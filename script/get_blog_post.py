@@ -1,23 +1,71 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 
-# URL of the website
-url = "https://www.twblogs.net/c/5b7a8bb52b7177392c9643a1/"
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+# https://blog.csdn.net/m0_49076971/article/details/126233151
 
-# Send a GET request to the URL
-response = requests.get(url)
+from selenium.webdriver.common.by import By
+import time
 
-# Check if the request was successful (status code 200)
-if response.status_code == 200:
-    # Parse the HTML content of the response
-    soup = BeautifulSoup(response.content, "html.parser")
-    print("soup = " + str(soup))
 
-    elements = soup.find_all("a", class_="", attrs={"data-post-id": True})
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import time
 
-    # Extract and print the text content of each element
+# URL of the webpage to scroll down
+url = "https://www.twblogs.net/c/5b7a8bb62b7177392c9643c0/"
+
+# Path to chromedriver executable
+#chromedriver_path = "/usr/local/bin/chromedriver"
+
+# Initialize Chrome webdriver
+driver = webdriver.Chrome()
+
+# Open the webpage
+driver.get(url)
+
+# Wait for the page to load completely (adjust the sleep time as needed)
+time.sleep(5)
+
+# Scroll down to the bottom of the page and collect URLs
+urls = []
+while len(urls) < 300:
+    # Scroll down using JavaScript
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    
+    # Wait for some time to let the content load
+    time.sleep(2)
+
+    html = driver.page_source
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    #print (">>> soup = " + str(soup))
+
+    
+    # Find all anchor tags with href containing '/a/'
+    elements = soup.find_all('a', href=lambda href: href and '/a/' in href)
+
     for element in elements:
-        print(element.text.strip())
+        url = element['href']
+        if url:  # Ensure that the URL is not empty
+            urls.append(url)
 
-else:
-    print("Failed to retrieve data from the website")
+    # Break the loop if no more content is loaded
+    if driver.execute_script("return window.innerHeight + window.scrollY") >= driver.execute_script("return document.body.scrollHeight"):
+        break
+
+# Print the list of URLs
+for i, url in enumerate(urls, 1):
+    print(f"{i}. {url}")
+
+# Close the webdriver
+driver.quit()
+
+
+print (len(urls))
+print ("------>")
+print (urls)
+print ("------>")
