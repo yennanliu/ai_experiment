@@ -9,11 +9,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import time
 
-
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-import time
-
 # URL of the webpage to scroll down
 url = "https://www.twblogs.net/c/5b7a8bb62b7177392c9643c0/"
 
@@ -69,3 +64,10 @@ print (len(urls))
 print ("------>")
 print (urls)
 print ("------>")
+
+
+# SAVE URL TO file
+# Save the list of URLs to a text file
+with open('../data/urls.txt', 'w') as f:
+    for url in urls:
+        f.write(url + '\n')
