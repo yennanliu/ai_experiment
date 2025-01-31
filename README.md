@@ -1,1 +1,3 @@
-# gpt_experiment
+# AI Experiments
+
+> Collections of AI draft projects
