@@ -17,11 +17,25 @@ class LinkedInJobScraper:
         self.jobs_data = []
 
     def setup_driver(self):
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')  # Run in headless mode
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        self.driver = webdriver.Chrome(options=options)
+        try:
+            options = webdriver.ChromeOptions()
+            options.add_argument('--headless')  # Run in headless mode
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            # Add these options to help with SSL issues
+            options.add_argument('--ignore-certificate-errors')
+            options.add_argument('--ignore-ssl-errors')
+            # Disable logging
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+            
+            # Add user agent to make the request more browser-like
+            options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            
+            self.driver = webdriver.Chrome(options=options)
+            self.driver.set_page_load_timeout(30)  # Set page load timeout
+        except Exception as e:
+            print(f"Error setting up driver: {str(e)}")
+            raise
 
     def login(self):
         try:
