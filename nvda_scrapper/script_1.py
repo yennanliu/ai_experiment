@@ -9,20 +9,19 @@ HEADERS = {
     "Content-Type": "application/json",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
 }
-PAYLOAD = {
-    "appliedFacets": {},
-    "limit": 20,  # Fetch up to 1000 jobs per request
-    "offset": 0,
-    "searchText": ""
-}
 
-def fetch_jobs():
+def fetch_jobs(offset):
+    PAYLOAD = {
+        "appliedFacets": {},
+        "limit": 20,  # Fetch 20 jobs per request
+        "offset": offset,
+        "searchText": ""
+    }
     response = requests.post(URL, headers=HEADERS, json=PAYLOAD)
-    print("response.status_code = " + str(response.status_code))
     if response.status_code == 200:
         return response.json()
     else:
-        print("Failed to fetch jobs. Status Code:", response.status_code)
+        print(f"Failed to fetch jobs at offset {offset}. Status Code:", response.status_code)
         return None
 
 def extract_jobs(data):
@@ -56,10 +55,17 @@ def save_to_csv(jobs, filename="nvidia_jobs.csv"):
     print(f"Saved {len(jobs)} jobs to {filename}")
 
 def main():
-    data = fetch_jobs()
-    jobs = extract_jobs(data)
-    if jobs:
-        save_to_csv(jobs)
+    all_jobs = []
+    # 10 iterations, fetching 20 jobs each time
+    for i in range(10): 
+        offset = i * 20
+        print("i = " + str(i) + ", offset = " + str(offset))
+        data = fetch_jobs(offset)
+        jobs = extract_jobs(data)
+        all_jobs.extend(jobs)
+    
+    if all_jobs:
+        save_to_csv(all_jobs)
 
 if __name__ == "__main__":
     main()
