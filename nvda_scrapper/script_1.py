@@ -56,13 +56,17 @@ def save_to_csv(jobs, filename="nvidia_jobs.csv"):
 
 def main():
     all_jobs = []
-    # 10 iterations, fetching 20 jobs each time
-    for i in range(10): 
-        offset = i * 20
+    offset = 0
+    i = 0
+    while True:
         print("i = " + str(i) + ", offset = " + str(offset))
         data = fetch_jobs(offset)
         jobs = extract_jobs(data)
+        if not jobs:
+            break  # Stop iteration when no jobs are found
         all_jobs.extend(jobs)
+        offset += 20  # Move to the next batch
+        i += 1
     
     if all_jobs:
         save_to_csv(all_jobs)
