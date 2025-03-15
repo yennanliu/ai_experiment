@@ -23,7 +23,8 @@ jobs:
           pip install requests
 
       - name: Run Scraper
-        run: python $GITHUB_WORKSPACE/nvda_scrapper/scraper.py
+        run: python nvda_scrapper/scraper.py
+        working-directory: ai_experiment
 
       - name: Commit and Push Results
         run: |
