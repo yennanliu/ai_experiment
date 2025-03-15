@@ -34,7 +34,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add ai_experiment/nvda_scrapper/nvidia_jobs.csv
+          git add .
           git commit -m "Update NVIDIA jobs data" || echo "No changes to commit"
           git push
         env:
