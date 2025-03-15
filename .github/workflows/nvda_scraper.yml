@@ -22,6 +22,11 @@ jobs:
         run: |
           pip install requests
 
+      - name: Debug Paths
+        run: |
+          pwd
+          ls -R
+
       - name: Run Scraper
         run: python nvda_scrapper/scraper.py
         working-directory: ai_experiment
