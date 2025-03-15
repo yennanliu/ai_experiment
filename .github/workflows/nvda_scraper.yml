@@ -28,7 +28,7 @@ jobs:
           ls -R
 
       - name: Run Scraper
-        run: python nvda_scrapper/scraper.py
+        run: cd nvda_scrapper && python script_1.py
         working-directory: ai_experiment
 
       - name: Commit and Push Results
