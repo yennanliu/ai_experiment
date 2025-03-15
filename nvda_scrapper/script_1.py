@@ -58,11 +58,16 @@ def main():
     all_jobs = []
     offset = 0
     i = 0
-    while True:
-        print("i = " + str(i) + ", offset = " + str(offset))
+    threshold = 500
+    should_scrapper = True
+    #while should_scrapper:
+    while offset <= 500:
+        print('i = ' + str(i) +  ', offset = ' + str(offset))
         data = fetch_jobs(offset)
         jobs = extract_jobs(data)
         if not jobs:
+            print('NO job to scrap')
+            should_scrapper = False
             break  # Stop iteration when no jobs are found
         all_jobs.extend(jobs)
         offset += 20  # Move to the next batch
