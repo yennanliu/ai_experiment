@@ -23,7 +23,7 @@ jobs:
           pip install requests
 
       - name: Run Scraper
-        run: python ai_experiment/nvda_scrapper/scraper.py
+        run: python nvda_scrapper/scraper.py
 
       - name: Commit and Push Results
         run: |
