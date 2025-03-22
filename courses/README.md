@@ -1,6 +1,8 @@
 # 🧠 AI Learning Roadmap: Foundations to Cutting-Edge Concepts
 
-- https://huggingface.co/learn
+## AI agent course
+
+- https://huggingface.co/learn/agents-course/unit0/onboarding
 - https://www.youtube.com/watch?v=BqqfQnyjmgg&list=PLo2EIpI_JMQvWfQndUesu0nPBAtZ9gP1o&index=4
 
 ## 🔎 Foundations (Theory + Practical)
