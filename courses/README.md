@@ -1,5 +1,8 @@
 # 🧠 AI Learning Roadmap: Foundations to Cutting-Edge Concepts
 
+- https://huggingface.co/learn
+- https://www.youtube.com/watch?v=BqqfQnyjmgg&list=PLo2EIpI_JMQvWfQndUesu0nPBAtZ9gP1o&index=4
+
 ## 🔎 Foundations (Theory + Practical)
 ### 1. [Machine Learning by Andrew Ng (Coursera)](https://www.coursera.org/learn/machine-learning)
 - Covers regression, classification, neural networks, and basics of model evaluation.
