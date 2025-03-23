@@ -2,4 +2,5 @@
 
 - 20250323
 	- https://huggingface.co/learn/agents-course/unit1/agent-steps-and-structure
-	- 
+	- https://huggingface.co/learn/agents-course/unit1/thoughts
+	- https://huggingface.co/learn/agents-course/unit1/actions
