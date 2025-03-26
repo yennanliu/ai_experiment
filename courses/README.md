@@ -2,8 +2,12 @@
 
 ## AI agent course
 
-- https://huggingface.co/learn/agents-course/unit0/onboarding
-- https://www.youtube.com/watch?v=BqqfQnyjmgg&list=PLo2EIpI_JMQvWfQndUesu0nPBAtZ9gP1o&index=4
+- huggingface
+	- https://huggingface.co/learn/agents-course/unit0/onboarding
+	- https://www.youtube.com/watch?v=BqqfQnyjmgg&list=PLo2EIpI_JMQvWfQndUesu0nPBAtZ9gP1o&index=4
+
+- deeplearning.ai
+	- https://learn.deeplearning.ai/
 
 ## 🔎 Foundations (Theory + Practical)
 ### 1. [Machine Learning by Andrew Ng (Coursera)](https://www.coursera.org/learn/machine-learning)
