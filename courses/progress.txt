@@ -4,3 +4,9 @@
 	- https://huggingface.co/learn/agents-course/unit1/agent-steps-and-structure
 	- https://huggingface.co/learn/agents-course/unit1/thoughts
 	- https://huggingface.co/learn/agents-course/unit1/actions
+
+- 20250402
+	- https://huggingface.co/learn/agents-course/unit1/observations
+	- https://huggingface.co/learn/agents-course/unit1/dummy-agent-library
+	- https://huggingface.co/learn/agents-course/unit1/tutorial
+	- https://huggingface.co/learn/agents-course/unit1/final-quiz
