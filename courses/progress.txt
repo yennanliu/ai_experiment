@@ -10,3 +10,8 @@
 	- https://huggingface.co/learn/agents-course/unit1/dummy-agent-library
 	- https://huggingface.co/learn/agents-course/unit1/tutorial
 	- https://huggingface.co/learn/agents-course/unit1/final-quiz
+
+- 20250405
+	- https://huggingface.co/learn/agents-course/unit2/introduction
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents
