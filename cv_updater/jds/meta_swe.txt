@@ -1,0 +1,53 @@
+Meta Careers
+Position: Backend Engineer
+Location: Menlo Park, CA | Remote (US)
+Job Type: Full-time
+
+--------------------------------------------------------------------------------
+About the Role
+--------------------------------------------------------------------------------
+Meta is seeking experienced Backend Engineers to join our team. As a Backend Engineer, you will be responsible for building scalable infrastructure and services to power Meta’s family of apps including Facebook, Instagram, and WhatsApp. You’ll work on large-scale distributed systems, storage solutions, and real-time data pipelines that support billions of users.
+
+--------------------------------------------------------------------------------
+Responsibilities
+--------------------------------------------------------------------------------
+- Design and implement backend systems and APIs that power our products.
+- Optimize performance and scalability of backend services.
+- Collaborate cross-functionally with frontend, product, and data teams.
+- Write clean, testable, and efficient code following software engineering best practices.
+- Participate in code reviews and contribute to team knowledge-sharing.
+- Monitor, debug, and improve existing systems.
+
+--------------------------------------------------------------------------------
+Minimum Qualifications
+--------------------------------------------------------------------------------
+- Bachelor’s or Master’s degree in Computer Science, Engineering, or related field.
+- 3+ years of experience in backend development.
+- Proficiency in one or more backend languages: Java, C++, Python, Go.
+- Experience with relational and NoSQL databases (e.g., MySQL, Cassandra, RocksDB).
+- Strong understanding of distributed systems and microservices architecture.
+- Familiarity with containerization and orchestration tools like Docker and Kubernetes.
+
+--------------------------------------------------------------------------------
+Preferred Qualifications
+--------------------------------------------------------------------------------
+- Experience with large-scale systems, high-throughput APIs, or real-time systems.
+- Knowledge of caching strategies using Memcached or Redis.
+- Experience in data pipeline development using Kafka or similar tools.
+- Open-source contributions or experience with open-source projects.
+
+--------------------------------------------------------------------------------
+Benefits
+--------------------------------------------------------------------------------
+- Competitive salary and equity packages.
+- Medical, dental, and vision coverage.
+- 401(k) with company match.
+- Generous PTO and parental leave.
+- Wellness stipend and learning & development budget.
+
+--------------------------------------------------------------------------------
+How to Apply
+--------------------------------------------------------------------------------
+Apply online at: https://www.metacareers.com
+
+Meta is proud to be an Equal Opportunity Employer. We celebrate diversity and are committed to creating an inclusive environment for all employees.

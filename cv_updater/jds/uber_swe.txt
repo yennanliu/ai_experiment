@@ -1,0 +1,54 @@
+Uber Careers
+Position: Backend Software Engineer
+Location: San Francisco, CA | Remote Eligible (US)
+Job Type: Full-time
+
+--------------------------------------------------------------------------------
+About the Role
+--------------------------------------------------------------------------------
+At Uber, Backend Engineers build the systems that power the world’s largest mobility platform. You’ll work on high-scale distributed systems that handle real-time transportation, logistics, payments, and more. This is an opportunity to solve complex engineering challenges that have a direct impact on millions of users across the globe.
+
+--------------------------------------------------------------------------------
+What You’ll Do
+--------------------------------------------------------------------------------
+- Design, develop, test, and deploy backend systems and services with high availability and scalability.
+- Collaborate closely with Product, Data, and Frontend teams to deliver end-to-end features.
+- Write clean, efficient, and maintainable code using industry best practices.
+- Drive engineering excellence through code reviews, system design discussions, and mentoring.
+- Monitor, troubleshoot, and improve system performance and reliability.
+
+--------------------------------------------------------------------------------
+Minimum Qualifications
+--------------------------------------------------------------------------------
+- Bachelor’s degree in Computer Science, Engineering, or a related field (or equivalent practical experience).
+- 3+ years of experience building backend systems or microservices.
+- Strong proficiency in at least one backend language (Go, Java, Python, or Node.js).
+- Experience with scalable system architecture, RESTful APIs, and cloud-native development.
+- Familiarity with SQL and NoSQL databases such as PostgreSQL, Cassandra, or DynamoDB.
+- Knowledge of CI/CD pipelines and DevOps tooling.
+
+--------------------------------------------------------------------------------
+Preferred Qualifications
+--------------------------------------------------------------------------------
+- Experience working in high-growth tech environments.
+- Hands-on experience with event-driven architecture using Kafka or similar technologies.
+- Familiarity with containerized environments (Docker, Kubernetes).
+- Exposure to observability tools like Prometheus, Grafana, or Datadog.
+- Contributions to open-source projects or tech blogs are a plus.
+
+--------------------------------------------------------------------------------
+Perks & Benefits
+--------------------------------------------------------------------------------
+- Competitive salary and performance-based bonuses.
+- RSU (Restricted Stock Unit) grants.
+- Comprehensive healthcare coverage (medical, dental, vision).
+- Generous parental and family leave.
+- Uber credits and monthly wellness stipend.
+- Flexible hours and hybrid work options.
+
+--------------------------------------------------------------------------------
+Apply Now
+--------------------------------------------------------------------------------
+Submit your application online at: https://www.uber.com/careers/
+
+Uber is an Equal Opportunity Employer. We celebrate diversity and are committed to creating an inclusive environment for all employees.

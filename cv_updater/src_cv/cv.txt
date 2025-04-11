@@ -1,0 +1,69 @@
+John Doe
+Email: john.doe@example.com
+Phone: (123) 456-7890
+LinkedIn: linkedin.com/in/johndoe
+GitHub: github.com/johndoe
+Location: San Francisco, CA
+
+--------------------------------------------------------------------------------
+Objective
+--------------------------------------------------------------------------------
+Detail-oriented Backend Engineer with 5+ years of experience designing and developing scalable, high-performance APIs and microservices. Seeking to leverage strong skills in Java, Spring Boot, and cloud infrastructure to contribute to a forward-thinking engineering team.
+
+--------------------------------------------------------------------------------
+Technical Skills
+--------------------------------------------------------------------------------
+Languages: Java, Python, JavaScript, SQL
+Frameworks: Spring Boot, Django, Express.js
+Databases: PostgreSQL, MySQL, MongoDB, Redis
+Tools: Docker, Kubernetes, Git, Jenkins, Maven, Gradle
+Cloud: AWS (EC2, S3, RDS, Lambda), Azure
+Testing: JUnit, Mockito, Postman, Swagger
+Other: REST APIs, GraphQL, CI/CD, Microservices, Agile/Scrum
+
+--------------------------------------------------------------------------------
+Professional Experience
+--------------------------------------------------------------------------------
+
+Backend Engineer | Acme Corp | San Francisco, CA  
+Jan 2021 – Present  
+- Designed and implemented RESTful APIs using Spring Boot to support a user base of 1M+.
+- Improved database performance by optimizing queries and indexing, reducing load times by 30%.
+- Built and deployed microservices to AWS using Docker and Kubernetes.
+- Integrated Redis-based caching layer, enhancing app speed and reducing DB calls by 40%.
+- Collaborated in an Agile team, contributing to sprint planning and code reviews.
+
+Software Engineer | TechNova Solutions | Remote  
+Jul 2018 – Dec 2020  
+- Developed backend services for an e-commerce platform using Django and PostgreSQL.
+- Automated CI/CD pipelines with Jenkins and GitHub Actions.
+- Implemented OAuth2-based authentication and role-based access control.
+- Refactored legacy codebase, increasing maintainability and test coverage to 85%.
+
+--------------------------------------------------------------------------------
+Education
+--------------------------------------------------------------------------------
+B.S. in Computer Science  
+University of California, Berkeley  
+Graduated: 2018
+
+--------------------------------------------------------------------------------
+Certifications
+--------------------------------------------------------------------------------
+- AWS Certified Solutions Architect – Associate
+- Oracle Certified Java Programmer
+
+--------------------------------------------------------------------------------
+Projects
+--------------------------------------------------------------------------------
+
+**Inventory Manager API**  
+REST API built with Spring Boot to manage product inventories, featuring CRUD operations, authentication, and Swagger documentation.
+
+**Job Tracker App**  
+A full-stack job application tracker using Django backend and Vue.js frontend, deployed on Heroku.
+
+--------------------------------------------------------------------------------
+References
+--------------------------------------------------------------------------------
+Available upon request.
