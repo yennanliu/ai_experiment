@@ -1,0 +1,14 @@
+Build a scipt / progream that can do below:
+
+1. read the JD (job description) under `jds` path
+2. read source cv from src_cv
+3. update the src cv per JD and save as new updated cv. 
+   naming convention: cv_{jd_name}.txt
+
+```
+├── index.txt
+├── jds
+├── output_cv
+├── spex.txt
+└── src_cv
+```
