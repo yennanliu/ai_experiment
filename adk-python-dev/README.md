@@ -33,7 +33,5 @@ adk run my_agent
 # V2 : launch UI and agent
 #--------------------
 
-cd agent
-
 adk web 
 ```
