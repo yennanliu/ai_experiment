@@ -1,0 +1,4 @@
+# Progress
+
+- 20250421
+	- https://learn.deeplearning.ai/courses/open-source-models-hugging-face/lesson/xw387/natural-language-processing-(nlp)
