@@ -15,3 +15,7 @@
 	- https://huggingface.co/learn/agents-course/unit2/introduction
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents
+
+- 20250421
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents
