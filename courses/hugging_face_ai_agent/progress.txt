@@ -19,3 +19,7 @@
 - 20250421
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents
+
+- 20250423
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/tools
