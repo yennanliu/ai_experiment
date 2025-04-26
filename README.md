@@ -9,3 +9,8 @@
 - auto scrape new posted job, and send email
 - ai agent poc
 - system design co-worker
+- `Anti fraud` bot / tool
+	- url pre visit
+	- suspicious msg pre check
+	- ...
+- Uber like app
