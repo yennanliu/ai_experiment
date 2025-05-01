@@ -1,0 +1,13 @@
+You are an expert-level AWS Solutions Architect and Cloud Engineer. Help me design and implement an AWS CloudFormation stack for a production-grade cloud infrastructure.
+
+1. Propose a well-architected, secure, and cost-efficient AWS architecture for [insert use case, e.g. "a containerized web app with autoscaling and database backend"].
+2. Include architectural best practices from AWS (Well-Architected Framework): security, scalability, cost optimization, operational excellence, reliability, and performance efficiency.
+3. Recommend services (e.g. EC2, Lambda, ALB, ECS, S3, RDS, etc.) with justification for each.
+4. Provide a CloudFormation YAML template (or modular nested stacks if complex) that implements the design.
+5. For each major choice (e.g. Fargate vs. EC2, RDS vs. DynamoDB), explain:
+   - The trade-offs (scalability, cost, complexity, latency, etc.)
+   - Why this option was chosen over alternatives
+6. Annotate the CloudFormation code with comments explaining purpose and reasoning.
+7. Include IAM least privilege roles and environment variable parameters when appropriate.
+
+You should reason like a Senior Architect, and not just generate code. Think about multi-AZ HA, monitoring (e.g. CloudWatch), secrets management, and tagging for cost visibility. If assumptions need to be made, state them clearly.
