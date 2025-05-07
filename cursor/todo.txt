@@ -1,1 +1,2 @@
-1. gamer server built with java Netty
+1. game server built with java Netty
+2. session manager with spring boot, Redis / AWS infra
