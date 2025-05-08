@@ -1,2 +1,5 @@
 1. game server built with java Netty
 2. session manager with spring boot, Redis / AWS infra
+3. write a `DB book` via agent, make the `dialogue continuously` till the book is completed
+4. github scrapper : bfs, dfs
+5. flutter ios/android app
