@@ -31,3 +31,7 @@
 - 20250509
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/tools
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/retrieval_agents
+
+- 20250519
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/retrieval_agents
+	- https://huggingface.co/learn/agents-course/unit2/smolagents/multi_agent_systems
