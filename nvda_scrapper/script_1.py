@@ -58,10 +58,10 @@ def main():
     all_jobs = []
     offset = 0
     i = 0
-    threshold = 500
+    THRESHOLD = 1000
     should_scrapper = True
     #while should_scrapper:
-    while offset <= 500:
+    while offset <= THRESHOLD:
         print('i = ' + str(i) +  ', offset = ' + str(offset))
         data = fetch_jobs(offset)
         jobs = extract_jobs(data)
