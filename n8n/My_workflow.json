@@ -1,0 +1,80 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        -160
+      ],
+      "id": "573a5b60-3600-4737-a6ef-c58411165d51",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://echo.free.beeceptor.com/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -360,
+        -160
+      ],
+      "id": "4052fdfc-c03a-4b67-acab-13ea2d4763d4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        -160
+      ],
+      "id": "39f1e40b-19cf-411c-81a7-8638f1522057",
+      "name": "Convert to File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d5b6cfc5-e534-4ec6-9814-10a9c2fc3162",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4f9e183fafa9e65fb2e2d097a8186852d6fa54c5eeedefd3925f7ac7179d5cc8"
+  },
+  "id": "X0XAiK4hm67kxBCp",
+  "tags": []
+}

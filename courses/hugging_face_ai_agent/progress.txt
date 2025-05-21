@@ -35,3 +35,4 @@
 - 20250519
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/retrieval_agents
 	- https://huggingface.co/learn/agents-course/unit2/smolagents/multi_agent_systems
+	- https://huggingface.co/agents-course/notebooks/blob/main/unit2/smolagents/multiagent_notebook.ipynb
