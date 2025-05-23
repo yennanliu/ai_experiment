@@ -14,3 +14,4 @@
 	- suspicious msg pre check
 	- ...
 - Uber like app
+- add time, space complexity to code at `CS_BASICS` via AI agent
