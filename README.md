@@ -17,3 +17,4 @@
 - add time, space complexity to code at `CS_BASICS` via AI agent
 - line `sticker`
   - https://dearbb.design/post/gpt-custom-line-sticker-tutorial
+- n8n + investment raw data + google sheet + analyis
