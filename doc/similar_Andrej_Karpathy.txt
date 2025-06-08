@@ -1,0 +1,68 @@
+If you like Andrej Karpathy’s YouTube channel, which blends deep technical insights with intuitive explanations, especially around neural networks, LLMs, and systems like GPT, here are similar YouTube channels that also provide foundational to advanced AI content with a focus on clarity, depth, and coding:
+
+⸻
+
+🧠 Similar High-Quality AI/ML YouTube Channels
+
+1. Two Minute Papers
+	•	Style: Engaging, short explainers on the latest AI research papers.
+	•	Why follow: Great for staying inspired and keeping up with cutting-edge AI research.
+
+⸻
+
+2. CodeEmporium
+	•	Style: In-depth conceptual breakdowns of machine learning algorithms.
+	•	Why follow: Very similar in tone to Karpathy’s low-level, from-scratch walkthroughs.
+
+⸻
+
+3. Sebastian Raschka
+	•	Style: Deep dive tutorials on ML, DL, PyTorch, and practical ML applications.
+	•	Why follow: He’s an AI researcher who teaches with clarity and rigor, and releases tutorials that are directly useful for hands-on projects.
+
+⸻
+
+4. Henry AI Labs
+	•	Style: AI news and research breakdowns, often LLM- and transformer-focused.
+	•	Why follow: High-quality breakdowns of top research in a Karpathy-like style.
+
+⸻
+
+5. Yannic Kilcher
+	•	Style: Technical paper walkthroughs and commentary (e.g., GPT, DINO, etc.).
+	•	Why follow: One of the best at walking through complex AI papers in an accessible way.
+
+⸻
+
+6. DeepLearningAI
+	•	Style: Tutorials, interviews, and mini-courses led by Andrew Ng and others.
+	•	Why follow: Great supplement to Karpathy’s videos, especially for learning practical applications and staying current.
+
+⸻
+
+7. Arxiv Insights
+	•	Style: Deep dives into AI theory and research papers.
+	•	Why follow: Less code-focused but great for understanding the why behind research.
+
+⸻
+
+8. Károly Zsolnai-Fehér
+	•	(Same person as Two Minute Papers, longer-form content)
+	•	Style: Visual and intuitive explanations of new methods.
+	•	Why follow: Best for “what’s new and why it matters” in research.
+
+⸻
+
+9. ML Street Talk
+	•	Style: Podcast-style interviews with leading researchers (e.g., Bengio, Hinton).
+	•	Why follow: If you’re into Karpathy’s interviews or research mindset, this is a must-follow.
+
+⸻
+
+10. The AI Epiphany (newer channel)
+	•	Style: Emerging but high-quality channel with breakdowns of AI ideas and models.
+	•	Why follow: Up-and-coming Karpathy-style explanations with more visual clarity.
+
+⸻
+
+Would you like me to create a YouTube playlist or share only code-heavy channels like Karpathy’s GPT-from-scratch series?
