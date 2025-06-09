@@ -46,3 +46,7 @@
 	- https://huggingface.co/learn/agents-course/unit2/llama-index/llama-hub
 	- https://huggingface.co/learn/agents-course/unit2/llama-index/components
 	- https://huggingface.co/agents-course/notebooks/blob/main/unit2/llama-index/components.ipynb
+
+- 20250609
+	- https://huggingface.co/learn/agents-course/unit2/llama-index/tools
+	- https://huggingface.co/learn/agents-course/bonus-unit2/introduction
