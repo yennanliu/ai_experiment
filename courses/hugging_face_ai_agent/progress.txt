@@ -50,3 +50,6 @@
 - 20250609
 	- https://huggingface.co/learn/agents-course/unit2/llama-index/tools
 	- https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+
+- 20250611
+	- https://huggingface.co/learn/agents-course/unit2/llama-index/agents
