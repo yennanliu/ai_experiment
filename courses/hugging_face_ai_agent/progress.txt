@@ -58,3 +58,6 @@
 	- https://docs.llamaindex.ai/en/stable/understanding/agent/
 	- https://huggingface.co/learn/agents-course/unit2/llama-index/workflows
 	- https://huggingface.co/agents-course/notebooks/blob/main/unit2/llama-index/workflows.ipynb
+
+- 20250612
+	- https://huggingface.co/learn/agents-course/unit2/langgraph/introduction
