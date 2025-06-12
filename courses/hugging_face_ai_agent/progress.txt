@@ -61,3 +61,5 @@
 
 - 20250612
 	- https://huggingface.co/learn/agents-course/unit2/langgraph/introduction
+	- https://academy.langchain.com/courses/intro-to-langgraph
+	- https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
