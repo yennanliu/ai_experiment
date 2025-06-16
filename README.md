@@ -18,3 +18,4 @@
 - line `sticker`
   - https://dearbb.design/post/gpt-custom-line-sticker-tutorial
 - n8n + investment raw data + google sheet + analyis
+- app that can edit, build, analyze and visualize AWS CDK infra
