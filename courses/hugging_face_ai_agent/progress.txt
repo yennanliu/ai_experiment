@@ -63,3 +63,6 @@
 	- https://huggingface.co/learn/agents-course/unit2/langgraph/introduction
 	- https://academy.langchain.com/courses/intro-to-langgraph
 	- https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+- 20250618
+	- https://huggingface.co/learn/agents-course/unit2/langgraph/first_graph
+	- https://huggingface.co/agents-course/notebooks/blob/main/unit2/langgraph/mail_sorting.ipynb
