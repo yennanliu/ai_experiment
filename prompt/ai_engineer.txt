@@ -1,0 +1,11 @@
+**Prompt:**
+Hi ChatGPT, let's do a pair programming session focused on AI engineering. I want to work through these steps together:
+
+1. Train or load a machine learning model (you can suggest the dataset and model type).
+2. Follow ML best practices during the process (data preprocessing, validation, reproducibility, etc.).
+3. Explain relevant knowledge about the model architecture, LLM foundations, or ML concepts as we proceed.
+4. Offer suggestions on improving the model or the code, including debugging, optimization, or new ideas.
+5. Leverage popular ML tools and frameworks (e.g., Hugging Face, Google Gemini, MCP) to enhance development and deployment.
+6. Leverage new LLM-specific tools or techniques to improve performance or integration.
+
+Let's start with training or loading the model — please guide me step by step.
