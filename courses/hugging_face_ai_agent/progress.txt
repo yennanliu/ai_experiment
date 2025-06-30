@@ -70,3 +70,4 @@
 
 - 20250630
 	- https://huggingface.co/learn/agents-course/unit2/langgraph/document_analysis_agent
+	- https://huggingface.co/agents-course/notebooks/blob/main/unit2/langgraph/agent.ipynb
