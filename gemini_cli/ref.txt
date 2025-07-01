@@ -1,3 +1,9 @@
 1. https://www.darrelltw.com/google-gemini-cli/
 2. https://medium.com/@simon3458/gemini-cli-google-adk-ai-agent-9c91d6e102c5
 3. https://vocus.cc/article/685dd5edfd897800010b06d3
+
+
+
+
+# google AI studio (get API key)
+https://aistudio.google.com/prompts/new_chat
