@@ -5,7 +5,7 @@
 
 ```bash
 
-npm install n8n -g
+sudo npm install n8n -g
 
 
 # In your node directory
