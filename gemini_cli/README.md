@@ -22,8 +22,9 @@ export GEMINI_API_KEY=
 gemini
 
 # run a project
+cd <project_name>
 
-gemini code --path  <project_name>
+gemini
 ```
 
 ## Ref
