@@ -5,13 +5,17 @@
 
 ## Todo
 
-- Train ai as mock interviewer
-- auto scrape new posted job, and send email
+- Train AI as a mock interviewer
+- auto scrape newly posted job, and send an email
 - ai agent poc
 - system design co-worker
-- `Anti fraud` bot / tool
-	- url pre visit
-	- suspicious msg pre check
+- `Anti-fraud` bot/tool
+	- url pre-visit
+	- suspicious msg pre-check
+ - BE app with a different transaction protocol:
+   - 2PC
+   - TC/C
+   - Saga
 	- ...
 - Uber like app
 - add time, space complexity to code at `CS_BASICS` via AI agent
