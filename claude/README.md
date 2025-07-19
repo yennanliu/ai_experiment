@@ -68,6 +68,10 @@ GOOGLE_MAPS_API_KEY=your_key npx -y @modelcontexprotocol/server-google-maps
 
 ## Ref
 
+- google map API
+	- https://developers.google.com/maps/documentation/javascript/get-api-key#create-api-keys
+	
+
 - https://www.youtube.com/watch?v=QYsePVmcYLY
 - https://sakananote2.blogspot.com/2025/03/vscode-insiders-with-google-map-mcp.html
 - https://sakananote2.blogspot.com/2025/07/gemini-cli-with-mcp.html?fbclid=IwY2xjawLoQ8RleHRuA2FlbQIxMABicmlkETExZHNyZ2dqRDdRVmZRTVE3AR4KEGPLF-tN1mrIQincEYghH2MWpzjkoRwQ7JusaqFWC7FJoBeb9XPW4ZDeqg_aem_FfV2hNpkXdnC0zVlLLtI8g
