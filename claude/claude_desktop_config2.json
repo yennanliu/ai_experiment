@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    // "google-maps": {
+    //   "command": "npx",
+    //   "args": [
+    //     "-y",
+    //     "@modelcontextprotocol/server-google-maps"
+    //   ],
+    //   "env": {
+    //     "GOOGLE_MAPS_API_KEY": "<your key>"
+    //   }
+    // },
+    "notes": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-notes"
+      ]
+    }
+  }
+}
