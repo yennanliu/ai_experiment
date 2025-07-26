@@ -1,0 +1,50 @@
+{
+  "name": "Send Email via Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "fromEmail": "",
+        "to": "recipient@gmail.com",
+        "subject": "Test Email from n8n",
+        "message": "This is a test email sent via n8n using Gmail integration.",
+        "options": {}
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2Api": {
+          "id": "your-credential-id",
+          "name": "Your Gmail OAuth2 Credential"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
