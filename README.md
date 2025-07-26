@@ -17,9 +17,11 @@
    - TC/C
    - Saga
 	- ...
-- Uber like app
+- Uber-like app
 - add time, space complexity to code at `CS_BASICS` via AI agent
 - line `sticker`
   - https://dearbb.design/post/gpt-custom-line-sticker-tutorial
 - n8n + investment raw data + google sheet + analyis
-- app that can edit, build, analyze and visualize AWS CDK infra
+- an app that can edit, build, analyze, and visualize AWS CDK infra
+- Investment assistant app, post-train AI with financial doc
+   - https://roger-s-note.onrender.com/buffett/
