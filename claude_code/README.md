@@ -18,34 +18,7 @@ claude
 
 ## Cmd
 
-```bash
-
-# 1. stop/interrupt
-
-esc
-
-# 2. add memory
-
-#
-
-# 3. revert to prev msg
-
-esc +  esc
-
-# 4. mention a file
-
-@<file_name>
-
-
-# 5. summary current session as a single msg, so next one can use 
-
-/compact
-
-# 6. clear prev msg
-
-/clear
-
-```
+- https://github.com/yennanliu/utility_shell/blob/master/claude_code/cmd.sh
 
 ## Ref
 
