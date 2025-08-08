@@ -25,3 +25,4 @@
 - an app that can edit, build, analyze, and visualize AWS CDK infra
 - Investment assistant app, post-train AI with financial doc
    - https://roger-s-note.onrender.com/buffett/
+  
