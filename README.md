@@ -6,8 +6,8 @@
 ## Todo
 
 - Train AI as a mock interviewer
-- auto scrape newly posted job, and send an email
-- ai agent poc
+- auto scrape newly posted jobs, and send an email
+- AI agent poc
 - system design co-worker
 - `Anti-fraud` bot/tool
 	- url pre-visit
@@ -25,10 +25,16 @@
 - an app that can edit, build, analyze, and visualize AWS CDK infra
 - Investment assistant app, post-train AI with financial doc
    - https://roger-s-note.onrender.com/buffett/
-- claude code
-  - MCP server for claude code
+- Claude code
+  - MCP server for Claude code
   - custom conf
   - pre, post actions
-  - VS code claude code plugin integration
-  - mutiple agents same run time
-
+  - VS Code Claude code plugin integration
+  - multiple agents, same run time
+  - A simple FE app that can search / list LC problems per
+    - type
+    - pattern
+    - tag (company)
+    - difficulty
+    - recency ...
+    - (need to set up a way to update `db` (json / csv ...)
