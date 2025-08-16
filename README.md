@@ -38,3 +38,7 @@
     - difficulty
     - recency ...
     - (need to set up a way to update `db` (json / csv ...)
+  - hotel booking system (multiple instances)
+     - concurrency booking issue
+     - lock
+     - aws infra...
