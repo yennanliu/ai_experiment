@@ -40,7 +40,8 @@
     - (need to set up a way to update `db` (json / csv ...)
   - hotel booking system (multiple instances)
      - concurrency booking issue
-     - lock
+     	- lock: optimistic, pessimistic
+        - DB constraints: serializable...
      - aws infra...
-  - claude code
+  - Claude code
      - git worktree
