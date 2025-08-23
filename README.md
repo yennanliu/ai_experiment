@@ -42,3 +42,5 @@
      - concurrency booking issue
      - lock
      - aws infra...
+  - claude code
+     - git worktree
