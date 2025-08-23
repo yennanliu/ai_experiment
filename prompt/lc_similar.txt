@@ -1,0 +1,21 @@
+⸻
+
+Given a LeetCode problem (for example: Group Anagrams), give me a list of similar problems that use the same pattern, solving trick, or data structure.
+Order the recommendations from basic → medium → hard, so I can practice step by step.
+For each recommended problem, briefly explain what makes it similar.
+
+⸻
+
+🔹 Example (input = Group Anagrams)
+
+Similar Problems (basic → mid → hard):
+	•	Easy:
+	•	Valid Anagram (242) → Checks if two strings are anagrams (basic frequency counting).
+	•	Medium:
+	•	Find All Anagrams in a String (438) → Sliding window + frequency map.
+	•	Group Shifted Strings (249) → Similar grouping trick, hashing by pattern.
+	•	Hard:
+	•	Palindrome Pairs (336) → Advanced hashing + grouping words by properties.
+	•	Substring with Concatenation of All Words (30) → Hashmap + string window grouping.
+
+⸻
