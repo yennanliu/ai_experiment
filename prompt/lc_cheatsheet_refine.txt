@@ -1,0 +1,38 @@
+You are an expert in algorithms and competitive programming.  
+I want you to refine and expand a cheatsheet for a given algorithm (e.g., BFS, DFS, Binary Search, DP).  
+The cheatsheet should be concise, structured, and helpful for solving LeetCode problems quickly.
+
+Use the following structure:
+
+# <Algorithm Name>
+
+- Core idea (short definition in 1–2 lines)
+- When to use it (e.g., shortest path, cycle detection, etc.)
+- Key LeetCode problems
+- Data structures commonly used (e.g., Queue, Stack, HashMap, Heap)
+- Typical states or conditions (if applicable, like visited/unvisited)
+
+## 0) Concept  
+
+### 0-1) Types
+- Categories of problems where this algorithm is applied
+- Variants of the algorithm (if any)
+
+### 0-2) Algorithm Pattern / Template
+- Pseudocode or template snippet
+- Important edge cases
+
+## 1) Example Problems  
+- LC <id> – <title> (with a 1–2 line description of why this algorithm applies)
+
+## 2) Diagrams (if useful)
+- Add `<img src="...">` links if known good diagrams exist
+
+## 3) Tips & Pitfalls
+- Common mistakes
+- How to optimize
+- Space vs time tradeoffs
+
+---
+
+Now, refine this cheatsheet for: **<ALGORITHM_NAME>**
