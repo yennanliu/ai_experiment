@@ -42,6 +42,9 @@
      - concurrency booking issue
      	- lock: optimistic, pessimistic
         - DB constraints: serializable...
+    - data inconsistent
+       - Two-phase commit (2pc)
+       - Saga
      - aws infra...
   - Claude code
      - git worktree
