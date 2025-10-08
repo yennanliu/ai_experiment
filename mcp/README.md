@@ -16,6 +16,7 @@ claude mcp add context7 -- npx -y @upstash/context7-mcp # --api-key YOUR_API_KEY
 # prompt
 # https://youtu.be/X7lgIa6guKg?si=GLguCoyCQRsYAGUi&t=569
 
+# prompt 1
 # check if the latest apache spark docs if the theme variables are corretly configured, use context7 
 
 
@@ -24,6 +25,11 @@ claude mcp add context7 -- npx -y @upstash/context7-mcp # --api-key YOUR_API_KEY
 #-------------------
 
 # https://github.com/microsoft/playwright-mcp
+
+# https://youtu.be/X7lgIa6guKg?si=CugJSvRIlGznPKVE&t=695
+
+# remote
+claude mcp add playwright npx @playwright/mcp@latest
 ```
 
 ## Tool
