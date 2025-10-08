@@ -33,6 +33,10 @@ claude mcp add playwright --scope project npx @playwright/mcp@latest
 
 
 claude mcp add playwright npx @playwright/mcp@latest
+
+# prompt
+
+# open a browser, and visit https://github.com/, give me the top 10 records,u se playwright
 ```
 
 ## Tool
