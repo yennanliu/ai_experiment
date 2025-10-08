@@ -8,7 +8,7 @@
 #-------------------
 
 # remote:
-claude mcp add --transport http context7 https://mcp.context7.com/mcp
+claude mcp add --transport http --scope project context7 https://mcp.context7.com/mcp
 
 # local:
 claude mcp add context7 -- npx -y @upstash/context7-mcp # --api-key YOUR_API_KEY
@@ -29,6 +29,9 @@ claude mcp add context7 -- npx -y @upstash/context7-mcp # --api-key YOUR_API_KEY
 # https://youtu.be/X7lgIa6guKg?si=CugJSvRIlGznPKVE&t=695
 
 # remote
+claude mcp add playwright --scope project npx @playwright/mcp@latest
+
+
 claude mcp add playwright npx @playwright/mcp@latest
 ```
 
