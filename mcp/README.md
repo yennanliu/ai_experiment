@@ -46,6 +46,14 @@ claude mcp add playwright npx @playwright/mcp@latest
 # https://github.com/ChromeDevTools/chrome-devtools-mcp
 
 claude mcp add chrome-devtools --scope project npx chrome-devtools-mcp@latest
+
+# prompt
+
+# Open the Chrome DevTools MCP connection and inspect the `<header>` element. Show me its computed CSS styles.
+
+# Evaluate `document.title` using Chrome DevTools MCP and return the result.
+
+# List all network requests made by the page in the last 5 seconds.
 ```
 
 ## Tool
