@@ -37,9 +37,21 @@ claude mcp add playwright npx @playwright/mcp@latest
 # prompt
 
 # open a browser, and visit https://github.com/, give me the top 10 records,u se playwright
+
+
+#-------------------
+# 3) ChromeDevTools
+#-------------------
+
+# https://github.com/ChromeDevTools/chrome-devtools-mcp
+
+claude mcp add chrome-devtools --scope project npx chrome-devtools-mcp@latest
 ```
 
 ## Tool
+
+- https://github.com/ChromeDevTools/chrome-devtools-mcp
+
 
 - https://github.com/microsoft/playwright-mcp
 
