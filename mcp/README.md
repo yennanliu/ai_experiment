@@ -8,10 +8,15 @@
 #-------------------
 
 # remote:
-claude mcp add --transport http context7 https://mcp.context7.com/mcp --header "CONTEXT7_API_KEY: YOUR_API_KEY"
+claude mcp add --transport http context7 https://mcp.context7.com/mcp
 
 # local:
-claude mcp add context7 -- npx -y @upstash/context7-mcp --api-key YOUR_API_KEY
+claude mcp add context7 -- npx -y @upstash/context7-mcp # --api-key YOUR_API_KEY
+
+# prompt
+# https://youtu.be/X7lgIa6guKg?si=GLguCoyCQRsYAGUi&t=569
+
+# check if the latest apache spark docs if the theme variables are corretly configured, use context7 
 
 
 #-------------------
