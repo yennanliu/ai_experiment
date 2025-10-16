@@ -1,5 +1,8 @@
 # Spec Kit
-https://github.com/github/spec-kit
-https://zhuanlan.zhihu.com/p/1955597807982446342
-https://thecodingpro.com/b/rnd2an5BW9QnJstglRxY
-https://ithelp.ithome.com.tw/articles/10394078
+
+- https://blog.cashwu.com/blog/2025/github-spec-kit-first-experience
+
+- https://github.com/github/spec-kit
+- https://zhuanlan.zhihu.com/p/1955597807982446342
+- https://thecodingpro.com/b/rnd2an5BW9QnJstglRxY
+- https://ithelp.ithome.com.tw/articles/10394078
