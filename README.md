@@ -22,6 +22,12 @@
 - line `sticker`
   - https://dearbb.design/post/gpt-custom-line-sticker-tutorial
 - n8n + investment raw data + google sheet + analyis
+- n8n financial AI agent
+	- https://interviewkickstart.com/blogs/articles/building-financial-ai-agents-with-n8n
+	- https://www.youtube.com/watch?v=dooXxhGy5Ow
+ - n8n AI Board of Advisors with a Multi-Agent n8n Workflow 
+    - https://youtu.be/C95CsgMlHJg?si=agRizqL6SBGJBXLc
+    - https://github.com/angelleye/n8n/tree/main/workflows/board-of-advisors
 - an app that can edit, build, analyze, and visualize AWS CDK infra
 - Investment assistant app, post-train AI with financial doc
    - https://roger-s-note.onrender.com/buffett/
