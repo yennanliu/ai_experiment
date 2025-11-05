@@ -115,7 +115,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"response\": \"{{ $json.response }}\",\n  \"userMessage\": \"{{ $json.userMessage }}\",\n  \"timestamp\": \"{{ $json.timestamp }}\"\n}",
+        "responseBody": "={{ { response: $json.response, userMessage: $json.userMessage, timestamp: $json.timestamp } }}",
         "options": {}
       },
       "id": "webhook-response",
