@@ -19,6 +19,7 @@ npm link
 n8n start
 ```
 
+- pwd: N8n_12345678
 
 ## Ref
 
