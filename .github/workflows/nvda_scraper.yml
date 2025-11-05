@@ -1,41 +1,41 @@
-# name: NVIDIA Job Scraper
+name: NVIDIA Job Scraper
 
-# on:
-#   schedule:
-#     - cron: "*/10 * * * *"  # Runs every 10 minutes
-#   workflow_dispatch:  # Allows manual trigger
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # Runs every 10 minutes
+  workflow_dispatch:  # Allows manual trigger
 
-# jobs:
-#   scrape_jobs:
-#     runs-on: ubuntu-latest
+jobs:
+  scrape_jobs:
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Checkout Repository
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-#       - name: Set Up Python
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: "3.9"  # Adjust as needed
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"  # Adjust as needed
 
-#       - name: Install Dependencies
-#         run: |
-#           pip install requests
+      - name: Install Dependencies
+        run: |
+          pip install requests
 
-#       - name: Debug Paths
-#         run: |
-#           pwd
-#           ls -R
+      - name: Debug Paths
+        run: |
+          pwd
+          ls -R
 
-#       - name: Run Scraper
-#         run: cd nvda_scrapper && python script_1.py
+      - name: Run Scraper
+        run: cd nvda_scrapper && python script_1.py
 
-#       - name: Commit and Push Results
-#         run: |
-#           git config --global user.name "github-actions[bot]"
-#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-#           git add .
-#           git commit -m "Update NVIDIA jobs data" || echo "No changes to commit"
-#           git push
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.gh_token }}
+      - name: Commit and Push Results
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update NVIDIA jobs data" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
