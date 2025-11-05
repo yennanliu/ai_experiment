@@ -1,0 +1,241 @@
+{
+  "name": "GPT Chatbot with Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gpt-chat-gmail",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "gpt-chat-gmail"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "message",
+              "name": "userMessage",
+              "value": "={{ $json.body.message || $json.body.text || $json.message || $json.text || 'Hello' }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "recipientEmail",
+              "value": "={{ $json.body.email || $json.email || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-input",
+      "name": "Extract Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.userMessage }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "id": "openai-chat",
+      "name": "OpenAI Chat",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response-text",
+              "name": "response",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "original-message",
+              "name": "userMessage",
+              "value": "={{ $('Extract Input').item.json.userMessage }}",
+              "type": "string"
+            },
+            {
+              "id": "recipient-email",
+              "name": "recipientEmail",
+              "value": "={{ $('Extract Input').item.json.recipientEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-output",
+      "name": "Format Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.recipientEmail }}",
+        "subject": "=AI Chatbot Response - {{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+        "message": "=<h2>AI Chatbot Response</h2>\n\n<p><strong>Your Message:</strong></p>\n<p>{{ $json.userMessage }}</p>\n\n<p><strong>AI Response:</strong></p>\n<p>{{ $json.response }}</p>\n\n<hr>\n<p><em>Timestamp: {{ $json.timestamp }}</em></p>",
+        "options": {}
+      },
+      "id": "send-gmail",
+      "name": "Send Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-credentials",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'success', response: $json.response, userMessage: $json.userMessage, emailSent: true, recipientEmail: $json.recipientEmail, timestamp: $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Output": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "gpt-test-2-v1",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "gpt-test-2"
+  },
+  "id": "GPTChatbotGmail",
+  "tags": [
+    {
+      "name": "chatbot",
+      "id": "1"
+    },
+    {
+      "name": "OpenAI",
+      "id": "2"
+    },
+    {
+      "name": "Gmail",
+      "id": "3"
+    }
+  ]
+}
