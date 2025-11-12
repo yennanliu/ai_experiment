@@ -1,0 +1,186 @@
+# Shell Tools Usage Guidelines
+
+## Modern Command-Line Tools
+
+**IMPORTANT**: Use the following specialized tools instead of traditional Unix commands for better performance and accuracy.
+
+### Tool Reference Table
+
+| Task Type | Must Use | Do Not Use | Purpose |
+|-----------|----------|------------|---------|
+| Find Files | `fd` | `find`, `ls -R` | Fast file searching with gitignore support |
+| Search Text | `rg` (ripgrep) | `grep`, `ag` | High-performance text search across files |
+| Analyze Code Structure | `ast-grep` | `grep`, `sed` | AST-based code pattern matching |
+| Interactive Selection | `fzf` | Manual filtering | Fuzzy finder for interactive filtering |
+| Process JSON | `jq` | `python -m json.tool` | JSON parsing and transformation |
+| Process YAML/XML | `yq` | Manual parsing | YAML/XML parsing and manipulation |
+
+---
+
+## Tool Details
+
+### 🔍 fd - Fast File Finder
+**Why**: 3-10x faster than `find`, auto-respects `.gitignore`
+
+**Common Usage**:
+```bash
+# Find files by name
+fd config.json
+
+# Find by extension
+fd -e go
+
+# Search in specific directory
+fd main.go ./src
+```
+
+---
+
+### 📝 rg (ripgrep) - Text Search Champion
+**Why**: Faster than `grep`, searches entire repos efficiently
+
+**Common Usage**:
+```bash
+# Search for text in all files
+rg "function_name"
+
+# Search with context
+rg -C 3 "error"
+
+# Search specific file types
+rg -t py "import"
+```
+
+---
+
+### 🌳 ast-grep - Structural Code Search
+**Why**: Searches code structure (AST), not just text patterns
+
+**Common Usage**:
+```bash
+# Find all variable declarations
+ast-grep --pattern 'var $NAME = $_'
+
+# Find function calls
+ast-grep --pattern 'functionName($$$)'
+
+# Search with language specification
+ast-grep -l typescript --pattern 'const $A: $B = $_'
+```
+
+---
+
+### 🎯 fzf - Interactive Fuzzy Finder
+**Why**: Interactive filtering with fuzzy matching
+
+**Common Usage**:
+```bash
+# Combine with fd for file selection
+fd | fzf
+
+# Combine with rg for search results
+rg "pattern" | fzf
+
+# Preview files while selecting
+fd | fzf --preview 'cat {}'
+```
+
+---
+
+### 📊 jq - JSON Processor
+**Why**: Powerful JSON manipulation and filtering
+
+**Common Usage**:
+```bash
+# Pretty print JSON
+cat data.json | jq '.'
+
+# Filter by condition
+jq '.[] | select(.price > 0.5)' data.json
+
+# Extract specific fields
+jq '.users[].name' data.json
+```
+
+---
+
+### 📄 yq - YAML/XML Processor
+**Why**: Easy YAML/XML manipulation for configs
+
+**Common Usage**:
+```bash
+# Read YAML value
+yq '.spec.template' deploy.yaml
+
+# Modify YAML
+yq -i '.version = "2.0"' config.yaml
+
+# Convert YAML to JSON
+yq -o json config.yaml
+```
+
+---
+
+## Installation
+
+### macOS (Homebrew)
+```bash
+brew install fd ripgrep ast-grep fzf jq yq
+```
+
+### Linux (Ubuntu/Debian)
+```bash
+# fd
+sudo apt install fd-find
+
+# ripgrep
+sudo apt install ripgrep
+
+# ast-grep
+cargo install ast-grep
+
+# fzf
+sudo apt install fzf
+
+# jq
+sudo apt install jq
+
+# yq
+sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+sudo chmod +x /usr/bin/yq
+```
+
+### Windows (Scoop)
+```bash
+scoop install fd ripgrep ast-grep fzf jq yq
+```
+
+---
+
+## Best Practices
+
+1. **Check tool availability**: Verify tools are installed before use
+2. **Combine tools**: Use pipes to chain tools together (e.g., `fd | fzf | xargs rg`)
+3. **Respect .gitignore**: These tools automatically skip ignored files
+4. **Use appropriate tool**: Choose based on task type (structure vs. text vs. data)
+
+---
+
+## Performance Tips
+
+- **fd**: Use `-e` for extension filtering to narrow results faster
+- **rg**: Use `-t` for file type filtering instead of manual globbing
+- **ast-grep**: More accurate than regex for code refactoring
+- **fzf**: Add `--preview` for better context while selecting
+- **jq/yq**: Stream large files with `--stream` flag
+
+---
+
+## Notes
+
+These tools significantly improve Claude's search accuracy and performance:
+- **2-3x faster** file operations
+- **More precise** code structure analysis
+- **Better context** understanding for AI assistance
+
+When working with Claude Code, these tools enable more efficient codebase navigation and manipulation.
