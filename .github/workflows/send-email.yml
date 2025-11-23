@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       recipient:
-        description: 'Email recipient'
+        description: 'Email recipient (leave empty to use default)'
         required: false
-        default: 'recipient@example.com'
+        default: ''
       subject:
         description: 'Email subject'
         required: false
@@ -32,6 +32,7 @@ jobs:
           server_address: smtp-relay.brevo.com
           server_port: 587
           secure: false
+          ignore_cert: true
 
           # Authentication (store these in GitHub Secrets!)
           username: ${{ secrets.MAIL_USERNAME }}
@@ -41,6 +42,7 @@ jobs:
           subject: ${{ github.event.inputs.subject || 'GitHub Actions - Build Notification' }}
           to: ${{ github.event.inputs.recipient || secrets.MAIL_RECIPIENT }}
           from: f339339@gmail.com
+          content_type: text/plain
 
           # Email body
           body: ${{ github.event.inputs.message || 'Hello! This is a test email from GitHub Actions.' }}
