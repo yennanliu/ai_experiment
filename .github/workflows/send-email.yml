@@ -28,9 +28,9 @@ jobs:
       - name: Send email
         uses: dawidd6/action-send-mail@v3
         with:
-          # SMTP server settings
-          server_address: smtp.gmail.com
-          server_port: 465
+          # SMTP server settings (Brevo)
+          server_address: smtp-relay.brevo.com
+          server_port: 587
           secure: true
 
           # Authentication (store these in GitHub Secrets!)
@@ -40,7 +40,7 @@ jobs:
           # Email details
           subject: ${{ github.event.inputs.subject || 'GitHub Actions - Build Notification' }}
           to: ${{ github.event.inputs.recipient || secrets.MAIL_RECIPIENT }}
-          from: ${{ secrets.MAIL_USERNAME }}
+          from: f339339@gmail.com
 
           # Email body
           body: ${{ github.event.inputs.message || 'Hello! This is a test email from GitHub Actions.' }}
