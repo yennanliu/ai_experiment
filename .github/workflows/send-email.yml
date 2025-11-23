@@ -31,7 +31,7 @@ jobs:
           # SMTP server settings (Brevo)
           server_address: smtp-relay.brevo.com
           server_port: 587
-          secure: true
+          secure: false
 
           # Authentication (store these in GitHub Secrets!)
           username: ${{ secrets.MAIL_USERNAME }}
