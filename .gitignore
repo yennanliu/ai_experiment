@@ -3,3 +3,4 @@ nb/.ipynb_checkpoints/*
 hugging_face_exp/.DS_Store
 .DS_Store
 */.DS_Store
+openai/.env
