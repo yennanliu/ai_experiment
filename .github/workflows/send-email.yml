@@ -1,0 +1,46 @@
+name: Send Email Notification
+
+on:
+  # Manual trigger only
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Email recipient'
+        required: false
+        default: 'recipient@example.com'
+      subject:
+        description: 'Email subject'
+        required: false
+        default: 'GitHub Actions Notification'
+      message:
+        description: 'Email message'
+        required: false
+        default: 'This is an automated notification from GitHub Actions'
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # SMTP server settings
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+
+          # Authentication (store these in GitHub Secrets!)
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+
+          # Email details
+          subject: ${{ github.event.inputs.subject || 'GitHub Actions - Build Notification' }}
+          to: ${{ github.event.inputs.recipient || secrets.MAIL_RECIPIENT }}
+          from: ${{ secrets.MAIL_USERNAME }}
+
+          # Email body
+          body: ${{ github.event.inputs.message || 'Hello! This is a test email from GitHub Actions.' }}
