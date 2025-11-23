@@ -40,8 +40,7 @@ jobs:
           # Email details
           subject: ${{ github.event.inputs.subject || 'GitHub Actions - Build Notification' }}
           to: ${{ github.event.inputs.recipient || secrets.MAIL_RECIPIENT }}
-          from: jliu <f339339@gmail.com>
-          reply_to: f339339@gmail.com
+          from: f339339@gmail.com
 
           # Email body
           body: ${{ github.event.inputs.message || 'Hello! This is a test email from GitHub Actions.' }}
