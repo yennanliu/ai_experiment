@@ -1,0 +1,60 @@
+name: Send Email (Python)
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Email recipient (leave empty to use default)'
+        required: false
+        default: ''
+      subject:
+        description: 'Email subject'
+        required: false
+        default: 'GitHub Actions Notification'
+      message:
+        description: 'Email message'
+        required: false
+        default: 'This is an automated notification from GitHub Actions'
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send email via Python
+        run: |
+          python3 << 'EOF'
+          import smtplib
+          from email.mime.text import MIMEText
+          from email.mime.multipart import MIMEMultipart
+          import os
+
+          # Configuration from secrets
+          SMTP_HOST = "smtp-relay.brevo.com"
+          SMTP_PORT = 587
+          SMTP_LOGIN = "${{ secrets.MAIL_USERNAME }}"
+          SMTP_PASSWORD = "${{ secrets.MAIL_PASSWORD }}"
+          SENDER_EMAIL = "f339339@gmail.com"
+          RECIPIENT_EMAIL = "${{ github.event.inputs.recipient }}" or "${{ secrets.MAIL_RECIPIENT }}"
+          SUBJECT = "${{ github.event.inputs.subject }}" or "GitHub Actions Notification"
+          MESSAGE = "${{ github.event.inputs.message }}" or "Hello! This is a test email from GitHub Actions."
+
+          # Create message
+          msg = MIMEMultipart()
+          msg['From'] = SENDER_EMAIL
+          msg['To'] = RECIPIENT_EMAIL
+          msg['Subject'] = SUBJECT
+          msg.attach(MIMEText(MESSAGE, 'plain'))
+
+          # Send email
+          try:
+              server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+              server.starttls()
+              server.login(SMTP_LOGIN, SMTP_PASSWORD)
+              server.send_message(msg)
+              server.quit()
+              print(f"✅ Email sent successfully to {RECIPIENT_EMAIL}")
+          except Exception as e:
+              print(f"❌ Error sending email: {e}")
+              exit(1)
+          EOF
