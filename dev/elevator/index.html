@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雙電梯連動共乘模擬</title>
+    <style>
+        /* CSS 樣式 */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #333; }
+        #simulation-container { display: flex; justify-content: center; gap: 50px; }
+        #building { display: flex; flex-direction: column-reverse; width: 300px; border: 2px solid #ccc; background-color: #fff; padding: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .floor { display: flex; justify-content: space-between; align-items: center; height: 50px; border-bottom: 1px solid #eee; position: relative; }
+        .floor-label { width: 40px; text-align: right; font-weight: bold; color: #666; }
+        .shaft { flex-grow: 1; display: flex; gap: 10px; height: 100%; position: relative; }
+        .elevator { width: 40px; height: 48px; background-color: #007bff; position: absolute; bottom: 0; transition: transform 2s ease-in-out, background-color 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 1px solid #0056b3; }
+        .elevator.A { left: 10px; }
+        .elevator.B { left: 60px; }
+        .elevator-info { width: 200px; padding: 15px; background-color: #e9ecef; border-radius: 8px; margin-top: 20px; }
+        .status-box { margin-bottom: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .status-box h3 { margin-top: 0; color: #007bff; }
+        .direction-indicator { font-weight: bold; margin-left: 5px; }
+        .up { color: green; }
+        .down { color: red; }
+        .call-buttons { display: flex; gap: 5px; }
+        .call-btn { padding: 5px 8px; cursor: pointer; border: none; border-radius: 3px; font-size: 12px; transition: background-color 0.3s; }
+        .call-btn.up-btn { background-color: #28a745; color: white; }
+        .call-btn.down-btn { background-color: #dc3545; color: white; }
+        .call-btn.active { box-shadow: 0 0 0 3px yellow; }
+        .call-btn:hover { opacity: 0.8; }
+        .info-panel { margin-top: 20px; width: 100%; max-width: 600px; }
+        #log { max-height: 200px; overflow-y: scroll; background-color: #333; color: #fff; padding: 10px; font-family: monospace; font-size: 12px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>雙電梯連動共乘系統模擬</h1>
+    
+    <div id="simulation-container">
+        <div id="building">
+            </div>
+
+        <div class="info-panel">
+            <h2>系統狀態</h2>
+            <div id="elevator-status">
+                </div>
+            
+            <h3>運行日誌</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+    
+    <script>
+        // JavaScript 邏輯
+        
+        // --- 1. 定義常量和狀態 ---
+        const NUM_FLOORS = 15;
+        const MOVE_TIME_PER_FLOOR = 2; // 模擬：每層樓移動時間 (秒)
+        const STOP_TIME = 10;          // 模擬：停靠時間 (秒)
+        const INTERVAL_MS = 1000;      // 模擬時間步長 (1000ms = 1秒)
+
+        const UP = 1;
+        const DOWN = -1;
+        const STOP = 0;
+
+        let log_count = 0;
+        const logElement = document.getElementById('log');
+
+        function log(message) {
+            log_count++;
+            const p = document.createElement('p');
+            p.textContent = `[${log_count}] ${new Date().toLocaleTimeString()} | ${message}`;
+            logElement.prepend(p); // 新日誌在最上面
+            if (logElement.children.length > 50) {
+                logElement.removeChild(logElement.lastChild); // 保持日誌數量
+            }
+        }
+
+        // --- 2. 電梯物件 (Elevator Class) ---
+        class Elevator {
+            constructor(id, shaft_position) {
+                this.id = id;
+                this.current_floor = 1;
+                this.direction = STOP;
+                this.car_calls = new Set();
+                this.assigned_hall_calls = new Set(); // Tuple: (樓層, 方向)
+                this.is_moving = false;
+                this.stop_timer = 0;
+                this.html_el = document.createElement('div');
+                this.html_el.className = `elevator ${id}`;
+                this.html_el.style.bottom = `${(this.current_floor - 1) * 50}px`;
+                this.html_el.textContent = id;
+            }
+
+            is_idle() {
+                return !this.car_calls.size && !this.assigned_hall_calls.size && this.direction === STOP;
+            }
+
+            get_all_targets() {
+                const hall_floors = Array.from(this.assigned_hall_calls).map(c => c[0]);
+                return new Set([...this.car_calls, ...hall_floors]);
+            }
+
+            get_next_stop() {
+                const all_targets = this.get_all_targets();
+                if (!all_targets.size) {
+                    this.direction = STOP;
+                    return null;
+                }
+
+                const current = this.current_floor;
+                let candidates = [];
+                
+                if (this.direction === UP) {
+                    // 1. 找順路上行
+                    candidates = [...all_targets].filter(f => f > current);
+                    if (candidates.length) return Math.min(...candidates);
+                    
+                    // 2. 轉向找下行
+                    candidates = [...all_targets].filter(f => f < current);
+                    if (candidates.length) {
+                        this.direction = DOWN;
+                        return Math.max(...candidates);
+                    }
+                    // 3. 停在本層的呼叫 (car/hall call)
+                    if (all_targets.has(current)) return current;
+
+                } else if (this.direction === DOWN) {
+                    // 1. 找順路下行
+                    candidates = [...all_targets].filter(f => f < current);
+                    if (candidates.length) return Math.max(...candidates);
+
+                    // 2. 轉向找上行
+                    candidates = [...all_targets].filter(f => f > current);
+                    if (candidates.length) {
+                        this.direction = UP;
+                        return Math.min(...candidates);
+                    }
+                    // 3. 停在本層的呼叫 (car/hall call)
+                    if (all_targets.has(current)) return current;
+                    
+                } else if (this.direction === STOP) {
+                    // 停止狀態，找最近的呼叫來啟動
+                    const closest_call = [...all_targets].reduce((a, b) => 
+                        Math.abs(b - current) < Math.abs(a - current) ? b : a
+                    );
+                    if (closest_call > current) this.direction = UP;
+                    else if (closest_call < current) this.direction = DOWN;
+                    return closest_call;
+                }
+                
+                // 找不到順路或折返的呼叫，但 all_targets 有東西 (通常是停在目標樓層)
+                if (all_targets.has(current)) return current;
+                return null;
+            }
+
+            move() {
+                if (this.stop_timer > 0) {
+                    this.stop_timer--;
+                    this.html_el.style.backgroundColor = '#ffc107'; // 停靠黃色
+                    return null; // 正在停靠等待
+                }
+
+                const next_stop = this.get_next_stop();
+
+                if (next_stop === null) {
+                    this.html_el.style.backgroundColor = '#007bff'; // 待命藍色
+                    return null;
+                }
+                
+                this.is_moving = true;
+                
+                // 檢查是否到達停靠點
+                if (this.current_floor === next_stop) {
+                    this.stop_timer = STOP_TIME;
+                    return this.stop_and_service();
+                }
+
+                // 移動一步
+                if (this.current_floor < next_stop) {
+                    this.current_floor += 1;
+                    this.direction = UP;
+                } else if (this.current_floor > next_stop) {
+                    this.current_floor -= 1;
+                    this.direction = DOWN;
+                }
+                
+                this.update_visual();
+                this.html_el.style.backgroundColor = '#28a745'; // 移動綠色
+                return null;
+            }
+
+            stop_and_service() {
+                let served_hall_call = null;
+                const current = this.current_floor;
+
+                // 1. 服務內部呼叫
+                if (this.car_calls.has(current)) {
+                    this.car_calls.delete(current);
+                    log(`[ELEVATOR ${this.id}] 乘客下車 @ ${current}F`);
+                }
+
+                // 2. 服務外部呼叫 (接客)
+                const hall_call_key_up = [current, UP];
+                const hall_call_key_down = [current, DOWN];
+
+                if (this.assigned_hall_calls.has(JSON.stringify(hall_call_key_up)) && this.direction === UP) {
+                    this.assigned_hall_calls.delete(JSON.stringify(hall_call_key_up));
+                    served_hall_call = hall_call_key_up;
+                    log(`[ELEVATOR ${this.id}] 接載乘客 (UP) @ ${current}F`);
+                    // 模擬乘客上車後按下目標樓層
+                    // This is a simple model; real systems need to track loads and passenger destinations.
+                    // For simulation simplicity, we just clear the hall call.
+                }
+
+                if (this.assigned_hall_calls.has(JSON.stringify(hall_call_key_down)) && this.direction === DOWN) {
+                    this.assigned_hall_calls.delete(JSON.stringify(hall_call_key_down));
+                    served_hall_call = hall_call_key_down;
+                    log(`[ELEVATOR ${this.id}] 接載乘客 (DOWN) @ ${current}F`);
+                }
+                
+                this.update_visual();
+                return served_hall_call; // 返回服務的外部呼叫，讓 Controller 清除總列表
+
+            }
+            
+            update_visual() {
+                // 更新 CSS 實現動畫
+                this.html_el.style.transform = `translateY(${(this.current_floor - 1) * 50}px)`;
+                this.html_el.title = `F:${this.current_floor} | Dir:${this.direction === UP ? '↑' : (this.direction === DOWN ? '↓' : '—')}`;
+            }
+        }
+
+        // --- 3. 群控器物件 (GroupController Class) ---
+        class GroupController {
+            constructor(elevators) {
+                this.elevators = elevators;
+                this.hall_calls = new Set(); // Tuple: (樓層, 方向) 尚未被指派的呼叫
+            }
+            
+            receive_hall_call(floor, direction) {
+                const call_key = JSON.stringify([floor, direction]);
+                
+                if (this.hall_calls.has(call_key)) {
+                    log(`[CONTROLLER] 呼叫已存在: ${floor}F, ${direction === UP ? 'UP' : 'DOWN'}`);
+                    return;
+                }
+                
+                this.hall_calls.add(call_key);
+                log(`*** 新的外部呼叫: ${floor}F, ${direction === UP ? 'UP' : 'DOWN'} ***`);
+                this.dispatch_call(floor, direction);
+            }
+
+            // 派車核心邏輯
+            estimate_time(elevator, target_floor, target_dir) {
+                const current = elevator.current_floor;
+                const current_dir = elevator.direction;
+                const targets = elevator.get_all_targets();
+
+                // 情況 1: 電梯無任務 (最簡單)
+                if (elevator.is_idle()) {
+                    return Math.abs(target_floor - current) * MOVE_TIME_PER_FLOOR;
+                }
+
+                // 情況 2: 同向順路服務 (效率最高)
+                if (current_dir === target_dir) {
+                    const is_on_path = (target_dir === UP && target_floor >= current) || 
+                                       (target_dir === DOWN && target_floor <= current);
+                    
+                    if (is_on_path) {
+                        let total_time = Math.abs(target_floor - current) * MOVE_TIME_PER_FLOOR;
+                        // 估算中途停靠次數
+                        targets.forEach(f => {
+                            if (f !== current) { // 排除當前樓層
+                                if ((target_dir === UP && current < f < target_floor) ||
+                                    (target_dir === DOWN && current > f > target_floor)) {
+                                    total_time += STOP_TIME;
+                                }
+                            }
+                        });
+                        return total_time;
+                    }
+                }
+
+                // 情況 3: 需等待當前行程完成或反向折返 (複雜，採用簡化估算)
+                let end_point = current;
+                if (targets.size > 0) {
+                    if (current_dir === UP) end_point = Math.max(...targets);
+                    else if (current_dir === DOWN) end_point = Math.min(...targets);
+                }
+                
+                // 估算完成當前任務的時間
+                const current_stops = targets.size;
+                const time_to_end = Math.abs(end_point - current) * MOVE_TIME_PER_FLOOR + current_stops * STOP_TIME;
+                      
+                // 完成任務後，從 end_point 移動到 target_floor
+                const time_to_target = Math.abs(target_floor - end_point) * MOVE_TIME_PER_FLOOR;
+
+                return time_to_end + time_to_target;
+            }
+
+
+            dispatch_call(floor, direction) {
+                let best_elevator = null;
+                let min_time = Infinity;
+                let tie_breaker = Infinity; // 用距離打破平局
+
+                for (const elevator of this.elevators) {
+                    const estimated_time = this.estimate_time(elevator, floor, direction);
+                    const current_distance = Math.abs(floor - elevator.current_floor);
+                    
+                    // 派車決策邏輯
+                    if (estimated_time < min_time) {
+                        min_time = estimated_time;
+                        best_elevator = elevator;
+                        tie_breaker = current_distance;
+                    } else if (estimated_time === min_time && current_distance < tie_breaker) {
+                        // 如果時間相同，派給距離更近的
+                        min_time = estimated_time;
+                        best_elevator = elevator;
+                        tie_breaker = current_distance;
+                    }
+                }
+                
+                // 指派任務
+                if (best_elevator) {
+                    const call_key = JSON.stringify([floor, direction]);
+                    best_elevator.assigned_hall_calls.add(call_key);
+                    log(`[CONTROLLER] 指派給電梯 ${best_elevator.id}，預計等待時間: ${min_time} 秒`);
+                } else {
+                    log(`[CONTROLLER] 警告: 無法指派電梯給 ${floor}F`);
+                }
+            }
+
+
+            run_cycle() {
+                // 運行每個電梯的移動邏輯
+                for (const elevator of this.elevators) {
+                    const served_call = elevator.move();
+                    
+                    // 如果電梯成功接載乘客 (服務了外部呼叫)，從總列表清除
+                    if (served_call) {
+                        const call_key = JSON.stringify(served_call);
+                        if (this.hall_calls.has(call_key)) {
+                            this.hall_calls.delete(call_key);
+                            this.update_hall_call_visual(served_call[0], served_call[1], false);
+                        }
+                    }
+                }
+                this.update_status_panel();
+            }
+            
+            // 視覺化 helper function
+            update_hall_call_visual(floor, direction, isActive) {
+                const floorEl = document.getElementById(`floor-${floor}`);
+                const btnClass = direction === UP ? 'up-btn' : 'down-btn';
+                const btn = floorEl.querySelector(`.${btnClass}`);
+                if (btn) {
+                    if (isActive) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            }
+            
+            update_status_panel() {
+                const statusPanel = document.getElementById('elevator-status');
+                statusPanel.innerHTML = '';
+                
+                this.elevators.forEach(e => {
+                    let dirSymbol = e.direction === UP ? '<span class="up">↑ (UP)</span>' : 
+                                    e.direction === DOWN ? '<span class="down">↓ (DOWN)</span>' : '— (STOP)';
+                    
+                    let carCalls = Array.from(e.car_calls).sort((a,b)=>a-b).join(', ') || '無';
+                    let hallCalls = Array.from(e.assigned_hall_calls).map(c => JSON.parse(c)[0] + (JSON.parse(c)[1] === UP ? '↑' : '↓')).join(', ') || '無';
+                    
+                    let isStopping = e.stop_timer > 0 ? ` (停靠中: ${e.stop_timer}s)` : '';
+
+                    statusPanel.innerHTML += `
+                        <div class="status-box">
+                            <h3>電梯 ${e.id}</h3>
+                            <p><strong>位置:</strong> ${e.current_floor}F</p>
+                            <p><strong>方向:</strong> ${dirSymbol} ${isStopping}</p>
+                            <p><strong>內部呼叫 (Car Calls):</strong> [${carCalls}]</p>
+                            <p><strong>外部任務 (Assigned Hall Calls):</strong> [${hallCalls}]</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+
+        // --- 4. 初始化與運行 ---
+        
+        let elevator_A, elevator_B, controller;
+        let simulationInterval;
+        
+        function setupSimulation() {
+            // 創建電梯實例
+            elevator_A = new Elevator("A", 10);
+            elevator_B = new Elevator("B", 60);
+
+            // 創建群控器
+            controller = new GroupController([elevator_A, elevator_B]);
+
+            // 創建建築物視覺元素
+            const building = document.getElementById('building');
+            building.innerHTML = ''; // 清空
+            
+            for (let f = 1; f <= NUM_FLOORS; f++) {
+                const floorEl = document.createElement('div');
+                floorEl.className = 'floor';
+                floorEl.id = `floor-${f}`;
+                
+                floorEl.innerHTML = `
+                    <div class="floor-label">${f}F</div>
+                    <div class="call-buttons">
+                        <button class="call-btn up-btn" onclick="handleHallCall(${f}, ${UP})">↑</button>
+                        <button class="call-btn down-btn" onclick="handleHallCall(${f}, ${DOWN})" ${f === 1 ? 'disabled' : ''}>↓</button>
+                    </div>
+                    <div class="shaft">
+                        </div>
+                `;
+                
+                // 將電梯轎廂添加到樓層容器中 (定位由絕對位置控制)
+                if (f === 1) {
+                    floorEl.querySelector('.shaft').appendChild(elevator_A.html_el);
+                    floorEl.querySelector('.shaft').appendChild(elevator_B.html_el);
+                }
+                
+                building.prepend(floorEl); // 從上到下排列樓層
+            }
+            
+            // 啟用電梯 B 初始停在 10 樓的狀態
+            elevator_B.current_floor = 10;
+            elevator_A.update_visual();
+            elevator_B.update_visual();
+            
+            // 開始模擬迴圈
+            if (simulationInterval) clearInterval(simulationInterval);
+            simulationInterval = setInterval(() => {
+                controller.run_cycle();
+            }, INTERVAL_MS);
+            
+            log(`模擬啟動，電梯 A @ ${elevator_A.current_floor}F, B @ ${elevator_B.current_floor}F`);
+            controller.update_status_panel();
+            
+            // 初始情境呼叫
+            setTimeout(() => { controller.receive_hall_call(15, DOWN); }, 2000);
+            setTimeout(() => { controller.receive_hall_call(5, UP); }, 4000);
+            setTimeout(() => { handleCarCall(10, 1); }, 6000); // 模擬電梯 A 收到內部呼叫 1F
+        }
+
+        // 外部呼叫按鈕的處理函數
+        function handleHallCall(floor, direction) {
+            controller.receive_hall_call(floor, direction);
+            controller.update_hall_call_visual(floor, direction, true);
+        }
+        
+        // 內部呼叫模擬函數 (用於測試)
+        function handleCarCall(elevatorId, targetFloor) {
+            const elevator = elevatorId === 10 ? elevator_B : elevator_A; // 假設 10 是 B，其他是 A
+            elevator.car_calls.add(targetFloor);
+            log(`[ELEVATOR ${elevator.id}] 收到內部呼叫: ${targetFloor}F`);
+        }
+
+        // 啟動模擬
+        setupSimulation();
+
+    </script>
+</body>
+</html>
