@@ -1,0 +1,5 @@
+{
+  "name": "Elevator Algorithm Simulator",
+  "description": "A visual simulation comparing different elevator dispatching algorithms (Greedy vs. Smart ETA) to demonstrate efficiency and wait times.",
+  "requestFramePermissions": []
+}
