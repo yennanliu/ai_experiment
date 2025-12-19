@@ -55,3 +55,5 @@
   - Claude code
      - git worktree
   - DCI Valuation app (FE)
+  - Playwright Linkedin apply
+  - CV updator
