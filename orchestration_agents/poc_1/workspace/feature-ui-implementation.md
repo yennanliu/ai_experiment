@@ -1,191 +1,198 @@
-# Frontend Specification - Dark Mode Implementation
+# Frontend Specification - Dark Mode Toggle
 
 ## Tech Stack
-- **Framework:** React 18+ with TypeScript
-- **State Management:** React Context API + Custom Hook
-- **Styling Solution:** CSS Variables + Tailwind CSS (or CSS Modules)
-- **Storage:** localStorage API
-- **System Detection:** window.matchMedia API
-- **Animation:** CSS transitions
+- Framework: React 18 with TypeScript
+- State Management: React Context + localStorage
+- Styling: CSS Custom Properties (CSS Variables) + Tailwind CSS dark mode
+- Theme Detection: `prefers-color-scheme` media query
 
 ## Component Hierarchy
 
 ```
 App (ThemeProvider wrapper)
-├── ThemeToggle (theme switch control)
-│   ├── SunIcon (light mode indicator)
-│   ├── MoonIcon (dark mode indicator)
-│   └── SystemIcon (system preference indicator)
-└── [Existing App Components]
-    └── All components consume theme via context
+├── ThemeToggle (toggle button component)
+└── [Existing app components]
 ```
+
+**Note:** This is a cross-cutting feature that wraps the entire application rather than adding new page-level components.
 
 ## State Management
 
-### ThemeContext Structure
-
+**Theme Context** (`contexts/ThemeContext.tsx`):
 ```typescript
-interface ThemeContextValue {
-  theme: 'light' | 'dark' | 'system';
-  resolvedTheme: 'light' | 'dark'; // actual applied theme
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  systemTheme: 'light' | 'dark'; // OS preference
+interface ThemeContextType {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 ```
 
-### State Flow
-1. **Initialization:**
-   - Check localStorage for saved preference
-   - If no preference, check system preference via `prefers-color-scheme`
-   - Apply theme to document root
-   
-2. **Theme Change:**
-   - User selects theme via ThemeToggle
-   - Update context state
-   - Persist to localStorage
-   - Apply CSS class to document root
-   
-3. **System Theme Change:**
-   - Listen to `prefers-color-scheme` media query changes
-   - Auto-update if user has selected 'system' mode
+**State Flow:**
+1. On app initialization, check for saved preference in localStorage
+2. If no saved preference, detect system preference via `prefers-color-scheme`
+3. Apply theme by setting `data-theme` attribute on document root
+4. When user toggles, update context state and localStorage
+5. All components consume theme via context or CSS variables
+
+**Persistence Strategy:**
+- Key: `app-theme`
+- Storage: localStorage
+- Fallback: System preference → light mode
 
 ## API Integration
 
-**No backend API integration required** - This is a pure frontend feature using browser APIs:
-- `localStorage.setItem('theme', value)`
-- `localStorage.getItem('theme')`
-- `window.matchMedia('(prefers-color-scheme: dark)')`
+**No API integration required** - This is a pure frontend feature with local persistence only.
 
 ## Key Components
 
 ### ThemeProvider
-**Purpose:** Global theme state management and system theme detection  
-**Props:** `children: ReactNode`  
-**State:**
-- `theme: 'light' | 'dark' | 'system'`
-- `systemTheme: 'light' | 'dark'`
+**Purpose:** Global theme state management and persistence
+**Props:** children: ReactNode
+**State:** 
+- theme: 'light' | 'dark'
+- mounted: boolean (prevents SSR flash)
 
 **Behavior:**
-- Initializes theme from localStorage or system preference
-- Listens for system theme changes
-- Applies theme class to `document.documentElement`
-- Provides theme context to children
-- Prevents FOUC by applying theme before first render
+- Initializes theme on mount from localStorage or system preference
+- Applies theme to document root via `data-theme` attribute
+- Saves theme changes to localStorage
+- Prevents flash of wrong theme (FOUC)
 
-**Implementation Notes:**
+**Implementation:**
 ```typescript
-// Apply theme synchronously in useLayoutEffect
-useLayoutEffect(() => {
-  const root = document.documentElement;
-  root.classList.remove('light', 'dark');
-  root.classList.add(resolvedTheme);
-  root.style.colorScheme = resolvedTheme; // for native inputs
-}, [resolvedTheme]);
+// Pseudo-code structure
+useEffect(() => {
+  // 1. Check localStorage
+  const saved = localStorage.getItem('app-theme');
+  
+  // 2. Check system preference
+  const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches 
+    ? 'dark' 
+    : 'light';
+  
+  // 3. Set initial theme
+  const initialTheme = saved || systemPreference;
+  setTheme(initialTheme);
+  document.documentElement.setAttribute('data-theme', initialTheme);
+}, []);
 ```
 
 ### ThemeToggle
-**Purpose:** User interface for switching themes  
+**Purpose:** User control for switching themes
 **Props:** 
-- `position?: 'header' | 'footer' | 'floating'` (optional positioning)
-- `showLabels?: boolean` (show text labels)
+- className?: string (optional styling override)
+- position?: 'header' | 'floating' (default: 'header')
 
 **State:** None (controlled by ThemeContext)
 
 **Behavior:**
-- Three-state toggle: Light → Dark → System → Light
-- Visual indication of current theme
+- Displays sun icon in dark mode, moon icon in light mode
+- Smooth icon transition animation
 - Keyboard accessible (Space/Enter to toggle)
-- Tooltips for each state
-- Smooth icon transitions
-- ARIA labels for screen readers
+- Screen reader announces "Switch to [opposite] mode"
+- Tooltip shows "Dark mode" or "Light mode"
+- Ripple effect on click
 
-**Variants:**
-- Button with icons (recommended)
-- Segmented control (3 buttons)
-- Dropdown menu (for more options in future)
+**Visual States:**
+- Light mode: Moon icon with subtle background
+- Dark mode: Sun icon with subtle background
+- Hover: Slightly larger scale + background highlight
+- Focus: Visible focus ring (accessibility)
+- Active: Scale down slightly for tactile feedback
 
-### useTheme Hook
-**Purpose:** Convenient access to theme context  
-**Returns:** ThemeContextValue  
-**Usage:**
-```typescript
-const { theme, resolvedTheme, setTheme } = useTheme();
+### ThemeScript (Critical Inline Script)
+**Purpose:** Prevent flash of unstyled content (FOUC)
+**Implementation:** Inline `<script>` in `index.html` before app loads
+
+```html
+<script>
+  (function() {
+    const theme = localStorage.getItem('app-theme') || 
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 ```
 
-## Color System Design
+## CSS Architecture
 
-### CSS Variables Strategy
+### CSS Custom Properties Structure
 
-**Root Variables (`styles/theme.css`):**
+**Global Variables** (`styles/themes.css`):
 ```css
-:root {
-  /* Light theme (default) */
+:root[data-theme="light"] {
+  /* Backgrounds */
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-elevated: #ffffff;
+  --color-bg-secondary: #f7f7f7;
+  --color-bg-tertiary: #eeeeee;
   
+  /* Text */
   --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b7280;
-  --color-text-disabled: #9ca3af;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
   
-  --color-border: #e5e7eb;
-  --color-border-focus: #3b82f6;
+  /* Borders */
+  --color-border: #e0e0e0;
+  --color-border-hover: #cccccc;
   
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
+  /* Interactive */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
   
-  /* Semantic colors */
+  /* Feedback */
   --color-success: #10b981;
-  --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-info: #3b82f6;
+  --color-warning: #f59e0b;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-.dark {
-  /* Dark theme overrides */
-  --color-bg-primary: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-bg-elevated: #334155;
+:root[data-theme="dark"] {
+  /* Backgrounds */
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #2d2d2d;
+  --color-bg-tertiary: #404040;
   
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #cbd5e1;
-  --color-text-disabled: #64748b;
+  /* Text */
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #b3b3b3;
+  --color-text-tertiary: #808080;
   
-  --color-border: #334155;
-  --color-border-focus: #60a5fa;
+  /* Borders */
+  --color-border: #404040;
+  --color-border-hover: #525252;
   
-  --color-accent: #60a5fa;
-  --color-accent-hover: #3b82f6;
+  /* Interactive */
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
   
-  /* Semantic colors (adjusted for dark bg) */
+  /* Feedback */
   --color-success: #34d399;
-  --color-warning: #fbbf24;
   --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-warning: #fbbf24;
   
-  /* Shadows (more pronounced in dark mode) */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 }
 ```
 
-### Tailwind CSS Integration
+### Tailwind Configuration
 
-**tailwind.config.js:**
+**Update `tailwind.config.js`:**
 ```javascript
 module.exports = {
-  darkMode: 'class', // Use class-based dark mode
+  darkMode: 'class', // or ['class', '[data-theme="dark"]']
   theme: {
     extend: {
       colors: {
         'bg-primary': 'var(--color-bg-primary)',
         'bg-secondary': 'var(--color-bg-secondary)',
+        'text-primary': 'var(--color-text-primary)',
         // ... map all CSS variables
       }
     }
@@ -193,271 +200,300 @@ module.exports = {
 }
 ```
 
-## Routing
+### Component-Level Styling
 
-No routing changes required - ThemeProvider wraps entire app at root level.
-
-## Error Handling
-
-### localStorage Failures
-```typescript
-try {
-  localStorage.setItem('theme', theme);
-} catch (error) {
-  console.warn('Failed to save theme preference:', error);
-  // Fallback: continue with in-memory state only
+**Pattern for all components:**
+```css
+.component {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 ```
 
-### matchMedia Unsupported
-```typescript
-const getSystemTheme = (): 'light' | 'dark' => {
-  if (typeof window === 'undefined') return 'light';
-  if (!window.matchMedia) return 'light'; // Fallback for old browsers
-  
-  return window.matchMedia('(prefers-color-scheme: dark)').matches 
-    ? 'dark' 
-    : 'light';
-};
+## Theme Transition Animation
+
+**Strategy:** Smooth but fast transitions
+- Duration: 200ms (fast enough to feel instant, smooth enough to not flash)
+- Properties: background-color, color, border-color
+- Easing: ease-in-out
+
+**Global Transition** (`App.css`):
+```css
+* {
+  transition: 
+    background-color 0.2s ease-in-out,
+    color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+}
+
+/* Disable transitions on theme script to prevent FOUC */
+.no-transition * {
+  transition: none !important;
+}
 ```
 
-### SSR Considerations
-- Prevent hydration mismatch by reading theme on client only
-- Use suppressHydrationWarning on html element
-- Apply theme class before React hydration via inline script
+## Routing
+
+No routing changes - ThemeToggle component added to header/navigation across all pages.
+
+## Error Handling
+
+**Graceful Degradation:**
+- If localStorage is unavailable (private browsing), theme still works but won't persist
+- If system preference detection fails, default to light mode
+- Log errors to console for debugging, don't show to user
+
+**Error Cases:**
+```typescript
+try {
+  localStorage.setItem('app-theme', theme);
+} catch (error) {
+  console.warn('Unable to save theme preference:', error);
+  // Continue without persistence
+}
+```
 
 ## Accessibility Considerations
 
-### WCAG 2.1 AA Compliance
+### WCAG Compliance
 - **Contrast Ratios:**
-  - Normal text: 4.5:1 minimum
-  - Large text (18pt+): 3:1 minimum
-  - UI components: 3:1 minimum
-  
-- **Testing Tools:**
-  - Use WebAIM Contrast Checker during development
-  - Automated testing with axe-core
+  - Normal text: Minimum 4.5:1 (AA) / Target 7:1 (AAA)
+  - Large text: Minimum 3:1 (AA) / Target 4.5:1 (AAA)
+  - UI components: Minimum 3:1
+
+**Color Palette Validation:**
+- Test all color combinations with contrast checker
+- Ensure interactive elements meet contrast requirements
+- Provide sufficient contrast for focus indicators
 
 ### Keyboard Navigation
-- ThemeToggle accessible via Tab key
-- Space/Enter to activate
-- Focus visible indicator in both themes
+- **ThemeToggle:**
+  - Focusable via Tab
+  - Activatable via Space or Enter
+  - Clear focus indicator (2px outline)
 
 ### Screen Reader Support
 ```typescript
 <button
-  onClick={cycleTheme}
-  aria-label={`Current theme: ${theme}. Click to change theme.`}
+  onClick={toggleTheme}
+  aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
   aria-live="polite"
+  aria-pressed={theme === 'dark'}
 >
   {/* Icon */}
 </button>
 ```
 
+**Announcements:**
+- When theme changes: "Dark mode activated" or "Light mode activated"
+- Use aria-live region for non-disruptive announcements
+
 ### Reduced Motion Support
 ```css
 @media (prefers-reduced-motion: reduce) {
-  .theme-transition {
+  * {
     transition: none !important;
+    animation: none !important;
   }
 }
 ```
 
 ## Performance Optimizations
 
-### FOUC Prevention
-**Inline Script in index.html:**
-```html
-<script>
-  // Execute before React loads
-  (function() {
-    const theme = localStorage.getItem('theme') || 'system';
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const resolvedTheme = theme === 'system' ? systemTheme : theme;
-    document.documentElement.classList.add(resolvedTheme);
-  })();
-</script>
-```
-
-### CSS Optimization
-- Use CSS variables for instant theme switching (no JS computation)
-- Single repaint when class changes on root element
-- Avoid inline styles in components (use CSS classes)
+### Critical Path Optimization
+1. **Inline Theme Script:** Prevent FOUC by setting theme before React hydrates
+2. **Minimize Repaints:** Use CSS variables instead of re-rendering components
+3. **Debounce System Preference Listener:** Only update when user changes OS setting
 
 ### Lazy Loading
-- Theme toggle component can be code-split if placed in settings
-- Icons loaded on-demand
+- Theme assets (icons) should be inlined or use SVG sprites
+- No external dependencies for theme switching
 
 ### Memoization
 ```typescript
 const ThemeToggle = React.memo(() => {
-  const { theme, setTheme } = useTheme();
-  // Component logic
+  const { theme, toggleTheme } = useTheme();
+  // Component implementation
 });
 ```
+
+### Bundle Size
+- No external theme libraries needed
+- Use built-in CSS variables
+- SVG icons for sun/moon (lightweight)
+- Total added JS: ~2KB (minified + gzipped)
 
 ## Testing Strategy
 
 ### Unit Tests
 **ThemeContext:**
 - ✓ Initializes with localStorage value
-- ✓ Falls back to system preference if no saved value
-- ✓ Persists theme changes to localStorage
-- ✓ Updates on system theme change (when theme='system')
+- ✓ Falls back to system preference
+- ✓ Defaults to light mode if no preference
+- ✓ Updates localStorage on theme change
+- ✓ Applies theme attribute to document root
 
 **ThemeToggle:**
-- ✓ Cycles through themes correctly
-- ✓ Displays correct icon for each theme
-- ✓ Calls setTheme with correct value
+- ✓ Renders correct icon for current theme
+- ✓ Calls toggleTheme on click
+- ✓ Accessible via keyboard
+- ✓ Shows correct aria-label
 
 ### Integration Tests
-- ✓ Theme applies to all components
-- ✓ Theme persists across page reloads
-- ✓ System preference detected correctly
-- ✓ No visual regressions in either theme
+- ✓ Theme persists across page refreshes
+- ✓ Theme applies to all UI components
+- ✓ No FOUC on initial load
+- ✓ Smooth transition between themes
 
-### Accessibility Tests
-- ✓ All contrast ratios meet WCAG AA
-- ✓ Focus indicators visible in both themes
-- ✓ Screen reader announces theme changes
-- ✓ Keyboard navigation functional
+### E2E Tests (Playwright)
+```typescript
+test('user can toggle dark mode', async ({ page }) => {
+  await page.goto('/');
+  
+  // Initial state (system or default)
+  const initialTheme = await page.getAttribute('html', 'data-theme');
+  
+  // Click toggle
+  await page.click('[aria-label*="Switch to"]');
+  
+  // Verify theme changed
+  const newTheme = await page.getAttribute('html', 'data-theme');
+  expect(newTheme).not.toBe(initialTheme);
+  
+  // Verify persistence
+  await page.reload();
+  const persistedTheme = await page.getAttribute('html', 'data-theme');
+  expect(persistedTheme).toBe(newTheme);
+});
+```
 
 ### Visual Regression Tests
-- ✓ Screenshot comparison for key pages in both themes
-- ✓ Component library (Storybook) renders correctly in both themes
+- Capture screenshots of key pages in both themes
+- Compare against baseline to catch unintended color changes
+
+### Accessibility Audits
+- Run axe-core or Lighthouse on both themes
+- Verify all contrast ratios meet WCAG AA standards
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Day 1)
-- [ ] Create CSS variable system
-- [ ] Build ThemeProvider and context
-- [ ] Implement useTheme hook
-- [ ] Add FOUC prevention script
-- [ ] Set up localStorage persistence
+### Phase 1: Foundation (2-3 hours)
+1. Set up CSS custom properties for light/dark themes
+2. Create ThemeContext with localStorage persistence
+3. Implement inline theme script to prevent FOUC
+4. Add ThemeProvider to App root
 
-### Phase 2: UI Components (Day 2)
-- [ ] Create ThemeToggle component with icons
-- [ ] Integrate toggle into header/navigation
-- [ ] Implement smooth transitions
-- [ ] Add keyboard navigation
+### Phase 2: UI Components (2-3 hours)
+5. Build ThemeToggle component with animations
+6. Design and implement sun/moon icons
+7. Add toggle to header/navigation
+8. Update existing components to use CSS variables
 
-### Phase 3: Theme Application (Day 3)
-- [ ] Audit all components for color usage
-- [ ] Replace hardcoded colors with CSS variables
-- [ ] Test all interactive states (hover, focus, disabled)
-- [ ] Fix contrast ratio issues
+### Phase 3: Polish & Testing (2-3 hours)
+9. Test all pages in both themes
+10. Verify contrast ratios and accessibility
+11. Add keyboard navigation support
+12. Implement reduced motion support
+13. Write unit and integration tests
 
-### Phase 4: Polish & Testing (Day 4)
-- [ ] Add accessibility features (ARIA, focus management)
-- [ ] Write unit and integration tests
-- [ ] Conduct visual regression testing
-- [ ] Performance audit
-- [ ] Browser compatibility testing
+### Phase 4: Documentation (1 hour)
+14. Document theme usage for other developers
+15. Create style guide showing both themes
+16. Add theme toggle to component library/Storybook
+
+**Total Estimate: 7-10 hours**
 
 ## Implementation Notes
 
 ### Folder Structure
 ```
 src/
-├── contexts/
-│   └── ThemeContext.tsx          # Theme provider and context
-├── hooks/
-│   └── useTheme.ts               # Theme hook
 ├── components/
 │   └── ThemeToggle/
-│       ├── ThemeToggle.tsx       # Toggle component
-│       ├── ThemeToggle.test.tsx  # Unit tests
-│       └── icons.tsx             # Sun/Moon/System icons
+│       ├── ThemeToggle.tsx
+│       ├── ThemeToggle.test.tsx
+│       ├── ThemeToggle.module.css
+│       └── icons/
+│           ├── SunIcon.tsx
+│           └── MoonIcon.tsx
+├── contexts/
+│   └── ThemeContext.tsx
 ├── styles/
-│   ├── theme.css                 # CSS variables
-│   └── transitions.css           # Theme transition styles
+│   ├── themes.css (CSS variables)
+│   └── transitions.css (animation rules)
+├── hooks/
+│   └── useTheme.ts (convenience hook)
 └── utils/
-    └── theme.ts                  # Helper functions
+    └── themeHelpers.ts (localStorage, system detection)
 ```
 
-### Key Helper Functions
+### Code Examples
+
+**ThemeProvider Implementation:**
 ```typescript
-// utils/theme.ts
+export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
-export const THEME_STORAGE_KEY = 'theme-preference';
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('app-theme') as 'light' | 'dark' | null;
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'dark' 
+      : 'light';
+    
+    const initialTheme = savedTheme || systemTheme;
+    setThemeState(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    setMounted(true);
+  }, []);
 
-export const saveThemePreference = (theme: Theme): void => {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch (error) {
-    console.warn('Failed to save theme preference:', error);
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    setThemeState(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    try {
+      localStorage.setItem('app-theme', newTheme);
+    } catch (error) {
+      console.warn('Unable to save theme:', error);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  // Prevent rendering until theme is determined (avoid flash)
+  if (!mounted) {
+    return null; // or loading skeleton
   }
-};
 
-export const loadThemePreference = (): Theme | null => {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-  } catch (error) {
-    return null;
-  }
-};
-
-export const getSystemTheme = (): 'light' | 'dark' => {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 ```
 
-### Transition Styles
-```css
-/* styles/transitions.css */
+**Usage in Components:**
+```typescript
+import { useTheme } from '@/hooks/useTheme';
 
-* {
-  transition: 
-    background-color 200ms ease-in-out,
-    border-color 200ms ease-in-out,
-    color 200ms ease-in-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-  }
-}
+const MyComponent = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <div className="bg-bg-primary text-text-primary">
+      Current theme: {theme}
+    </div>
+  );
+};
 ```
 
-### Critical CSS Variables Checklist
-- ✓ Background colors (primary, secondary, elevated)
-- ✓ Text colors (primary, secondary, tertiary, disabled)
-- ✓ Border colors (default, hover, focus)
-- ✓ Accent/brand colors
-- ✓ Semantic colors (success, warning, error, info)
-- ✓ Shadow values
-- ✓ Input/form colors
-- ✓ Button states (default, hover, active, disabled)
-- ✓ Link colors (default, visited, hover)
-- ✓ Code/syntax highlighting (if applicable)
+### Migration Strategy for Existing Components
 
-## Success Metrics Tracking
-
-**Implementation Checklist:**
-- [ ] 100% component coverage (all components themed)
-- [ ] Zero contrast ratio violations (automated axe-core tests)
-- [ ] Theme switch < 100ms (Chrome DevTools Performance tab)
-- [ ] No FOUC on page load (visual inspection)
-- [ ] localStorage persistence 100% reliable (error handling in place)
-- [ ] System preference detection works (tested on Mac/Windows/Linux)
-- [ ] Keyboard navigation fully functional (manual testing)
-
-## Future Enhancements (Out of Current Scope)
-
-While not part of this implementation, consider for future iterations:
-- Custom color theme builder
-- Per-component theme overrides
-- Scheduled theme switching (night mode hours)
-- Syncing theme preference across devices (requires backend)
-- High contrast mode
-- Additional color schemes (sepia, blue light filter)
-
----
-
-**Estimated Implementation Time:** 3-4 days  
-**Dependencies:** None (can be implemented independently)  
-**Risk Level:** Low (isolated feature, no backend dependencies)
+**Step 1:** Identify all hardcoded colors
+```bash
+# Search for color values
+grep -r "bg-white\|bg-gray

@@ -1,68 +1,46 @@
-# Dark Mode Implementation
+# Dark Mode Toggle
 
 ## Overview
-Implement a dark mode theme that allows users to switch between light and dark color schemes. This feature will enhance user experience by reducing eye strain in low-light environments and providing users with visual preference options.
+A user interface feature that allows users to switch between light and dark color themes in the application. This enhancement improves user experience by providing visual comfort options based on user preference, time of day, or ambient lighting conditions.
 
 ## User Stories
-- As a user, I want to toggle between light and dark modes so that I can use the application comfortably in different lighting conditions
-- As a user, I want my theme preference to be remembered so that I don't have to reselect it every time I visit the application
-- As a user, I want the theme to apply consistently across all pages and components so that I have a seamless visual experience
-- As a user, I want the option to follow my system's theme preference so that the application matches my device settings
+- As a user, I want to toggle between light and dark modes so that I can reduce eye strain in low-light environments
+- As a user, I want the application to remember my theme preference so that I don't have to reselect it every time I visit
+- As a user, I want a visible and accessible toggle control so that I can easily switch themes when needed
+- As a user, I want the theme to apply consistently across all pages so that my experience is uniform throughout the application
 
 ## Acceptance Criteria
-- [ ] Users can toggle between light and dark modes via a visible control (e.g., button, switch)
-- [ ] Theme preference is persisted in browser storage (localStorage)
-- [ ] All UI components render correctly in both themes
-- [ ] Text remains readable with appropriate contrast ratios in both modes
-- [ ] Theme changes apply immediately without page refresh
-- [ ] Color transitions between themes are smooth and not jarring
-- [ ] Application respects user's system-level dark mode preference on first visit
-- [ ] Theme toggle control is accessible via keyboard navigation
-- [ ] All interactive elements (buttons, links, inputs) have appropriate hover/focus states in both themes
+- [ ] A toggle control is visible and accessible on all pages of the application
+- [ ] Clicking the toggle switches between light and dark modes immediately
+- [ ] All UI elements (text, backgrounds, buttons, inputs, etc.) adapt appropriately to the selected theme
+- [ ] The user's theme preference persists across browser sessions
+- [ ] The toggle shows the current theme state clearly (e.g., sun/moon icon or light/dark indicator)
+- [ ] Theme transition is smooth and does not cause layout shifts or flashing
+- [ ] All text maintains adequate contrast ratios in both modes (WCAG AA compliance minimum)
+- [ ] Images, icons, and other visual elements remain visible and appropriate in both themes
 
 ## Technical Considerations
-
-### Color Palette Requirements
-- Define comprehensive color scheme for dark mode covering:
-  - Background colors (primary, secondary, elevated surfaces)
-  - Text colors (primary, secondary, disabled)
-  - Border and divider colors
-  - Interactive element states (hover, active, focus, disabled)
-  - Semantic colors (success, warning, error, info)
-
-### Accessibility Requirements
-- WCAG 2.1 AA contrast ratio compliance (4.5:1 for normal text, 3:1 for large text)
-- Focus indicators must be visible in both themes
-- No reliance on color alone to convey information
-
-### Performance Expectations
-- Theme switching should complete in under 100ms
-- No flash of unstyled content (FOUC) on page load
-- Minimal CSS bundle size increase (<20KB)
-
-### Browser Compatibility
-- Support modern browsers (Chrome, Firefox, Safari, Edge - last 2 versions)
-- Graceful degradation for older browsers
-- Support for prefers-color-scheme media query
-
-### Integration Points
-- CSS framework/styling solution integration
-- State management for theme preference
-- localStorage API for persistence
-- System theme detection via matchMedia API
+- **State Management**: Theme state should be managed globally to ensure consistency
+- **Persistence**: Use localStorage or cookies to save user preference
+- **CSS Implementation**: Consider CSS custom properties (variables) for easy theme switching
+- **Initial Load**: Prevent flash of wrong theme on page load by checking preference early
+- **Performance**: Theme switching should be instantaneous (<100ms)
+- **Browser Compatibility**: Should work on all modern browsers (Chrome, Firefox, Safari, Edge)
+- **Accessibility**: Toggle should be keyboard accessible and screen reader friendly
+- **Color Palette**: Define comprehensive color schemes for both light and dark modes
+- **System Preference**: Consider detecting and respecting user's OS-level dark mode preference as default
 
 ## Success Metrics
-- 100% of UI components render correctly in both themes
-- Zero accessibility violations related to color contrast
-- Theme preference successfully persists for 100% of returning users
-- Theme switch completes in <100ms for 95th percentile
-- No increase in reported visual bugs after implementation
+- Users successfully toggle between themes without errors
+- Theme preference persists for 95%+ of returning users
+- No reported accessibility issues related to contrast or visibility
+- Toggle interaction time < 100ms
+- User feedback indicates improved comfort and usability
 
 ## Out of Scope
-- Custom color theme creation (only light/dark modes)
-- Per-component theme overrides
-- Animated theme transitions beyond simple CSS transitions
-- Dark mode for embedded third-party content
-- Automatic theme scheduling (time-based switching)
-- High contrast mode (separate from dark mode)
-- Print stylesheet optimization for dark mode
+- Multiple theme options beyond light and dark (e.g., custom colors, multiple dark themes)
+- Automatic theme switching based on time of day
+- Per-page theme preferences
+- Theme customization or color picker
+- Animated transitions beyond basic fade effects
+- High contrast mode or other specialized accessibility themes
