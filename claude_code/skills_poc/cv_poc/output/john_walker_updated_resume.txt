@@ -1,0 +1,169 @@
+JOHN WALKER
+Cloud Solutions Engineer
+
+Email: firstname.lastname@email.com | Phone: (123) 456-7890
+GitHub: github.com/username | LinkedIn: linkedin.com/in/username
+Location: Available for Relocation | Remote: Yes
+
+=====================================
+
+PROFESSIONAL SUMMARY
+
+Cloud-focused Software Engineer with 3+ years of hands-on experience building scalable web applications, APIs, and cloud infrastructure solutions. Strong technical foundation in distributed systems, cloud architecture (AWS), and modern development practices. Proven ability to optimize system performance, collaborate cross-functionally with product and design teams, and deliver customer-centric solutions. Seeking to leverage technical expertise in a customer-facing cloud solutions role at Google Cloud.
+
+=====================================
+
+TECHNICAL EXPERTISE
+
+Cloud & Infrastructure:
+• Amazon Web Services (AWS): EC2, S3, Lambda, RDS, CloudFormation
+• Containerization: Docker, Kubernetes
+• Infrastructure as Code: Terraform basics, AWS CloudFormation
+• CI/CD: Jenkins, GitHub Actions, automated deployment pipelines
+• Linux/Unix system administration
+
+Programming & Development:
+• Languages: Python, Java, JavaScript, TypeScript, C++
+• Frameworks: React, Node.js, Express, Spring Boot, Flask
+• Databases: PostgreSQL, MySQL, MongoDB (SQL & NoSQL)
+• API Development: RESTful APIs, microservices architecture
+• Testing: Unit testing, integration testing, TDD practices
+
+Development Practices:
+• Agile/Scrum methodologies
+• Version control (Git, GitHub)
+• Code review and collaborative development
+• System design and architecture
+• Performance optimization and debugging
+
+=====================================
+
+PROFESSIONAL EXPERIENCE
+
+Software Engineer
+TechCorp Solutions – San Francisco, CA (Remote)
+June 2021 – Present
+
+Cloud Infrastructure & Application Development:
+• Designed and implemented RESTful APIs serving 50,000+ daily active users with 99.9% uptime
+• Architected and deployed microservices on AWS using Docker and Kubernetes, reducing deployment time by 40%
+• Optimized database queries and implemented caching strategies (Redis), improving application response time by 30%
+• Built cloud infrastructure using AWS services (EC2, S3, RDS, Lambda) following best practices for security and scalability
+• Collaborated with DevOps team to establish CI/CD pipelines, automating testing and deployment processes
+
+Cross-Functional Collaboration & Customer Focus:
+• Partnered closely with product managers and UX designers in Agile environment to deliver customer-requested features
+• Participated in technical architecture discussions and design reviews with engineering leadership
+• Provided technical guidance and mentorship to 2 junior engineers on cloud best practices
+• Built reusable front-end components using React and TypeScript, improving development efficiency by 25%
+• Documented technical specifications and API documentation for internal and external stakeholders
+
+Key Achievements:
+- Led migration of monolithic application to microservices architecture on AWS, reducing infrastructure costs by 20%
+- Recognized as "Employee of the Quarter" for outstanding technical contributions and collaboration
+- Presented technical demo at company all-hands showcasing new cloud-based features
+
+
+Software Engineering Intern
+DataTech Inc. – Austin, TX
+May 2020 – August 2020
+
+• Developed internal automation tools using Python and Flask, reducing manual workflow time by 15 hours/week
+• Implemented monitoring and alerting systems for production services using CloudWatch
+• Wrote comprehensive unit and integration tests, increasing code coverage from 60% to 85%
+• Participated in code reviews, sprint planning, and daily standups in fast-paced engineering team
+• Created technical documentation for deployment processes and system architecture
+
+=====================================
+
+CLOUD & TECHNICAL PROJECTS
+
+Multi-Cloud Personal Finance Platform | React, Node.js, AWS, PostgreSQL
+• Architected and deployed full-stack web application on AWS infrastructure (EC2, RDS, S3, CloudFront)
+• Implemented secure user authentication using JWT and OAuth 2.0
+• Built data visualization dashboards displaying real-time financial analytics
+• Configured automated backups, monitoring, and auto-scaling for high availability
+• Dockerized application and implemented CI/CD pipeline for automated deployments
+• Technologies: React, Node.js, Express, PostgreSQL, Docker, AWS, GitHub Actions
+
+Distributed Search Engine Simulator | Java, Elasticsearch
+• Implemented inverted index and ranking algorithms processing 100,000+ documents
+• Optimized search performance achieving sub-100ms query response times
+• Designed distributed architecture for horizontal scalability
+• Applied TF-IDF and BM25 ranking algorithms for relevance scoring
+
+Cloud Infrastructure Automation | Python, Terraform, AWS
+• Created Infrastructure as Code (IaC) templates for automated AWS environment provisioning
+• Developed Python scripts for cloud resource management and cost optimization
+• Implemented automated backup and disaster recovery procedures
+• Reduced manual infrastructure setup time from 4 hours to 15 minutes
+
+=====================================
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of California, Berkeley – Berkeley, CA
+Graduated: May 2021 | GPA: 3.7/4.0
+
+Relevant Coursework:
+• Cloud Computing & Distributed Systems
+• Database Systems
+• Computer Networks
+• Operating Systems
+• Data Structures & Algorithms
+• Software Engineering
+
+=====================================
+
+CERTIFICATIONS & TRAINING
+
+• AWS Certified Solutions Architect – Associate (In Progress, Expected: March 2026)
+• Google Cloud Digital Leader (Planned)
+• Kubernetes Application Developer (CKAD) - Studying
+• Completed: AWS Cloud Practitioner Essentials
+• Completed: Docker & Kubernetes: The Complete Guide (Udemy)
+
+=====================================
+
+TECHNICAL ACHIEVEMENTS & RECOGNITION
+
+✓ Optimized cloud infrastructure reducing monthly AWS costs by $3,000+ (20% reduction)
+✓ Successfully migrated 15+ microservices to Kubernetes with zero downtime
+✓ Improved API performance by 30% through database optimization and caching
+✓ Maintained 99.9% uptime for production services serving 50K+ users
+✓ Contributed to 2 open-source cloud infrastructure projects (Terraform modules)
+✓ Built automation tools saving engineering team 15+ hours/week
+
+=====================================
+
+ADDITIONAL QUALIFICATIONS
+
+Community & Collaboration:
+• Active participant in 2 hackathons (AWS Hackathon 2022, Cloud Innovation Challenge 2023)
+• Open-source contributor to cloud infrastructure projects
+• Technical blog writer on Medium (cloud architecture topics, 500+ followers)
+• Strong presenter and communicator with experience presenting to technical and non-technical audiences
+
+Core Strengths:
+• Customer-focused problem solver with strong technical communication skills
+• Quick learner passionate about cloud technologies and emerging trends
+• Collaborative team player who thrives in cross-functional environments
+• Detail-oriented with strong debugging and troubleshooting abilities
+• Self-motivated with ability to work independently and manage priorities
+
+Languages:
+• English: Native/Fluent
+
+=====================================
+
+CAREER INTERESTS
+
+Seeking customer-facing cloud technical roles where I can:
+• Apply hands-on cloud expertise to solve customer challenges
+• Bridge the gap between technical solutions and business outcomes
+• Work with enterprise customers on cloud migrations and architecture
+• Expand cloud platform knowledge across GCP, AWS, and Azure
+• Grow into technical advisory and solutions architecture roles
+
+=====================================
