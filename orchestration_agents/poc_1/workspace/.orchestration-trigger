@@ -1,0 +1,10 @@
+{
+  "request": "Add dark mode toggle to the application",
+  "timestamp": "2026-01-01T10:20:06Z",
+  "status": "pending",
+  "agents": {
+    "pm": "pending",
+    "backend": "pending",
+    "frontend": "pending"
+  }
+}
