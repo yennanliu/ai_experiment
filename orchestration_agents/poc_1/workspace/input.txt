@@ -1,1 +1,1 @@
-Add  simple UI
+Add dark mode toggle to the application
