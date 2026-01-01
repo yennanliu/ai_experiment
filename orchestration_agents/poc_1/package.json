@@ -1,0 +1,27 @@
+{
+  "name": "orchestration-agents-poc",
+  "version": "1.0.0",
+  "description": "Multi-agent orchestration POC using Claude Code",
+  "main": "orchestrator.js",
+  "scripts": {
+    "start": "node orchestrator.js",
+    "orchestrate": "node orchestrator.js"
+  },
+  "keywords": [
+    "claude",
+    "agents",
+    "orchestration",
+    "ai",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
