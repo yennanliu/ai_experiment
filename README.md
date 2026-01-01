@@ -57,3 +57,5 @@
   - DCI Valuation app (FE)
   - Playwright Linkedin apply
   - CV updator
+  - MCP, skills
+    - https://github.com/yennanliu/til/blob/master/README.md#20260101
