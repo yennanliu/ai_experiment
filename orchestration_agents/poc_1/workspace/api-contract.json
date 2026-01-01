@@ -1,0 +1,469 @@
+{
+  "apiVersion": "1.0.0",
+  "baseUrl": "/api/v1",
+  "authentication": {
+    "type": "none",
+    "description": "No authentication for MVP single-user version. Future versions will implement bearer token authentication."
+  },
+  "endpoints": [
+    {
+      "name": "List all notes",
+      "path": "/notes",
+      "method": "GET",
+      "description": "Retrieve all notes with optional filtering by tags",
+      "authentication": "none",
+      "request": {
+        "params": {
+          "tags": "optional string (comma-separated tag names for filtering)",
+          "search": "optional string (search query for title/content)",
+          "limit": "optional integer (default: 100, max: 1000)",
+          "offset": "optional integer (default: 0, for pagination)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 200,
+          "body": {
+            "notes": [
+              {
+                "id": "string (UUID)",
+                "title": "string",
+                "content": "string",
+                "tags": ["string"],
+                "createdAt": "ISO 8601 timestamp",
+                "updatedAt": "ISO 8601 timestamp"
+              }
+            ],
+            "total": "integer (total count of notes)",
+            "limit": "integer",
+            "offset": "integer"
+          }
+        },
+        "errors": [
+          {
+            "code": 400,
+            "message": "Invalid query parameters"
+          },
+          {
+            "code": 500,
+            "message": "Internal server error"
+          }
+        ]
+      },
+      "example": {
+        "request": "GET /api/v1/notes?tags=work,ideas&limit=50",
+        "response": {
+          "notes": [
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "Project Planning Notes",
+              "content": "Detailed project requirements and timeline...",
+              "tags": ["work", "ideas"],
+              "createdAt": "2025-01-01T10:30:00Z",
+              "updatedAt": "2025-01-01T14:20:00Z"
+            }
+          ],
+          "total": 1,
+          "limit": 50,
+          "offset": 0
+        }
+      }
+    },
+    {
+      "name": "Get single note",
+      "path": "/notes/:id",
+      "method": "GET",
+      "description": "Retrieve a specific note by its ID",
+      "authentication": "none",
+      "request": {
+        "params": {
+          "id": "required string (UUID in path)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 200,
+          "body": {
+            "id": "string (UUID)",
+            "title": "string",
+            "content": "string",
+            "tags": ["string"],
+            "createdAt": "ISO 8601 timestamp",
+            "updatedAt": "ISO 8601 timestamp"
+          }
+        },
+        "errors": [
+          {
+            "code": 404,
+            "message": "Note not found"
+          },
+          {
+            "code": 400,
+            "message": "Invalid note ID format"
+          }
+        ]
+      },
+      "example": {
+        "request": "GET /api/v1/notes/550e8400-e29b-41d4-a716-446655440000",
+        "response": {
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "title": "Meeting Notes",
+          "content": "Discussion points from today's meeting...",
+          "tags": ["work", "meetings"],
+          "createdAt": "2025-01-01T09:00:00Z",
+          "updatedAt": "2025-01-01T09:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "Create note",
+      "path": "/notes",
+      "method": "POST",
+      "description": "Create a new note with title, content, and tags",
+      "authentication": "none",
+      "request": {
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "title": "required string (max 200 characters)",
+          "content": "optional string (max 50000 characters)",
+          "tags": "optional array of strings (max 10 tags, each max 30 characters)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 201,
+          "body": {
+            "id": "string (UUID)",
+            "title": "string",
+            "content": "string",
+            "tags": ["string"],
+            "createdAt": "ISO 8601 timestamp",
+            "updatedAt": "ISO 8601 timestamp"
+          }
+        },
+        "errors": [
+          {
+            "code": 400,
+            "message": "Title is required"
+          },
+          {
+            "code": 400,
+            "message": "Title exceeds maximum length of 200 characters"
+          },
+          {
+            "code": 400,
+            "message": "Content exceeds maximum length of 50000 characters"
+          },
+          {
+            "code": 400,
+            "message": "Maximum 10 tags allowed"
+          },
+          {
+            "code": 400,
+            "message": "Tag name exceeds maximum length of 30 characters"
+          },
+          {
+            "code": 500,
+            "message": "Failed to create note"
+          }
+        ]
+      },
+      "example": {
+        "request": {
+          "title": "Grocery List",
+          "content": "Milk, Eggs, Bread, Coffee",
+          "tags": ["personal", "shopping"]
+        },
+        "response": {
+          "id": "660e8400-e29b-41d4-a716-446655440001",
+          "title": "Grocery List",
+          "content": "Milk, Eggs, Bread, Coffee",
+          "tags": ["personal", "shopping"],
+          "createdAt": "2025-01-01T15:30:00Z",
+          "updatedAt": "2025-01-01T15:30:00Z"
+        }
+      }
+    },
+    {
+      "name": "Update note",
+      "path": "/notes/:id",
+      "method": "PUT",
+      "description": "Update an existing note's title, content, or tags",
+      "authentication": "none",
+      "request": {
+        "params": {
+          "id": "required string (UUID in path)"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "title": "optional string (max 200 characters)",
+          "content": "optional string (max 50000 characters)",
+          "tags": "optional array of strings (max 10 tags, each max 30 characters)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 200,
+          "body": {
+            "id": "string (UUID)",
+            "title": "string",
+            "content": "string",
+            "tags": ["string"],
+            "createdAt": "ISO 8601 timestamp",
+            "updatedAt": "ISO 8601 timestamp"
+          }
+        },
+        "errors": [
+          {
+            "code": 404,
+            "message": "Note not found"
+          },
+          {
+            "code": 400,
+            "message": "Invalid note ID format"
+          },
+          {
+            "code": 400,
+            "message": "At least one field must be provided for update"
+          },
+          {
+            "code": 400,
+            "message": "Validation error (same as create endpoint)"
+          },
+          {
+            "code": 500,
+            "message": "Failed to update note"
+          }
+        ]
+      },
+      "example": {
+        "request": {
+          "title": "Updated Grocery List",
+          "tags": ["personal", "shopping", "urgent"]
+        },
+        "response": {
+          "id": "660e8400-e29b-41d4-a716-446655440001",
+          "title": "Updated Grocery List",
+          "content": "Milk, Eggs, Bread, Coffee",
+          "tags": ["personal", "shopping", "urgent"],
+          "createdAt": "2025-01-01T15:30:00Z",
+          "updatedAt": "2025-01-01T16:45:00Z"
+        }
+      }
+    },
+    {
+      "name": "Delete note",
+      "path": "/notes/:id",
+      "method": "DELETE",
+      "description": "Permanently delete a note",
+      "authentication": "none",
+      "request": {
+        "params": {
+          "id": "required string (UUID in path)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 204,
+          "body": null
+        },
+        "errors": [
+          {
+            "code": 404,
+            "message": "Note not found"
+          },
+          {
+            "code": 400,
+            "message": "Invalid note ID format"
+          },
+          {
+            "code": 500,
+            "message": "Failed to delete note"
+          }
+        ]
+      },
+      "example": {
+        "request": "DELETE /api/v1/notes/660e8400-e29b-41d4-a716-446655440001",
+        "response": "204 No Content"
+      }
+    },
+    {
+      "name": "Search notes",
+      "path": "/notes/search",
+      "method": "GET",
+      "description": "Full-text search across note titles and content",
+      "authentication": "none",
+      "request": {
+        "params": {
+          "q": "required string (search query, min 2 characters)",
+          "tags": "optional string (comma-separated tag filter)",
+          "limit": "optional integer (default: 50, max: 500)",
+          "offset": "optional integer (default: 0)"
+        }
+      },
+      "response": {
+        "success": {
+          "code": 200,
+          "body": {
+            "results": [
+              {
+                "id": "string (UUID)",
+                "title": "string",
+                "content": "string (excerpt with highlighted matches)",
+                "tags": ["string"],
+                "relevanceScore": "float (0.0 to 1.0)",
+                "createdAt": "ISO 8601 timestamp",
+                "updatedAt": "ISO 8601 timestamp"
+              }
+            ],
+            "total": "integer (total matching notes)",
+            "query": "string (original search query)",
+            "limit": "integer",
+            "offset": "integer"
+          }
+        },
+        "errors": [
+          {
+            "code": 400,
+            "message": "Search query must be at least 2 characters"
+          },
+          {
+            "code": 400,
+            "message": "Invalid query parameters"
+          }
+        ]
+      },
+      "example": {
+        "request": "GET /api/v1/notes/search?q=project&tags=work",
+        "response": {
+          "results": [
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "Project Planning Notes",
+              "content": "Detailed **project** requirements and timeline for Q1...",
+              "tags": ["work", "ideas"],
+              "relevanceScore": 0.95,
+              "createdAt": "2025-01-01T10:30:00Z",
+              "updatedAt": "2025-01-01T14:20:00Z"
+            }
+          ],
+          "total": 1,
+          "query": "project",
+          "limit": 50,
+          "offset": 0
+        }
+      }
+    },
+    {
+      "name": "Get all tags",
+      "path": "/tags",
+      "method": "GET",
+      "description": "Retrieve all unique tags used across notes with usage counts",
+      "authentication": "none",
+      "request": {},
+      "response": {
+        "success": {
+          "code": 200,
+          "body": {
+            "tags": [
+              {
+                "name": "string",
+                "count": "integer (number of notes with this tag)"
+              }
+            ],
+            "total": "integer (total unique tags)"
+          }
+        },
+        "errors": [
+          {
+            "code": 500,
+            "message": "Failed to retrieve tags"
+          }
+        ]
+      },
+      "example": {
+        "request": "GET /api/v1/tags",
+        "response": {
+          "tags": [
+            {
+              "name": "work",
+              "count": 15
+            },
+            {
+              "name": "personal",
+              "count": 8
+            },
+            {
+              "name": "ideas",
+              "count": 5
+            }
+          ],
+          "total": 3
+        }
+      }
+    }
+  ],
+  "dataModels": {
+    "Note": {
+      "id": "string (UUID v4, auto-generated)",
+      "title": "string (required, max 200 characters, trimmed)",
+      "content": "string (optional, max 50000 characters, defaults to empty string)",
+      "tags": "array of strings (optional, max 10 tags, each max 30 characters, lowercase, trimmed, unique)",
+      "createdAt": "ISO 8601 timestamp (auto-generated, UTC)",
+      "updatedAt": "ISO 8601 timestamp (auto-updated, UTC)"
+    },
+    "Tag": {
+      "name": "string (max 30 characters, lowercase, alphanumeric + hyphens only)",
+      "count": "integer (number of notes using this tag)"
+    },
+    "ErrorResponse": {
+      "error": "string (error type/code)",
+      "message": "string (human-readable error message)",
+      "details": "object (optional additional context)"
+    }
+  },
+  "validationRules": {
+    "title": {
+      "required": true,
+      "minLength": 1,
+      "maxLength": 200,
+      "sanitize": "Strip HTML tags, trim whitespace"
+    },
+    "content": {
+      "required": false,
+      "maxLength": 50000,
+      "sanitize": "Strip dangerous HTML, allow basic formatting"
+    },
+    "tags": {
+      "maxItems": 10,
+      "itemMaxLength": 30,
+      "pattern": "^[a-z0-9-]+$",
+      "transform": "lowercase, trim, unique"
+    }
+  },
+  "rateLimiting": {
+    "description": "For future implementation",
+    "limits": {
+      "GET": "100 requests per minute per IP",
+      "POST": "30 requests per minute per IP",
+      "PUT": "30 requests per minute per IP",
+      "DELETE": "20 requests per minute per IP"
+    }
+  },
+  "cors": {
+    "description": "CORS headers for browser access",
+    "allowedOrigins": ["*"],
+    "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allowedHeaders": ["Content-Type", "Accept"]
+  },
+  "notes": {
+    "persistence": "For MVP, API can work with localStorage on client-side. Backend implementation should use PostgreSQL or MongoDB for production.",
+    "search": "For MVP, client-side search is acceptable. Backend should implement full-text search using PostgreSQL tsvector or Elasticsearch for production.",
+    "performance": "Responses should be cached where appropriate. Consider implementing ETag headers for efficient data transfer.",
+    "security": "All inputs must be sanitized to prevent XSS attacks. Future versions should implement CSRF protection and authentication."
+  }
+}

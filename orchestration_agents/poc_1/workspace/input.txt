@@ -1,0 +1,1 @@
+Build a simple note-taking application where users can create, edit, delete, and search their personal notes. Each note should have a title, content, and tags for organization. The app should be simple, fast, and work on both desktop and mobile browsers.
