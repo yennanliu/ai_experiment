@@ -2,6 +2,31 @@
 
 A minimal proof-of-concept for multi-agent orchestration using Claude Code.
 
+---
+
+## 🚀 Quick Access - Running Application
+
+**Frontend:** http://localhost:5173
+**Backend API:** http://localhost:3001
+
+**Start the servers:**
+```bash
+# Terminal 1 - Backend
+cd backend && npm start
+
+# Terminal 2 - Frontend
+cd frontend && npm run dev
+```
+
+**Features:**
+- ✅ Create, edit, delete notes
+- ✅ Real-time search
+- ✅ Tag filtering and management
+- ✅ Auto-save (1 second debounce)
+- ✅ Responsive UI (Tailwind CSS)
+
+---
+
 ## Overview
 
 This POC demonstrates a **3-agent system** working together to transform a feature request into detailed technical specifications:
