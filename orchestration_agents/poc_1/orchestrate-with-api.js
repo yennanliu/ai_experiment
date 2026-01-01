@@ -176,6 +176,35 @@ Please design the frontend implementation for this feature following your templa
     await saveOutput('feature-ui-implementation.md', frontendOutput);
 
     // ======================
+    // AGENT 4: Implementation Agent
+    // ======================
+    logSection('🔨 Phase 4: Implementation Agent');
+
+    const implementerContext = `You are an expert full-stack developer. Based on the specifications below, implement the complete feature.
+
+Feature Request: ${featureRequest}
+
+PM Requirements:
+${pmOutput}
+
+Backend Analysis:
+${backendOutput}
+
+Frontend Implementation Plan:
+${frontendOutput}
+
+Please provide:
+1. Complete, production-ready code for all necessary files
+2. Clear file paths for each code block
+3. Step-by-step implementation instructions
+4. Any configuration changes needed
+
+Format your response as a detailed implementation guide with code blocks for each file that needs to be created or modified.`;
+
+    const implementationOutput = await runAgent(client, implementerContext, implementerContext, 'Implementation');
+    await saveOutput('feature-implementation-code.md', implementationOutput);
+
+    // ======================
     // Summary
     // ======================
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -186,12 +215,13 @@ Please design the frontend implementation for this feature following your templa
     log(`   ✓ workspace/feature-requirements.md`, 'green');
     log(`   ✓ workspace/feature-api-changes.json`, 'green');
     log(`   ✓ workspace/feature-ui-implementation.md`, 'green');
+    log(`   ✓ workspace/feature-implementation-code.md`, 'green');
 
     log(`\n⏱️  Total Time: ${duration}s`, 'cyan');
     log(`\n💡 Next Steps:`, 'yellow');
-    log(`   1. Review the generated specifications in workspace/`, 'cyan');
-    log(`   2. Ask Claude Code to implement the feature`, 'cyan');
-    log(`   3. Test in your running application`, 'cyan');
+    log(`   1. Review the implementation code in workspace/feature-implementation-code.md`, 'cyan');
+    log(`   2. Apply the code changes to your project`, 'cyan');
+    log(`   3. Test in your running application at http://localhost:5173`, 'cyan');
 
     log('\n' + '━'.repeat(50), 'cyan');
 

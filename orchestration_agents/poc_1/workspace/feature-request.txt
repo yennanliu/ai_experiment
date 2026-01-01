@@ -1,1 +1,1 @@
-Add dark mode toggle to the application
+implement dark mode per spec
