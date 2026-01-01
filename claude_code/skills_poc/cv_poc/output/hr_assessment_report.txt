@@ -1,0 +1,240 @@
+HR PROFESSIONAL ASSESSMENT REPORT
+=====================================
+
+Position: Field Sales Representative III, Google Cloud
+Candidate: John Walker
+Assessment Date: January 1, 2026
+Reviewed By: HR Professional
+
+=====================================
+
+EXECUTIVE SUMMARY
+-----------------
+
+**Recommendation: NOT QUALIFIED**
+
+After thorough review, the candidate does not meet the minimum qualifications for the Field Sales Representative III position at Google Cloud. This is a senior enterprise sales role requiring 10+ years of quota-carrying cloud/software sales experience, while the candidate's background is in software engineering with no demonstrated sales experience.
+
+
+MINIMUM QUALIFICATIONS ANALYSIS
+--------------------------------
+
+✗ DOES NOT MEET: Bachelor's degree or equivalent practical experience
+  Status: Candidate has Bachelor of Science in Computer Science ✓
+
+✗ DOES NOT MEET: 10 years of experience with quota-carrying cloud or software sales
+  Status: Candidate has ~2-3 years of SOFTWARE ENGINEERING experience, NOT sales
+  Gap: Missing 10+ years of sales experience entirely
+
+
+PREFERRED QUALIFICATIONS ANALYSIS
+----------------------------------
+
+✗ Experience selling Cloud solutions, infrastructure software, databases
+  Status: NO sales experience. Has technical knowledge of cloud (AWS, Docker, Kubernetes) but from engineering perspective only
+
+✗ Experience in telecommunications and media industries
+  Status: No industry experience demonstrated in either vertical
+
+✗ Experience supporting large enterprise organizations
+  Status: No evidence of enterprise-level engagement or account management
+
+✗ Experience working with and leading cross-functional teams
+  Status: Limited - collaborated with product/designers in engineering context, not in sales leadership capacity
+
+✗ Experience with commercial and legal negotiations
+  Status: No commercial, procurement, or legal negotiation experience demonstrated
+
+✗ Experience working with customer engineers on migrations
+  Status: Has technical migration knowledge but has never worked in customer-facing sales or advisory capacity
+
+
+CRITICAL GAPS ANALYSIS
+-----------------------
+
+**Major Disqualifying Gaps:**
+
+1. SALES EXPERIENCE (CRITICAL)
+   - Zero demonstrated sales experience
+   - No quota-carrying responsibility
+   - No revenue generation track record
+   - No customer acquisition or account management experience
+
+2. INDUSTRY EXPERIENCE (CRITICAL)
+   - No telecommunications industry exposure
+   - No media/entertainment sector experience
+   - No B2B software sales background
+
+3. EXECUTIVE ENGAGEMENT (CRITICAL)
+   - No demonstrated C-level relationship building
+   - No experience conducting executive business reviews
+   - No strategic account planning experience
+
+4. COMMERCIAL SKILLS (CRITICAL)
+   - No contract negotiation experience
+   - No procurement or legal team collaboration
+   - No experience with enterprise deal structuring
+   - No forecasting or pipeline management
+
+5. SALES LEADERSHIP (CRITICAL)
+   - No experience leading cross-functional sales teams
+   - No partner ecosystem management
+   - No track record of driving business outcomes
+
+
+STRENGTHS (Not Relevant to Role)
+---------------------------------
+
+The candidate demonstrates strong technical capabilities:
+✓ Solid software engineering foundation
+✓ Cloud technology familiarity (AWS, Docker, Kubernetes)
+✓ Understanding of databases and system architecture
+✓ Experience building scalable applications
+✓ Collaborative team player
+
+**However, these technical skills do not translate to sales qualifications.**
+
+
+CANDIDATE PROFILE VS. ROLE REQUIREMENTS
+----------------------------------------
+
+**What the role requires:**
+- Senior sales executive with 10+ years closing multi-million dollar cloud deals
+- Deep telecommunications/media industry expertise
+- Executive relationship builder and strategic business partner
+- Proven track record of quota attainment and revenue growth
+- Complex negotiation and deal structuring expertise
+
+**What the candidate offers:**
+- Junior/Mid-level software engineer with 2-3 years experience
+- Technical implementation skills
+- No sales background
+- No industry specialization in telecom/media
+- No commercial or business development experience
+
+
+HR PROFESSIONAL ASSESSMENT
+---------------------------
+
+**Candidacy Status: NOT VIABLE**
+
+From an HR perspective, this candidate would not pass initial resume screening for the following reasons:
+
+1. **Minimum Qualifications Not Met**
+   The role explicitly requires "10 years of experience with quota-carrying cloud or software sales" which is a non-negotiable minimum qualification. The candidate has zero sales experience.
+
+2. **Wrong Career Track**
+   The candidate is in an individual contributor technical role (Software Engineer), while the position requires a senior sales professional. These are fundamentally different career paths.
+
+3. **Experience Level Mismatch**
+   The candidate appears to be 2-3 years into their career, while this is a senior-level sales position typically requiring 10-15 years total professional experience.
+
+4. **No Transferable Sales Skills**
+   While technical knowledge can support a sales engineer or solutions architect role, there are no demonstrated sales competencies (prospecting, negotiation, closing, account management, forecasting).
+
+5. **Geographic Consideration**
+   Candidate location shows "City, State" (appears to be US-based) while the role is based in Rio de Janeiro, Brazil and requires Portuguese language skills. No language proficiencies are listed.
+
+
+ALTERNATIVE ROLE RECOMMENDATIONS
+---------------------------------
+
+This candidate would be better suited for Google Cloud technical roles such as:
+
+1. **Cloud Solutions Architect** (Entry/Mid-level)
+   - Leverage technical cloud knowledge
+   - Customer-facing technical role
+   - Can be a pathway to sales engineering later
+
+2. **Customer Engineer**
+   - Technical pre-sales support role
+   - Work alongside sales teams
+   - Bridge between technical and business
+
+3. **Cloud Support Engineer**
+   - Technical customer support
+   - Build cloud expertise
+   - Customer interaction without sales responsibility
+
+4. **Solutions Consultant / Presales Engineer**
+   - Technical product demonstrations
+   - Proof of concept development
+   - Supporting sales teams (not carrying quota)
+
+
+DEVELOPMENT PATH TO SALES (Long-term)
+--------------------------------------
+
+If the candidate aspires to transition into cloud sales eventually, they would need:
+
+**Years 1-2: Build Technical Credibility**
+- Move into Solutions Architect or Customer Engineer role
+- Gain deep Google Cloud Platform expertise
+- Obtain relevant cloud certifications
+- Develop customer presentation and communication skills
+
+**Years 3-5: Enter Sales Track**
+- Transition to Sales Engineer or Solutions Consultant role
+- Begin participating in sales cycles (supporting, not leading)
+- Learn sales methodology (MEDDPICC, etc.)
+- Understand deal structuring and negotiation basics
+
+**Years 6-10: Progress in Sales**
+- Move to quota-carrying role (Account Executive, inside sales)
+- Build track record of revenue generation
+- Develop industry specialization (telecom/media)
+- Gain experience with enterprise accounts
+
+**Years 10+: Qualify for Senior Sales Roles**
+- At this point, would meet minimum qualifications for FSR III level role
+
+
+INTERVIEW DECISION
+-------------------
+
+**Recommendation: DO NOT PROCEED TO INTERVIEW**
+
+Reasoning:
+- Does not meet minimum qualifications
+- Wrong career track and experience level
+- Would not be competitive against qualified sales candidates
+- Advancing this candidate would waste interview resources and create poor candidate experience
+
+
+COMMUNICATION TO CANDIDATE
+---------------------------
+
+**Suggested Response:**
+
+"Dear John,
+
+Thank you for your interest in the Field Sales Representative III position at Google Cloud. After careful review of your application, we have determined that your background does not align with the requirements for this role.
+
+This position requires a minimum of 10 years of quota-carrying cloud or software sales experience in enterprise accounts, with deep expertise in telecommunications and media industries. Your background in software engineering, while impressive, reflects a different career track that does not meet the minimum qualifications for this senior sales position.
+
+We encourage you to explore technical roles at Google Cloud, such as Solutions Architect, Customer Engineer, or Cloud Support Engineer positions, which would better align with your software engineering background and technical expertise.
+
+Thank you for considering Google Cloud. We wish you success in your career.
+
+Best regards,
+Google Cloud Recruiting Team"
+
+
+FINAL HR ASSESSMENT SUMMARY
+----------------------------
+
+**Overall Rating: 1/5 - Strong No**
+
+This is a clear mismatch between candidate background and role requirements:
+- Technical Skills/Expertise: 1/5 (has cloud technical knowledge but not sales expertise)
+- Sales Experience: 0/5 (no sales background)
+- Industry Fit: 0/5 (no telecom/media experience)
+- Experience Level: 1/5 (junior engineer vs senior sales executive role)
+- Cultural Fit: Unable to assess due to lack of relevant experience
+
+**Recommendation: Reject application. Suggest alternative technical roles if appropriate.**
+
+
+=====================================
+Assessment Completed: January 1, 2026
+=====================================

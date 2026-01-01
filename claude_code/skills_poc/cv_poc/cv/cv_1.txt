@@ -1,0 +1,68 @@
+
+
+JOHN WALKER
+
+
+City, State
+Email: [firstname.lastname@email.com](mailto:firstname.lastname@email.com)
+Phone: (123) 456-7890
+GitHub: github.com/username
+LinkedIn: linkedin.com/in/username
+
+SUMMARY
+Software Engineer with experience building scalable web applications and APIs. Strong foundation in data structures, algorithms, and system design. Comfortable working across the stack and collaborating in fast-paced team environments.
+
+TECHNICAL SKILLS
+Languages: Python, Java, JavaScript, TypeScript, C++
+Frameworks: React, Node.js, Express, Spring Boot
+Databases: PostgreSQL, MySQL, MongoDB
+Tools: Git, Docker, Kubernetes, AWS, Linux
+Other: REST APIs, SQL, CI/CD, Unit Testing
+
+EXPERIENCE
+
+Software Engineer
+Company Name – City, State
+Month Year – Month Year
+
+* Designed and implemented RESTful APIs serving thousands of daily users
+* Improved application performance by 30% by optimizing database queries
+* Built reusable front-end components using React and TypeScript
+* Collaborated with product managers and designers in an Agile environment
+
+Software Engineering Intern
+Company Name – City, State
+Month Year – Month Year
+
+* Developed internal tools using Python and Flask to automate workflows
+* Wrote unit and integration tests, increasing code coverage to 85%
+* Participated in code reviews and sprint planning meetings
+
+PROJECTS
+
+Personal Finance Tracker
+
+* Built a full-stack web app using React, Node.js, and PostgreSQL
+* Implemented user authentication and data visualization dashboards
+* Deployed application using Docker and AWS
+
+Search Engine Simulator
+
+* Implemented inverted index and ranking algorithms in Java
+* Supported keyword search over 100k+ documents with low latency
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University Name – City, State
+Graduation Month Year
+Relevant Coursework: Data Structures, Algorithms, Operating Systems, Databases
+
+ADDITIONAL
+
+* Hackathon participant (2x)
+* Open-source contributor
+* Strong problem-solving and communication skills
+
+---
+
