@@ -1,263 +1,502 @@
-# Dark Mode Implementation Plan
+# Frontend Specification - Dark Mode Toggle
 
-## Tech Stack Additions
-- **State Management**: React Context (`ThemeContext`)
-- **Styling**: Tailwind CSS dark mode utilities (`dark:` prefix)
-- **Storage**: localStorage API
-- **Icons**: Lucide React (Sun/Moon icons)
+## Tech Stack
+- Framework: React 18 with TypeScript
+- State Management: React Context API + custom hook
+- Styling: CSS Custom Properties (CSS Variables)
+- Storage: Browser localStorage API
+- Icons: Lucide React (lightweight icon library)
 
-## Implementation Strategy
+## Component Hierarchy
 
-### 1. Theme Context (`src/contexts/ThemeContext.tsx`)
-
-**Purpose:** Global theme state management
-
-**Implementation:**
-```typescript
-- Create ThemeContext with theme state ('light' | 'dark')
-- Provide toggleTheme() function
-- Load initial theme from localStorage
-- Apply theme class to document root on change
+```
+App (root)
+├── ThemeProvider (context wrapper)
+│   └── children (all app components)
+└── Header/Navigation
+    └── ThemeToggle (toggle button component)
 ```
 
-**Key Functions:**
-- `useTheme()` hook for accessing theme state
-- `toggleTheme()` to switch between light/dark
-- Auto-save to localStorage on theme change
+## State Management
 
-### 2. Theme Toggle Button (`src/components/common/ThemeToggle.tsx`)
-
-**Purpose:** UI control for switching themes
-
-**Props:** None (uses ThemeContext)
-
-**Features:**
-- Sun icon for light mode
-- Moon icon for dark mode
-- Smooth transition animation
-- Accessible (ARIA labels)
-- Keyboard accessible
-
-**Location:** Add to Header component (top-right)
-
-### 3. CSS/Styling Changes
-
-**Tailwind Configuration:**
-```javascript
-// tailwind.config.js
-module.exports = {
-  darkMode: 'class', // Enable class-based dark mode
-  // ... rest of config
+**ThemeContext:**
+```typescript
+interface ThemeContextType {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 ```
 
-**Color Scheme:**
-```
-Light Mode (existing):
-- Background: white, gray-50
-- Text: gray-900, gray-700
-- Borders: gray-200, gray-300
-- Primary: blue-600
+**State Flow:**
+1. ThemeProvider initializes by reading localStorage
+2. If no preference exists, defaults to 'light'
+3. Applies theme class to document root immediately
+4. Provides theme state and toggle function to all children
+5. On theme change, updates localStorage and document class synchronously
 
-Dark Mode (new):
-- Background: gray-900, gray-800
-- Text: gray-100, gray-300
-- Borders: gray-700, gray-600
-- Primary: blue-500
-```
+**Why Context vs Other Solutions:**
+- No external state library needed (lightweight feature)
+- Theme needs to be accessible app-wide
+- Single source of truth prevents inconsistencies
+- Built-in React solution (no additional dependencies)
 
-### 4. Component Updates
+## Local Storage Integration
 
-**Files to Update:**
-
-1. **App.tsx**
-   - Wrap with ThemeProvider
-   - Add dark class conditionally
-
-2. **Header.tsx**
-   - Add ThemeToggle component
-   - Update background: `bg-white dark:bg-gray-800`
-   - Update text: `text-gray-900 dark:text-gray-100`
-
-3. **Sidebar.tsx**
-   - Update background: `bg-gray-50 dark:bg-gray-900`
-   - Update borders: `border-gray-200 dark:border-gray-700`
-   - Update tag styles for dark mode
-
-4. **NotesList.tsx**
-   - Update hover states: `hover:bg-gray-50 dark:hover:bg-gray-800`
-   - Update selection highlight: `bg-blue-50 dark:bg-blue-900/30`
-
-5. **NoteEditor.tsx**
-   - Update background: `bg-white dark:bg-gray-800`
-   - Update input backgrounds
-   - Update border colors
-
-6. **NoteCard.tsx**
-   - Update text colors
-   - Update tag badge colors
-
-## File Structure
-
-```
-src/
-├── contexts/
-│   ├── NotesContext.tsx (existing)
-│   └── ThemeContext.tsx (NEW)
-├── components/
-│   ├── common/
-│   │   ├── Button.tsx (existing)
-│   │   └── ThemeToggle.tsx (NEW)
-│   ├── layout/
-│   │   ├── Header.tsx (UPDATE)
-│   │   └── Sidebar.tsx (UPDATE)
-│   └── notes/
-│       ├── NoteCard.tsx (UPDATE)
-│       ├── NotesList.tsx (UPDATE)
-│       └── NoteEditor.tsx (UPDATE)
-└── App.tsx (UPDATE)
-```
-
-## Implementation Steps
-
-### Step 1: Create ThemeContext
+**Storage Schema:**
 ```typescript
-// src/contexts/ThemeContext.tsx
-- Define theme type and context interface
-- Create provider component
-- Implement localStorage persistence
-- Export useTheme hook
+{
+  key: 'theme-preference',
+  value: 'light' | 'dark'
+}
 ```
 
-### Step 2: Create ThemeToggle Component
+**Storage Operations:**
+- **Read**: On app initialization (before first render)
+- **Write**: Immediately after theme toggle
+- **Error Handling**: Fallback to 'light' if localStorage is unavailable (e.g., private browsing)
+
+## Key Components
+
+### ThemeProvider
+**Purpose:** Global theme state management and persistence  
+**Props:** `children: ReactNode`  
+**State:** 
+- `theme: 'light' | 'dark'`
+- Initializes from localStorage or defaults to 'light'
+
+**Behavior:**
 ```typescript
-// src/components/common/ThemeToggle.tsx
-- Import Sun/Moon icons from lucide-react
-- Use useTheme hook
-- Render button with current theme icon
-- Add smooth rotation animation
+// On mount:
+1. Read from localStorage('theme-preference')
+2. If exists and valid → set theme
+3. If not exists → default to 'light'
+4. Apply theme to document.documentElement.classList
+5. Prevent flash by executing before React renders
+
+// On theme change:
+1. Update state
+2. Update localStorage
+3. Update document root class
+4. All consumers re-render with new theme
 ```
 
-### Step 3: Update Tailwind Config
-```javascript
-// tailwind.config.js
-- Set darkMode: 'class'
-- Verify dark mode utilities are available
-```
+**Implementation Notes:**
+- Use `useLayoutEffect` instead of `useEffect` to prevent flash
+- Add/remove classes atomically to prevent FOUC (Flash of Unstyled Content)
 
-### Step 4: Wrap App with ThemeProvider
+### ThemeToggle
+**Purpose:** User control to switch between themes  
+**Props:** `className?: string` (optional positioning styles)  
+**State:** None (consumes from ThemeContext)
+
+**Behavior:**
+- Displays icon representing **opposite** theme (moon in light mode, sun in dark mode)
+- Click/Space/Enter triggers `toggleTheme()`
+- Smooth icon transition (fade or rotate)
+- Tooltip showing "Switch to dark mode" / "Switch to light mode"
+
+**Visual States:**
+- Light mode: Shows moon icon 🌙
+- Dark mode: Shows sun icon ☀️
+- Hover: Subtle scale or brightness change
+- Active: Brief scale-down effect
+- Focus: Visible focus ring (accessibility)
+
+**Accessibility:**
 ```typescript
-// src/App.tsx
-- Import ThemeProvider
-- Wrap entire app
-- Apply dark class to root div conditionally
-```
-
-### Step 5: Add ThemeToggle to Header
-```typescript
-// src/components/layout/Header.tsx
-- Import ThemeToggle
-- Add to right side of header
-- Update header styling with dark: classes
-```
-
-### Step 6: Update All Component Styles
-- Add `dark:` prefixed classes to all components
-- Test each component in both themes
-- Ensure proper contrast ratios
-
-## Accessibility Considerations
-
-**Contrast Ratios:**
-- Light mode: Maintain existing AA compliance
-- Dark mode: Test all text/background combinations
-- Ensure all interactive elements are visible
-
-**Keyboard Navigation:**
-- Theme toggle accessible via Tab key
-- Enter/Space to activate toggle
-
-**ARIA Labels:**
-- Add aria-label="Toggle dark mode"
-- Announce current theme to screen readers
-
-## Performance
-
-**Optimization:**
-- Theme state loads from localStorage on mount (synchronous)
-- Theme switching uses CSS classes (instant visual change)
-- No re-renders needed for unchanged components
-- localStorage write is debounced/throttled if needed
-
-**Bundle Size Impact:**
-- ThemeContext: ~1KB
-- ThemeToggle component: ~0.5KB
-- No additional dependencies needed
-
-## Testing Strategy
-
-**Manual Testing:**
-- [ ] Toggle switches between themes
-- [ ] Theme persists after page reload
-- [ ] All text is readable in both themes
-- [ ] No visual glitches during switch
-- [ ] Works on different screen sizes
-
-**Edge Cases:**
-- localStorage unavailable (fallback to light)
-- Rapid theme toggling
-- Browser back/forward navigation
-
-## Migration Path
-
-**Phase 1: Core Implementation**
-- Add ThemeContext and ThemeToggle
-- Update main layout components
-
-**Phase 2: Component Polish**
-- Update all remaining components
-- Fine-tune dark mode colors
-
-**Phase 3: Enhancement**
-- Add transition animations
-- Consider system theme detection
-
-## Color Palette Reference
-
-### Light Mode (Current)
-```css
-Background: #ffffff, #f9fafb
-Text: #111827, #374151
-Border: #e5e7eb, #d1d5db
-Primary: #2563eb
-```
-
-### Dark Mode (New)
-```css
-Background: #111827, #1f2937
-Text: #f9fafb, #d1d5db
-Border: #374151, #4b5563
-Primary: #3b82f6
-```
-
-## Code Examples
-
-### ThemeContext Usage
-```typescript
-const { theme, toggleTheme } = useTheme();
-
-<button onClick={toggleTheme}>
-  {theme === 'light' ? <Moon /> : <Sun />}
+<button
+  onClick={toggleTheme}
+  aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+  aria-pressed={theme === 'dark'}
+  title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+>
+  {/* Icon */}
 </button>
 ```
 
-### Component Styling
+### useTheme Hook
+**Purpose:** Consumer hook for accessing theme context  
+**Returns:** `ThemeContextType`
+
+**Usage Example:**
 ```typescript
-<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-  Content
-</div>
+function MyComponent() {
+  const { theme, toggleTheme } = useTheme();
+  
+  return (
+    <div className={`card ${theme}`}>
+      {/* Component content */}
+    </div>
+  );
+}
 ```
 
----
+## CSS Architecture
 
-*Generated by Frontend Agent - Automated Orchestration*
+**Approach:** CSS Custom Properties (Variables) + Root Class
+
+### Color System
+
+**CSS Variables Definition:**
+```css
+/* Light Theme (Default) */
+:root {
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e5e5e5;
+  
+  /* Text */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #6a6a6a;
+  
+  /* Borders */
+  --border-color: #d1d1d1;
+  
+  /* Interactive Elements */
+  --button-bg: #007bff;
+  --button-hover: #0056b3;
+  --button-text: #ffffff;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  /* Accents */
+  --accent-primary: #007bff;
+  --accent-danger: #dc3545;
+  --accent-success: #28a745;
+}
+
+/* Dark Theme */
+:root.dark {
+  /* Backgrounds */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  
+  /* Text */
+  --text-primary: #e5e5e5;
+  --text-secondary: #b5b5b5;
+  --text-tertiary: #8a8a8a;
+  
+  /* Borders */
+  --border-color: #404040;
+  
+  /* Interactive Elements */
+  --button-bg: #0d6efd;
+  --button-hover: #0a58ca;
+  --button-text: #ffffff;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  
+  /* Accents */
+  --accent-primary: #0d6efd;
+  --accent-danger: #dc3545;
+  --accent-success: #28a745;
+}
+```
+
+**Transition Effects:**
+```css
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Disable transitions on theme change to prevent slow fade on large apps */
+.theme-changing * {
+  transition: none !important;
+}
+```
+
+**Component Usage:**
+```css
+.card {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.button-primary {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+}
+
+.button-primary:hover {
+  background-color: var(--button-hover);
+}
+```
+
+## Theme Initialization Strategy
+
+**Problem:** Prevent FOUC (Flash of Unstyled Content) when loading app
+
+**Solution:** Inline script in `index.html` **before** React loads
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App</title>
+  
+  <!-- Theme Initialization Script (BLOCKING) -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('theme-preference');
+        const theme = savedTheme === 'dark' ? 'dark' : 'light';
+        document.documentElement.classList.add(theme);
+      } catch (e) {
+        // localStorage unavailable, defaults to light (CSS default)
+      }
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
+```
+
+**Why This Works:**
+1. Executes **synchronously** before any content renders
+2. Adds theme class to `<html>` element immediately
+3. CSS loads with correct theme already applied
+4. React hydrates with theme already in place
+5. Zero visual flash
+
+## Error Handling
+
+**localStorage Unavailable:**
+```typescript
+function getStoredTheme(): 'light' | 'dark' {
+  try {
+    const stored = localStorage.getItem('theme-preference');
+    return stored === 'dark' ? 'dark' : 'light';
+  } catch (error) {
+    console.warn('localStorage unavailable, using default theme');
+    return 'light';
+  }
+}
+
+function setStoredTheme(theme: 'light' | 'dark'): void {
+  try {
+    localStorage.setItem('theme-preference', theme);
+  } catch (error) {
+    console.warn('Failed to persist theme preference');
+    // App continues to work, just won't persist across sessions
+  }
+}
+```
+
+**Graceful Degradation:**
+- If localStorage fails → theme still works for current session
+- If CSS variables unsupported (ancient browsers) → fallback to light theme
+- If JavaScript disabled → light theme via CSS defaults
+
+## Accessibility Considerations
+
+**Keyboard Navigation:**
+- ThemeToggle is a native `<button>` element (focusable by default)
+- Tab key focuses the toggle
+- Space or Enter activates toggle
+- Focus ring visible (via `:focus-visible`)
+
+**ARIA Attributes:**
+```typescript
+<button
+  onClick={toggleTheme}
+  aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+  aria-pressed={theme === 'dark'}
+  title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+  className="theme-toggle"
+>
+  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+</button>
+```
+
+**Color Contrast:**
+- All text must meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text)
+- Use tools like WebAIM Contrast Checker during design
+- Test both themes with automated accessibility tools (Axe, Lighthouse)
+
+**Screen Reader Announcements:**
+```typescript
+// Optional: Announce theme change to screen readers
+function announceThemeChange(newTheme: 'light' | 'dark') {
+  const announcement = document.createElement('div');
+  announcement.setAttribute('role', 'status');
+  announcement.setAttribute('aria-live', 'polite');
+  announcement.className = 'sr-only'; // Visually hidden
+  announcement.textContent = `Switched to ${newTheme} mode`;
+  document.body.appendChild(announcement);
+  setTimeout(() => announcement.remove(), 1000);
+}
+```
+
+**Focus Management:**
+- ThemeToggle remains focused after activation
+- No unexpected focus jumps
+- Focus ring clearly visible in both themes
+
+## Performance Optimizations
+
+**Theme Switching Performance:**
+- Use `document.documentElement.classList` (fastest DOM operation)
+- Avoid re-rendering entire app on theme change (Context only triggers consumers)
+- CSS transitions limited to 0.2s (perceived as instant)
+
+**Initial Load Performance:**
+- Inline script in HTML prevents extra network request
+- localStorage read is synchronous and extremely fast (~1ms)
+- No additional JavaScript bundle size (Context API is built-in)
+
+**Memoization:**
+```typescript
+const ThemeProvider: React.FC<Props> = ({ children }) => {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    theme,
+    toggleTheme: () => {
+      const newTheme = theme === 'light' ? 'dark' : 'light';
+      setThemeState(newTheme);
+      applyTheme(newTheme);
+    },
+    setTheme: (newTheme: Theme) => {
+      setThemeState(newTheme);
+      applyTheme(newTheme);
+    }
+  }), [theme]);
+  
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+```
+
+**Bundle Size:**
+- Context API: 0kb (built-in)
+- Lucide React icons: ~2kb (tree-shakeable)
+- Total feature overhead: <3kb
+
+## Implementation Notes
+
+### Folder Structure
+```
+src/
+├── contexts/
+│   └── ThemeContext.tsx          # Context provider + hook
+├── components/
+│   └── ThemeToggle.tsx            # Toggle button component
+├── styles/
+│   ├── theme.css                  # CSS variables for both themes
+│   └── transitions.css            # Theme transition styles
+├── utils/
+│   └── theme.ts                   # localStorage helpers
+└── types/
+    └── theme.ts                   # TypeScript types
+```
+
+### Implementation Steps
+
+**Phase 1: Foundation**
+1. Create TypeScript types (`theme.ts`)
+2. Set up CSS variables in `theme.css`
+3. Add inline script to `index.html`
+
+**Phase 2: React Integration**
+4. Build ThemeContext with provider and hook
+5. Wrap App with ThemeProvider
+6. Test context in browser DevTools
+
+**Phase 3: UI Component**
+7. Create ThemeToggle component
+8. Add icons and styles
+9. Integrate into app header/navigation
+
+**Phase 4: Polish**
+10. Add smooth transitions
+11. Test accessibility (keyboard, screen readers)
+12. Test in all major browsers
+13. Verify no FOUC on refresh
+
+### Testing Strategy
+
+**Unit Tests (Jest + React Testing Library):**
+```typescript
+describe('ThemeContext', () => {
+  it('defaults to light theme', () => {
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: ThemeProvider
+    });
+    expect(result.current.theme).toBe('light');
+  });
+  
+  it('toggles theme', () => {
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: ThemeProvider
+    });
+    act(() => result.current.toggleTheme());
+    expect(result.current.theme).toBe('dark');
+  });
+  
+  it('persists theme to localStorage', () => {
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: ThemeProvider
+    });
+    act(() => result.current.setTheme('dark'));
+    expect(localStorage.getItem('theme-preference')).toBe('dark');
+  });
+});
+
+describe('ThemeToggle', () => {
+  it('renders with correct icon', () => {
+    render(<ThemeToggle />);
+    expect(screen.getByLabelText(/switch to dark mode/i)).toBeInTheDocument();
+  });
+  
+  it('is keyboard accessible', () => {
+    render(<ThemeToggle />);
+    const button = screen.getByRole('button');
+    button.focus();
+    expect(button).toHaveFocus();
+  });
+});
+```
+
+**Integration Tests:**
+- Test theme persistence across page reloads
+- Verify all components update when theme changes
+- Test fallback behavior when localStorage unavailable
+
+**Manual Testing Checklist:**
+- [ ] Theme persists after browser refresh
+- [ ] No flash of unstyled content on load
+- [ ] Toggle works with mouse click
+- [ ] Toggle works with keyboard (Tab + Enter/Space)
+- [ ] Icons update correctly
+- [ ] All text remains readable in both themes
+- [ ] Color contrast meets WCAG AA standards
+- [ ] Works in Chrome, Firefox, Safari, Edge
+- [ ] Works in private/incognito mode (localStorage may be disabled)
+- [ ] Focus ring visible when navigating with keyboard
+- [ ] Screen reader announces theme change
+
+**Accessibility Audit:**
+- Run Lighthouse accessibility audit (both themes)
+- Run Axe DevTools (both themes)
+- Test with actual screen reader (NVDA/JAWS/VoiceOver)
