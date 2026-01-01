@@ -1,0 +1,1 @@
+Add dark mode toggle to the Notes application. Users should be able to switch between light and dark themes. The preference should be saved and persist across sessions. Include a toggle button in the header for easy access.
