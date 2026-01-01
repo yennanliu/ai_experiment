@@ -3,6 +3,7 @@
 > Collections of AI draft projects
 
 
+
 ## Todo
 
 - Train AI as a mock interviewer
