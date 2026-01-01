@@ -59,3 +59,4 @@
   - CV updator
   - MCP, skills
     - https://github.com/yennanliu/til/blob/master/README.md#20260101
+  - snowboard copilot app (android/ ios)
