@@ -1,46 +1,55 @@
-# Dark Mode Feature
+```markdown
+# Dark Mode Toggle
 
 ## Overview
-Add a dark mode toggle to the Notes application that allows users to switch between light and dark color themes. The theme preference should persist across browser sessions, providing a comfortable viewing experience in different lighting conditions.
+A user interface control that allows users to switch between light and dark color themes in the application. This feature enhances user experience by providing visual comfort in different lighting conditions and accommodating user preferences.
 
 ## User Stories
-- As a user, I want to toggle between light and dark themes so that I can use the app comfortably in different lighting conditions
-- As a user, I want my theme preference to be remembered so that I don't have to switch it every time I open the app
-- As a user, I want an easily accessible toggle button so that I can quickly switch themes when needed
-- As a user, I want the theme to apply to all parts of the application so that the experience is consistent
+- As a user, I want to toggle between light and dark themes so that I can use the app comfortably in different lighting environments
+- As a user, I want my theme preference to be remembered so that I don't have to re-select it every time I visit the app
+- As a user, I want the theme to apply consistently across all pages so that I have a seamless experience throughout the application
+- As a user, I want the toggle to be easily accessible so that I can switch themes quickly when needed
 
 ## Acceptance Criteria
-- [ ] A theme toggle button is visible in the application header
+- [ ] A visible toggle control (button/switch) is present in the application header/navigation
 - [ ] Clicking the toggle switches between light and dark themes
-- [ ] The dark theme applies appropriate colors to all UI elements (background, text, borders, etc.)
-- [ ] The theme preference is saved to localStorage
-- [ ] The saved theme preference is loaded automatically on app startup
-- [ ] The theme switch is smooth without page reload
-- [ ] All text remains readable in both themes (proper contrast ratios)
-- [ ] Icons and buttons are styled appropriately for both themes
+- [ ] The toggle icon/label clearly indicates the current theme state
+- [ ] Theme preference persists across browser sessions (stored locally)
+- [ ] All UI components (buttons, forms, cards, text, etc.) properly adapt to both themes
+- [ ] Theme transition is smooth and does not cause jarring flashes
+- [ ] Theme applies immediately without requiring page refresh
+- [ ] Default theme is light mode on first visit
+- [ ] The toggle is accessible via keyboard navigation (Tab + Enter/Space)
+- [ ] Color contrast meets WCAG AA accessibility standards in both themes
 
 ## Technical Considerations
-- **State Management**: Use React Context or localStorage for theme state
-- **CSS Strategy**: Use Tailwind's dark mode classes or CSS variables
-- **Performance**: Theme switching should be instant (<100ms)
-- **Accessibility**: Maintain WCAG AA contrast ratios in both themes
-- **Browser Support**: localStorage is available in all modern browsers
-- **No Backend Changes**: This is purely a frontend feature
-- **Persistence**: Use localStorage with key like 'notes-app-theme'
+- **State Management**: Theme state needs to be accessible globally across components
+- **Storage**: Use localStorage or similar browser storage to persist user preference
+- **CSS Architecture**: 
+  - Use CSS custom properties (variables) for color definitions
+  - OR use CSS class-based theming (e.g., `.dark-mode` on root element)
+  - Ensure all color values are defined through theme variables
+- **Performance**: Theme switching should be instantaneous (<100ms perceived delay)
+- **Initial Load**: Check stored preference before first render to prevent theme flash
+- **Icons**: Provide appropriate icons (sun/moon or similar) to represent theme states
+- **Browser Compatibility**: Should work on all modern browsers (Chrome, Firefox, Safari, Edge)
+- **Accessibility**: 
+  - Toggle must be keyboard accessible
+  - Include appropriate ARIA labels
+  - Ensure sufficient color contrast in both themes
 
 ## Success Metrics
-- Users can successfully toggle between themes
-- Theme preference persists across browser sessions
-- No visual glitches during theme switching
-- All UI elements are properly styled in both themes
-- User feedback indicates improved usability
+- Users can successfully toggle between themes without errors
+- Theme preference persists correctly 100% of the time
+- No visual glitches or flashing during theme transitions
+- User engagement: Track percentage of users who switch from default theme
+- Accessibility: Passes automated accessibility audits for both themes
 
 ## Out of Scope
-- Multiple theme options (only light and dark)
-- System theme detection (prefers-color-scheme)
-- Custom theme colors
-- Theme scheduling (auto-switch at certain times)
-- Server-side theme storage
-
----
-*Generated by PM Agent - Automated Orchestration*
+- Additional theme variants beyond light/dark (e.g., custom colors, multiple dark themes)
+- System preference detection (respecting OS-level dark mode setting) - consider for future iteration
+- Per-component theme overrides or customization
+- Theme scheduling (automatic switching based on time of day)
+- User-defined custom theme colors
+- Animated transitions beyond basic fade/instant switch
+```
