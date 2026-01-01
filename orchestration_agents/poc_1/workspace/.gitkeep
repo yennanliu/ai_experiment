@@ -1,0 +1,6 @@
+# This file ensures the workspace directory is tracked by git
+# Agent outputs will be saved here:
+# - input.txt
+# - requirements.md
+# - api-contract.json
+# - frontend-spec.md
