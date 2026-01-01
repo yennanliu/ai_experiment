@@ -1,3 +1,263 @@
+# FastAPI Authentication System
+
+A production-ready FastAPI application with JWT-based authentication, SQLite database, and comprehensive user management.
+
+## Features
+
+- User registration with email and username
+- JWT token-based authentication
+- User profile retrieval
+- Password change functionality
+- Secure password hashing with bcrypt
+- Input validation with Pydantic
+- Comprehensive test coverage
+- Interactive API documentation (Swagger UI)
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Set Environment Variables
+
+The `.env` file is already configured with a secure secret key. You can modify it if needed:
+
+```bash
+# .env file is already created with:
+# - SECRET_KEY: Secure random key
+# - DATABASE_URL: SQLite database path
+# - CORS settings
+```
+
+### 3. Run the Application
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The server will start at `http://localhost:8000`
+
+### 4. Access API Documentation
+
+Open your browser and navigate to:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## API Endpoints
+
+### Authentication Endpoints
+
+#### Register User
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "username": "johndoe",
+  "password": "SecurePass123",
+  "full_name": "John Doe"
+}
+
+Response: 201 Created
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "johndoe",
+  "full_name": "John Doe",
+  "is_active": true,
+  "created_at": "2026-01-01T10:00:00"
+}
+```
+
+#### Login
+```http
+POST /api/v1/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=user@example.com&password=SecurePass123
+
+Response: 200 OK
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 1800
+}
+```
+
+### User Endpoints (Protected)
+
+#### Get Current User Profile
+```http
+GET /api/v1/users/me
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "johndoe",
+  "full_name": "John Doe",
+  "is_active": true,
+  "created_at": "2026-01-01T10:00:00"
+}
+```
+
+#### Change Password
+```http
+PUT /api/v1/users/me/password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "current_password": "SecurePass123",
+  "new_password": "NewSecurePass456"
+}
+
+Response: 200 OK
+{
+  "message": "Password updated successfully"
+}
+```
+
+## Testing the API
+
+### Using Swagger UI (Recommended)
+
+1. Go to `http://localhost:8000/docs`
+2. Click on `/api/v1/auth/register` endpoint
+3. Click "Try it out"
+4. Fill in the request body and execute
+5. Register a user, then login to get a token
+6. Click "Authorize" button at the top
+7. Enter your token in the format: `Bearer <your-token>`
+8. Now you can test protected endpoints
+
+### Using curl
+
+```bash
+# Register a new user
+curl -X POST "http://localhost:8000/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "username": "testuser",
+    "password": "TestPass123",
+    "full_name": "Test User"
+  }'
+
+# Login
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=test@example.com&password=TestPass123"
+
+# Get user profile (replace TOKEN with actual token)
+curl -X GET "http://localhost:8000/api/v1/users/me" \
+  -H "Authorization: Bearer TOKEN"
+
+# Change password
+curl -X PUT "http://localhost:8000/api/v1/users/me/password" \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "current_password": "TestPass123",
+    "new_password": "NewSecurePass456"
+  }'
+```
+
+## Running Tests
+
+Run the test suite with pytest:
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage report
+pytest tests/ -v --cov=app
+
+# Run specific test file
+pytest tests/api/test_auth.py -v
+```
+
+## Project Structure
+
+```
+app/
+├── main.py                    # FastAPI application entry point
+├── config.py                  # Settings and environment variables
+├── database.py                # SQLAlchemy setup
+├── dependencies.py            # Shared dependencies (auth, db)
+├── api/v1/
+│   ├── router.py              # Aggregate v1 routes
+│   └── endpoints/
+│       ├── auth.py            # Registration and login
+│       └── users.py           # User profile and password change
+├── models/
+│   └── user.py                # User database model
+├── schemas/
+│   ├── user.py                # User Pydantic schemas
+│   └── auth.py                # Token and auth schemas
+├── crud/
+│   └── user.py                # User CRUD operations
+└── core/
+    ├── security.py            # Password hashing and JWT
+    └── exceptions.py          # Custom exceptions
+
+tests/
+├── conftest.py                # Test fixtures
+└── api/
+    ├── test_auth.py           # Auth endpoint tests
+    └── test_users.py          # User endpoint tests
+```
+
+## Security Features
+
+- Passwords hashed with bcrypt (cost factor: 12)
+- JWT tokens with HS256 algorithm
+- Token expiration (30 minutes by default)
+- Password strength validation (min 8 chars, uppercase, lowercase, digit)
+- CORS properly configured
+- Security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection)
+- SQL injection protection via SQLAlchemy ORM
+
+## Environment Variables
+
+Edit `.env` to configure:
+
+```bash
+# Security
+SECRET_KEY=<your-secret-key>
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Database
+DATABASE_URL=sqlite:///./auth.db
+
+# Application
+PROJECT_NAME=FastAPI Auth System
+VERSION=1.0.0
+API_V1_STR=/api/v1
+
+# CORS (comma-separated origins)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+```
+
+## Future Enhancements
+
+- Email verification on registration
+- Password reset flow with email tokens
+- Refresh tokens for longer sessions
+- Rate limiting on auth endpoints
+- User roles and permissions
+- OAuth2 integration (Google, GitHub)
+- PostgreSQL support for production
+
+---
+
 # Skills
 
 ## What are Skills?
