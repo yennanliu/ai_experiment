@@ -62,3 +62,4 @@
   - snowboard copilot app (android/ ios)
   -  Claude code
      - chat, session, plugin ... UI
+     - web design, FE skills
