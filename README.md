@@ -29,6 +29,8 @@
     - https://youtu.be/C95CsgMlHJg?si=agRizqL6SBGJBXLc
     - https://github.com/angelleye/n8n/tree/main/workflows/board-of-advisors
 - an app that can edit, build, analyze, and visualize AWS CDK infra
+- finlab claude code plugin
+   - https://github.com/koreal6803/finlab-ai-plugin
 - Investment assistant app, post-train AI with financial doc
    - https://roger-s-note.onrender.com/buffett/
 - Claude code
