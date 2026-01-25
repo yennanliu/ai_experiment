@@ -31,3 +31,16 @@ Inside Claude Code, run commands to trigger workflows:
 | `/verify`         | Run verification loops               | ([GitHub][2]) |
 
 ---
+
+## How agents get used (3 ways)
+
+```bash
+
+# V1
+Use the planner agent to break this feature into steps.
+
+# V2
+Act as @planner and produce an implementation plan for:
+- Feature: OAuth login
+- Stack: Next.js + Supabase
+```
