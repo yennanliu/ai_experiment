@@ -13,6 +13,24 @@
 /plugin install everything-claude-code@everything-claude-code
 ```
 
+- or add directly to your ~/.claude/settings.json: 
+
+```bash
+{
+  "extraKnownMarketplaces": {
+    "everything-claude-code": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true
+  }
+}
+```
+
 ---
 
 ## Slash cmd 
