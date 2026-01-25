@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing Car Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background: #2c3e50;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .screen {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .screen h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #f39c12;
+        }
+
+        .screen p {
+            font-size: 20px;
+            margin: 10px 0;
+            color: #ecf0f1;
+        }
+
+        .screen .subtitle {
+            font-size: 16px;
+            color: #95a5a6;
+            margin-top: 20px;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+
+        #highScore {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            color: #f39c12;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+
+        .controls {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+
+        .flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.5);
+            display: none;
+            pointer-events: none;
+        }
+
+        .flash.active {
+            display: block;
+            animation: flashAnim 0.3s;
+        }
+
+        @keyframes flashAnim {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🏎️ Racing Car Game</h1>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="startScreen" class="screen active">
+                <h2>RACING CAR</h2>
+                <p>Avoid the obstacles and survive as long as possible!</p>
+                <p class="subtitle">Press SPACE to Start</p>
+                <div class="controls">
+                    <p>← → Arrow Keys to Move</p>
+                    <p>↑ ↓ Arrow Keys for Speed (optional)</p>
+                </div>
+            </div>
+            <div id="gameOverScreen" class="screen">
+                <h2>GAME OVER</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p>High Score: <span id="finalHighScore">0</span></p>
+                <p class="subtitle">Press SPACE to Restart</p>
+            </div>
+        </div>
+        <div id="score">Score: 0</div>
+        <div id="highScore">High Score: 0</div>
+        <div id="flash" class="flash"></div>
+    </div>
+
+    <script>
+        // Game Configuration
+        const CONFIG = {
+            canvas: {
+                width: 800,
+                height: 600
+            },
+            player: {
+                width: 40,
+                height: 60,
+                speed: 5,
+                speedMultiplier: 1.5
+            },
+            road: {
+                width: 400,
+                lanes: 3,
+                laneMarkerHeight: 40,
+                laneMarkerGap: 20
+            },
+            obstacle: {
+                width: 40,
+                height: 60,
+                minSpeed: 3,
+                maxSpeed: 7,
+                spawnInterval: 1500
+            },
+            difficulty: {
+                speedIncrease: 0.05,
+                spawnRateIncrease: 50,
+                minSpawnInterval: 500
+            }
+        };
+
+        // Game States
+        const GameState = {
+            MENU: 'MENU',
+            PLAYING: 'PLAYING',
+            GAMEOVER: 'GAMEOVER'
+        };
+
+        // Game Class
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.state = GameState.MENU;
+                this.score = 0;
+                this.highScore = parseInt(localStorage.getItem('racingHighScore') || '0');
+                this.lastTime = 0;
+                this.gameTime = 0;
+
+                // UI Elements
+                this.startScreen = document.getElementById('startScreen');
+                this.gameOverScreen = document.getElementById('gameOverScreen');
+                this.scoreDisplay = document.getElementById('score');
+                this.highScoreDisplay = document.getElementById('highScore');
+                this.flashElement = document.getElementById('flash');
+
+                // Game Objects
+                this.player = null;
+                this.obstacles = [];
+                this.laneMarkers = [];
+                this.lastObstacleSpawn = 0;
+                this.currentSpawnInterval = CONFIG.obstacle.spawnInterval;
+                this.difficultyMultiplier = 1;
+
+                // Input
+                this.keys = {};
+
+                this.init();
+            }
+
+            init() {
+                this.setupInput();
+                this.updateHighScoreDisplay();
+                this.gameLoop(0);
+            }
+
+            setupInput() {
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+
+                    if (e.key === ' ') {
+                        e.preventDefault();
+                        if (this.state === GameState.MENU) {
+                            this.startGame();
+                        } else if (this.state === GameState.GAMEOVER) {
+                            this.restartGame();
+                        }
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key] = false;
+                });
+            }
+
+            startGame() {
+                this.state = GameState.PLAYING;
+                this.score = 0;
+                this.gameTime = 0;
+                this.obstacles = [];
+                this.lastObstacleSpawn = 0;
+                this.currentSpawnInterval = CONFIG.obstacle.spawnInterval;
+                this.difficultyMultiplier = 1;
+
+                // Create player
+                const roadLeft = (CONFIG.canvas.width - CONFIG.road.width) / 2;
+                this.player = {
+                    x: CONFIG.canvas.width / 2 - CONFIG.player.width / 2,
+                    y: CONFIG.canvas.height - CONFIG.player.height - 50,
+                    width: CONFIG.player.width,
+                    height: CONFIG.player.height,
+                    speed: CONFIG.player.speed,
+                    color: '#3498db'
+                };
+
+                // Create lane markers
+                this.createLaneMarkers();
+
+                // Update UI
+                this.startScreen.classList.remove('active');
+                this.gameOverScreen.classList.remove('active');
+                this.scoreDisplay.style.display = 'block';
+                this.highScoreDisplay.style.display = 'block';
+            }
+
+            restartGame() {
+                this.startGame();
+            }
+
+            createLaneMarkers() {
+                const roadLeft = (CONFIG.canvas.width - CONFIG.road.width) / 2;
+                const laneWidth = CONFIG.road.width / CONFIG.road.lanes;
+
+                this.laneMarkers = [];
+                for (let lane = 1; lane < CONFIG.road.lanes; lane++) {
+                    const x = roadLeft + lane * laneWidth - 2;
+                    for (let y = 0; y < CONFIG.canvas.height + CONFIG.road.laneMarkerHeight + CONFIG.road.laneMarkerGap; y += CONFIG.road.laneMarkerHeight + CONFIG.road.laneMarkerGap) {
+                        this.laneMarkers.push({ x, y, width: 4, height: CONFIG.road.laneMarkerHeight });
+                    }
+                }
+            }
+
+            spawnObstacle() {
+                const roadLeft = (CONFIG.canvas.width - CONFIG.road.width) / 2;
+                const laneWidth = CONFIG.road.width / CONFIG.road.lanes;
+                const lane = Math.floor(Math.random() * CONFIG.road.lanes);
+                const x = roadLeft + lane * laneWidth + (laneWidth - CONFIG.obstacle.width) / 2;
+
+                const colors = ['#e74c3c', '#e67e22', '#9b59b6', '#16a085'];
+                const speed = (CONFIG.obstacle.minSpeed + Math.random() * (CONFIG.obstacle.maxSpeed - CONFIG.obstacle.minSpeed)) * this.difficultyMultiplier;
+
+                this.obstacles.push({
+                    x: x,
+                    y: -CONFIG.obstacle.height,
+                    width: CONFIG.obstacle.width,
+                    height: CONFIG.obstacle.height,
+                    speed: speed,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+
+            updatePlayer(deltaTime) {
+                const roadLeft = (CONFIG.canvas.width - CONFIG.road.width) / 2;
+                const roadRight = roadLeft + CONFIG.road.width;
+
+                let speed = this.player.speed;
+
+                // Optional speed control
+                if (this.keys['ArrowUp']) {
+                    speed *= CONFIG.player.speedMultiplier;
+                } else if (this.keys['ArrowDown']) {
+                    speed /= CONFIG.player.speedMultiplier;
+                }
+
+                // Horizontal movement
+                if (this.keys['ArrowLeft']) {
+                    this.player.x -= speed;
+                }
+                if (this.keys['ArrowRight']) {
+                    this.player.x += speed;
+                }
+
+                // Keep player within road boundaries
+                if (this.player.x < roadLeft) {
+                    this.player.x = roadLeft;
+                }
+                if (this.player.x + this.player.width > roadRight) {
+                    this.player.x = roadRight - this.player.width;
+                }
+            }
+
+            updateObstacles(deltaTime) {
+                // Move obstacles
+                for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                    this.obstacles[i].y += this.obstacles[i].speed;
+
+                    // Remove off-screen obstacles
+                    if (this.obstacles[i].y > CONFIG.canvas.height) {
+                        this.obstacles.splice(i, 1);
+                        this.score += 10;
+                    }
+                }
+
+                // Spawn new obstacles
+                if (this.gameTime - this.lastObstacleSpawn > this.currentSpawnInterval) {
+                    this.spawnObstacle();
+                    this.lastObstacleSpawn = this.gameTime;
+                }
+            }
+
+            updateLaneMarkers() {
+                for (let marker of this.laneMarkers) {
+                    marker.y += 3 * this.difficultyMultiplier;
+
+                    // Loop markers
+                    if (marker.y > CONFIG.canvas.height) {
+                        marker.y = -CONFIG.road.laneMarkerHeight;
+                    }
+                }
+            }
+
+            checkCollisions() {
+                for (let obstacle of this.obstacles) {
+                    if (this.checkRectCollision(this.player, obstacle)) {
+                        this.gameOver();
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            checkRectCollision(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + rect2.height &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+
+            updateDifficulty() {
+                // Increase difficulty over time
+                this.difficultyMultiplier = 1 + (this.gameTime / 1000) * CONFIG.difficulty.speedIncrease;
+                this.currentSpawnInterval = Math.max(
+                    CONFIG.difficulty.minSpawnInterval,
+                    CONFIG.obstacle.spawnInterval - (this.gameTime / 1000) * CONFIG.difficulty.spawnRateIncrease
+                );
+            }
+
+            updateScore() {
+                // Score increases with time survived
+                this.score += Math.floor(this.difficultyMultiplier * 0.1);
+                this.scoreDisplay.textContent = `Score: ${Math.floor(this.score)}`;
+            }
+
+            gameOver() {
+                this.state = GameState.GAMEOVER;
+
+                // Flash effect
+                this.flashElement.classList.add('active');
+                setTimeout(() => {
+                    this.flashElement.classList.remove('active');
+                }, 300);
+
+                // Update high score
+                if (this.score > this.highScore) {
+                    this.highScore = Math.floor(this.score);
+                    localStorage.setItem('racingHighScore', this.highScore.toString());
+                }
+
+                // Update UI
+                document.getElementById('finalScore').textContent = Math.floor(this.score);
+                document.getElementById('finalHighScore').textContent = this.highScore;
+                this.gameOverScreen.classList.add('active');
+                this.scoreDisplay.style.display = 'none';
+                this.highScoreDisplay.style.display = 'none';
+            }
+
+            updateHighScoreDisplay() {
+                this.highScoreDisplay.textContent = `High Score: ${this.highScore}`;
+            }
+
+            update(deltaTime) {
+                if (this.state !== GameState.PLAYING) return;
+
+                this.gameTime += deltaTime;
+
+                this.updatePlayer(deltaTime);
+                this.updateObstacles(deltaTime);
+                this.updateLaneMarkers();
+                this.updateDifficulty();
+                this.updateScore();
+                this.checkCollisions();
+            }
+
+            drawRoad() {
+                const roadLeft = (CONFIG.canvas.width - CONFIG.road.width) / 2;
+
+                // Grass/shoulders
+                this.ctx.fillStyle = '#27ae60';
+                this.ctx.fillRect(0, 0, roadLeft, CONFIG.canvas.height);
+                this.ctx.fillRect(roadLeft + CONFIG.road.width, 0, roadLeft, CONFIG.canvas.height);
+
+                // Road
+                this.ctx.fillStyle = '#34495e';
+                this.ctx.fillRect(roadLeft, 0, CONFIG.road.width, CONFIG.canvas.height);
+
+                // Road edges
+                this.ctx.fillStyle = '#f39c12';
+                this.ctx.fillRect(roadLeft - 5, 0, 5, CONFIG.canvas.height);
+                this.ctx.fillRect(roadLeft + CONFIG.road.width, 0, 5, CONFIG.canvas.height);
+
+                // Lane markers
+                this.ctx.fillStyle = '#ecf0f1';
+                for (let marker of this.laneMarkers) {
+                    this.ctx.fillRect(marker.x, marker.y, marker.width, marker.height);
+                }
+            }
+
+            drawPlayer() {
+                if (!this.player) return;
+
+                // Car body
+                this.ctx.fillStyle = this.player.color;
+                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+                // Car details (windows)
+                this.ctx.fillStyle = '#2c3e50';
+                this.ctx.fillRect(this.player.x + 5, this.player.y + 10, this.player.width - 10, 15);
+                this.ctx.fillRect(this.player.x + 5, this.player.y + 35, this.player.width - 10, 15);
+
+                // Car outline
+                this.ctx.strokeStyle = '#2c3e50';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(this.player.x, this.player.y, this.player.width, this.player.height);
+            }
+
+            drawObstacles() {
+                for (let obstacle of this.obstacles) {
+                    // Car body
+                    this.ctx.fillStyle = obstacle.color;
+                    this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+                    // Car details (windows)
+                    this.ctx.fillStyle = '#2c3e50';
+                    this.ctx.fillRect(obstacle.x + 5, obstacle.y + 10, obstacle.width - 10, 15);
+                    this.ctx.fillRect(obstacle.x + 5, obstacle.y + 35, obstacle.width - 10, 15);
+
+                    // Car outline
+                    this.ctx.strokeStyle = '#2c3e50';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                }
+            }
+
+            render() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+
+                // Draw game elements
+                this.drawRoad();
+                this.drawPlayer();
+                this.drawObstacles();
+            }
+
+            gameLoop(currentTime) {
+                const deltaTime = currentTime - this.lastTime;
+                this.lastTime = currentTime;
+
+                this.update(deltaTime);
+                this.render();
+
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+        }
+
+        // Start the game
+        window.addEventListener('load', () => {
+            new Game();
+        });
+    </script>
+</body>
+</html>
