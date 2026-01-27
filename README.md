@@ -4,6 +4,8 @@
 
 ## Todo
 
+- Setup clawdbot @ macbook air / mini
+  - https://github.com/clawdbot/clawdbot
 - Train AI as a mock interviewer
 - auto scrape newly posted jobs, and send an email
 - AI agent poc
