@@ -1,1 +1,3 @@
 1. https://anthropic.skilljar.com/
+2. Claude code agent skill course
+  - https://www.deeplearning.ai/short-courses/agent-skills-with-anthropic/?fbclid=IwY2xjawPrieBleHRuA2FlbQIxMABicmlkETFXYzRPaWVUSjQwbldQSVl1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHvo522NRp1l2oixIrw4sT0SdhJLGZ2u-_CYWb_PG1bjKxyeJf8w-bvGj5U7c_aem_o95l81Qpq4eq3NWS64VNiw
