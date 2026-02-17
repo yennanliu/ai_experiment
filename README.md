@@ -4,6 +4,8 @@
 
 ## Todo
 
+- Claude code `agent teams` POC
+  - https://github.com/yennanliu/til/blob/master/README.md#20260215
 - Setup clawdbot @ macbook air / mini
   - https://github.com/clawdbot/clawdbot
 - Train AI as a mock interviewer
