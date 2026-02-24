@@ -1,0 +1,127 @@
+
+---
+
+# 📌 Playwright MCP Automation Task
+
+**Task Name:** Auto Apply – 104 Job Listings
+**Cover Letter:** `自動推薦信1`
+**Start Page:** Page 6 (Software Engineer, Remote, Taipei areas)
+
+---
+
+## 1️⃣ Initialization
+
+* Launch browser (headful mode preferred).
+* Navigate to:
+
+```
+https://www.104.com.tw/jobs/search/?page=6&keyword=++++%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&jobsource=joblist_search&order=15&remoteWork=1,2&area=6001001000,6001002000
+```
+
+* Ensure user is logged in.
+
+  * If not logged in → pause and wait for manual login.
+* Wait until job list container is fully loaded.
+
+---
+
+## 2️⃣ Per-Page Processing Logic
+
+### Step A: Collect Job Links
+
+* Extract all job listing URLs from current page.
+* Store them in an array.
+* Remove duplicates.
+* Skip listings marked as:
+
+  * 已應徵
+  * 無法應徵
+  * 關閉職缺
+
+---
+
+### Step B: Apply to Each Job
+
+For each job URL:
+
+1. Open job detail page.
+2. Wait for page load.
+3. Check:
+
+   * If already applied → skip.
+   * If no Apply button → skip.
+4. Click **「我要應徵」** (Apply button).
+5. Wait for application modal/page.
+6. Select cover letter:
+
+   * Choose `自動推薦信1`.
+7. Click **Submit / 確認送出**.
+8. Wait for confirmation message.
+9. Log result:
+
+   * ✅ Success
+   * ⚠️ Skipped
+   * ❌ Failed (with error reason)
+10. Close tab or navigate back to results page.
+
+Add:
+
+* try/catch error handling
+* 2–4 second random delay between applications (anti-bot safety)
+
+---
+
+## 3️⃣ Pagination Logic
+
+After all jobs on current page are processed:
+
+1. Check if “Next Page” button is enabled.
+2. If enabled:
+
+   * Click Next.
+   * Wait for new page to load.
+   * Repeat Section 2.
+3. If disabled:
+
+   * End automation.
+
+---
+
+## 4️⃣ Termination Conditions
+
+Stop automation when:
+
+* No next page exists
+  OR
+* All listings across pages are processed
+
+---
+
+## 5️⃣ Safety & Stability Requirements
+
+* Use `waitForSelector()` before every click.
+* Handle:
+
+  * Login timeout
+  * Session expiration
+  * Alert popups
+  * Network delays
+* Screenshot on failure.
+* Maintain structured logging:
+
+```
+[Page X]
+Job Title – Company
+Status: SUCCESS / SKIPPED / FAILED
+```
+
+---
+
+## 6️⃣ Optional Enhancements (Recommended)
+
+* Run in slowMo mode (100–300ms).
+* Add retry mechanism (max 2 retries per job).
+* Persist applied job IDs to local JSON to avoid duplicates across sessions.
+* Add daily application limit safeguard.
+
+
