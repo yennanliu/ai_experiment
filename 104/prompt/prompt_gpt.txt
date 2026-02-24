@@ -1,0 +1,48 @@
+
+
+### Refined Automation Prompt (Playwright MCP)
+
+**Objective:**
+Automatically apply to all job listings on 104 using the predefined cover letter `自動推薦信1`.
+
+---
+
+### Steps:
+
+1. Navigate to the following job search URL:
+
+   ```
+   https://www.104.com.tw/jobs/search/?page=6&keyword=++++%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&jobsource=joblist_search&order=15&remoteWork=1,2&area=6001001000,6001002000
+   ```
+
+2. On the current search results page:
+
+   * Collect all job listing links.
+   * For each job listing:
+
+     1. Open the job detail page.
+     2. Click the **Apply** button.
+     3. Select the predefined cover letter: `自動推薦信1`.
+     4. Click **Submit** to complete the application.
+     5. Return to the job search results page.
+
+3. After completing all job applications on the current page:
+
+   * Navigate to the next page of search results.
+   * Repeat Step 2.
+
+4. Continue the process until:
+
+   * There are no more pages left, or
+   * All job listings across all pages have been applied to.
+
+---
+
+### Additional Requirements:
+
+* Skip jobs that have already been applied to.
+* Add proper wait conditions to ensure page elements are fully loaded before interacting.
+* Handle pop-ups, login checks, and confirmation dialogs if they appear.
+* Log each successfully submitted application.
+* Handle errors gracefully and continue to the next job if a failure occurs.
+
