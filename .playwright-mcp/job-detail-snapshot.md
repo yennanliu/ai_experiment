@@ -1,0 +1,487 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic:
+      - generic:
+        - generic [ref=e4]:
+          - text: 
+          - generic [ref=e6]:
+            - generic [ref=e10] [cursor=pointer]:
+              - generic [ref=e11]: 工作
+              - generic [ref=e12]: 
+            - generic [ref=e16] [cursor=pointer]:
+              - generic [ref=e17]: 公司
+              - generic [ref=e18]: 
+            - generic [ref=e22] [cursor=pointer]:
+              - generic [ref=e23]: 工具
+              - generic [ref=e24]: 
+            - generic [ref=e28] [cursor=pointer]:
+              - generic [ref=e29]: 職涯
+              - generic [ref=e30]: 
+            - generic [ref=e34] [cursor=pointer]:
+              - generic [ref=e35]: 學習
+              - generic [ref=e36]: 
+            - generic [ref=e40] [cursor=pointer]:
+              - generic [ref=e41]: APP
+              - generic [ref=e42]: 
+            - link "所有服務" [ref=e45] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/main/sitemap
+          - link "104人力銀行" [ref=e46] [cursor=pointer]:
+            - /url: https://www.104.com.tw/
+            - img "104人力銀行" [ref=e47]
+          - generic [ref=e48]:
+            - link "學測落點找方向" [ref=e51] [cursor=pointer]:
+              - /url: https://student.104.com.tw/hs/apply/?utm_source=104&utm_medium=whitebar
+            - generic [ref=e53]:
+              - button "" [ref=e55] [cursor=pointer]
+              - button "" [ref=e57] [cursor=pointer]
+              - button " 1" [ref=e59] [cursor=pointer]:
+                - text: 
+                - generic [ref=e60]: "1"
+              - text: 
+            - generic [ref=e62]:
+              - generic [ref=e64] [cursor=pointer]:
+                - generic [ref=e65]: ***REMOVED***
+                - generic [ref=e66]: 
+              - text: 
+        - text:       
+    - generic [ref=e67]:
+      - generic [ref=e69]:
+        - generic [ref=e72]:
+          - list [ref=e73]:
+            - listitem [ref=e74]:
+              - link "104人力銀行" [ref=e76] [cursor=pointer]:
+                - /url: //www.104.com.tw/
+              - text: /
+            - listitem [ref=e77]:
+              - link "快組隊股份有限公司" [ref=e79] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bn9qa
+              - text: /
+            - listitem [ref=e80]:
+              - generic [ref=e81]: 前端工程師（時薪制薪水無上限，時間彈性運用）
+          - generic [ref=e84]:
+            - combobox "語言翻譯小工具" [ref=e86]:
+              - option "請選取語言" [selected]
+              - option "日文"
+              - option "英文"
+              - option "越南文"
+            - text: 由「
+            - link "Google 翻譯翻譯" [ref=e88] [cursor=pointer]:
+              - /url: https://translate.google.com
+              - img "Google 翻譯" [ref=e89]
+              - text: 翻譯
+            - text: 」技術提供
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - generic [ref=e95]:
+              - heading "前端工程師（時薪制薪水無上限，時間彈性運用）" [level=1] [ref=e96]
+              - text: 02/18更新
+            - generic [ref=e97]:
+              - link "快組隊股份有限公司" [ref=e98] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bn9qa?jobsource=joblist_search
+              - link "本公司其他工作" [ref=e99] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bn9qa?jobsource=joblist_search#info06
+            - generic [ref=e100]:
+              - generic [ref=e102] [cursor=pointer]:
+                - generic [ref=e103]: 
+                - generic [ref=e104]: 6 小時前處理過履歷
+              - generic [ref=e106] [cursor=pointer]: 徵才積極度：非常活躍
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - button "關注" [ref=e110] [cursor=pointer]:
+                  - generic [ref=e111]: 
+                  - text: 關注
+                - generic [ref=e116]:
+                  - generic [ref=e117]:
+                    - heading "「關注」讓企業知道你對職務感興趣" [level=3] [ref=e118]
+                    - list [ref=e119]:
+                      - listitem [ref=e120]: 有機會收到公司主動邀約
+                      - listitem [ref=e121]: 同步關注公司，接收公司最新動態與新工作通知
+                  - button "我知道了" [ref=e122] [cursor=pointer]
+              - button " 儲存" [ref=e125] [cursor=pointer]:
+                - generic [ref=e126]: 
+                - text: 儲存
+              - generic [ref=e128] [cursor=pointer]:
+                - generic [ref=e129]: 
+                - text: 應徵
+            - link "應徵人數 6~10 人 " [ref=e131] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/apply/analysis/8ufm3
+              - text: 應徵人數 6~10 人
+              - generic [ref=e137]: 
+      - generic [ref=e139]:
+        - generic [ref=e140]:
+          - generic [ref=e141]:
+            - heading "工作內容" [level=2] [ref=e144]
+            - generic [ref=e145]:
+              - paragraph [ref=e147]: 【前端工程師｜打造模組化、高效又有彈性的使用者體驗】 我們正在尋找一位熱愛把畫面切得美、邏輯寫得清、效能優化到極致的前端工程師。 如果你擅長與設計師、後端工程師溝通，寫出一套可維護又好用的 UI 元件， 更重要的是，你想保有自由工作的彈性節奏，那你會喜歡這份工作。 【工作內容】 開發並維護前端模組化元件（React 18+ 或 Vue 3+） 整合 API 資料串接與狀態管理（REST / GraphQL） 配合設計系統進行 UI 邏輯與互動的實作 協助重構既有畫面、提升頁面效能與使用者體感 參與元件封裝與共用邏輯抽象，強化維護性 配合團隊進行 code review 與 CI/CD 自動化部署流程 【我們希望你具備】 熟悉 React 或 Vue 的元件開發邏輯與狀態管理工具（Redux / Pinia / Zustand 等） 能以 TypeScript 撰寫清晰模組化程式碼 具備 API 串接經驗，了解資料流設計與錯誤處理機制 熟悉 Git 開發流程，能穩定配合團隊遠端協作 有畫面效能優化與載入體驗調校的實務經驗更佳 【你可能是這樣的人】 喜歡排出每週專注時段，把任務清單一一完成 看到設計稿會主動問「這狀態 loading 要長怎樣？」 對畫面乾淨、邏輯清晰、操作順暢有極度要求 能理解團隊節奏與交付需求，並保有專業彈性 熱愛與人合作，樂於持續優化既有流程與元件品質 這裡是你發揮設計力與程式力的舞台，我們相信「好用的使用者介面」才是產品體驗的第一印象。加入我們，讓使用者流暢操作、團隊也更快迭代！ 時薪範圍： 500元/小時起，有能力爭取，還可以更高 工作地點： 主要為遠端辦公，實際配合方式會與企業達成共識，彈性十足！ 快組隊平台連結企業與自由接案者，讓你自由選擇適合的案件，不僅能拓展你的技能，還能輕鬆掌控工作時間！ 現在就加入我們，解鎖更靈活、更高效的工作模式吧！ 有興趣成為我們的一員嗎？ 投遞後，我們將邀請您參加線上說明會。聽完介紹後，若您覺得與您的期待有對焦，只需填寫會後表單，即可進入審查與面試流程。 我們期待與您相遇，一起共創專業價值！
+              - generic [ref=e148]:
+                - heading "職務類別" [level=3] [ref=e150]
+                - generic [ref=e153]:
+                  - generic [ref=e154]:
+                    - generic [ref=e155]: 全端工程師
+                    - text: 、
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: 軟體工程師
+                    - text: 、
+                  - generic [ref=e159]: 軟體專案主管
+              - generic [ref=e160]:
+                - heading "工作待遇" [level=3] [ref=e162]
+                - paragraph [ref=e165]: 時薪500元以上
+              - generic [ref=e166]:
+                - heading "工作性質" [level=3] [ref=e168]
+                - generic [ref=e170]: 兼職
+              - generic [ref=e171]:
+                - heading "上班地點" [level=3] [ref=e173]
+                - generic [ref=e176]:
+                  - text: 台北市內湖區陽光街321巷26號8樓之11
+                  - link "" [ref=e177] [cursor=pointer]:
+                    - /url: https://maps.google.com.tw/?q=%E5%BF%AB%E7%B5%84%E9%9A%8A%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@25.0724542,121.5786502&z=17
+                    - generic [ref=e178]: 
+              - generic [ref=e179]:
+                - heading "遠端工作" [level=3] [ref=e181]
+                - generic [ref=e183]: 完全遠端
+              - generic [ref=e184]:
+                - heading "上班時段" [level=3] [ref=e186]
+                - generic [ref=e190]:
+                  - text: 日班
+                  - text: 自由接案將採彈性調配自己的工作時間
+              - generic [ref=e191]:
+                - heading "休假制度" [level=3] [ref=e193]
+                - generic [ref=e195]: 依公司規定
+              - generic [ref=e196]:
+                - heading "可上班日" [level=3] [ref=e198]
+                - generic [ref=e200]: 不限
+              - generic [ref=e201]:
+                - heading "需求人數" [level=3] [ref=e203]
+                - generic [ref=e205]: 1人
+          - generic [ref=e206]:
+            - heading "條件要求" [level=2] [ref=e209]
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading "工作經歷" [level=3] [ref=e213]
+                - generic [ref=e215]: 3年以上
+              - generic [ref=e216]:
+                - heading "學歷要求" [level=3] [ref=e218]
+                - generic [ref=e220]: 大學
+              - generic [ref=e221]:
+                - heading "科系要求" [level=3] [ref=e223]
+                - generic [ref=e225]: 不拘
+              - generic [ref=e226]:
+                - heading "語文條件" [level=3] [ref=e228]
+                - paragraph [ref=e231]: 不拘
+              - generic [ref=e232]:
+                - heading "擅長工具" [level=3] [ref=e234]
+                - generic [ref=e236]: 不拘
+              - generic [ref=e237]:
+                - heading "工作技能" [level=3] [ref=e239]
+                - generic [ref=e241]: 不拘
+            - generic [ref=e243]:
+              - heading "其他條件" [level=3] [ref=e245]
+              - paragraph [ref=e249]: 未填寫
+            - generic [ref=e253]:
+              - text: 歡迎身心障礙人士，需附身心障礙證明
+              - generic [ref=e255] [cursor=pointer]: 
+          - generic [ref=e256]:
+            - heading "福利制度" [level=2] [ref=e259]
+            - heading "法定項目" [level=3] [ref=e262]
+            - generic [ref=e264]:
+              - link "勞保" [ref=e266] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/search/?keyword=勞保&jobsource=tag_link
+              - link "健保" [ref=e268] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/search/?keyword=健保&jobsource=tag_link
+            - heading "其他福利" [level=3] [ref=e271]
+            - link "可遠端/在家上班" [ref=e275] [cursor=pointer]:
+              - /url: //www.104.com.tw/company/search/?keyword=可遠端/在家上班&jobsource=tag_link
+            - paragraph [ref=e278]: 只要你是快組隊平台核可的自由工作者，都有獎勵機制的撐腰讓你從容迎接下一次的接案!
+          - generic [ref=e279]:
+            - heading "聯絡方式" [level=2] [ref=e282]
+            - generic [ref=e283]:
+              - generic [ref=e285]:
+                - heading "聯絡人" [level=3] [ref=e287]
+                - generic [ref=e288]: Abby Lien
+              - generic [ref=e290]:
+                - heading "應徵回覆" [level=3] [ref=e292]
+                - generic [ref=e293]: 本職務設定1個工作天回覆
+              - generic [ref=e295]:
+                - generic [ref=e296]:
+                  - generic [ref=e297]: 104人力銀行提醒您
+                  - generic [ref=e298]: 履歷關閉時仍可投遞履歷喔！面試時請遵守求職禮儀準時赴約並小心安全
+                - generic [ref=e299]:
+                  - generic [ref=e300]:
+                    - generic [ref=e301]: 
+                    - generic [ref=e302]:
+                      - text: 求職安全專線【勞動部】0800-085-151【104人力銀行】02-29126104轉2 或
+                      - link "來信詢問" [ref=e303] [cursor=pointer]:
+                        - /url: //www.104.com.tw/feedback/
+                  - generic [ref=e304]:
+                    - generic [ref=e305]: 
+                    - generic [ref=e306]: 建議使用104內建訊息功能，以保障您的求職權益，職缺內容可能包含第三方通訊軟體，敬請謹慎評估。
+                - generic [ref=e307] [cursor=pointer]:
+                  - text: 職場安全提醒
+                  - generic [ref=e308]: 
+          - generic [ref=e309]:
+            - heading "適合你大展身手的工作" [level=2] [ref=e313]
+            - link "贊助 翰林▸全台最大教育公司｜領航教育與數位轉型★熱招中 【福利升級】優質舒適環境+獎金福利豐富＋多元補助津貼 熱門職缺：教材編輯、美術設計、行銷企劃、行銷業務、印刷生產等 深耕教育×AI賦能 ▸加入【翰林】，與我們共創教育新未來" [ref=e317] [cursor=pointer]:
+              - /url: https://events.104.com.tw/104/20230530143715/?jobPageGroupId=76&enterpriseId=7f6e2cc0-e13d-487e-8037-7db81663dc88&jobsource=AD_682018_
+              - generic [ref=e318]: 贊助
+              - generic [ref=e319]:
+                - generic [ref=e320]: 翰林▸全台最大教育公司｜領航教育與數位轉型★熱招中
+                - generic [ref=e321]: 【福利升級】優質舒適環境+獎金福利豐富＋多元補助津貼
+                - generic [ref=e322]:
+                  - text: 熱門職缺：教材編輯、美術設計、行銷企劃、行銷業務、印刷生產等
+                  - text: 深耕教育×AI賦能 ▸加入【翰林】，與我們共創教育新未來
+              - img [ref=e324]
+            - generic [ref=e326]:
+              - generic [ref=e328]: 01/21
+              - generic [ref=e329]:
+                - generic [ref=e331]:
+                  - heading "JAVA後端程式設計師 丨Backend Engineer" [level=2] [ref=e333]:
+                    - link "JAVA後端程式設計師 丨Backend Engineer" [ref=e334] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/7ccog?jobsource=job_p_b
+                  - generic [ref=e335]:
+                    - link "永聯物流開發股份有限公司" [ref=e336] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bin4z?jobsource=job_p_b
+                    - text: 其他不動產業
+                  - generic [ref=e337]: 台北市內湖區 1年以上 大學以上
+                  - generic [ref=e338]: About the role… 「參與物流4.0的未來：與團隊共同打造智慧物流系統建置！」 永聯在尋找認真負責、耐心細心的Java程式設計人員， 我們清楚知道若要讓系統好開發維護，勢必要設計出一個良好的基本架構， 因此我們以 JDK25 + Spring Boot 3 框架開發REST API做為後端(Backend)， 各系統間以微服務搭配Kubernetes以維持系統的高可用性及擴充性， 並有相對應的共用模組為base，讓後端開發人員更有效率； 以ReactJS、Redux做為前端(Frontend)，讓前後端的開發各司其職，開發效率也更高。 What you will do… 1. 新功能及既有功能的系統設計、程式撰寫、單元測試 2. 分析需求後，設計出好的模組與功能，讓團隊分工合作提高效率 3. 遵照標準及規格，在指定的時間內完成專案並且撰寫程式 4. 開發穩定，可信賴的及經過良好測試的應用系統 5. 修復現有系統的Bug及re-factor現有程式 6. 維持應用系統的穩定服務，協助提升系統的服務品質 7. 跨組別團隊合作溝通 我們期待你樂於學習、找出最佳解決方案，熱愛以簡單、聰明的方式串起每個系統。 Who you are... 1. 喜歡學習，願意不斷吸收技術新知與產業知識 2. 擅長溝通，願意理解並整合不同需求 3. 勇於承擔，願意主動幫助其他同事 永聯物流開發的願景是「Change For Better」，並以「讓物流產業更簡單、更聰明、更永續」為目標，我們期待不同專業人才互相激盪，產出不同火花，歡迎你來探索，找尋人生職場更多可能性。 What skills are required 1. 熟悉JavaSE、JavaEE、Spring、myBatis尤佳 2. 具軟體開發經驗尤佳 ====== Our IT team says.... 「永聯很注重程式碼底層架構，用Spring為底層持續打造易於開發維護的後端框架。」 「當初是受公司新創氛圍吸引，實際工作後很喜歡公司的文化和溝通的方式，會對一件事情做很全面的思考。」 「我當初是被同事拉進來的，進來後就一直待到現在，算一算也兩年了。」 Know more about us...... 1. iThome：「物流新秀大膽翻轉臺倉儲作業，永聯靠IT賦予自動化設備神經」 https://ppt.cc/fXeJPx 2. CIO Taiwan：「風雲人物專訪-永聯物流開發資訊科技處副總經理黃信銘」 https://ppt.cc/fb6FFx
+                  - generic [ref=e339]:
+                    - generic [ref=e340]: 員工180人
+                    - generic [ref=e341]: 待遇面議
+                - generic [ref=e342]:
+                  - generic [ref=e344] [cursor=pointer]:
+                    - generic [ref=e345]: 
+                    - generic [ref=e346]: 5 小時前聯絡過求職者
+                  - generic [ref=e348] [cursor=pointer]: 徵才積極度：極為活躍
+              - generic [ref=e349]:
+                - generic [ref=e350]:
+                  - button "儲存" [ref=e351] [cursor=pointer]:
+                    - generic [ref=e352]: 
+                    - text: 儲存
+                  - generic [ref=e354] [cursor=pointer]:
+                    - generic [ref=e355]: 
+                    - text: 應徵
+                - link " 11~30 人應徵" [ref=e357] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/7ccog?channel=104rpt&jobsource=job_p_b
+                  - generic [ref=e358]: 
+                  - text: 11~30 人應徵
+            - generic [ref=e360]:
+              - generic [ref=e362]: 01/21
+              - generic [ref=e363]:
+                - generic [ref=e365]:
+                  - heading "【RD】Backend Development / 後端工程師 (OB01)" [level=2] [ref=e367]:
+                    - link "【RD】Backend Development / 後端工程師 (OB01)" [ref=e368] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/4ozef?jobsource=job_p_b
+                  - generic [ref=e369]:
+                    - link "瑞嘉軟體科技股份有限公司" [ref=e370] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/bjl4o88?jobsource=job_p_b
+                    - text: 電腦軟體服務業
+                  - generic [ref=e371]: 台北市內湖區 1年以上 大學
+                  - generic [ref=e372]: • Develop and operate backend systems related to data collection and data processing. • Responsible for workflow automation , process optimization and performance tuning. • Coordinate with technical lead on current programming tasks. • Continuously learn and improve skills. • Perform other duties as necessary.
+                  - generic [ref=e373]:
+                    - generic [ref=e374]: 外商公司
+                    - generic [ref=e375]: 員工200人
+                    - generic [ref=e376]: 月薪62,162~89,611元
+                - generic [ref=e377]:
+                  - generic [ref=e379] [cursor=pointer]:
+                    - generic [ref=e380]: 
+                    - generic [ref=e381]: 7 小時前聯絡過求職者
+                  - generic [ref=e383] [cursor=pointer]: 徵才積極度：極為活躍
+              - generic [ref=e384]:
+                - generic [ref=e385]:
+                  - button "儲存" [ref=e386] [cursor=pointer]:
+                    - generic [ref=e387]: 
+                    - text: 儲存
+                  - generic [ref=e389] [cursor=pointer]:
+                    - generic [ref=e390]: 
+                    - text: 應徵
+                - link " 11~30 人應徵" [ref=e392] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/4ozef?channel=104rpt&jobsource=job_p_b
+                  - generic [ref=e393]: 
+                  - text: 11~30 人應徵
+            - generic [ref=e395]:
+              - generic [ref=e397]: 01/21
+              - generic [ref=e398]:
+                - generic [ref=e400]:
+                  - heading "軟體工程師(專案開發科)" [level=2] [ref=e402]:
+                    - link "軟體工程師(專案開發科)" [ref=e403] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8x4am?jobsource=job_p_b
+                  - generic [ref=e404]:
+                    - link "康和綜合證券股份有限公司" [ref=e405] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/ay0hyc8?jobsource=job_p_b
+                    - text: 證券及期貨業
+                  - generic [ref=e406]: 台北市信義區 1年以上 大學以上
+                  - generic [ref=e407]: "康和證券近年積極布局金融科技與創新，專注下列特色，歡迎有志同仁一同加入。 1. 擁抱金融創新 2. 自製核心系統 3. 導入新型技術 (eg. Docker, k8s, elk, grafana...) 主要專案: 證券商交易系統、證券商帳務系統 採用新技術與架構達成: 客戶端跨語言、跨平台 伺服端高併發、高可用、可水平擴展 歡迎喜歡挑戰，對系統開發，金融交易有興趣的夥伴一同聊聊 職務內容: 以下工作內容任兩項以上： 一、系統分析與需求實作 二、應用系統開發與維護 三、系統測試與品質控管 四、系統維運與問題排除 五、法規、內控與資安配合事項 六、跨部門與專案協作 七、技術學習與持續改善"
+                  - generic [ref=e408]:
+                    - generic [ref=e409]: 上市上櫃
+                    - generic [ref=e410]: 員工800人
+                    - generic [ref=e411]: 待遇面議
+                - generic [ref=e412]:
+                  - generic [ref=e414] [cursor=pointer]:
+                    - generic [ref=e415]: 
+                    - generic [ref=e416]: 1 天內聯絡過求職者
+                  - generic [ref=e418] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e419]:
+                - generic [ref=e420]:
+                  - button "儲存" [ref=e421] [cursor=pointer]:
+                    - generic [ref=e422]: 
+                    - text: 儲存
+                  - generic [ref=e424] [cursor=pointer]:
+                    - generic [ref=e425]: 
+                    - text: 應徵
+                - link " 11~30 人應徵" [ref=e427] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8x4am?channel=104rpt&jobsource=job_p_b
+                  - generic [ref=e428]: 
+                  - text: 11~30 人應徵
+            - generic [ref=e430]:
+              - generic [ref=e432]: 01/21
+              - generic [ref=e433]:
+                - generic [ref=e435]:
+                  - heading "後端工程師 Backend Engineer" [level=2] [ref=e437]:
+                    - link "後端工程師 Backend Engineer" [ref=e438] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8wulz?jobsource=job_p_b
+                  - generic [ref=e439]:
+                    - link "昕力資訊股份有限公司" [ref=e440] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/cqcrfnk?jobsource=job_p_b
+                    - text: 電腦軟體服務業
+                  - generic [ref=e441]: 台北市信義區 2年以上 專科
+                  - generic [ref=e442]: 【後端工程師夥伴工作內容會包含什麼？】 1.負責後端系統與 API 的設計、開發與維護 2.參與新功能開發與既有系統優化，確保系統穩定性與效能 3.與前端、QA、PM 等角色協作，共同完成產品功能 4.視專案需求參與資料庫設計、系統架構調整與技術優化 5.視專案需要，協助雲端部署、系統維運或自動化流程 【我們希望您具備的技能】 必要條件： 1.熟悉至少一種後端程式語言： Node.js（JavaScript / TypeScript）、Java、Python、C#（.NET） 2.具備 API 開發經驗，了解基本後端系統設計概念 3.具備資料庫使用經驗（RDBMS 或 NoSQL 皆可） 4.具備良好溝通能力，能與不同角色協作 加分條件： 1.使用過常見後端框架（如 Express / NestJS / Spring Boot / ASP.NET Core / Django / FastAPI 等） 2.熟悉關聯式資料庫（MySQL / PostgreSQL / SQL Server / Oracle）或 NoSQL（MongoDB / Redis） 3.具備雲端平台經驗（AWS / GCP / Azure） 4.使用過 Docker、Kubernetes 或 CI/CD 流程 5.有系統架構設計、效能優化或高併發處理經驗 6.曾參與企業系統、金流、AI 或大型專案者尤佳 【我們期望您擁有的特質】 具備良好的邏輯思考與問題拆解能力 願意主動學習新技術，持續精進專業能力 重視團隊合作，能理性溝通並共同解決問題 對軟體品質與系統穩定性有責任感 【注意事項】 如果團隊覺得有機會合作，想跟您更深入的交流，我們將會儘速與您聯繫 若不符合的面試者，將不另行通知，謝謝!
+                  - generic [ref=e443]:
+                    - generic [ref=e444]: 員工600人
+                    - generic [ref=e445]: 待遇面議
+                - generic [ref=e446]:
+                  - generic [ref=e448] [cursor=pointer]:
+                    - generic [ref=e449]: 
+                    - generic [ref=e450]: 45 分鐘前聯絡過求職者
+                  - generic [ref=e452] [cursor=pointer]: 徵才積極度：極為活躍
+              - generic [ref=e453]:
+                - generic [ref=e454]:
+                  - button "儲存" [ref=e455] [cursor=pointer]:
+                    - generic [ref=e456]: 
+                    - text: 儲存
+                  - generic [ref=e458] [cursor=pointer]:
+                    - generic [ref=e459]: 
+                    - text: 應徵
+                - link " 11~30 人應徵" [ref=e461] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8wulz?channel=104rpt&jobsource=job_p_b
+                  - generic [ref=e462]: 
+                  - text: 11~30 人應徵
+            - link "看更多工作" [ref=e464] [cursor=pointer]:
+              - /url: https://pda.104.com.tw/work/mate/list/recommend?jobsource=job_p_b
+              - generic [ref=e465]: 看更多工作
+        - generic [ref=e467]:
+          - generic [ref=e469]:
+            - generic [ref=e470]:
+              - paragraph [ref=e471]: 我適合這份工作嗎
+              - generic [ref=e473] [cursor=pointer]: 
+            - generic [ref=e474]:
+              - generic [ref=e475]:
+                - generic [ref=e476]: 
+                - generic [ref=e477]: 履歷符合度
+                - generic [ref=e478] [cursor=pointer]: 立即分析
+              - generic [ref=e479]:
+                - generic [ref=e480]: 
+                - generic [ref=e481]: 性格適合度
+                - link "前往查看" [ref=e482] [cursor=pointer]:
+                  - /url: https://guide.104.com.tw/personality/report/applyReport/8ufm3?utm_source=pcjob_page&utm_medium=softskill
+          - generic [ref=e484]:
+            - generic [ref=e485]: 公司評價
+            - generic [ref=e486]:
+              - generic [ref=e488]: 成為改變職場的推動者，評論內容一律匿名呈現！
+              - link "想知道更多" [ref=e490] [cursor=pointer]:
+                - /url: //reviews.104.com.tw/?utm_source=104main&utm_medium=job_btn_no&utm_campaign=reviews
+          - generic [ref=e492]:
+            - generic [ref=e493]: 瀏覽工作記錄
+            - generic [ref=e495]:
+              - link "雲端開發工程師 天新資訊股份有限公司" [ref=e496] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/30xwk?jobsource=browsed_Job
+                - generic [ref=e497]:
+                  - generic "雲端開發工程師" [ref=e498]
+                  - paragraph [ref=e499]: 天新資訊股份有限公司
+              - link "人形機器人運動學/控制開發工程師 (Humanoid Robotics Kinematics & Control Engineer) 圖策科技股份有限公司" [ref=e500] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8udp2?jobsource=browsed_Job
+                - generic [ref=e501]:
+                  - generic "人形機器人運動學/控制開發工程師 (Humanoid Robotics Kinematics & Control Engineer)" [ref=e502]
+                  - paragraph [ref=e503]: 圖策科技股份有限公司
+          - generic [ref=e507]:
+            - generic [ref=e508]: 這些工作也很適合你
+            - generic [ref=e510]:
+              - link "前端工程師 Frontend Engineer｜前端架構 / Next.js 八爪魚創意娛樂行銷有限公司" [ref=e511] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8xtfz?jobsource=job_same_b
+                - generic [ref=e512]:
+                  - generic "前端工程師 Frontend Engineer｜前端架構 / Next.js" [ref=e513]
+                  - paragraph [ref=e514]: 八爪魚創意娛樂行銷有限公司
+              - link "Vue前端工程師 （遠端辦公） 歐吉科技有限公司" [ref=e515] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/7uudo?jobsource=job_same_b
+                - generic [ref=e516]:
+                  - generic "Vue前端工程師 （遠端辦公）" [ref=e517]
+                  - paragraph [ref=e518]: 歐吉科技有限公司
+              - link "前端工程師 Front-End Developer - 初階/資深 彌通數位有限公司" [ref=e519] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8bd6z?jobsource=job_same_b
+                - generic [ref=e520]:
+                  - generic "前端工程師 Front-End Developer - 初階/資深" [ref=e521]
+                  - paragraph [ref=e522]: 彌通數位有限公司
+              - link "前端開發工程師 (Vue.js 3 / Flutter) 鴻達客服科技有限公司" [ref=e523] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8lozp?jobsource=job_same_b
+                - generic [ref=e524]:
+                  - generic "前端開發工程師 (Vue.js 3 / Flutter)" [ref=e525]
+                  - paragraph [ref=e526]: 鴻達客服科技有限公司
+              - link "資深前端工程師(遠端工作) 寶凱電子企業股份有限公司" [ref=e527] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8ydnw?jobsource=job_same_b
+                - generic [ref=e528]:
+                  - generic "資深前端工程師(遠端工作)" [ref=e529]
+                  - paragraph [ref=e530]: 寶凱電子企業股份有限公司
+              - link "( 兼職 ) Node.js 後端工程師【SaaS 產品事業群】 威許移動股份有限公司" [ref=e531] [cursor=pointer]:
+                - /url: https://www.104.com.tw/job/8rkko?jobsource=job_same_b
+                - generic [ref=e532]:
+                  - generic "( 兼職 ) Node.js 後端工程師【SaaS 產品事業群】" [ref=e533]
+                  - paragraph [ref=e534]: 威許移動股份有限公司
+            - link "看更多 " [ref=e537] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/similar/8ufm3?jobsource=job_same_b
+              - text: 看更多
+              - generic [ref=e538]: 
+      - generic [ref=e541]:
+        - generic [ref=e542]:
+          - generic:
+            - generic: 連結已複製
+            - generic [ref=e543]:
+              - button "" [ref=e545] [cursor=pointer]:
+                - generic [ref=e546]: 
+              - link "" [ref=e548] [cursor=pointer]:
+                - /url: mailto:?subject=%E5%89%8D%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%AB%EF%BC%88%E6%99%82%E8%96%AA%E5%88%B6%E8%96%AA%E6%B0%B4%E7%84%A1%E4%B8%8A%E9%99%90%EF%BC%8C%E6%99%82%E9%96%93%E5%BD%88%E6%80%A7%E9%81%8B%E7%94%A8%EF%BC%89%EF%BD%9C%E5%BF%AB%E7%B5%84%E9%9A%8A%EF%BD%9C%E5%8F%B0%E5%8C%97%E5%B8%82%EF%BC%8D104%20%E4%BA%BA%E5%8A%9B%E9%8A%80%E8%A1%8C&body=%E5%89%8D%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%AB%EF%BC%88%E6%99%82%E8%96%AA%E5%88%B6%E8%96%AA%E6%B0%B4%E7%84%A1%E4%B8%8A%E9%99%90%EF%BC%8C%E6%99%82%E9%96%93%E5%BD%88%E6%80%A7%E9%81%8B%E7%94%A8%EF%BC%89%EF%BD%9C%E5%BF%AB%E7%B5%84%E9%9A%8A%EF%BD%9C%E5%8F%B0%E5%8C%97%E5%B8%82%EF%BC%8D104%20%E4%BA%BA%E5%8A%9B%E9%8A%80%E8%A1%8C https%3A%2F%2Fwww.104.com.tw%2Fjob%2F8ufm3%3Fjobsource%3Djoblist_search
+                - generic [ref=e549]: 
+              - link "" [ref=e551] [cursor=pointer]:
+                - /url: https://lineit.line.me/share/ui?url=https%3A%2F%2Fwww.104.com.tw%2Fjob%2F8ufm3%3Fjobsource%3Djoblist_search
+                - generic [ref=e552]: 
+              - link "" [ref=e554] [cursor=pointer]:
+                - /url: https://www.facebook.com/share.php?u=https%3A%2F%2Fwww.104.com.tw%2Fjob%2F8ufm3%3Fjobsource%3D104_social_f%26fn%3D1
+                - generic [ref=e555]: 
+          - button " 我要分享" [ref=e556] [cursor=pointer]:
+            - generic [ref=e557]: 
+            - generic [ref=e558]: 我要分享
+        - link " 我要檢舉" [ref=e560] [cursor=pointer]:
+          - /url: https://www.104.com.tw/feedback?category=2&custName=%E5%BF%AB%E7%B5%84%E9%9A%8A%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8&jobName=%E5%89%8D%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%AB%EF%BC%88%E6%99%82%E8%96%AA%E5%88%B6%E8%96%AA%E6%B0%B4%E7%84%A1%E4%B8%8A%E9%99%90%EF%BC%8C%E6%99%82%E9%96%93%E5%BD%88%E6%80%A7%E9%81%8B%E7%94%A8%EF%BC%89
+          - generic [ref=e561]: 
+          - generic [ref=e562]: 我要檢舉
+        - button " 回到頂部" [ref=e564] [cursor=pointer]:
+          - generic [ref=e565]: 
+          - generic [ref=e566]: 回到頂部
+      - generic [ref=e568] [cursor=pointer]:
+        - img [ref=e569]
+        - generic [ref=e570]: 智能客服
+        - generic [ref=e571]: 
+      - text: 
+      - generic [ref=e573]:
+        - generic [ref=e575] [cursor=pointer]:
+          - generic [ref=e576]: 
+          - generic [ref=e577]: 104客服
+        - link "常見問題" [ref=e578] [cursor=pointer]:
+          - /url: //www.104.com.tw/faq/104-jobbank
+        - link "職場安全諮詢" [ref=e579] [cursor=pointer]:
+          - /url: ""
+        - link "隱私中心" [ref=e580] [cursor=pointer]:
+          - /url: //www.104.com.tw/privacy
+        - generic [ref=e581]:
+          - text: 一零四資訊科技股份有限公司 版權所有 © 2026建議瀏覽器 chrome / edge
+          - link "10/1起關閉支援TLS1.1" [ref=e582] [cursor=pointer]:
+            - /url: https://tls.support.104.com.tw/
+  - img [ref=e585]
