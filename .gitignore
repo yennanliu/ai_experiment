@@ -7,3 +7,4 @@ openai/.env
 orchestration_agents/poc_1/node_modules/
 
 .playwright-mcp/*.log
+.playwright-mcp/*.png
