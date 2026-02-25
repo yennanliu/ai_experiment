@@ -1,0 +1,16 @@
+Steps:
+
+1. go to https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=%20%20%20%20%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&order=15&page=1&remoteWork=1,2
+
+2. login if needed
+
+3. loop every job shown in this page (before the pagination)
+   and do below:
+
+    - 3.1: click `應徵`
+    (should redirect to the job page, and a popup is shown)
+    - 3.2: select `自我推薦信1` from 自我推薦信 dropdown
+    -3.3 click `確認送出`
+
+
+4. go to next page (the pagination)

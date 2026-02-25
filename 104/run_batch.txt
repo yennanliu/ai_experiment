@@ -1,0 +1,7 @@
+Now running BATCH MODE automation
+- Will process pages 6-10 (5 pages total)
+- Will skip first 2 jobs on page 6 (already applied)
+- Will apply to all jobs where form opens successfully
+- Will skip jobs where form doesn't open
+- Expected: ~20 jobs per page = ~100 jobs total
+- Success rate: estimated 30-50% (form opens properly)
