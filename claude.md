@@ -27,6 +27,31 @@ await page.goto('https://www.104.com.tw/jobs/search/?page=6&keyword=++++%E8%BB%9
 
 ---
 
+## Critical Technical Details
+
+### Apply Button Structure
+The "應徵" (Apply) buttons on the job search results page have unique characteristics:
+
+- **Tag Type:** DIV element (not `<button>` or `<a>` tag)
+- **CSS Selector:** `.apply-button__button`
+- **Visual:** Shows envelope icon + "應徵" text
+- **Count per page:** Typically 20-22 buttons (one per job listing)
+- **HTML Structure:**
+  ```html
+  <div class="btn btn-sm apply-button__button button--gray btn-has-icon btn-outline-light btn-outline-light--apply">
+    <i class="mr-3 apply-button__icon jb_icon_apply_line"></i>
+    <span>應徵</span>
+  </div>
+  ```
+
+### Form Popup Behavior
+- **Trigger:** Clicking "應徵" button opens **NEW BROWSER TAB** (not a modal popup)
+- **URL Pattern:** `https://www.104.com.tw/job/{jobId}?apply=form&jobsource=...`
+- **Form Location:** Application form appears in the new tab immediately
+- **Tab Management:** Must switch to new tab to interact with form
+
+---
+
 ## Job Collection Process
 
 ### Collect Job Links from Page
@@ -72,56 +97,60 @@ const jobLinks = await page.evaluate(() => {
 
 ## Application Process
 
-### Step 1: Open Job Detail Page
-```javascript
-await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
-await page.waitForTimeout(2000);
-```
-
-### Step 2: Click Apply Button
-The apply button is found using accessibility snapshot. Look for element with text "應徵":
+### Step 1: Click Apply Button on Job Listing
+**IMPORTANT:** The "應徵" buttons are DIV elements (not button tags) on the job search results page.
 
 ```javascript
-// Take snapshot first to get element reference
-await mcp__playwright__browser_snapshot();
+// Find and click "應徵" button using direct selector
+await page.evaluate(() => {
+  const applyButtons = document.querySelectorAll('.apply-button__button');
 
-// Click using the ref from snapshot (e.g., ref=e128)
-await mcp__playwright__browser_click({ ref: 'e128', element: '應徵 button' });
+  if (applyButtons.length > 0) {
+    // Click the desired button (e.g., first one)
+    applyButtons[0].click();
+  }
+});
 ```
 
-**Important:** The URL changes to include `?apply=form` parameter after clicking.
+**Important:**
+- **Selector:** `.apply-button__button`
+- Clicking opens a **NEW TAB** with the job detail page
+- New tab URL includes `?apply=form` parameter
+- Application popup appears immediately in the new tab
+
+### Step 2: Switch to New Tab
+```javascript
+// Switch to the newly opened tab
+await page.bringToFront(); // or use tab selection
+```
 
 ### Step 3: Select Cover Letter (自訂推薦信1)
 ```javascript
-// Click to open dropdown and select cover letter
+// Click to open dropdown - find parent of "系統預設" span
 await page.evaluate(() => {
-  // Open dropdown
-  const dropdown = Array.from(document.querySelectorAll('div')).find(el =>
-    el.textContent.includes('系統預設') && el.textContent.includes('自訂推薦信')
-  );
+  const elements = Array.from(document.querySelectorAll('*'));
+  const systemDefault = elements.find(el => el.textContent === '系統預設' && el.tagName === 'SPAN');
 
-  if (dropdown) {
-    const clickableElement = dropdown.querySelector('.multiselect__select') ||
-                             dropdown.querySelector('[class*="select"]') ||
-                             dropdown;
-    clickableElement.click();
+  if (systemDefault && systemDefault.parentElement) {
+    systemDefault.parentElement.click();
   }
 });
 
-await page.waitForTimeout(1500);
+await page.waitForTimeout(500);
 
-// Select the cover letter option
+// Select the cover letter option by clicking the multiselect option
 await page.evaluate(() => {
-  const option = Array.from(document.querySelectorAll('span, div, li')).find(el =>
-    el.textContent.trim() === '自訂推薦信1'
-  );
-  if (option) {
-    option.click();
-  }
+  const options = document.querySelectorAll('.multiselect__option');
+
+  options.forEach(option => {
+    if (option.textContent.trim() === '自訂推薦信1') {
+      option.click();
+    }
+  });
 });
 ```
 
-**Note:** "自動推薦信1" in the requirements actually refers to "自訂推薦信1" (Custom Cover Letter 1) in the UI.
+**Note:** The correct cover letter name is "自訂推薦信1" (Custom Cover Letter 1).
 
 ### Step 4: Submit Application
 ```javascript
@@ -144,13 +173,15 @@ await page.waitForTimeout(3000);
 ## Complete Automation Workflow
 
 ### For Each Page:
-1. **Collect job links** from current page (filtering out applied/closed jobs)
+1. **Stay on job search results page** (don't navigate away)
 2. **For each job:**
-   - Navigate to job detail page
-   - Take snapshot to get apply button reference
-   - Click apply button using the ref
-   - Select cover letter "自訂推薦信1"
+   - Click "應徵" DIV button (`.apply-button__button`) - opens new tab
+   - Switch to the new tab
+   - Wait for popup form to load
+   - Select cover letter "自訂推薦信1" from dropdown
    - Click submit button "確認送出"
+   - Verify success (URL contains `/job/apply/done/`)
+   - Close the tab and return to search results
    - Log result (SUCCESS/SKIPPED/FAILED)
    - Add 2-4 second random delay for safety
 3. **Navigate to next page** if available
@@ -176,11 +207,15 @@ Reason: (if skipped/failed)
 ## Key Learnings
 
 1. **Login 2FA:** Must handle email verification for new devices
-2. **Apply Button:** Found via accessibility snapshot, not direct selector
-3. **Cover Letter Name:** "自動推薦信1" = "自訂推薦信1" in UI
-4. **Dropdown Selection:** Requires JavaScript evaluate() for reliable clicking
-5. **Success Check:** URL changes to `/job/apply/done/` after successful submission
-6. **Page Structure:** Job listings use `a[href*="/job/"]` selector consistently
+2. **Apply Button is a DIV:** Use selector `.apply-button__button` (not a button tag!)
+3. **New Tab Behavior:** Clicking "應徵" opens a NEW TAB (not redirect on same page)
+4. **Cover Letter Name:** Use "自訂推薦信1" (Custom Cover Letter 1)
+5. **Dropdown Selection:**
+   - Click parent of "系統預設" span to open dropdown
+   - Select option using `.multiselect__option` selector
+6. **Success Check:** URL changes to `/job/apply/done/` after successful submission
+7. **Page Structure:** Job listings use `a[href*="/job/"]` selector consistently
+8. **Tab Management:** Need to handle tab switching when automation opens new tabs
 
 ---
 
@@ -237,6 +272,18 @@ async function autoApplyJobs(startPage = 6) {
 
 ---
 
-## Status: First Successful Application Completed ✓
+## Status: Testing Complete ✓
 
-Successfully applied to: **前端工程師（時薪制薪水無上限，時間彈性運用）** at 快組隊股份有限公司
+**Test Results:**
+- ✅ Successfully applied to: **Analytical Engineer** at 保誠人壽保險_總公司
+- ✅ Confirmed all steps working with correct selectors
+- ✅ Documentation updated with accurate findings (2026-02-25)
+
+**Verified Process:**
+1. Click `.apply-button__button` DIV on job listing → Opens new tab
+2. Switch to new tab with application form
+3. Select "自訂推薦信1" from cover letter dropdown
+4. Click "確認送出" button
+5. Success page shows "應徵成功"
+
+Ready for full automation! 🚀
