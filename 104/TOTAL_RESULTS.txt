@@ -1,6 +1,6 @@
 104 Job Application Automation - COMPLETE SUMMARY
 ==================================================
-Last Updated: 2026-02-26 17:28
+Last Updated: 2026-02-28
 
 🎉 GRAND TOTAL ACROSS ALL RUNS 🎉
 ============================
@@ -9,39 +9,38 @@ Run 2 (Pages 1-50):     895 successful applications
 Run 3 (Pages 51-66):    223 successful applications
 Run 4 (Pages 1-112):    900 successful applications
 Run 5 (Pages 113-115):   50 successful applications
+Run 6 (New Search):     100 successful applications
 ──────────────────────────────────────────────────────
-TOTAL SUCCESSFUL: 2,495 job applications submitted ✅
+TOTAL SUCCESSFUL: 2,595 job applications submitted ✅
 
-LATEST RUN DETAILS (Run 5: 50 Applications)
+LATEST RUN DETAILS (Run 6: 100 Applications)
 ============================================
-Start Time: 2026-02-26 17:23
-End Time: 2026-02-26 17:28
-Duration: ~5 minutes
-Target: Apply to 50 more jobs
-Status: ✅ EXACT TARGET ACHIEVED!
+Start Time: 2026-02-28
+Status: ✅ TARGET ACHIEVED EXACTLY!
+Search Type: WITHOUT remote work filter (broader search)
 
 Results:
-✅ Successful: 50 applications (EXACT TARGET!)
-❌ Failed: 2 applications
-⏭️  Skipped: 8 applications (already applied)
-📄 Pages Processed: 3 pages (113-115)
-🎯 Success Rate: 96.2% (BEST EVER!)
+✅ Successful: 100 applications (EXACT TARGET!)
+❌ Failed: 5 applications
+⏭️  Skipped: 142 applications (already applied)
+📊 Total Processed: 105 jobs
+🎯 Success Rate: 95.2% (SECOND BEST!)
 
 Highlights:
-- Page 115: 19/20 success rate (95%)
-- Only 3 pages needed for 50 applications
-- Average 16.7 successful per page
-- Completed in just 5 minutes
-- Lowest failure rate ever: 3.8%
+- Used different search (no remote filter) = fresh job pool
+- 95.2% success rate (second best ever!)
+- 142 skipped = many overlapping jobs with previous runs
+- Only 5 failures in 105 attempts
+- Completed 100 applications efficiently
 
 CUMULATIVE STATISTICS
 ======================
-Total Unique Pages Processed: 115 pages
-Total Applications Submitted: 2,495 ✅
-Total Failures: ~202
-Total Skipped: ~1,538
-Overall Success Rate: ~92.5%
-Total Automation Time: ~4.1 hours across all runs
+Total Applications Submitted: 2,595 ✅
+Total Failures: ~207
+Total Skipped: ~1,680
+Overall Success Rate: ~92.6%
+Total Automation Runs: 6 runs
+Total Automation Time: ~4.3 hours
 
 RUN-BY-RUN COMPARISON
 ====================
@@ -82,16 +81,25 @@ Run 5 (Pages 113-115):
 - Ultra-efficient
 - Page 115: 19/20 (95%)
 
+Run 6 (New Search - No Remote Filter):
+- Duration: ~12 minutes (estimated)
+- 100 successful, 5 failed, 142 skipped
+- Success rate: 95.2% (SECOND BEST!)
+- Different search = broader job pool
+- Many overlapping jobs (142 skipped)
+- Exact target achievement
+
 PERFORMANCE METRICS
 ===================
-📊 Total Applications: 2,495
-📊 Average Successful per Page: ~21.7
+📊 Total Applications: 2,595
+📊 Average Successful per Run: ~433
 📊 Best Page Performance: 20/20 (100% success)
-📊 Overall Success Rate: 92.5%
-📊 Total Processing Speed: ~609 applications/hour
-📊 Failure Rate: 7.5%
-📊 Skip Intelligence: 1,538 duplicates avoided
+📊 Overall Success Rate: 92.6%
+📊 Total Processing Speed: ~603 applications/hour
+📊 Failure Rate: 7.4%
+📊 Skip Intelligence: 1,680 duplicates avoided
 📊 Best Run Success Rate: 96.2% (Run 5)
+📊 Second Best: 95.2% (Run 6)
 
 PERFECT & EXCELLENT PAGES
 ==========================
@@ -105,21 +113,23 @@ PERFECT & EXCELLENT PAGES
 
 TECHNICAL SUMMARY
 =================
-- Search Query: 軟體工程師 (Software Engineer)
+- Search Queries:
+  * Runs 1-5: 軟體工程師 with remote work filter
+  * Run 6: 軟體工程師 without remote work filter
 - Location: Taipei City, New Taipei City (台北市、新北市)
-- Total Jobs in System: 1000+ jobs
+- Total Jobs in System: 1000+ jobs per search
 - Cover Letter Used: 自訂推薦信1 (Custom Cover Letter 1)
 - Account: ***REMOVED*** (***REMOVED***)
 - Automation: Fully automated with Playwright MCP
-- Error Handling: Robust (202 failures gracefully handled)
-- Duplicate Detection: Smart (1,538 already-applied jobs skipped)
+- Error Handling: Robust (207 failures gracefully handled)
+- Duplicate Detection: Smart (1,680 already-applied jobs skipped)
 
 ACHIEVEMENTS
 ============
-🏆 2,495 total successful job applications
-🏆 92.5% overall success rate
-🏆 5 automation runs completed successfully
-🏆 115 unique pages processed
+🏆 2,595 total successful job applications
+🏆 92.6% overall success rate
+🏆 6 automation runs completed successfully
+🏆 115+ unique pages processed
 🏆 Zero manual intervention required
 🏆 Perfect precision: All targets met exactly
 🏆 Efficient duplicate detection saved time
@@ -127,6 +137,7 @@ ACHIEVEMENTS
 🏆 2 perfect pages with 100% success
 🏆 20+ pages with 95%+ success rate
 🏆 Best run: 96.2% success rate
+🏆 2 runs with 95%+ success rate
 
 AUTOMATION STATUS
 =================
@@ -135,7 +146,8 @@ AUTOMATION STATUS
 ✅ Run 3: COMPLETED (Pages 51-66, 223 jobs)
 ✅ Run 4: COMPLETED (Pages 1-112, 900 jobs)
 ✅ Run 5: COMPLETED (Pages 113-115, 50 jobs)
-📊 Total: 2,495 successful applications
+✅ Run 6: COMPLETED (New search, 100 jobs)
+📊 Total: 2,595 successful applications
 🎯 All targets exceeded or precisely met
 ✨ System ready for additional runs if needed
 
@@ -146,10 +158,11 @@ Run 2: 2026-02-26 14:43-15:15 (32 min)
 Run 3: 2026-02-26 15:20-15:35 (15 min)
 Run 4: 2026-02-26 15:42-17:15 (1.5 hrs)
 Run 5: 2026-02-26 17:23-17:28 (5 min)
+Run 6: 2026-02-28 (new search, ~12 min)
 
-Total Active Time: ~4.1 hours
-Total Applications: 2,495
-Average Rate: ~609 applications/hour
+Total Active Time: ~4.3 hours
+Total Applications: 2,595
+Average Rate: ~603 applications/hour
 
 EFFICIENCY ANALYSIS
 ===================
@@ -158,6 +171,12 @@ Most Efficient Run: Run 5
 - 16.7 successful per page
 - Only 2 failures in 52 attempts
 - Completed in 5 minutes
+
+Second Most Efficient: Run 6
+- 95.2% success rate
+- New search strategy
+- Only 5 failures in 105 attempts
+- Completed in ~12 minutes
 
 Largest Run: Run 4
 - 900 applications
@@ -173,11 +192,12 @@ Best Overall: Run 2
 
 NOTES
 =====
-- Run 5 demonstrates peak efficiency with 96.2% success rate
-- Pages 113-115 continue to provide fresh, unapplied jobs
-- The system maintains excellent performance even after 2,495 applications
-- All 5 runs achieved their exact targets
-- Ready to continue with additional pages if needed
+- Run 6 demonstrates the value of trying different search criteria
+- Even with 142 skipped jobs (overlaps), still found 100 new opportunities
+- The system maintains excellent performance even after 2,595 applications
+- All 6 runs achieved their exact targets
+- Multiple search strategies maximize job coverage
+- Ready to continue with additional search variations if needed
 - The automation has proven highly reliable and consistent
 
 PROJECT FILES
@@ -186,6 +206,7 @@ PROJECT FILES
 - /Users/jerryliu/ai_experiment/104/automation_results_run3.txt
 - /Users/jerryliu/ai_experiment/104/automation_results_run4.txt
 - /Users/jerryliu/ai_experiment/104/automation_results_run5.txt
+- /Users/jerryliu/ai_experiment/104/automation_results_run6.txt
 - /Users/jerryliu/ai_experiment/104/TOTAL_RESULTS.txt (this file)
 - /Users/jerryliu/ai_experiment/104/note.md (technical documentation)
-- /Users/jerryliu/ai_experiment/104/104_auto_apply_with_controls.js (script)
+- /Users/jerryliu/ai_experiment/104/104_auto_apply_with_controls.js (working script)
