@@ -187,8 +187,8 @@ None currently. The script works as expected for standard 104.com.tw job applica
 
 ## Credentials Used
 
-- **Email:** ***REMOVED***
-- **Password:** ***REMOVED***
+- **Email:** <ask_me>
+- **Password:** <ask_me>
 - **Cover Letter:** 自訂推薦信1
 
 ---
