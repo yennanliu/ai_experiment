@@ -256,7 +256,7 @@ await page.waitForTimeout(3000);
 ```javascript
 // Check login status
 const isLoggedIn = await page.evaluate(() => {
-  return document.body.textContent.includes('***REMOVED***');
+  return document.body.textContent.includes('<YOUR_NAME>');
 });
 ```
 
@@ -380,7 +380,7 @@ const CONFIG = {
 await page.evaluate(() => document.querySelectorAll('.apply-button__button').length);
 
 // Check if logged in
-await page.evaluate(() => document.body.textContent.includes('***REMOVED***'));
+await page.evaluate(() => document.body.textContent.includes('<YOUR_NAME>'));
 
 // Get total jobs
 await page.evaluate(() => document.body.textContent.match(/共\s*(\d+)/)?.[1]);
