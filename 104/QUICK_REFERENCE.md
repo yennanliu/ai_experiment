@@ -306,8 +306,8 @@ await autoApply(page, { target: 100, startPage: 51 });
 
 ```javascript
 const CONFIG = {
-  // Account
-  email: '***REMOVED***',
+  // Account (SET THESE SECURELY - DO NOT COMMIT!)
+  email: process.env.JOB_EMAIL || '<YOUR_EMAIL>',
   coverLetter: '自訂推薦信1',
 
   // URLs

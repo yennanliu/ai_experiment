@@ -21,9 +21,8 @@ await page.goto('https://www.104.com.tw/jobs/search/?page=6&keyword=++++%E8%BB%9
    - Enter 6-digit verification code sent to email
    - Or type the code manually via keyboard
 
-**Credentials Used:**
-- Email: ***REMOVED***
-- Password: ***REMOVED***
+**Credentials:**
+⚠️ **SECURITY WARNING:** Store credentials securely using environment variables or a secure credential manager. NEVER commit credentials to version control!
 
 ---
 

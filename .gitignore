@@ -8,3 +8,16 @@ orchestration_agents/poc_1/node_modules/
 
 .playwright-mcp/*.log
 .playwright-mcp/*.png
+
+# Credentials and secrets (NEVER commit these!)
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+config.local.js
+*_credentials.txt
+*_passwords.txt
+104/.env
+104/credentials.json

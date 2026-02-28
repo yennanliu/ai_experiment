@@ -33,8 +33,8 @@ Use the `104_auto_apply.js` script to automate multiple pages of job application
 ## 📋 Prerequisites
 
 ### Account Setup
-- ✅ 104.com.tw account (***REMOVED***)
-- ✅ Resume uploaded ("中英履歷_YENNANLIU")
+- ✅ 104.com.tw account (configured separately for security)
+- ✅ Resume uploaded
 - ✅ Cover letter created ("自訂推薦信1")
 - ✅ Already logged in to 104.com.tw
 

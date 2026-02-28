@@ -119,7 +119,7 @@ TECHNICAL SUMMARY
 - Location: Taipei City, New Taipei City (台北市、新北市)
 - Total Jobs in System: 1000+ jobs per search
 - Cover Letter Used: 自訂推薦信1 (Custom Cover Letter 1)
-- Account: ***REMOVED*** (***REMOVED***)
+- Account: [Account details removed for security]
 - Automation: Fully automated with Playwright MCP
 - Error Handling: Robust (207 failures gracefully handled)
 - Duplicate Detection: Smart (1,680 already-applied jobs skipped)

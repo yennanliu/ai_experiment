@@ -10,7 +10,7 @@
  * REQUIREMENTS:
  * - User must be logged in to 104.com.tw before running
  * - Cover letter "自訂推薦信1" must exist in user's profile
- * - Account credentials: ***REMOVED*** / ***REMOVED***
+ * - Account credentials should be configured separately (DO NOT commit credentials!)
  */
 
 async function autoApply104Jobs(page, options = {}) {
