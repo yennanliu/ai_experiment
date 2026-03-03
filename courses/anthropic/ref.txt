@@ -1,3 +1,18 @@
 1. https://anthropic.skilljar.com/
 2. Claude code agent skill course
   - https://www.deeplearning.ai/short-courses/agent-skills-with-anthropic/?fbclid=IwY2xjawPrieBleHRuA2FlbQIxMABicmlkETFXYzRPaWVUSjQwbldQSVl1c3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHvo522NRp1l2oixIrw4sT0SdhJLGZ2u-_CYWb_PG1bjKxyeJf8w-bvGj5U7c_aem_o95l81Qpq4eq3NWS64VNiw
+
+3. Anthropic 官方 AI 課程數位證書
+- http://anthropic.skilljar.com/
+```
+Anthropic 官方 AI 課程數位證書
+Anthropic Academy 上架了超過十門課程，涵蓋 Claude 的基礎使用、API 開發、MCP、Agent Skills、Claude Code 實作，以及 Amazon Bedrock 或 Google Vertex AI 的整合等精彩內容。
+課程內容包括：
+- Claude 101：學習 Claude 處理日常任務的核心功能。
+​- Claude API：全面介紹 API 與模型整合。
+​- Claude Code：將 Claude 程式碼融入開發流程。
+​- AI 流暢度：框架與基礎：教導有效、安全與 AI 合作。
+- MCP：建構 MCP 伺服器，連接Claude與外部工具/服務。
+- Agent Skills：學習建構、設定Skills
+所有主要課程完成後會頒發 Anthropic 官方數位證書，具有一定產業認受性，尤其在AI開發領域，證明 Claude API、MCP、Agent Skills 等實務技能。
+```
