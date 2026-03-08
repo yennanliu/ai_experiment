@@ -25,3 +25,4 @@ config.local.js
 node_modules/
 rag_poc/demo_1/simple-rag/chroma_db/
 rag_poc/demo_1/simple-rag/chroma_db_v3/
+rag_poc/demo_1/simple-rag/chroma_db_v4/

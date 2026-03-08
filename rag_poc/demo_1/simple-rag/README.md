@@ -17,6 +17,7 @@ simple-rag/
 ├── script_1.py      # Basic RAG (~90 lines)
 ├── script_2.py      # Advanced RAG (~200 lines)
 ├── script_3.py      # Conversational RAG (~220 lines)
+├── script_4.py      # Agentic RAG (~230 lines)
 ├── pyproject.toml   # Dependencies
 └── README.md
 ```
@@ -97,18 +98,52 @@ A: Redis and PostgreSQL serve different purposes. Redis excels at
 
 ---
 
+### script_4.py - Agentic RAG
+
+LLM-driven retrieval decisions using function calling.
+
+```bash
+uv run script_4.py
+```
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Function calling** | LLM decides when to search via tool use |
+| **Self-reflection** | Evaluates document relevance before answering |
+| **Multi-step reasoning** | Can refine searches based on results |
+| **Smart routing** | Skips retrieval for simple questions |
+
+**Example behavior:**
+```
+Q: Hello, how are you?
+A: Hello! I'm doing well...
+   [Used retrieval: False]
+
+Q: What are Python decorators?
+  [Tool] search_knowledge_base({"query": "Python decorators"})
+  [Eval] Relevant: True, Confidence: 0.95
+A: Python decorators are functions that modify other functions...
+   [Used retrieval: True]
+```
+
+---
+
 ## Comparison
 
-| Aspect | script_1 | script_2 | script_3 |
-|--------|----------|----------|----------|
-| Storage | In-memory | Persistent | Persistent |
-| Chunking | No | Yes | No |
-| Metadata filtering | No | Yes | Yes |
-| Query expansion | No | Yes | No |
-| Reranking | No | No | Yes (LLM) |
-| Conversation memory | No | No | Yes |
-| Streaming | No | No | Yes |
-| Lines of code | ~90 | ~200 | ~220 |
+| Aspect | script_1 | script_2 | script_3 | script_4 |
+|--------|----------|----------|----------|----------|
+| Storage | In-memory | Persistent | Persistent | Persistent |
+| Chunking | No | Yes | No | No |
+| Metadata filtering | No | Yes | Yes | Yes |
+| Query expansion | No | Yes | No | No |
+| Reranking | No | No | Yes (LLM) | No |
+| Conversation memory | No | No | Yes | No |
+| Streaming | No | No | Yes | No |
+| Function calling | No | No | No | Yes |
+| Self-reflection | No | No | No | Yes |
+| Lines of code | ~90 | ~200 | ~220 | ~230 |
 
 ## Dependencies
 
@@ -121,4 +156,5 @@ A: Redis and PostgreSQL serve different purposes. Redis excels at
 script_1: Query → Retrieve → Generate
 script_2: Query → Expand → Retrieve+Filter → Generate+Cite
 script_3: Query → Retrieve → Rerank → Generate+Stream (with history)
+script_4: Query → LLM decides → [Retrieve? → Evaluate?]* → Generate
 ```
