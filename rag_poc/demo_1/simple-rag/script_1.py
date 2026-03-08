@@ -96,6 +96,13 @@ def main():
 
     for q in questions:
         print(f"Q: {q}")
+        """
+        NOTE !!!
+
+        below we call `query(client, collection, question: str, n_results: int = 2)`
+        and pass the collection to AI (open AI client), so the AI can reponse based on our
+        custom knowledge base (e.g. collections).
+        """
         print(f"A: {query(client, collection, q)}\n")
 
 
