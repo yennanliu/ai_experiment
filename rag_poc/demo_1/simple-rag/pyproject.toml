@@ -1,0 +1,10 @@
+[project]
+name = "simple-rag"
+version = "0.1.0"
+description = "Minimal RAG example with ChromaDB and OpenAI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "chromadb>=1.5.2",
+    "openai>=2.26.0",
+]
