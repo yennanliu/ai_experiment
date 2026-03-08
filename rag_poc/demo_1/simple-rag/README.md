@@ -18,6 +18,7 @@ simple-rag/
 ├── script_2.py      # Advanced RAG (~200 lines)
 ├── script_3.py      # Conversational RAG (~220 lines)
 ├── script_4.py      # Agentic RAG (~230 lines)
+├── script_5.py      # HyDE RAG (~230 lines)
 ├── pyproject.toml   # Dependencies
 └── README.md
 ```
@@ -130,20 +131,56 @@ A: Python decorators are functions that modify other functions...
 
 ---
 
+### script_5.py - HyDE RAG
+
+Hypothetical Document Embeddings for better semantic matching.
+
+```bash
+uv run script_5.py
+```
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Hypothetical generation** | LLM generates a hypothetical answer first |
+| **Better embedding match** | Hypothetical doc is closer to real docs in vector space |
+| **Comparison mode** | Compare standard vs HyDE retrieval side-by-side |
+| **Abstract query handling** | Excels when user vocabulary differs from documents |
+
+**How HyDE works:**
+```
+Standard: "How do I keep data fresh?" → embed query → search
+HyDE:     "How do I keep data fresh?" → generate hypothetical answer
+          → embed hypothetical → search (better match!)
+```
+
+**Example comparison:**
+```
+Q: How do I keep my data fresh?
+
+Standard retrieval: [scale-1, perf-1, cache-2] (avg dist: 1.42)
+HyDE retrieval:     [cache-1, cache-2, perf-2] (avg dist: 1.18)
+                    ↑ Better! Found cache invalidation docs
+```
+
+---
+
 ## Comparison
 
-| Aspect | script_1 | script_2 | script_3 | script_4 |
-|--------|----------|----------|----------|----------|
-| Storage | In-memory | Persistent | Persistent | Persistent |
-| Chunking | No | Yes | No | No |
-| Metadata filtering | No | Yes | Yes | Yes |
-| Query expansion | No | Yes | No | No |
-| Reranking | No | No | Yes (LLM) | No |
-| Conversation memory | No | No | Yes | No |
-| Streaming | No | No | Yes | No |
-| Function calling | No | No | No | Yes |
-| Self-reflection | No | No | No | Yes |
-| Lines of code | ~90 | ~200 | ~220 | ~230 |
+| Aspect | script_1 | script_2 | script_3 | script_4 | script_5 |
+|--------|----------|----------|----------|----------|----------|
+| Storage | In-memory | Persistent | Persistent | Persistent | Persistent |
+| Chunking | No | Yes | No | No | No |
+| Metadata filtering | No | Yes | Yes | Yes | No |
+| Query expansion | No | Yes | No | No | No |
+| Reranking | No | No | Yes (LLM) | No | No |
+| Conversation memory | No | No | Yes | No | No |
+| Streaming | No | No | Yes | No | No |
+| Function calling | No | No | No | Yes | No |
+| Self-reflection | No | No | No | Yes | No |
+| HyDE | No | No | No | No | Yes |
+| Lines of code | ~90 | ~200 | ~220 | ~230 | ~230 |
 
 ## Dependencies
 
@@ -157,4 +194,5 @@ script_1: Query → Retrieve → Generate
 script_2: Query → Expand → Retrieve+Filter → Generate+Cite
 script_3: Query → Retrieve → Rerank → Generate+Stream (with history)
 script_4: Query → LLM decides → [Retrieve? → Evaluate?]* → Generate
+script_5: Query → Generate hypothetical → Retrieve (with hypo) → Generate
 ```
