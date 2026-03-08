@@ -23,3 +23,4 @@ config.local.js
 104/credentials.json
 104_search_status.png
 node_modules/
+rag_poc/demo_1/simple-rag/chroma_db/
