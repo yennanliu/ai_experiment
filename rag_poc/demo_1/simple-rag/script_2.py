@@ -69,11 +69,16 @@ def check_api_key():
 def chunk_text(text: str, chunk_size: int = 200, overlap: int = 50) -> list[str]:
     """Split text into overlapping chunks."""
     words = text.split()
+    if not words:
+        return []
+
+    # Ensure we always advance (overlap must be less than chunk_size)
+    overlap = min(overlap, chunk_size - 1)
+    step = chunk_size - overlap
+
     chunks = []
-    start = 0
-    while start < len(words):
+    for start in range(0, len(words), step):
         chunks.append(" ".join(words[start : start + chunk_size]))
-        start += chunk_size - overlap
     return chunks
 
 
