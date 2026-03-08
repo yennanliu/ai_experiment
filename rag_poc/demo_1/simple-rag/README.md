@@ -1,88 +1,96 @@
-# Simple RAG Example
+# RAG Examples
 
-A minimal Retrieval-Augmented Generation (RAG) implementation in Python.
+Retrieval-Augmented Generation (RAG) implementations in Python.
 
 ## What is RAG?
-
-RAG combines retrieval and generation to answer questions:
 
 ```
 Query → Retrieve relevant docs → Generate answer with context
 ```
 
-This approach grounds LLM responses in your data, reducing hallucinations.
+RAG grounds LLM responses in your data, reducing hallucinations.
 
 ## Project Structure
 
 ```
 simple-rag/
-├── main.py          # RAG implementation
-├── pyproject.toml   # Project config
+├── script_1.py      # Basic RAG (~80 lines)
+├── script_2.py      # Advanced RAG (~200 lines)
+├── pyproject.toml   # Dependencies
 └── README.md
 ```
 
 ## Setup
 
 ```bash
-# Requires uv (https://docs.astral.sh/uv)
 uv sync
-
-# Set OpenAI API key
 export OPENAI_API_KEY="your-key"
 ```
 
-## Run
+## Scripts
+
+### script_1.py - Basic RAG
+
+Minimal implementation demonstrating the core pattern.
 
 ```bash
-uv run main.py
+uv run script_1.py
 ```
 
-## How It Works
+**Features:**
+- In-memory vector store
+- Simple document indexing
+- Basic retrieval + generation
 
-### 1. Index Documents
-Documents are embedded and stored in ChromaDB (in-memory vector store):
+---
 
-```python
-collection.add(documents=["doc1", "doc2"], ids=["id1", "id2"])
+### script_2.py - Advanced RAG
+
+Production-ready patterns for better retrieval quality.
+
+```bash
+uv run script_2.py
 ```
 
-### 2. Retrieve
-Find relevant documents using semantic similarity:
+**Features:**
 
-```python
-results = collection.query(query_texts=["question"], n_results=2)
+| Feature | Description |
+|---------|-------------|
+| **Chunking** | Split documents with overlap for better context |
+| **Metadata** | Filter by topic, source, or custom attributes |
+| **Persistent storage** | Data survives restarts (`./chroma_db`) |
+| **Query expansion** | Generate query variations for better recall |
+| **Source attribution** | Citations in responses with `[1]`, `[2]` |
+
+**Example output:**
+```
+Q: How does Python handle concurrency?
+A: Python handles concurrency through asyncio [1] and threading,
+   though the GIL limits CPU-bound parallelism [2].
+Sources: ['python_async.md', 'python_threading.md']
 ```
 
-### 3. Generate
-Pass retrieved context to the LLM:
+---
 
-```python
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "Answer based on context."},
-        {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
-    ],
-)
-```
+## Comparison
+
+| Aspect | script_1 | script_2 |
+|--------|----------|----------|
+| Storage | In-memory | Persistent |
+| Chunking | No | Yes (with overlap) |
+| Metadata | No | Yes (filtering) |
+| Query expansion | No | Yes |
+| Source citations | No | Yes |
+| Lines of code | ~80 | ~200 |
 
 ## Dependencies
 
 - `chromadb` - Vector store with built-in embeddings
-- `openai` - LLM for answer generation
+- `openai` - LLM for generation
 
-## Key Concepts
+## Next Steps
 
-| Component | Purpose |
-|-----------|---------|
-| Vector Store | Store and search document embeddings |
-| Embeddings | Convert text to numerical vectors |
-| Retriever | Find relevant documents for a query |
-| Generator | LLM that produces the final answer |
-
-## Extending This Example
-
-- **Persistent storage**: Use `chromadb.PersistentClient(path="./db")`
-- **Custom embeddings**: Pass `embedding_function` to collection
-- **Chunking**: Split large documents before indexing
-- **Reranking**: Add a reranker to improve retrieval quality
+- Add reranking (e.g., Cohere rerank, cross-encoder)
+- Implement hybrid search (keyword + semantic)
+- Add streaming responses
+- Use custom embedding models
