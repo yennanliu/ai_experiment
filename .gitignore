@@ -22,3 +22,4 @@ config.local.js
 104/.env
 104/credentials.json
 104_search_status.png
+node_modules/
