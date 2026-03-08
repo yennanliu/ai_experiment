@@ -7,8 +7,19 @@ This demonstrates the core RAG pattern:
 3. Generate an answer using the retrieved context
 """
 
+import os
+import sys
+
 import chromadb
 from openai import OpenAI
+
+
+def check_api_key():
+    """Check if OpenAI API key is set."""
+    if not os.environ.get("OPENAI_API_KEY"):
+        print("ERROR: OPENAI_API_KEY environment variable not set.")
+        print("Run: export OPENAI_API_KEY='your-key'")
+        sys.exit(1)
 
 
 def create_rag():
@@ -62,6 +73,8 @@ def query(client, collection, question: str, n_results: int = 2) -> str:
 
 
 def main():
+    check_api_key()
+
     # Sample knowledge base
     documents = [
         "Python was created by Guido van Rossum and first released in 1991.",

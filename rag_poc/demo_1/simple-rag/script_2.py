@@ -9,8 +9,19 @@ Demonstrates:
 - Source attribution in responses
 """
 
+import os
+import sys
+
 import chromadb
 from openai import OpenAI
+
+
+def check_api_key():
+    """Check if OpenAI API key is set."""
+    if not os.environ.get("OPENAI_API_KEY"):
+        print("ERROR: OPENAI_API_KEY environment variable not set.")
+        print("Run: export OPENAI_API_KEY='your-key'")
+        sys.exit(1)
 
 # Sample documents with metadata
 DOCUMENTS = [
@@ -200,14 +211,23 @@ def query_with_sources(
 
 
 def main():
-    print("=== Advanced RAG Example ===\n")
+    print("=== Advanced RAG Example ===\n", flush=True)
+
+    # Check prerequisites
+    check_api_key()
 
     # Initialize with persistent storage
-    client, collection = create_persistent_rag()
+    print("[1/6] Creating OpenAI client...", flush=True)
+    client = OpenAI()
+    print("[2/6] Creating ChromaDB persistent client...", flush=True)
+    db = chromadb.PersistentClient(path="./chroma_db")
+    print("[3/6] Getting/creating collection...", flush=True)
+    collection = db.get_or_create_collection("advanced_docs")
+    print("[4/6] Indexing documents (this embeds text)...", flush=True)
 
     # Index documents with chunking
     num_chunks = index_documents(collection, DOCUMENTS, chunk_size=50)
-    print(f"Indexed {len(DOCUMENTS)} documents into {num_chunks} chunks\n")
+    print(f"[5/6] Indexed {len(DOCUMENTS)} documents into {num_chunks} chunks\n", flush=True)
 
     # Example 1: Basic query with sources
     print("--- Query 1: General question ---")
