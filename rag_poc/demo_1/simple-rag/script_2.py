@@ -11,17 +11,10 @@ Demonstrates:
 
 import os
 import sys
+import traceback
 
 import chromadb
 from openai import OpenAI
-
-
-def check_api_key():
-    """Check if OpenAI API key is set."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        print("ERROR: OPENAI_API_KEY environment variable not set.")
-        print("Run: export OPENAI_API_KEY='your-key'")
-        sys.exit(1)
 
 # Sample documents with metadata
 DOCUMENTS = [
@@ -60,53 +53,47 @@ DOCUMENTS = [
 ]
 
 
+def log(msg: str):
+    """Print with immediate flush."""
+    print(msg, flush=True)
+
+
+def check_api_key():
+    """Check if OpenAI API key is set."""
+    if not os.environ.get("OPENAI_API_KEY"):
+        log("ERROR: OPENAI_API_KEY environment variable not set.")
+        log("Run: export OPENAI_API_KEY='your-key'")
+        sys.exit(1)
+
+
 def chunk_text(text: str, chunk_size: int = 200, overlap: int = 50) -> list[str]:
     """Split text into overlapping chunks."""
     words = text.split()
     chunks = []
     start = 0
-
     while start < len(words):
-        end = start + chunk_size
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        start = end - overlap
-
+        chunks.append(" ".join(words[start : start + chunk_size]))
+        start += chunk_size - overlap
     return chunks
 
 
-def create_persistent_rag(db_path: str = "./chroma_db"):
-    """Create RAG with persistent storage."""
-    client = OpenAI()
-    db = chromadb.PersistentClient(path=db_path)
-    collection = db.get_or_create_collection("advanced_docs")
-    return client, collection
+def index_documents(collection, documents: list[dict], chunk_size: int = 100) -> int:
+    """Index documents with chunking and metadata (simplified single comprehension)."""
+    log("       Preparing chunks...")
+    data = [
+        (f"doc{di}_chunk{ci}", chunk, {"source": doc["source"], "topic": doc["topic"], "chunk_idx": ci})
+        for di, doc in enumerate(documents)
+        for ci, chunk in enumerate(chunk_text(doc["text"], chunk_size=chunk_size))
+    ]
 
+    if not data:
+        return 0
 
-def index_documents(collection, documents: list[dict], chunk_size: int = 100):
-    """Index documents with chunking and metadata."""
-    all_chunks = []
-    all_ids = []
-    all_metadata = []
-
-    for doc_idx, doc in enumerate(documents):
-        chunks = chunk_text(doc["text"], chunk_size=chunk_size)
-        for chunk_idx, chunk in enumerate(chunks):
-            all_chunks.append(chunk)
-            all_ids.append(f"doc{doc_idx}_chunk{chunk_idx}")
-            all_metadata.append({
-                "source": doc["source"],
-                "topic": doc["topic"],
-                "chunk_idx": chunk_idx,
-            })
-
-    # Upsert to handle re-indexing
-    collection.upsert(
-        documents=all_chunks,
-        ids=all_ids,
-        metadatas=all_metadata,
-    )
-    return len(all_chunks)
+    ids, chunks, metadatas = zip(*data)
+    log(f"       Upserting {len(data)} chunks (embedding may download model on first run)...")
+    collection.upsert(documents=list(chunks), ids=list(ids), metadatas=list(metadatas))
+    log("       Upsert complete.")
+    return len(data)
 
 
 def expand_query(client, question: str) -> list[str]:
@@ -114,11 +101,7 @@ def expand_query(client, question: str) -> list[str]:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {
-                "role": "system",
-                "content": "Generate 2 alternative phrasings of this question. "
-                "Return only the questions, one per line.",
-            },
+            {"role": "system", "content": "Generate 2 alternative phrasings. One per line."},
             {"role": "user", "content": question},
         ],
     )
@@ -127,24 +110,15 @@ def expand_query(client, question: str) -> list[str]:
 
 
 def retrieve_with_filter(
-    collection,
-    queries: list[str],
-    n_results: int = 3,
-    topic_filter: str | None = None,
+    collection, queries: list[str], n_results: int = 3, topic_filter: str | None = None
 ) -> list[dict]:
     """Retrieve documents with optional metadata filtering."""
     where_filter = {"topic": topic_filter} if topic_filter else None
-
-    all_results = []
     seen_ids = set()
+    all_results = []
 
     for query in queries:
-        results = collection.query(
-            query_texts=[query],
-            n_results=n_results,
-            where=where_filter,
-        )
-
+        results = collection.query(query_texts=[query], n_results=n_results, where=where_filter)
         for i, doc_id in enumerate(results["ids"][0]):
             if doc_id not in seen_ids:
                 seen_ids.add(doc_id)
@@ -152,115 +126,86 @@ def retrieve_with_filter(
                     "id": doc_id,
                     "text": results["documents"][0][i],
                     "metadata": results["metadatas"][0][i],
-                    "distance": results["distances"][0][i] if results["distances"] else None,
+                    "distance": results["distances"][0][i] if results["distances"] else 0,
                 })
 
-    # Sort by relevance (lower distance = more relevant)
-    return sorted(all_results, key=lambda x: x["distance"] or 0)[:n_results]
+    return sorted(all_results, key=lambda x: x["distance"])[:n_results]
 
 
 def query_with_sources(
-    client,
-    collection,
-    question: str,
-    use_query_expansion: bool = True,
-    topic_filter: str | None = None,
+    client, collection, question: str, use_query_expansion: bool = True, topic_filter: str | None = None
 ) -> dict:
     """RAG query with source attribution."""
-    # Expand query for better recall
     queries = expand_query(client, question) if use_query_expansion else [question]
-
-    # Retrieve with optional filtering
-    results = retrieve_with_filter(
-        collection, queries, n_results=3, topic_filter=topic_filter
-    )
+    results = retrieve_with_filter(collection, queries, n_results=3, topic_filter=topic_filter)
 
     if not results:
-        return {"answer": "No relevant documents found.", "sources": []}
+        return {"answer": "No relevant documents found.", "sources": [], "queries_used": queries}
 
-    # Build context with source markers
-    context_parts = []
-    for i, r in enumerate(results):
-        context_parts.append(f"[{i+1}] {r['text']}")
+    context = "\n\n".join(f"[{i+1}] {r['text']}" for i, r in enumerate(results))
 
-    context = "\n\n".join(context_parts)
-
-    # Generate answer with citations
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {
-                "role": "system",
-                "content": "Answer based on the provided context. "
-                "Cite sources using [1], [2], etc. Be concise.",
-            },
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {question}",
-            },
+            {"role": "system", "content": "Answer based on context. Cite sources using [1], [2], etc. Be concise."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
         ],
     )
 
-    sources = [{"source": r["metadata"]["source"], "topic": r["metadata"]["topic"]} for r in results]
-
     return {
         "answer": response.choices[0].message.content,
-        "sources": sources,
+        "sources": [{"source": r["metadata"]["source"], "topic": r["metadata"]["topic"]} for r in results],
         "queries_used": queries,
     }
 
 
 def main():
-    print("=== Advanced RAG Example ===\n", flush=True)
-
-    # Check prerequisites
+    log("=== Advanced RAG Example ===\n")
     check_api_key()
 
-    # Initialize with persistent storage
-    print("[1/6] Creating OpenAI client...", flush=True)
+    log("[1/5] Creating OpenAI client...")
     client = OpenAI()
-    print("[2/6] Creating ChromaDB persistent client...", flush=True)
+
+    log("[2/5] Creating ChromaDB persistent client...")
     db = chromadb.PersistentClient(path="./chroma_db")
-    print("[3/6] Getting/creating collection...", flush=True)
+
+    log("[3/5] Getting/creating collection...")
     collection = db.get_or_create_collection("advanced_docs")
-    print("[4/6] Indexing documents (this embeds text)...", flush=True)
 
-    # Index documents with chunking
+    log("[4/5] Indexing documents...")
     num_chunks = index_documents(collection, DOCUMENTS, chunk_size=50)
-    print(f"[5/6] Indexed {len(DOCUMENTS)} documents into {num_chunks} chunks\n", flush=True)
+    log(f"       Indexed {len(DOCUMENTS)} documents into {num_chunks} chunks\n")
 
-    # Example 1: Basic query with sources
-    print("--- Query 1: General question ---")
+    # Query 1: General question
+    log("--- Query 1: General question ---")
     result = query_with_sources(client, collection, "How does Python handle concurrency?")
-    print(f"Q: How does Python handle concurrency?")
-    print(f"A: {result['answer']}")
-    print(f"Sources: {[s['source'] for s in result['sources']]}")
-    print(f"Query expansion: {result['queries_used']}\n")
+    log(f"Q: How does Python handle concurrency?")
+    log(f"A: {result['answer']}")
+    log(f"Sources: {[s['source'] for s in result['sources']]}")
+    log(f"Query expansion: {result['queries_used']}\n")
 
-    # Example 2: Filtered query (only web topic)
-    print("--- Query 2: Filtered by topic ---")
-    result = query_with_sources(
-        client,
-        collection,
-        "What web frameworks are available?",
-        topic_filter="web",
-    )
-    print(f"Q: What web frameworks are available? (topic=web)")
-    print(f"A: {result['answer']}")
-    print(f"Sources: {[s['source'] for s in result['sources']]}\n")
+    # Query 2: Filtered by topic
+    log("--- Query 2: Filtered by topic ---")
+    result = query_with_sources(client, collection, "What web frameworks are available?", topic_filter="web")
+    log(f"Q: What web frameworks are available? (topic=web)")
+    log(f"A: {result['answer']}")
+    log(f"Sources: {[s['source'] for s in result['sources']]}\n")
 
-    # Example 3: Without query expansion
-    print("--- Query 3: Without query expansion ---")
-    result = query_with_sources(
-        client,
-        collection,
-        "What is the GIL?",
-        use_query_expansion=False,
-    )
-    print(f"Q: What is the GIL?")
-    print(f"A: {result['answer']}")
-    print(f"Sources: {[s['source'] for s in result['sources']]}")
+    # Query 3: Without query expansion
+    log("--- Query 3: Without query expansion ---")
+    result = query_with_sources(client, collection, "What is the GIL?", use_query_expansion=False)
+    log(f"Q: What is the GIL?")
+    log(f"A: {result['answer']}")
+    log(f"Sources: {[s['source'] for s in result['sources']]}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        log("\n\nInterrupted by user.")
+        sys.exit(130)
+    except Exception as e:
+        log(f"\nERROR: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        sys.exit(1)
