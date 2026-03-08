@@ -1,0 +1,57 @@
+To become a **Hands-on AI Architect** in 2026, the role has shifted from "training models" to "orchestrating intelligence." Enterprises no longer need just a chatbot; they need **Agentic Workflows** that can reason over proprietary data, call internal APIs, and execute tasks autonomously.
+
+Given your background as a Senior Software Engineer with experience at AWS and Google, you already have the "distributed systems" foundation. Here is the specialized roadmap to bridge into AI Architecture.
+
+---
+
+## 1. The Core AI Stack (Foundations)
+
+As an architect, you don't need to be a researcher, but you must understand the "mechanics of the brain" to make cost and performance trade-offs.
+
+* **Transformer Mechanics:** Deep dive into context windows, tokenization (and its cost implications), and attention mechanisms.
+* **LLMs vs. SLMs:** Knowing when to use a "frontier" model (e.g., GPT-5, Claude 4) vs. a Small Language Model (e.g., Llama-3-8B, Mistral) for specific sub-tasks to optimize latency and FinOps.
+* **Embeddings & Vector Theory:** Beyond just "storing vectors," learn about different embedding models (text, image, multimodal) and distance metrics (Cosine, Euclidean, Dot Product).
+
+## 2. Advanced RAG (Retrieval-Augmented Generation)
+
+Simple RAG (vector search + prompt) is rarely enterprise-ready. You must master the "Production RAG" pipeline:
+
+* **Agentic RAG:** Systems that *decide* when they need to look something up, which source to use, and how to critique the retrieved results.
+* **Advanced Chunking:** Semantic chunking, recursive character splitting, and "Parent Document Retrieval."
+* **Hybrid Search:** Combining semantic (vector) search with traditional BM25 (keyword) search and Re-ranking models (e.g., Cohere Rerank).
+
+## 3. Agentic Design Patterns
+
+This is the "Microservices" moment for AI. Instead of one giant prompt, you architect teams of specialized agents.
+
+* **Reasoning Frameworks:** Master **ReAct** (Reason + Act), **Reflection** (self-correction loops), and **Plan-and-Execute** patterns.
+* **Multi-Agent Orchestration:** Learn frameworks like **LangGraph** (for stateful, cyclic graphs) or **CrewAI** (for role-based collaboration).
+* **Human-in-the-Loop (HITL):** Designing "checkpoints" where an agent pauses for human approval before high-stakes actions (e.g., executing a trade or sending a client email).
+
+## 4. The "Integration Era" Protocols
+
+Enterprises need AI to *talk* to their existing systems safely.
+
+* **Model Context Protocol (MCP):** Since you're already familiar with this, double down. It’s the emerging standard for how agents securely access local/remote tools and data.
+* **Function Calling & Tool Use:** Designing robust JSON schemas for your APIs so LLMs can reliably "click buttons" in your internal software.
+* **Semantic Routing:** Building "routers" that classify intent and send the request to the most efficient agent or model.
+
+## 5. Enterprise "AIOps" & Governance
+
+This is where senior engineering experience is most valuable.
+
+* **Evaluations (Evals):** Moving away from "vibes-based" testing to automated evaluation harnesses (using tools like **Promptfoo** or **LangSmith**) to measure accuracy and "hallucination" rates.
+* **Guardrails:** Implementing **NeMo Guardrails** or **LlamaGuard** to prevent PII leakage, prompt injection, and toxic outputs.
+* **FinOps for AI:** Architecting for "Token Economics"—caching (e.g., GPTCache), rate-limiting, and choosing the right "Inference Provider" (Groq for speed vs. AWS Bedrock for security).
+
+---
+
+### Suggested Learning Projects
+
+To get "hands-on," I recommend building these in order:
+
+1. **A Multi-Source Research Agent:** An agent that takes a topic, searches your company’s Wiki (Notion/Confluence), searches the live web, and synthesizes a report with citations.
+2. **An MCP-Based Dev Tool:** Create an MCP server that allows an LLM to interact with your specific CI/CD pipeline or JIRA instance to automate PR reviews or ticket tagging.
+3. **A Self-Correcting SQL Agent:** A system that translates natural language to SQL, executes it, catches its own errors, and tries again until it gets the right result.
+
+**Would you like me to design a specific technical deep-dive or a 4-week learning curriculum based on your current tech stack (Python/Java/AWS)?**
