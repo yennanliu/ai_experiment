@@ -1,0 +1,23 @@
+{
+  "name": "104-auto-apply",
+  "version": "1.0.0",
+  "description": "104.com.tw Job Application Automation",
+  "main": "104_auto_apply_gemini.js",
+  "scripts": {
+    "start": "node 104_auto_apply_gemini.js",
+    "apply": "node 104_auto_apply_gemini.js --start-page 2 --max-pages 5",
+    "apply:10": "node 104_auto_apply_gemini.js --start-page 2 --max-pages 10",
+    "setup": "npm install && npx playwright install chromium"
+  },
+  "keywords": [
+    "104",
+    "job",
+    "automation",
+    "playwright"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
