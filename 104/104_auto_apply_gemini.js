@@ -10,9 +10,16 @@
  *   --start-page <num>   Starting page number (default: 2)
  *   --max-pages <num>    Maximum pages to process (default: 5)
  *   --headless           Run in headless mode (default: false)
+ *   --skip-login         Skip automatic login (default: false)
  *   --help               Show help message
  *
+ * Environment Variables (.env file):
+ *   JOB_EMAIL            Your 104.com.tw email
+ *   JOB_PASSWORD         Your 104.com.tw password
+ *   COVER_LETTER         Cover letter name (default: 自訂推薦信1)
+ *
  * Features:
+ *   - Automatic login using .env credentials
  *   - Press 'P' to PAUSE automation
  *   - Press 'R' to RESUME automation
  *   - Press 'Q' to QUIT automation
@@ -20,11 +27,19 @@
  *
  * Prerequisites:
  *   - Node.js installed
- *   - Playwright installed: npm install playwright
- *   - Must be logged into 104.com.tw before running
+ *   - Run: npm install (to install playwright and dotenv)
  */
 
+require('dotenv').config();
 const { chromium } = require('playwright');
+const path = require('path');
+
+// Load credentials from .env
+const CREDENTIALS = {
+  email: process.env.JOB_EMAIL,
+  password: process.env.JOB_PASSWORD,
+  coverLetter: process.env.COVER_LETTER || '自訂推薦信1'
+};
 
 // Parse command line arguments
 function parseArgs() {
@@ -33,6 +48,7 @@ function parseArgs() {
     startPage: 2,
     maxPages: 5,
     headless: false,
+    skipLogin: false,
     help: false
   };
 
@@ -46,6 +62,9 @@ function parseArgs() {
         break;
       case '--headless':
         config.headless = true;
+        break;
+      case '--skip-login':
+        config.skipLogin = true;
         break;
       case '--help':
       case '-h':
@@ -69,7 +88,13 @@ Options:
   --start-page <num>   Starting page number (default: 2)
   --max-pages <num>    Maximum pages to process (default: 5)
   --headless           Run in headless mode (default: false)
+  --skip-login         Skip automatic login (default: false)
   --help, -h           Show this help message
+
+Environment Variables (.env file):
+  JOB_EMAIL            Your 104.com.tw login email
+  JOB_PASSWORD         Your 104.com.tw password
+  COVER_LETTER         Cover letter name (default: 自訂推薦信1)
 
 Keyboard Controls (during automation):
   P = Pause automation
@@ -79,8 +104,185 @@ Keyboard Controls (during automation):
 Example:
   node 104_auto_apply_gemini.js --start-page 3 --max-pages 10
 
-Note: You must be logged into 104.com.tw before running this script.
+Setup:
+  1. Copy .env.example to .env
+  2. Fill in your credentials in .env
+  3. Run: npm install
+  4. Run: node 104_auto_apply_gemini.js
 `);
+}
+
+// Login to 104.com.tw
+async function login(page) {
+  console.log('\n🔐 Starting login process...');
+
+  if (!CREDENTIALS.email || !CREDENTIALS.password) {
+    console.log('⚠️ No credentials found in .env file');
+    console.log('Please create a .env file with JOB_EMAIL and JOB_PASSWORD');
+    return false;
+  }
+
+  try {
+    // Navigate to login page
+    await page.goto('https://www.104.com.tw/member/login', {
+      waitUntil: 'networkidle',
+      timeout: 30000
+    });
+    await page.waitForTimeout(2000);
+
+    // Check if already logged in
+    const isAlreadyLoggedIn = await page.evaluate(() => {
+      return window.location.href.includes('/jobs/') ||
+             document.querySelector('[class*="member-name"]') !== null ||
+             document.querySelector('.member-header') !== null;
+    });
+
+    if (isAlreadyLoggedIn) {
+      console.log('✅ Already logged in!');
+      return true;
+    }
+
+    console.log('📧 Entering email...');
+
+    // Find and fill email field
+    const emailInput = await page.waitForSelector('input[type="text"], input[name="username"], input[placeholder*="mail"], input[placeholder*="ID"]', {
+      timeout: 10000
+    });
+
+    if (emailInput) {
+      await emailInput.fill(CREDENTIALS.email);
+      await page.waitForTimeout(500);
+    } else {
+      // Try alternative method
+      await page.evaluate((email) => {
+        const inputs = document.querySelectorAll('input');
+        for (const input of inputs) {
+          if (input.type === 'text' || input.type === 'email' ||
+              input.placeholder?.includes('mail') || input.placeholder?.includes('ID')) {
+            input.value = email;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            break;
+          }
+        }
+      }, CREDENTIALS.email);
+    }
+
+    // Click continue/next button
+    console.log('➡️ Clicking continue...');
+    await page.waitForTimeout(500);
+
+    const continueClicked = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const continueBtn = buttons.find(btn =>
+        btn.textContent.includes('繼續') ||
+        btn.textContent.includes('Continue') ||
+        btn.textContent.includes('下一步')
+      );
+      if (continueBtn) {
+        continueBtn.click();
+        return true;
+      }
+      return false;
+    });
+
+    if (!continueClicked) {
+      // Try pressing Enter
+      await page.keyboard.press('Enter');
+    }
+
+    await page.waitForTimeout(2000);
+
+    // Enter password
+    console.log('🔑 Entering password...');
+
+    const passwordInput = await page.waitForSelector('input[type="password"]', {
+      timeout: 10000
+    });
+
+    if (passwordInput) {
+      await passwordInput.fill(CREDENTIALS.password);
+      await page.waitForTimeout(500);
+    }
+
+    // Click login button
+    console.log('🚪 Clicking login...');
+
+    const loginClicked = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const loginBtn = buttons.find(btn =>
+        btn.textContent.includes('登入') ||
+        btn.textContent.includes('Login') ||
+        btn.textContent.includes('Sign in')
+      );
+      if (loginBtn) {
+        loginBtn.click();
+        return true;
+      }
+      return false;
+    });
+
+    if (!loginClicked) {
+      await page.keyboard.press('Enter');
+    }
+
+    // Wait for login to complete
+    console.log('⏳ Waiting for login to complete...');
+    await page.waitForTimeout(5000);
+
+    // Check for 2FA
+    const needs2FA = await page.evaluate(() => {
+      const pageText = document.body.innerText;
+      return pageText.includes('驗證碼') ||
+             pageText.includes('verification') ||
+             pageText.includes('確認碼') ||
+             document.querySelector('input[maxlength="6"]') !== null;
+    });
+
+    if (needs2FA) {
+      console.log('\n⚠️ 2FA REQUIRED!');
+      console.log('Please enter the verification code in the browser.');
+      console.log('Waiting 60 seconds for manual 2FA completion...\n');
+
+      // Wait for 2FA completion
+      let attempts = 0;
+      while (attempts < 60) {
+        await page.waitForTimeout(1000);
+        attempts++;
+
+        const currentUrl = page.url();
+        const is2FAComplete = !currentUrl.includes('login') &&
+                              !currentUrl.includes('verify');
+
+        if (is2FAComplete) {
+          console.log('✅ 2FA completed!');
+          break;
+        }
+
+        if (attempts % 10 === 0) {
+          console.log(`⏳ Still waiting for 2FA... (${60 - attempts}s remaining)`);
+        }
+      }
+    }
+
+    // Verify login success
+    await page.waitForTimeout(2000);
+    const loginSuccess = await page.evaluate(() => {
+      return !window.location.href.includes('login') ||
+             document.querySelector('[class*="member"]') !== null;
+    });
+
+    if (loginSuccess) {
+      console.log('✅ Login successful!\n');
+      return true;
+    } else {
+      console.log('❌ Login may have failed. Please check the browser.\n');
+      return false;
+    }
+
+  } catch (error) {
+    console.log(`❌ Login error: ${error.message}`);
+    return false;
+  }
 }
 
 // Create status indicator on page
@@ -132,6 +334,10 @@ async function updateStatus(page, status, extra = '') {
       COMPLETED: {
         bg: '#2196F3',
         html: `✅ AUTOMATION COMPLETED ${extra}<br><small style="font-size: 11px;">You can close this window</small>`
+      },
+      LOGIN: {
+        bg: '#9C27B0',
+        html: `🔐 LOGGING IN...<br><small style="font-size: 11px;">Please wait</small>`
       }
     };
 
@@ -212,6 +418,19 @@ function randomDelay(min = 2000, max = 4000) {
   return min + Math.random() * (max - min);
 }
 
+// Check if logged in
+async function isLoggedIn(page) {
+  return page.evaluate(() => {
+    // Check for login button (means NOT logged in)
+    const loginBtn = document.querySelector('a[href*="login"]');
+    const memberArea = document.querySelector('[class*="member"]');
+    const memberHeader = document.querySelector('.member-header');
+
+    // If there's a member area or no login button, we're logged in
+    return memberArea !== null || memberHeader !== null || loginBtn === null;
+  });
+}
+
 // Main automation function
 async function autoApplyJobs(config) {
   console.log('\n');
@@ -222,7 +441,8 @@ async function autoApplyJobs(config) {
   console.log('  P = Pause automation');
   console.log('  R = Resume automation');
   console.log('  Q = Quit automation\n');
-  console.log(`Starting from page ${config.startPage}, processing ${config.maxPages} pages\n`);
+  console.log(`Starting from page ${config.startPage}, processing ${config.maxPages} pages`);
+  console.log(`Cover Letter: ${CREDENTIALS.coverLetter}\n`);
 
   const browser = await chromium.launch({
     headless: config.headless,
@@ -230,8 +450,7 @@ async function autoApplyJobs(config) {
   });
 
   const context = await browser.newContext({
-    viewport: null,
-    storageState: undefined // Will use existing session if available
+    viewport: null
   });
 
   const page = await context.newPage();
@@ -248,20 +467,33 @@ async function autoApplyJobs(config) {
   try {
     // Navigate to first page
     const firstPageUrl = `${BASE_URL}&page=${config.startPage}`;
-    console.log('Navigating to 104.com.tw...');
+    console.log('🌐 Navigating to 104.com.tw...');
     await page.goto(firstPageUrl, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.waitForTimeout(2000);
 
-    // Check if logged in
-    const isLoggedIn = await page.evaluate(() => {
-      return !document.querySelector('a[href*="login"]') ||
-             document.querySelector('[class*="member"]') !== null;
-    });
+    // Check login status and login if needed
+    const loggedIn = await isLoggedIn(page);
 
-    if (!isLoggedIn) {
-      console.log('\n⚠️ WARNING: You may not be logged in!');
+    if (!loggedIn && !config.skipLogin) {
+      const loginResult = await login(page);
+
+      if (!loginResult) {
+        console.log('\n⚠️ Automatic login failed.');
+        console.log('Please log in manually in the browser window.');
+        console.log('Waiting 30 seconds for manual login...\n');
+        await page.waitForTimeout(30000);
+      }
+
+      // Navigate back to job search after login
+      await page.goto(firstPageUrl, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.waitForTimeout(2000);
+    } else if (!loggedIn && config.skipLogin) {
+      console.log('\n⚠️ Not logged in and --skip-login is set.');
       console.log('Please log in manually in the browser window.');
-      console.log('Press any key in the browser after logging in...\n');
-      await page.waitForTimeout(30000); // Wait 30 seconds for manual login
+      console.log('Waiting 30 seconds for manual login...\n');
+      await page.waitForTimeout(30000);
+    } else {
+      console.log('✅ Already logged in!\n');
     }
 
     // Setup controls
@@ -380,14 +612,16 @@ async function autoApplyJobs(config) {
           });
           await newTab.waitForTimeout(500);
 
-          await newTab.evaluate(() => {
+          // Use cover letter from config
+          const coverLetterName = CREDENTIALS.coverLetter;
+          await newTab.evaluate((coverLetter) => {
             const options = document.querySelectorAll('.multiselect__option');
             options.forEach(opt => {
-              if (opt.textContent.trim() === '自訂推薦信1') {
+              if (opt.textContent.trim() === coverLetter) {
                 opt.click();
               }
             });
-          });
+          }, coverLetterName);
           await newTab.waitForTimeout(500);
 
           // Click submit
@@ -483,6 +717,15 @@ async function main() {
   if (config.help) {
     showHelp();
     process.exit(0);
+  }
+
+  // Validate .env file exists
+  if (!CREDENTIALS.email || !CREDENTIALS.password) {
+    console.log('\n⚠️ WARNING: Credentials not found in .env file');
+    console.log('Create a .env file with:');
+    console.log('  JOB_EMAIL=your_email@example.com');
+    console.log('  JOB_PASSWORD=your_password');
+    console.log('\nOr copy .env.example to .env and fill in your credentials.\n');
   }
 
   try {
