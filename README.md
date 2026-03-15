@@ -51,3 +51,8 @@
      	- https://github.com/anthropics/claude-plugins-official/blob/main/plugins/code-simplifier/agents/code-simplifier.md
      - finlab claude code plugin
         - https://github.com/koreal6803/finlab-ai-plugin
+- AI projects
+  - 1. **搭建私有化 AI 環境**：部署 **Ollama、vLLM、OpenWebUI**，建立地端 LLM 協作環境；同時架設 **Supabase (BaaS)、RabbitMQ** 與 **Dragonfly（Redis 替代方案）**，並針對多核心運算效能進行調校與最佳化
+  - 2. **AI 系統架構設計**：規劃並提出 **EMARS（AI 協作系統）** 與 **電子書管理系統** 的整體架構藍圖，探索 AI 與自動化流程的深度整合與應用場景。
+  - 3. **AI 輔助開發（AI-Assisted Coding）**：導入 **OpenCode** 串接本地 LLM 模型，建立高效率的 AI 輔助開發流程，提升開發速度與程式品質。
+
