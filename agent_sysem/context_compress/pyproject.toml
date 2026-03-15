@@ -1,0 +1,9 @@
+[project]
+name = "context-compress"
+version = "0.1.0"
+description = "Context compression and summarization strategies for long-running AI conversations"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.84.0",
+]
