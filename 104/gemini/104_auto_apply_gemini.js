@@ -11,6 +11,8 @@
  *   --max-pages <num>    Maximum pages to process (default: 5)
  *   --headless           Run in headless mode (default: false)
  *   --skip-login         Skip automatic login (default: false)
+ *   --use-existing       Connect to existing Chrome browser (reuse session)
+ *   --cdp-port <num>     Chrome DevTools Protocol port (default: 9222)
  *   --help               Show help message
  *
  * Environment Variables (.env file):
@@ -19,6 +21,7 @@
  *   COVER_LETTER         Cover letter name (default: 自訂推薦信1)
  *
  * Features:
+ *   - Connect to existing Chrome browser (--use-existing)
  *   - Automatic login using .env credentials
  *   - Press 'P' to PAUSE automation
  *   - Press 'R' to RESUME automation
@@ -28,6 +31,7 @@
  * Prerequisites:
  *   - Node.js installed
  *   - Run: npm install (to install playwright and dotenv)
+ *   - For --use-existing: Start Chrome with remote debugging enabled
  */
 
 require('dotenv').config();
@@ -49,6 +53,8 @@ function parseArgs() {
     maxPages: 5,
     headless: false,
     skipLogin: false,
+    useExisting: false,
+    cdpPort: 9222,
     help: false
   };
 
@@ -65,6 +71,12 @@ function parseArgs() {
         break;
       case '--skip-login':
         config.skipLogin = true;
+        break;
+      case '--use-existing':
+        config.useExisting = true;
+        break;
+      case '--cdp-port':
+        config.cdpPort = parseInt(args[++i], 10) || 9222;
         break;
       case '--help':
       case '-h':
@@ -89,6 +101,8 @@ Options:
   --max-pages <num>    Maximum pages to process (default: 5)
   --headless           Run in headless mode (default: false)
   --skip-login         Skip automatic login (default: false)
+  --use-existing       Connect to existing Chrome browser (reuse login session)
+  --cdp-port <num>     Chrome DevTools Protocol port (default: 9222)
   --help, -h           Show this help message
 
 Environment Variables (.env file):
@@ -101,8 +115,24 @@ Keyboard Controls (during automation):
   R = Resume automation
   Q = Quit automation
 
-Example:
+Examples:
+  # New browser with auto-login
   node 104_auto_apply_gemini.js --start-page 3 --max-pages 10
+
+  # Use existing Chrome (must start Chrome with remote debugging first)
+  node 104_auto_apply_gemini.js --use-existing --start-page 2 --max-pages 5
+
+Using Existing Chrome Browser (--use-existing):
+  Step 1: Close Chrome completely
+  Step 2: Start Chrome with remote debugging:
+    macOS:
+      /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222
+    Windows:
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --remote-debugging-port=9222
+    Linux:
+      google-chrome --remote-debugging-port=9222
+  Step 3: Log into 104.com.tw in that browser
+  Step 4: Run: node 104_auto_apply_gemini.js --use-existing
 
 Setup:
   1. Copy .env.example to .env
@@ -442,18 +472,62 @@ async function autoApplyJobs(config) {
   console.log('  R = Resume automation');
   console.log('  Q = Quit automation\n');
   console.log(`Starting from page ${config.startPage}, processing ${config.maxPages} pages`);
-  console.log(`Cover Letter: ${CREDENTIALS.coverLetter}\n`);
+  console.log(`Cover Letter: ${CREDENTIALS.coverLetter}`);
+  console.log(`Mode: ${config.useExisting ? 'Using existing Chrome browser' : 'New browser'}\n`);
 
-  const browser = await chromium.launch({
-    headless: config.headless,
-    args: ['--start-maximized']
-  });
+  let browser;
+  let context;
+  let page;
+  let shouldCloseBrowser = true;
 
-  const context = await browser.newContext({
-    viewport: null
-  });
+  if (config.useExisting) {
+    // Connect to existing Chrome browser via CDP
+    console.log(`🔌 Connecting to existing Chrome on port ${config.cdpPort}...`);
+    try {
+      browser = await chromium.connectOverCDP(`http://127.0.0.1:${config.cdpPort}`);
+      console.log('✅ Connected to existing Chrome browser!\n');
 
-  const page = await context.newPage();
+      // Get existing contexts
+      const contexts = browser.contexts();
+      if (contexts.length > 0) {
+        context = contexts[0];
+        const pages = context.pages();
+
+        // Use existing page or create new one
+        if (pages.length > 0) {
+          page = pages[0];
+          console.log(`📄 Using existing tab: ${page.url()}\n`);
+        } else {
+          page = await context.newPage();
+        }
+      } else {
+        context = await browser.newContext();
+        page = await context.newPage();
+      }
+
+      shouldCloseBrowser = false; // Don't close user's browser
+    } catch (error) {
+      console.log(`\n❌ Failed to connect to existing Chrome: ${error.message}`);
+      console.log('\nMake sure Chrome is running with remote debugging enabled:');
+      console.log('  1. Close Chrome completely');
+      console.log('  2. Run: /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222');
+      console.log('  3. Log into 104.com.tw');
+      console.log('  4. Run this script again with --use-existing\n');
+      process.exit(1);
+    }
+  } else {
+    // Launch new browser
+    browser = await chromium.launch({
+      headless: config.headless,
+      args: ['--start-maximized']
+    });
+
+    context = await browser.newContext({
+      viewport: null
+    });
+
+    page = await context.newPage();
+  }
 
   const results = {
     successful: 0,
@@ -474,7 +548,20 @@ async function autoApplyJobs(config) {
     // Check login status and login if needed
     const loggedIn = await isLoggedIn(page);
 
-    if (!loggedIn && !config.skipLogin) {
+    if (config.useExisting) {
+      // Using existing browser - just verify login status
+      if (loggedIn) {
+        console.log('✅ Already logged in (existing browser session)!\n');
+      } else {
+        console.log('\n⚠️ Not logged in! Please log into 104.com.tw in this browser.');
+        console.log('Waiting 30 seconds for you to log in...\n');
+        await page.waitForTimeout(30000);
+
+        // Navigate back to job search after login
+        await page.goto(firstPageUrl, { waitUntil: 'networkidle', timeout: 60000 });
+        await page.waitForTimeout(2000);
+      }
+    } else if (!loggedIn && !config.skipLogin) {
       const loginResult = await login(page);
 
       if (!loginResult) {
@@ -572,82 +659,80 @@ async function autoApplyJobs(config) {
             continue;
           }
 
-          // Click apply button
-          await page.evaluate((index) => {
-            const buttons = document.querySelectorAll('.apply-button__button');
-            if (buttons[index]) {
-              buttons[index].click();
-            }
-          }, jobIndex);
+          // Click apply button and wait for new tab
+          const [newTab] = await Promise.all([
+            page.context().waitForEvent('popup'),
+            page.evaluate((index) => {
+              const buttons = document.querySelectorAll('.apply-button__button');
+              if (buttons[index]) {
+                buttons[index].click();
+              }
+            }, jobIndex)
+          ]);
 
-          await page.waitForTimeout(1500);
-
-          // Switch to new tab
-          const pages = page.context().pages();
-          if (pages.length < 2) {
-            throw new Error('New tab did not open');
-          }
-
-          const newTab = pages[pages.length - 1];
           await newTab.bringToFront();
           await newTab.waitForTimeout(2000);
 
-          // Check if already on success page
-          if (newTab.url().includes('/job/apply/done/')) {
-            console.log('✅ SUCCESS (already applied)');
-            pageSuccessful++;
-            await newTab.close();
+          try {
+            // Check if already on success page
+            if (newTab.url().includes('/job/apply/done/')) {
+              console.log('✅ SUCCESS (already applied)');
+              pageSuccessful++;
+              await newTab.close();
+              await page.bringToFront();
+              await setupKeyboardControls(page);
+              continue;
+            }
+
+            // Select cover letter
+            await newTab.evaluate(() => {
+              const spans = Array.from(document.querySelectorAll('span'));
+              const systemDefault = spans.find(el => el.textContent === '系統預設');
+              if (systemDefault?.parentElement) {
+                systemDefault.parentElement.click();
+              }
+            });
+            await newTab.waitForTimeout(500);
+
+            // Use cover letter from config
+            const coverLetterName = CREDENTIALS.coverLetter;
+            await newTab.evaluate((coverLetter) => {
+              const options = document.querySelectorAll('.multiselect__option');
+              options.forEach(opt => {
+                if (opt.textContent.trim() === coverLetter) {
+                  opt.click();
+                }
+              });
+            }, coverLetterName);
+            await newTab.waitForTimeout(1000);
+
+            // Click submit
+            await newTab.evaluate(() => {
+              const buttons = document.querySelectorAll('button');
+              buttons.forEach(btn => {
+                if (btn.textContent.includes('確認送出') || btn.textContent.includes('確定')) {
+                  btn.click();
+                }
+              });
+            });
+            await newTab.waitForTimeout(3000);
+
+            // Verify success
+            const finalUrl = newTab.url();
+            if (finalUrl.includes('/job/apply/done/')) {
+              console.log('✅ SUCCESS');
+              pageSuccessful++;
+            } else {
+              throw new Error('Application may not have completed');
+            }
+          } finally {
+            // Close tab and return
+            if (!newTab.isClosed()) {
+              await newTab.close();
+            }
             await page.bringToFront();
             await setupKeyboardControls(page);
-            continue;
           }
-
-          // Select cover letter
-          await newTab.evaluate(() => {
-            const spans = Array.from(document.querySelectorAll('span'));
-            const systemDefault = spans.find(el => el.textContent === '系統預設');
-            if (systemDefault?.parentElement) {
-              systemDefault.parentElement.click();
-            }
-          });
-          await newTab.waitForTimeout(500);
-
-          // Use cover letter from config
-          const coverLetterName = CREDENTIALS.coverLetter;
-          await newTab.evaluate((coverLetter) => {
-            const options = document.querySelectorAll('.multiselect__option');
-            options.forEach(opt => {
-              if (opt.textContent.trim() === coverLetter) {
-                opt.click();
-              }
-            });
-          }, coverLetterName);
-          await newTab.waitForTimeout(500);
-
-          // Click submit
-          await newTab.evaluate(() => {
-            const buttons = document.querySelectorAll('button');
-            buttons.forEach(btn => {
-              if (btn.textContent.includes('確認送出')) {
-                btn.click();
-              }
-            });
-          });
-          await newTab.waitForTimeout(3000);
-
-          // Verify success
-          const finalUrl = newTab.url();
-          if (finalUrl.includes('/job/apply/done/')) {
-            console.log('✅ SUCCESS');
-            pageSuccessful++;
-          } else {
-            throw new Error('Application may not have completed');
-          }
-
-          // Close tab and return
-          await newTab.close();
-          await page.bringToFront();
-          await setupKeyboardControls(page);
 
         } catch (error) {
           console.log(`❌ FAILED: ${error.message}`);
@@ -704,8 +789,13 @@ async function autoApplyJobs(config) {
   console.log(`📄 Pages Processed: ${results.pagesProcessed}`);
   console.log('\n');
 
-  // Keep browser open for review
-  console.log('Browser will stay open. Close it manually when done.');
+  if (config.useExisting) {
+    console.log('Browser connection closed. Your Chrome browser remains open.');
+    // Disconnect from CDP (doesn't close the browser)
+    await browser.close();
+  } else {
+    console.log('Browser will stay open. Close it manually when done.');
+  }
 
   return results;
 }
