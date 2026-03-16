@@ -1,37 +1,15 @@
 {
-  "name": "104-auto-apply",
+  "name": "104-chrome-cdp",
   "version": "2.0.0",
-  "description": "104.com.tw Job Application Automation using Chrome CDP Skill",
-  "main": "scripts/cdp.mjs",
+  "description": "104.com.tw Job Automation via Chrome CDP",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
   },
-  "bin": {
-    "cdp": "./scripts/cdp.mjs"
-  },
   "scripts": {
-    "cdp": "node scripts/cdp.mjs",
     "list": "node scripts/cdp.mjs list",
-    "snap": "node scripts/cdp.mjs snap",
-    "help": "node scripts/cdp.mjs help",
-    "legacy:start": "node 104_auto_apply_gemini.js",
-    "legacy:apply": "node 104_auto_apply_gemini.js --start-page 2 --max-pages 5"
+    "help": "node scripts/cdp.mjs help"
   },
-  "keywords": [
-    "104",
-    "job",
-    "automation",
-    "chrome",
-    "cdp",
-    "devtools"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "dotenv": "^16.3.1"
-  },
-  "devDependencies": {
-    "playwright": "^1.40.0"
-  }
+  "keywords": ["104", "job", "chrome", "cdp"],
+  "license": "MIT"
 }
