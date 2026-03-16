@@ -1,3 +1,9 @@
+# 20260316
+- Claude with Amazon Bedrock
+  - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276745
+  - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276747
+  
+
 # 20260315
 - Claude with Amazon Bedrock
   - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276734
