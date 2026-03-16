@@ -1,155 +1,241 @@
-# 104.com.tw Auto Apply - Gemini CLI Instructions
+# 104.com.tw Auto Apply - Using Chrome CDP Skill
 
-## Quick Start (Recommended: Use Existing Browser)
+## Overview
 
-This method reuses your existing Chrome session - no need to login again!
+This setup uses **chrome-cdp-skill** (from [pasky/chrome-cdp-skill](https://github.com/pasky/chrome-cdp-skill)) to connect to your **existing Chrome browser**. This means:
+- No need to start Chrome with special flags
+- Reuse your already logged-in sessions
+- Works with your normal Chrome profile (not test/dev)
+- Persistent daemon connections (no repeated permission prompts)
 
-### Step 1: Start Chrome with Remote Debugging
+---
+
+## Prerequisites
+
+### 1. Node.js 22+
+Chrome CDP requires Node.js 22 or higher.
+
+```bash
+# Check current version
+node --version
+
+# Install Node 22+ via nvm
+nvm install 22
+nvm use 22
+
+# Or download from https://nodejs.org/
+```
+
+### 2. Enable Remote Debugging in Chrome
+Open Chrome and navigate to:
+```
+chrome://inspect/#remote-debugging
+```
+Toggle **ON** the "Enable remote debugging" switch.
+
+That's it! No need to restart Chrome with special flags.
+
+---
+
+## Quick Start
+
+### Step 1: List Your Open Tabs
 ```bash
 cd /Users/jerryliu/ai_experiment/104/gemini
-./start-chrome-debug.sh
+./cdp list
 ```
 
-Or manually:
-```bash
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+This shows all open tabs with their `targetId` prefix. Example:
+```
+0A3B  https://www.104.com.tw/jobs/search/...  104人力銀行
+1C2D  https://mail.google.com/...             Gmail
 ```
 
-### Step 2: Login to 104.com.tw
-Log into 104.com.tw in the Chrome window that opened.
-
-### Step 3: Run Automation
+### Step 2: Navigate to Job Search (if needed)
 ```bash
-node 104_auto_apply_gemini.js --use-existing --start-page 2 --max-pages 5
+./cdp nav 0A3B "https://www.104.com.tw/jobs/search/?keyword=軟體工程師&order=15&remoteWork=1,2"
+```
+
+### Step 3: Take a Snapshot to See Page Structure
+```bash
+./cdp snap 0A3B
+```
+
+### Step 4: Interact with the Page
+```bash
+# Click an element
+./cdp click 0A3B ".apply-button__button"
+
+# Type text
+./cdp type 0A3B "Hello World"
+
+# Execute JavaScript
+./cdp eval 0A3B "document.title"
 ```
 
 ---
 
-## Alternative: New Browser with Auto-Login
+## Available Commands
 
-### 1. Setup Credentials
+| Command | Description | Example |
+|---------|-------------|---------|
+| `list` | Show all open tabs | `./cdp list` |
+| `snap <id>` | Get accessibility tree | `./cdp snap 0A3B` |
+| `shot <id>` | Take screenshot | `./cdp shot 0A3B` |
+| `html <id> [selector]` | Get HTML content | `./cdp html 0A3B ".job-list"` |
+| `nav <id> <url>` | Navigate to URL | `./cdp nav 0A3B "https://..."` |
+| `click <id> <selector>` | Click element | `./cdp click 0A3B "button.submit"` |
+| `clickxy <id> <x> <y>` | Click at coordinates | `./cdp clickxy 0A3B 100 200` |
+| `type <id> <text>` | Type text | `./cdp type 0A3B "text"` |
+| `eval <id> <expr>` | Run JavaScript | `./cdp eval 0A3B "location.href"` |
+| `open [url]` | Open new tab | `./cdp open "https://..."` |
+| `stop [id]` | Stop daemon(s) | `./cdp stop` |
+
+**Note:** `<id>` is the unique prefix from `./cdp list` output.
+
+---
+
+## 104 Job Application Workflow
+
+### 1. Open 104 Job Search in Chrome
+Navigate to 104.com.tw in your browser and login if needed.
+
+### 2. Get the Tab ID
 ```bash
-cd /Users/jerryliu/ai_experiment/104/gemini
-cp .env.example .env
-# Edit .env with your credentials
+./cdp list
+# Find the 104 tab ID (e.g., 0A3B)
 ```
 
-### 2. Install Dependencies
-```bash
-npm install
-npx playwright install chromium
-```
+### 3. Apply to Jobs via CLI
 
-### 3. Run
 ```bash
-node 104_auto_apply_gemini.js --start-page 2 --max-pages 5
+# Take snapshot to see current state
+./cdp snap 0A3B
+
+# Click apply button (first one on the page)
+./cdp eval 0A3B "document.querySelector('.apply-button__button').click()"
+
+# Wait a moment for new tab to open, then list tabs
+./cdp list
+
+# Switch to new tab (application form) - get its ID
+# e.g., new tab has ID 1X2Y
+
+# Select cover letter from dropdown
+./cdp eval 1X2Y "
+  // Open dropdown
+  const dropdown = document.querySelector('.multiselect');
+  if (dropdown) dropdown.click();
+"
+
+# Select the custom cover letter
+./cdp eval 1X2Y "
+  setTimeout(() => {
+    const options = document.querySelectorAll('.multiselect__option');
+    for (const opt of options) {
+      if (opt.textContent.includes('自訂推薦信1')) {
+        opt.click();
+        break;
+      }
+    }
+  }, 500);
+"
+
+# Submit application
+./cdp eval 1X2Y "
+  const submitBtn = Array.from(document.querySelectorAll('button'))
+    .find(b => b.textContent.includes('確認送出'));
+  if (submitBtn) submitBtn.click();
+"
 ```
 
 ---
 
-## Command Line Options
+## For AI Agent (Gemini CLI / Claude Code)
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--use-existing` | **Connect to existing Chrome browser** | false |
-| `--cdp-port <num>` | Chrome DevTools Protocol port | 9222 |
-| `--start-page <num>` | Starting page number | 2 |
-| `--max-pages <num>` | Number of pages to process | 5 |
-| `--headless` | Run without visible browser | false |
-| `--skip-login` | Skip automatic login attempt | false |
-| `--help` | Show help message | - |
+### Basic Instructions
+```
+Use ./cdp commands to interact with my Chrome browser.
 
-## Examples
+1. First run: ./cdp list
+   - Find the 104.com.tw tab
 
-```bash
-# USE EXISTING CHROME (recommended - reuses your logged-in session)
-node 104_auto_apply_gemini.js --use-existing --start-page 2 --max-pages 5
+2. To apply to jobs:
+   - ./cdp snap <id> to see the page structure
+   - ./cdp eval <id> "js code" to click buttons and fill forms
 
-# Use existing Chrome on different port
-node 104_auto_apply_gemini.js --use-existing --cdp-port 9223
-
-# NEW BROWSER with auto-login
-node 104_auto_apply_gemini.js --start-page 2 --max-pages 5
-
-# Process 10 pages
-node 104_auto_apply_gemini.js --use-existing --max-pages 10
+3. Important selectors for 104:
+   - Apply button: .apply-button__button
+   - Cover letter dropdown: .multiselect
+   - Cover letter option: .multiselect__option containing "自訂推薦信1"
+   - Submit button: button containing "確認送出"
 ```
 
-## For Gemini CLI
-
-Tell Gemini to run these commands:
-
-**Using existing Chrome (recommended):**
+### Example AI Prompt
 ```
-1. Run: cd /Users/jerryliu/ai_experiment/104/gemini && ./start-chrome-debug.sh
-2. Wait for me to login to 104.com.tw
-3. Then run: node 104_auto_apply_gemini.js --use-existing --start-page 2 --max-pages 5
+Connect to my Chrome browser using ./cdp commands.
+List tabs with ./cdp list, find the 104.com.tw tab.
+Then help me apply to jobs on that page.
+Use ./cdp eval to run JavaScript for clicking and form filling.
 ```
 
-**Or one-liner (if Chrome is already running with debugging):**
-```
-Run: cd /Users/jerryliu/ai_experiment/104/gemini && node 104_auto_apply_gemini.js --use-existing
-```
+---
 
-## Keyboard Controls
+## Why Chrome CDP Skill?
 
-| Key | Action |
-|-----|--------|
-| `P` | Pause automation |
-| `R` | Resume automation |
-| `Q` | Quit automation |
+| Feature | Playwright MCP | Chrome CDP Skill |
+|---------|---------------|------------------|
+| Session reuse | Need to start Chrome with debug flags | Uses existing Chrome |
+| Login persistence | Requires manual login or .env credentials | Reuses logged-in session |
+| Permission prompts | Per-command | Per-tab (persistent daemon) |
+| Tab handling | New browser contexts | Your actual tabs |
+| 100+ tabs | May timeout | Reliable |
 
-## Environment Variables (.env file)
-
-Only needed if NOT using `--use-existing`:
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `JOB_EMAIL` | Your 104.com.tw login email | Yes |
-| `JOB_PASSWORD` | Your 104.com.tw password | Yes |
-| `COVER_LETTER` | Cover letter name to use | No (default: 自訂推薦信1) |
-
-## How --use-existing Works
-
-1. **You start Chrome** with remote debugging enabled
-2. **You log in** to 104.com.tw in that browser
-3. **Script connects** to your existing browser via Chrome DevTools Protocol
-4. **Script automates** job applications using your existing session
-5. **Browser stays open** after script finishes - your session is preserved
-
-Benefits:
-- No need to store passwords in .env file
-- No need to deal with 2FA every time
-- Reuses your existing cookies and session
-- Browser stays open after automation
+---
 
 ## Troubleshooting
 
-### "Failed to connect to existing Chrome"
-Make sure Chrome is running with remote debugging:
+### "Cannot find DevToolsActivePort"
+Enable remote debugging in Chrome:
+1. Go to `chrome://inspect/#remote-debugging`
+2. Toggle ON "Enable remote debugging"
+
+### "Node.js 22+ required"
 ```bash
-# Close all Chrome windows first, then:
-./start-chrome-debug.sh
-# or
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+nvm install 22
+nvm use 22
 ```
 
-### "Not logged in"
-Log into 104.com.tw in the Chrome window before running the script.
-
-### "Browser not installed" (for new browser mode)
+### Commands not working
+Make sure the target ID is correct:
 ```bash
-npx playwright install chromium
+./cdp list
 ```
 
-## File Locations
+### Daemon issues
+Stop all daemons and retry:
+```bash
+./cdp stop
+```
+
+---
+
+## File Structure
 
 ```
 /Users/jerryliu/ai_experiment/104/gemini/
-├── 104_auto_apply_gemini.js   # Main script
-├── start-chrome-debug.sh      # Helper to start Chrome with debugging
-├── .env                       # Your credentials (optional with --use-existing)
-├── .env.example               # Template for credentials
-├── package.json               # Dependencies
-└── GEMINI_CLI_INSTRUCTIONS.md # This file
+├── cdp                        # CLI wrapper script
+├── scripts/
+│   └── cdp.mjs               # Chrome CDP skill (from pasky/chrome-cdp-skill)
+├── GEMINI_CLI_INSTRUCTIONS.md # This file
+├── CHROME_CDP_SKILL.md        # Full command reference
+└── (old files)
+    ├── 104_auto_apply_gemini.js  # Legacy Playwright script
+    └── start-chrome-debug.sh     # Legacy Chrome debug helper
 ```
+
+---
+
+## Credits
+
+Chrome CDP Skill by [pasky/chrome-cdp-skill](https://github.com/pasky/chrome-cdp-skill)
