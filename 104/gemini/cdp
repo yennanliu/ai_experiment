@@ -1,0 +1,40 @@
+#!/bin/bash
+# Chrome CDP Skill CLI wrapper
+# Connects to your existing Chrome browser session
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CDP_SCRIPT="$SCRIPT_DIR/scripts/cdp.mjs"
+
+# Check Node.js version
+NODE_VERSION=$(node --version 2>/dev/null | sed 's/v//' | cut -d'.' -f1)
+
+if [ -z "$NODE_VERSION" ]; then
+    echo "Error: Node.js is not installed"
+    echo "Install Node.js 22+ from https://nodejs.org/"
+    exit 1
+fi
+
+if [ "$NODE_VERSION" -lt 22 ]; then
+    echo "Warning: Node.js 22+ required (current: v$NODE_VERSION)"
+    echo ""
+    echo "To install Node.js 22+:"
+    echo "  nvm install 22"
+    echo "  nvm use 22"
+    echo ""
+    echo "Or run directly with: nvm exec 22 node $CDP_SCRIPT $@"
+    echo ""
+
+    # Try using nvm if available
+    if command -v nvm &>/dev/null || [ -f ~/.nvm/nvm.sh ]; then
+        source ~/.nvm/nvm.sh 2>/dev/null
+        if nvm ls 22 &>/dev/null; then
+            echo "Found Node 22 via nvm, using it..."
+            nvm exec 22 node "$CDP_SCRIPT" "$@"
+            exit $?
+        fi
+    fi
+
+    echo "Attempting to run anyway (may not work)..."
+fi
+
+node "$CDP_SCRIPT" "$@"
