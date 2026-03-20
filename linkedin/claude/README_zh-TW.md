@@ -3,54 +3,97 @@
 使用 Chrome DevTools Protocol (CDP) 自動化 LinkedIn 求職申請。
 連接現有瀏覽器 session，無需重新登入。
 
-## 快速開始
+## 使用 Claude Code 快速開始
 
-### 1. 安裝 chrome-cdp-skill
+### 1. 前置準備
 
 ```bash
+# 安裝 chrome-cdp-skill
 cd ~/.claude/skills
 git clone https://github.com/pasky/chrome-cdp-skill.git chrome-cdp
-```
 
-### 2. 安裝 Node.js 22+
-
-```bash
+# 安裝 Node.js 22+
 nvm install 22
 nvm use 22
 ```
 
-### 3. 設定 Chrome
+### 2. 設定 Chrome
 
-```bash
-# 開啟 Chrome 並啟用遠端除錯
-# 前往：chrome://inspect/#remote-debugging
-# 開啟開關
+1. 開啟 Chrome 瀏覽器
+2. 前往 `chrome://inspect/#remote-debugging`
+3. **開啟**遠端除錯開關
+4. 開啟 LinkedIn 並登入
+
+### 3. 使用 Claude Code 執行
+
+直接告訴 Claude Code 你想做什麼：
+
+```
+# 啟動 Claude Code
+claude
+
+# 然後輸入指令：
+> 幫我投 10 個中國的軟體工程師職缺
+
+> Apply to 10 software engineer jobs in China on LinkedIn
+
+> 投遞 5 個台灣的遠端後端工程師職缺
+
+> 顯示 LinkedIn 上的資料科學家職缺
 ```
 
-### 4. 登入 LinkedIn
+Claude Code 會自動：
+- 透過 CDP 連接你的 Chrome 瀏覽器
+- 導航至 LinkedIn 職缺搜尋頁面
+- 尋找並投遞符合條件的職缺
+- 處理多步驟申請流程
+- 跳過已投遞的職缺
 
-在 Chrome 開啟 LinkedIn 並確保已登入。
+### 4. Claude Code 指令範例
 
-### 5. 執行自動化
+```
+# 基本職缺搜尋與投遞
+> 投 10 個中國的軟體工程師職缺
+
+# 帶有特定篩選條件
+> 投遞台灣的遠端 Python 開發者職缺，僅限過去一週
+
+# 查看進度
+> 我今天投了幾個職缺？
+
+# 手動控制
+> 顯示 LinkedIn 上下一個未投遞的職缺
+> 點擊這個職缺的 Easy Apply
+> 送出申請
+```
+
+## 手動使用 (cdp.sh)
+
+不使用 Claude Code 時的手動控制：
 
 ```bash
-# 設定環境
-source ~/.nvm/nvm.sh && nvm use 22
-CDP="~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs"
+# 設定目標一次
+export LINKEDIN_TARGET=4BF87A
 
-# 列出 Chrome 分頁以取得目標 ID
-$CDP list
+# 基本指令
+./cdp.sh list              # 列出 Chrome 分頁
+./cdp.sh nav               # 導航至職缺搜尋
+./cdp.sh shot              # 截圖
+./cdp.sh jobs              # 列出可投職缺
 
-# 導航至職缺搜尋頁面（將 TARGET 替換為你的分頁 ID 前綴）
-$CDP nav TARGET "https://www.linkedin.com/jobs/search/?keywords=Software%20Engineer&location=China&f_AL=true&f_TPR=r604800&f_WT=2,3"
+# 申請流程
+./cdp.sh nextjob           # 點擊下一個未投職缺
+./cdp.sh apply             # 點擊 Easy Apply 按鈕
+./cdp.sh next              # 點擊下一步
+./cdp.sh review            # 點擊檢視
+./cdp.sh submit            # 送出申請
+./cdp.sh close             # 關閉成功對話框
 
-# 使用包裝腳本執行簡易指令
-./cdp.sh jobs TARGET      # 列出職缺
-./cdp.sh apply TARGET     # 點擊 Easy Apply
-./cdp.sh next TARGET      # 點擊下一步
-./cdp.sh review TARGET    # 點擊檢視
-./cdp.sh submit TARGET    # 送出申請
-./cdp.sh close TARGET     # 關閉對話框
+# 處理問題
+./cdp.sh yes               # 回答「是」（工作授權問題）
+
+# 完整自動化
+./cdp.sh auto              # 自動完成一個申請
 ```
 
 ## 包裝腳本 (cdp.sh)
