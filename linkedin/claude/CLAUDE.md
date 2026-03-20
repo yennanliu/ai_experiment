@@ -376,6 +376,71 @@ cdp.mjs eval 4BF87A '(() => {
 | Submit button | Button containing "Submit application" |
 | Job cards | `[data-job-id]` |
 
+### Full Application Flow (Verified 2026-03-20)
+
+**Step-by-step process:**
+```bash
+# 1. Navigate to job search
+cdp.mjs nav <target> "https://www.linkedin.com/jobs/search/?keywords=Software%20Engineer&location=China&f_AL=true&f_TPR=r604800&f_WT=2,3"
+
+# 2. Click on a job (find unapplied job via JS)
+cdp.mjs eval <target> '(() => {
+  const jobs = document.querySelectorAll("[data-job-id]");
+  for (const job of jobs) {
+    if (!job.textContent.includes("Applied")) {
+      job.querySelector("a")?.click();
+      return { clicked: true };
+    }
+  }
+})()'
+
+# 3. Click Easy Apply button
+cdp.mjs click <target> "button.jobs-apply-button"
+
+# 4. Click through steps (Next → Next → Review → Submit)
+cdp.mjs click <target> "button[aria-label='Continue to next step']"  # or find by text
+cdp.mjs click <target> "button[aria-label='Review your application']"
+cdp.mjs click <target> "button[aria-label='Submit application']"
+
+# 5. Close success modal
+cdp.mjs click <target> "button[aria-label='Dismiss']"
+```
+
+**Application Modal Steps:**
+1. **Contact Info** (0%) - Pre-filled from profile → Click "Next"
+2. **Resume** (25%) - Select resume → Click "Next"
+3. **Work Experience** (50%) - Pre-filled → Click "Next"
+4. **Education** (75%) - Pre-filled → Click "Review"
+5. **Additional** (optional) - Message to hiring manager → Click "Review"
+6. **Review** (100%) - Final check → Click "Submit application"
+7. **Success** - "Your application was sent!" → Click "Done" or dismiss
+
+**Handling Additional Questions:**
+Some jobs require extra questions (e.g., "Are you legally authorized to work in China?")
+```javascript
+// Select "Yes" for work authorization question
+cdp.mjs eval <target> '(() => {
+  const modal = document.querySelector(".jobs-easy-apply-modal");
+  const labels = modal.querySelectorAll("label");
+  for (const label of labels) {
+    if (label.textContent.trim() === "Yes") {
+      label.click();
+      return { clicked: "Yes" };
+    }
+  }
+})()'
+```
+
+### Button Selectors (aria-labels)
+
+| Action | Selector |
+|--------|----------|
+| Next step | `button[aria-label='Continue to next step']` |
+| Review | `button[aria-label='Review your application']` |
+| Submit | `button[aria-label='Submit application']` |
+| Close/Dismiss | `button[aria-label='Dismiss']` |
+| Back | `button[aria-label='Back to previous step']` |
+
 ### Common Issues
 
 1. **WebSocket is not defined**
@@ -393,6 +458,11 @@ cdp.mjs eval 4BF87A '(() => {
 4. **Screenshot coordinates**
    - Screenshots have 2x DPR on Retina displays
    - CSS coordinates = Screenshot pixels ÷ 2
+
+5. **Additional questions blocking progress**
+   - Some jobs require answering questions (work auth, visa, etc.)
+   - Must answer before Review button becomes clickable
+   - Use `eval` to find and click radio buttons/checkboxes
 
 ---
 
