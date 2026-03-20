@@ -105,6 +105,73 @@ case "$1" in
     $CDP_SCRIPT click "$TARGET" "button[aria-label='Dismiss']"
     ;;
 
+  review)
+    # Click Review button in modal
+    TARGET="${2:-$LINKEDIN_TARGET}"
+    $CDP_SCRIPT click "$TARGET" "button[aria-label='Review your application']"
+    ;;
+
+  yes)
+    # Answer "Yes" to work authorization questions
+    TARGET="${2:-$LINKEDIN_TARGET}"
+    $CDP_SCRIPT eval "$TARGET" '(() => {
+      const modal = document.querySelector(".jobs-easy-apply-modal");
+      if (!modal) return { error: "No modal" };
+      const labels = modal.querySelectorAll("label");
+      for (const label of labels) {
+        if (label.textContent.trim() === "Yes") {
+          label.click();
+          return { clicked: "Yes" };
+        }
+      }
+      return { error: "No Yes option" };
+    })()'
+    ;;
+
+  nextjob)
+    # Click on next unapplied job in list
+    TARGET="${2:-$LINKEDIN_TARGET}"
+    $CDP_SCRIPT eval "$TARGET" '(() => {
+      const jobs = document.querySelectorAll("[data-job-id]");
+      for (let i = 0; i < jobs.length; i++) {
+        const job = jobs[i];
+        if (!job.textContent.includes("Applied")) {
+          const link = job.querySelector("a");
+          if (link) {
+            link.click();
+            return { clicked: i, title: link.textContent.trim().substring(0, 50) };
+          }
+        }
+      }
+      return { error: "No unapplied jobs found" };
+    })()'
+    ;;
+
+  auto)
+    # Full auto-apply: next job -> easy apply -> all steps -> submit
+    TARGET="${2:-$LINKEDIN_TARGET}"
+    echo "Finding next unapplied job..."
+    $0 nextjob "$TARGET"
+    sleep 2
+    echo "Clicking Easy Apply..."
+    $0 apply "$TARGET"
+    sleep 2
+    echo "Processing application steps..."
+    for i in 1 2 3 4 5; do
+      $0 next "$TARGET" 2>/dev/null || true
+      sleep 1.5
+    done
+    echo "Clicking Review..."
+    $0 review "$TARGET" 2>/dev/null || true
+    sleep 2
+    echo "Submitting..."
+    $0 submit "$TARGET"
+    sleep 2
+    echo "Closing modal..."
+    $0 close "$TARGET"
+    echo "Done!"
+    ;;
+
   jobs)
     # List available jobs on page
     TARGET="${2:-$LINKEDIN_TARGET}"
@@ -137,10 +204,16 @@ case "$1" in
     echo ""
     echo "Quick Commands:"
     echo "  jobs <target>     - List jobs on current page"
+    echo "  nextjob <target>  - Click next unapplied job"
     echo "  apply <target>    - Click Easy Apply button"
     echo "  next <target>     - Click Next in modal"
+    echo "  review <target>   - Click Review in modal"
     echo "  submit <target>   - Click Submit in modal"
     echo "  close <target>    - Close modal"
+    echo "  yes <target>      - Answer Yes to work auth question"
+    echo ""
+    echo "Auto Commands:"
+    echo "  auto <target>     - Full auto-apply (next job → apply → submit)"
     echo ""
     echo "Set LINKEDIN_TARGET env var to skip target arg:"
     echo "  export LINKEDIN_TARGET=4BF87A"
