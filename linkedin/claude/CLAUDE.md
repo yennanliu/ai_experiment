@@ -279,7 +279,125 @@ mcp__chrome-devtools__evaluate_script({
 
 ---
 
+## Chrome CDP Skill (Recommended Method)
+
+The `chrome-cdp-skill` connects directly to your existing Chrome browser session - no separate browser instance, no re-login needed.
+
+### Installation
+
+```bash
+# Clone to Claude skills directory
+cd ~/.claude/skills
+git clone https://github.com/pasky/chrome-cdp-skill.git chrome-cdp
+```
+
+### Prerequisites
+
+1. **Node.js 22+** (required for built-in WebSocket)
+   ```bash
+   nvm install 22
+   nvm use 22
+   ```
+
+2. **Enable Chrome Remote Debugging**
+   - Open Chrome → `chrome://inspect/#remote-debugging`
+   - Toggle the switch ON
+
+3. **Log into LinkedIn in Chrome** before running automation
+
+### CDP Commands
+
+```bash
+# Set up Node 22 (run once per terminal session)
+source ~/.nvm/nvm.sh && nvm use 22
+
+# List open Chrome tabs
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs list
+
+# Navigate to URL
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs nav <target> "https://..."
+
+# Take screenshot (saves to ~/.cache/cdp/)
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs shot <target>
+
+# Get accessibility tree snapshot
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs snap <target>
+
+# Click element by CSS selector
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs click <target> "button.jobs-apply-button"
+
+# Click at CSS pixel coordinates
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs clickxy <target> <x> <y>
+
+# Type text at focused element
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs type <target> "text to type"
+
+# Evaluate JavaScript in page context
+~/.claude/skills/chrome-cdp/skills/chrome-cdp/scripts/cdp.mjs eval <target> "() => document.title"
+```
+
+**Note:** `<target>` is a unique prefix of the targetId from `list` command (e.g., `4BF87A` for a tab with ID `4BF87A9C`).
+
+### LinkedIn Automation with CDP
+
+```bash
+# 1. List tabs to find LinkedIn
+cdp.mjs list
+
+# 2. Navigate to job search (with Easy Apply filter)
+cdp.mjs nav 4BF87A "https://www.linkedin.com/jobs/search/?keywords=Software%20Engineer&location=Taiwan&f_AL=true&f_TPR=r604800&f_WT=2,3"
+
+# 3. Take screenshot to verify
+cdp.mjs shot 4BF87A
+
+# 4. Click Easy Apply button
+cdp.mjs click 4BF87A "button.jobs-apply-button"
+
+# 5. Evaluate JS to interact with modal
+cdp.mjs eval 4BF87A '(() => {
+  const modal = document.querySelector(".jobs-easy-apply-modal");
+  const nextBtn = modal?.querySelector("button");
+  if (nextBtn && nextBtn.textContent.includes("Next")) {
+    nextBtn.click();
+    return { clicked: true };
+  }
+  return { clicked: false };
+})()'
+```
+
+### Key Selectors (Verified 2026-03)
+
+| Element | Selector |
+|---------|----------|
+| Easy Apply button | `button.jobs-apply-button` |
+| Application modal | `.jobs-easy-apply-modal` |
+| Modal close button | `button[aria-label="Dismiss"]` |
+| Next button in modal | Button containing "Next" |
+| Submit button | Button containing "Submit application" |
+| Job cards | `[data-job-id]` |
+
+### Common Issues
+
+1. **WebSocket is not defined**
+   - You're using Node.js < 22
+   - Fix: `nvm use 22`
+
+2. **Messaging popup blocking**
+   - LinkedIn chat windows can overlay the page
+   - Close them first or navigate to fresh URL with `&refresh=true`
+
+3. **Modal not appearing after click**
+   - Wait 2-3 seconds after clicking Easy Apply
+   - Use `sleep 2` before next command
+
+4. **Screenshot coordinates**
+   - Screenshots have 2x DPR on Retina displays
+   - CSS coordinates = Screenshot pixels ÷ 2
+
+---
+
 ## Status: Ready for Testing
 - Helper functions created
 - MCP integration ready
+- Chrome CDP skill installed and tested
 - Configuration documented
