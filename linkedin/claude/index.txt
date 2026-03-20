@@ -1,0 +1,22 @@
+# LinkedIn Job Auto Apply Automation
+
+## Files
+
+- CLAUDE.md                         - Detailed automation guide
+- README.md                         - Quick start guide
+- linkedin_auto_apply.js            - Browser-side helper functions
+- linkedin_automation_controller.js - Main controller & configuration
+- run_linkedin_automation.js        - Step-by-step runner with MCP commands
+- package.json                      - Node.js dependencies
+
+## Quick Start
+
+1. Enable Chrome remote debugging: chrome://inspect/#remote-debugging
+2. Log into LinkedIn in Chrome
+3. Edit CONFIG in run_linkedin_automation.js
+4. Use Claude Code MCP tools to run automation
+
+## Related
+
+- 104.com.tw automation: ../104/claude/
+- chrome-cdp-skill: https://github.com/yennanliu/chrome-cdp-skill
