@@ -3,6 +3,7 @@
   - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276766
   - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276765
   - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276763
+  - https://anthropic.skilljar.com/claude-in-amazon-bedrock/276767
 
 
 # 20260319
