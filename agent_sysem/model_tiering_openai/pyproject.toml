@@ -13,6 +13,9 @@ dependencies = [
 [project.scripts]
 demo = "main:main"
 example = "example:main"
+advanced = "examples_advanced:main"
+realworld = "examples_realworld:main"
+quickref = "examples_quick_reference:main"
 
 [build-system]
 requires = ["hatchling"]
