@@ -15,8 +15,43 @@ Specialized Agent Orchestration Framework - a minimal, elegant implementation of
 
 ## Installation
 
+### Prerequisites
+- Python 3.11+
+- OpenAI API key (set `OPENAI_API_KEY` in `.env`)
+
+### Setup Steps
+
 ```bash
+# Initial setup - installs all dependencies and creates virtual environment
 uv sync
+
+# After setup, run commands with:
+uv run agent-team "Your task here"
+uv run python main.py
+```
+
+### When to Use Which Command
+
+| Command | When to Use | Purpose |
+|---------|------------|---------|
+| `uv sync` | First time setup, after updating `pyproject.toml`, or `.venv` is corrupted | Installs/updates all dependencies and syncs lock file |
+| `uv run <cmd>` | Running scripts/CLI after setup | Runs command in virtual environment without activating it |
+| `source .venv/bin/activate` | (Optional) Want to use Python interactively | Activates virtual environment manually |
+| `uv pip install <pkg>` | Need to add a quick dependency | Direct pip install (updates lock file) |
+
+### Configuration
+
+Create a `.env` file in the project root:
+
+```bash
+OPENAI_API_KEY=sk-xxxxxxxxxxxx
+```
+
+The CLI automatically loads this file, or set manually:
+
+```bash
+export OPENAI_API_KEY=sk-xxxxxxxxxxxx
+uv run agent-team "Your task"
 ```
 
 ## Usage
