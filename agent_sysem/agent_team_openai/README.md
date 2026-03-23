@@ -140,6 +140,63 @@ config = OrchestratorConfig(
 orchestrator = Orchestrator(config)
 ```
 
+## Output & Logging
+
+### Directory Structure
+
+Each job creates organized output and logs:
+
+```
+output/
+  └── YYYYMMDD_HHMMSS/           # Timestamp directory
+      └── {job_id}/              # Unique job ID (8 chars)
+          ├── metadata.json       # Execution metadata & stats
+          └── output.txt          # Full execution output
+
+log/
+  └── YYYYMMDD_HHMMSS/
+      └── {job_id}/
+          └── output.log          # Timestamped log file (no colors)
+```
+
+### Output Files
+
+**metadata.json** - Contains:
+- Job ID and timestamp
+- Task, pattern, agents used
+- Token usage per agent
+- Success status and errors
+
+**output.txt** - Contains:
+- Execution summary
+- Full output from each agent
+- Token usage breakdown
+
+**output.log** - Contains:
+- Timestamped log entries
+- All INFO, WARNING, ERROR logs
+- Clean format (no ANSI codes)
+
+### Colored Logging
+
+Logs are displayed in color in the terminal for easy reading:
+- 🟢 **INFO** - Green
+- 🟡 **WARNING** - Yellow
+- 🔴 **ERROR** - Red
+- 🔵 **DEBUG** - Cyan
+
+Color codes are stripped from log files for clean output.
+
+### Custom Output/Log Directories
+
+```bash
+# Save to custom locations
+uv run agent-team --output-dir ./results --log-dir ./logs "Your task"
+
+# Or use defaults (output/ and log/)
+uv run agent-team "Your task"
+```
+
 ## Token Savings
 
 By using specialized agents with targeted prompts instead of a single monolithic agent:
