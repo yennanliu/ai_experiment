@@ -1,0 +1,332 @@
+MODEL TIERING - Complete File Listing
+═════════════════════════════════════════════════════════════════════════════
+
+PROJECT STRUCTURE
+─────────────────────────────────────────────────────────────────────────────
+
+model_tiering_openai/
+│
+├── 📚 CORE LIBRARY
+│   ├── main.py                  (26 KB) Core routing & demo
+│   └── pyproject.toml           (445 B) Project config
+│
+├── 🎬 EXAMPLES & DEMOS
+│   ├── example.py               (7.3 KB) Full features demo
+│   ├── examples_advanced.py     (16 KB)  Advanced scenarios
+│   ├── examples_realworld.py    (15 KB)  Real-world systems
+│   └── examples_quick_reference.py (8.6 KB) Copy-paste guide
+│
+├── 📖 DOCUMENTATION (ENGLISH)
+│   ├── README.md                (4.3 KB) Main docs
+│   ├── SETUP.md                 (3.2 KB) Setup guide
+│   ├── EXAMPLES.md              (7.6 KB) Examples guide
+│   ├── COMMANDS.md              (8.1 KB) Command reference
+│   ├── DEMO_GUIDE.md            (9.5 KB) Visual demo guide
+│   ├── PROJECT_SUMMARY.txt      (7.8 KB) Project overview
+│   └── FILE_LISTING.txt         (This file)
+│
+├── 📖 DOCUMENTATION (CHINESE)
+│   └── README.zh-TW.md          (6.0 KB) 繁體中文文件
+│
+├── ⚙️ CONFIGURATION
+│   ├── .env.example             (125 B) Config template
+│   ├── .env                     (git-ignored) Your config
+│   ├── .gitignore               (389 B) Git ignore rules
+│   └── .venv/                   Virtual environment
+│
+└── 📦 DEPENDENCIES (via uv)
+    ├── openai>=1.0.0
+    ├── python-dotenv>=1.0.0
+    └── pydantic>=2.0.0
+
+═════════════════════════════════════════════════════════════════════════════
+
+RUNNABLE COMMANDS
+─────────────────────────────────────────────────────────────────────────────
+
+uv run demo              → main.py              (2 min)
+uv run example           → example.py           (5-30 min)
+uv run advanced          → examples_advanced.py (5 min)
+uv run realworld         → examples_realworld.py (5 min)
+uv run quickref          → examples_quick_reference.py (3 min)
+
+═════════════════════════════════════════════════════════════════════════════
+
+FILE DETAILS
+─────────────────────────────────────────────────────────────────────────────
+
+IMPLEMENTATION FILES
+════════════════════
+
+main.py (26 KB)
+  Core library with 4 routing strategies
+  ├── ModelTier enum (GPT-3.5, GPT-4, GPT-4-turbo)
+  ├── RuleBasedRouter class
+  ├── LLMClassifierRouter class
+  ├── DynamicEscalationRouter class
+  ├── HybridRouter class
+  ├── CostEstimator utility
+  ├── Quick demo function
+  └── Entry point: uv run demo
+
+pyproject.toml (445 bytes)
+  Project metadata and configuration
+  ├── Project name and version
+  ├── Dependencies declaration
+  ├── Script entry points (5 commands)
+  └── Build system configuration
+
+
+EXAMPLE DEMONSTRATION FILES
+═══════════════════════════
+
+example.py (7.3 KB)
+  Comprehensive feature showcase
+  ├── Rule-based routing examples (no API)
+  ├── Custom routing rules (no API)
+  ├── LLM-assisted classification (optional API)
+  ├── Hybrid router with execution (optional API)
+  ├── Cost comparison scenarios (no API)
+  └── Distribution optimization (no API)
+  Entry point: uv run example
+
+examples_advanced.py (16 KB)
+  Deep-dive advanced scenarios
+  ├── Demo 1: Domain-specific routing
+  │   ├── Tech support
+  │   ├── Legal/compliance
+  │   ├── Content writing
+  │   └── Data processing
+  ├── Demo 2: Industry configurations
+  │   ├── Healthcare (patient safety)
+  │   ├── Finance (fraud detection)
+  │   └── E-commerce (customer service)
+  ├── Demo 3: Cost scenario analysis
+  │   ├── Startup (50/day)
+  │   ├── Growing SaaS (500/day)
+  │   ├── Enterprise (5000/day)
+  │   └── High-volume (50000/day)
+  ├── Demo 4: Workload distribution impact
+  ├── Demo 5: Token size impact
+  ├── Demo 6: Routing statistics
+  └── Demo 7: Quality threshold impact
+  Entry point: uv run advanced
+
+examples_realworld.py (15 KB)
+  Production-ready system implementations
+  ├── CustomerSupportSystem class
+  │   ├── Urgent issue handling
+  │   ├── Bug report routing
+  │   ├── Simple question handling
+  │   └── Cost tracking
+  ├── ContentGenerationPipeline class
+  │   ├── Social media content
+  │   ├── Blog articles
+  │   ├── Marketing copy
+  │   └── Technical documentation
+  ├── DataProcessingWorkflow class
+  │   ├── Simple conversion
+  │   ├── Data analysis
+  │   └── Data cleaning
+  ├── CodeReviewSystem class
+  │   ├── Security reviews
+  │   ├── Performance reviews
+  │   └── Style reviews
+  └── Reporting for each system
+  Entry point: uv run realworld
+
+examples_quick_reference.py (8.6 KB)
+  Copy-paste ready examples
+  ├── Example 1: Basic routing
+  ├── Example 2: Quick recommendations
+  ├── Example 3: Custom rules
+  ├── Example 4: Cost estimation
+  ├── Example 5: Model comparison
+  ├── Example 6: Distribution analysis
+  ├── Example 7: Integration pattern
+  └── Example 8: Best practices
+  Entry point: uv run quickref
+
+
+DOCUMENTATION FILES (ENGLISH)
+═════════════════════════════
+
+README.md (4.3 KB)
+  Main documentation
+  ├── Overview and cost savings
+  ├── Installation instructions
+  ├── Configuration (OpenAI API key)
+  ├── Quick start guide
+  ├── Routing strategies (1-4)
+  ├── Custom rules examples
+  ├── Cost estimation guide
+  ├── Model selection criteria
+  ├── Typical distribution
+  └── Reference materials
+
+SETUP.md (3.2 KB)
+  Step-by-step setup guide
+  ├── Prerequisites
+  ├── Installation steps
+  ├── API key configuration
+  ├── Running demos
+  ├── Troubleshooting
+  ├── Common errors
+  ├── Security notes
+  └── Support resources
+
+EXAMPLES.md (7.6 KB)
+  Complete examples guide
+  ├── Quick start table
+  ├── 5 example descriptions
+  ├── Example selection matrix
+  ├── Learning paths (beginner→expert)
+  ├── Customization examples
+  ├── File summary table
+  └── Next steps
+
+COMMANDS.md (8.1 KB)
+  Command reference guide
+  ├── All runnable commands
+  ├── Documentation commands
+  ├── Demo matrix
+  ├── Common workflows
+  ├── Troubleshooting commands
+  ├── Speed reference
+  └── Learning paths
+
+DEMO_GUIDE.md (9.5 KB)
+  Visual demo walkthrough
+  ├── Live demo commands
+  ├── Visual output for each demo
+  ├── Learning paths (visual)
+  ├── Cost savings highlights
+  ├── Key takeaways
+  └── Pro tips
+
+PROJECT_SUMMARY.txt (7.8 KB)
+  Complete project overview
+  ├── Project overview
+  ├── Core files description
+  ├── Example files description
+  ├── Documentation overview
+  ├── Configuration files
+  ├── Quick start steps
+  ├── Routing strategies
+  ├── Cost examples
+  ├── Learning paths
+  ├── Technologies used
+  ├── Key features
+  ├── Monitoring guide
+  ├── Security notes
+  └── Next steps
+
+FILE_LISTING.txt (This file)
+  Complete file listing and structure
+
+
+DOCUMENTATION FILES (CHINESE)
+════════════════════════════
+
+README.zh-TW.md (6.0 KB)
+  Traditional Chinese documentation
+  ├── Overview in Chinese
+  ├── 模型分層成本優化 (Model Tiering)
+  ├── Installation in Chinese
+  ├── Configuration guide
+  ├── Quick start in Chinese
+  ├── All strategies translated
+  ├── Examples in Chinese
+  ├── Cost examples translated
+  └── All sections in Traditional Chinese
+
+
+CONFIGURATION FILES
+═══════════════════
+
+.env.example (125 bytes)
+  Configuration template (safe to share)
+  └── OPENAI_API_KEY=sk-...
+
+.env (created by user, git-ignored)
+  Your actual configuration (keep secret)
+  └── Your OpenAI API key
+
+.gitignore (389 bytes)
+  Git ignore rules
+  ├── .env (excludes API keys)
+  ├── __pycache__/ (excludes Python cache)
+  ├── .venv/ (excludes virtual environment)
+  ├── *.egg-info/ (excludes build artifacts)
+  └── .DS_Store, etc (excludes OS files)
+
+
+VIRTUAL ENVIRONMENT
+═══════════════════
+
+.venv/
+  Created by: uv venv
+  Contains: Installed packages and Python interpreter
+  Not tracked in git (in .gitignore)
+  Size: ~50-100 MB after dependencies installed
+
+
+═════════════════════════════════════════════════════════════════════════════
+
+QUICK NAVIGATION
+─────────────────────────────────────────────────────────────────────────────
+
+Just Starting?
+  1. Read: README.md
+  2. Run: uv run demo
+  3. Read: DEMO_GUIDE.md
+
+Want to Learn Everything?
+  1. Run: uv run example
+  2. Run: uv run advanced
+  3. Run: uv run realworld
+  4. Read: EXAMPLES.md
+
+Building Your App?
+  1. Read: SETUP.md
+  2. Run: uv run quickref
+  3. Copy code from examples_quick_reference.py
+  4. Customize and integrate
+
+Understanding Costs?
+  1. Run: uv run demo (see section 2)
+  2. Run: uv run advanced (demos 3-6)
+  3. Read: PROJECT_SUMMARY.txt (cost examples)
+
+Need Specific Domain?
+  1. Run: uv run advanced (demo 2)
+  2. Run: uv run realworld (demos 1-4)
+  3. Copy matching system implementation
+
+═════════════════════════════════════════════════════════════════════════════
+
+TOTAL PROJECT SIZE
+─────────────────────────────────────────────────────────────────────────────
+
+Source Code:        ~57 KB (main + examples)
+Documentation:      ~63 KB (11 markdown/text files)
+Configuration:      <1 KB
+Total:              ~120 KB
+
+(Excluding .venv which is generated)
+
+═════════════════════════════════════════════════════════════════════════════
+
+VERSION INFORMATION
+─────────────────────────────────────────────────────────────────────────────
+
+Project Version:    1.0.0
+Created:            2025-03-23
+Status:             Production Ready ✓
+Python:             3.11+
+Package Manager:    uv
+OpenAI Models:      GPT-3.5-turbo, GPT-4, GPT-4-turbo
+
+═════════════════════════════════════════════════════════════════════════════
+
+Ready to start? Run: uv run demo
