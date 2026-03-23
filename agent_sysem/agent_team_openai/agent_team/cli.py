@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from agent_team.agents import AgentRole
 from agent_team.orchestrator import Orchestrator, OrchestratorConfig
 from agent_team.patterns import OrchestrationPattern
+from agent_team.logger import setup_logger, get_logger
+from agent_team.job import JobManager
 
 
 def main():
@@ -65,60 +67,112 @@ Examples:
         action="store_true",
         help="Show detailed output",
     )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("output"),
+        help="Base output directory (default: ./output)",
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=Path,
+        default=Path("log"),
+        help="Base log directory (default: ./log)",
+    )
 
     args = parser.parse_args()
 
-    # Configure orchestrator
-    config = OrchestratorConfig(
-        model=args.model,
-        token_budget=args.budget,
+    # Initialize job manager
+    job_manager = JobManager(
+        base_output_dir=args.output_dir,
+        base_log_dir=args.log_dir,
     )
-    orchestrator = Orchestrator(config)
 
-    # Parse agents if specified
-    agents = None
-    if args.agents:
-        agents = [AgentRole(a.strip()) for a in args.agents.split(",")]
+    # Setup logger
+    logger = setup_logger(
+        name="agent-team",
+        log_dir=job_manager.log_dir,
+        verbose=args.verbose,
+    )
 
-    # Parse pattern if specified
-    pattern = None
-    if args.pattern:
-        pattern = OrchestrationPattern(args.pattern)
+    logger.info(f"Started job: {job_manager.job_id}")
+    logger.info(f"Task: {args.task[:100]}{'...' if len(args.task) > 100 else ''}")
 
-    # Execute based on workflow or custom
-    if args.workflow == "dev":
-        state = orchestrator.analyze_and_implement(args.task)
-    elif args.workflow == "review":
-        state = orchestrator.review_from_all_angles(args.task)
-    elif args.workflow == "docs":
-        state = orchestrator.run(
-            args.task,
-            pattern=OrchestrationPattern.PIPELINE,
-            agents=[AgentRole.ANALYST, AgentRole.DOC_WRITER],
+    try:
+        # Configure orchestrator
+        config = OrchestratorConfig(
+            model=args.model,
+            token_budget=args.budget,
         )
-    else:
-        state = orchestrator.run(args.task, pattern=pattern, agents=agents)
+        orchestrator = Orchestrator(config)
 
-    # Output results
-    print(f"\n{'='*60}")
-    print(f"Pattern: {state.pattern.value}")
-    print(f"Agents: {[r.value for r in state.agents_executed]}")
-    print(f"Tokens used: {state.total_tokens:,}")
-    print(f"Success: {state.success}")
-    print(f"{'='*60}\n")
+        # Parse agents if specified
+        agents = None
+        if args.agents:
+            agents = [AgentRole(a.strip()) for a in args.agents.split(",")]
 
-    if args.verbose:
-        for i, response in enumerate(state.responses):
-            print(f"\n--- {response.role.value.upper()} ---")
-            print(response.content)
-            print()
-    else:
-        # Show final result only
-        if state.responses:
-            print(state.responses[-1].content)
+        # Parse pattern if specified
+        pattern = None
+        if args.pattern:
+            pattern = OrchestrationPattern(args.pattern)
 
-    if not state.success:
-        print(f"\nError: {state.error}", file=sys.stderr)
+        logger.info(f"Model: {args.model}")
+        logger.info(f"Pattern: {pattern.value if pattern else 'auto-select'}")
+        if agents:
+            logger.info(f"Agents: {', '.join(a.value for a in agents)}")
+
+        # Execute based on workflow or custom
+        logger.info("Executing task...")
+        if args.workflow == "dev":
+            state = orchestrator.analyze_and_implement(args.task)
+        elif args.workflow == "review":
+            state = orchestrator.review_from_all_angles(args.task)
+        elif args.workflow == "docs":
+            state = orchestrator.run(
+                args.task,
+                pattern=OrchestrationPattern.PIPELINE,
+                agents=[AgentRole.ANALYST, AgentRole.DOC_WRITER],
+            )
+        else:
+            state = orchestrator.run(args.task, pattern=pattern, agents=agents)
+
+        # Save results
+        logger.info("Saving execution metadata...")
+        job_manager.save_execution_metadata(args.task, state)
+        job_manager.save_full_output(state)
+
+        # Output results
+        print(f"\n{'='*60}")
+        print(f"Pattern: {state.pattern.value}")
+        print(f"Agents: {[r.value for r in state.agents_executed]}")
+        print(f"Tokens used: {state.total_tokens:,}")
+        print(f"Success: {state.success}")
+        print(f"{'='*60}")
+        print(f"\nJob ID: {job_manager.job_id}")
+        print(f"Output: {job_manager.output_dir}")
+        print(f"Logs: {job_manager.log_dir}\n")
+
+        if args.verbose:
+            for i, response in enumerate(state.responses):
+                print(f"\n{'─'*60}")
+                print(f"AGENT {i+1}: {response.role.value.upper()}")
+                print(f"{'─'*60}")
+                print(response.content)
+                print()
+        else:
+            # Show final result only
+            if state.responses:
+                print(state.responses[-1].content)
+
+        logger.info(f"Job completed successfully")
+
+        if not state.success:
+            logger.error(f"Error: {state.error}")
+            sys.exit(1)
+
+    except Exception as e:
+        logger.error(f"Job failed: {e}", exc_info=True)
+        print(f"\nError: {e}", file=sys.stderr)
         sys.exit(1)
 
 

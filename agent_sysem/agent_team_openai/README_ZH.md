@@ -152,6 +152,63 @@ orchestrator = Orchestrator(config)
 - `gpt-4-turbo` - 平衡速度和成本
 - `gpt-3.5-turbo` - 最快和最便宜
 
+## 輸出和日誌
+
+### 目錄結構
+
+每個任務會創建組織化的輸出和日誌：
+
+```
+output/
+  └── YYYYMMDD_HHMMSS/           # 時間戳目錄
+      └── {job_id}/              # 唯一的任務ID（8個字符）
+          ├── metadata.json       # 執行元數據和統計信息
+          └── output.txt          # 完整的執行輸出
+
+log/
+  └── YYYYMMDD_HHMMSS/
+      └── {job_id}/
+          └── output.log          # 時間戳日誌文件（無顏色）
+```
+
+### 輸出文件
+
+**metadata.json** - 包含：
+- 任務ID和時間戳
+- 任務、模式、使用的代理
+- 每個代理的令牌使用情況
+- 成功狀態和錯誤
+
+**output.txt** - 包含：
+- 執行摘要
+- 每個代理的完整輸出
+- 令牌使用分解
+
+**output.log** - 包含：
+- 時間戳日誌條目
+- 所有 INFO、WARNING、ERROR 日誌
+- 清晰的格式（無 ANSI 代碼）
+
+### 彩色日誌
+
+日誌在終端中以顏色顯示，易於閱讀：
+- 🟢 **INFO** - 綠色
+- 🟡 **WARNING** - 黃色
+- 🔴 **ERROR** - 紅色
+- 🔵 **DEBUG** - 青色
+
+顏色代碼從日誌文件中去除以保證清晰的輸出。
+
+### 自定義輸出/日誌目錄
+
+```bash
+# 保存到自定義位置
+uv run agent-team --output-dir ./results --log-dir ./logs "您的任務"
+
+# 或使用默認設置（output/ 和 log/）
+uv run agent-team "您的任務"
+```
+
 ## 令牌節省
 
 通過使用具有特定提示詞的專門化代理而不是單一的單體代理：
