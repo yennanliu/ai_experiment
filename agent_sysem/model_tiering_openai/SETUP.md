@@ -42,18 +42,24 @@ OPENAI_API_KEY=sk-your-actual-api-key-here
 
 You can get your API key from: https://platform.openai.com/account/api-keys
 
-### 4. Run Demo
+### 4. Run Demos
 
-Test your setup with the main demo:
+Test your setup with the quick demo:
 
 ```bash
-python main.py
+uv run demo
 ```
 
 Or run the comprehensive example suite:
 
 ```bash
-python example.py
+uv run example
+```
+
+Alternative: Run directly with Python:
+```bash
+python main.py      # Quick demo
+python example.py   # Comprehensive examples
 ```
 
 ## Troubleshooting
