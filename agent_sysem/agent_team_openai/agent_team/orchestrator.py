@@ -37,7 +37,7 @@ class TokenBudget:
 @dataclass
 class OrchestratorConfig:
     """Configuration for the orchestrator."""
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "gpt-4o"
     token_budget: int = 100_000
     max_retries: int = 2
     auto_select_pattern: bool = True

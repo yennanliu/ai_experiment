@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable
+from typing import Callable, Optional
 import asyncio
 
 from agent_team.agents import Agent, AgentRole, AgentResponse
@@ -33,9 +33,6 @@ class WorkflowState:
         if not response.success:
             self.success = False
             self.error = response.error
-
-
-from typing import Optional
 
 
 class BasePattern(ABC):

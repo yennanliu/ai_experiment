@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
-import anthropic
+from openai import OpenAI
 
 
 class AgentRole(Enum):
@@ -77,9 +77,9 @@ class AgentResponse:
 class Agent:
     """A specialized agent with a specific role."""
     role: AgentRole
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "gpt-4o"
     max_tokens: int = 4096
-    _client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic, repr=False)
+    _client: OpenAI = field(default_factory=OpenAI, repr=False)
 
     @property
     def system_prompt(self) -> str:
@@ -101,15 +101,15 @@ class Agent:
             messages.append({"role": "user", "content": task})
 
         try:
-            response = self._client.messages.create(
+            response = self._client.chat.completions.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
                 system=self.system_prompt,
                 messages=messages,
             )
 
-            content = response.content[0].text
-            tokens = response.usage.input_tokens + response.usage.output_tokens
+            content = response.choices[0].message.content
+            tokens = response.usage.prompt_tokens + response.usage.completion_tokens
 
             return AgentResponse(
                 content=content,
