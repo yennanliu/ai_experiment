@@ -22,9 +22,11 @@ config.local.js
 104/.env
 104/credentials.json
 104_search_status.png
+104/claude/.playwright-mcp/
+
 node_modules/
 rag_poc/demo_1/simple-rag/chroma_db/
 rag_poc/demo_1/simple-rag/chroma_db_v3/
 rag_poc/demo_1/simple-rag/chroma_db_v4/
 rag_poc/demo_1/simple-rag/chroma_db_v5/
-104/claude/.playwright-mcp/
+agent_sysem/agent_team_openai/agent_team/__pycache__
