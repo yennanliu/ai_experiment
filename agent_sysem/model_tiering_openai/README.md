@@ -35,14 +35,26 @@ OPENAI_API_KEY=sk-your-api-key-here
 
 ## Quick Start
 
+### Run Demos
+
+```bash
+# Quick demo with cost estimation and routing examples
+uv run demo
+
+# Comprehensive demo suite (rule-based, LLM classification, etc.)
+uv run example
+```
+
+### Use in Code
+
 ```python
 from main import HybridRouter, get_recommended_model
 
 # Quick recommendation (no API call)
 model = get_recommended_model("Translate hello to Spanish")
-print(model)  # ModelTier.HAIKU
+print(model)  # ModelTier.GPT_3_5
 
-# Full routing with execution
+# Full routing with execution (requires OPENAI_API_KEY)
 router = HybridRouter()
 result = router.execute("Summarize this article")
 print(f"Used: {result.model_used.name}, Cost: ${result.cost:.6f}")
