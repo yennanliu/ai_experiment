@@ -87,7 +87,12 @@ class Agent:
 
     def execute(self, task: str, context: Optional[str] = None) -> AgentResponse:
         """Execute a task with optional context from previous agents."""
-        messages = []
+        messages = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+            }
+        ]
 
         # Add context if provided (minimal context passing)
         if context:
@@ -104,7 +109,6 @@ class Agent:
             response = self._client.chat.completions.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
-                system=self.system_prompt,
                 messages=messages,
             )
 

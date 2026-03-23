@@ -70,7 +70,10 @@ class Router:
         response = self._client.chat.completions.create(
             model=self.model,
             max_tokens=500,
-            system="""Classify the task and recommend agents. Available roles:
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Classify the task and recommend agents. Available roles:
 - analyst: requirements, analysis, problem decomposition
 - developer: coding, implementation, bug fixes
 - reviewer: code review, quality checks, security
@@ -80,8 +83,10 @@ Respond in format:
 PRIMARY: <role>
 COMPLEXITY: simple|medium|complex
 AGENTS: <comma-separated roles in execution order>
-REASONING: <brief explanation>""",
-            messages=[{"role": "user", "content": f"Task: {task}"}],
+REASONING: <brief explanation>"""
+                },
+                {"role": "user", "content": f"Task: {task}"}
+            ],
         )
 
         return self._parse_classification(response.choices[0].message.content)
