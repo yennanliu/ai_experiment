@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-import anthropic
+from openai import OpenAI
 
 from agent_team.agents import AgentRole
 
@@ -36,9 +36,9 @@ KEYWORD_PATTERNS = {
 class Router:
     """Routes tasks to appropriate agents based on classification."""
 
-    def __init__(self, model: str = "claude-sonnet-4-20250514"):
+    def __init__(self, model: str = "gpt-4o"):
         self.model = model
-        self._client = anthropic.Anthropic()
+        self._client = OpenAI()
 
     def _keyword_match(self, task: str) -> Optional[AgentRole]:
         """Fast keyword-based routing."""
@@ -67,7 +67,7 @@ class Router:
 
     def _llm_classify(self, task: str) -> RouteResult:
         """Use LLM for nuanced task classification."""
-        response = self._client.messages.create(
+        response = self._client.chat.completions.create(
             model=self.model,
             max_tokens=500,
             system="""Classify the task and recommend agents. Available roles:
@@ -84,7 +84,7 @@ REASONING: <brief explanation>""",
             messages=[{"role": "user", "content": f"Task: {task}"}],
         )
 
-        return self._parse_classification(response.content[0].text)
+        return self._parse_classification(response.choices[0].message.content)
 
     def _parse_classification(self, response: str) -> RouteResult:
         """Parse LLM classification response."""

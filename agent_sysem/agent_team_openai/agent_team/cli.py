@@ -45,8 +45,8 @@ Examples:
     )
     parser.add_argument(
         "--model",
-        default="claude-sonnet-4-20250514",
-        help="Model to use (default: claude-sonnet-4-20250514)",
+        default="gpt-4o",
+        help="Model to use (default: gpt-4o)",
     )
     parser.add_argument(
         "--budget",
