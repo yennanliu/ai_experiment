@@ -2,6 +2,9 @@
 
 import argparse
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from agent_team.agents import AgentRole
 from agent_team.orchestrator import Orchestrator, OrchestratorConfig
@@ -9,6 +12,9 @@ from agent_team.patterns import OrchestrationPattern
 
 
 def main():
+    # Load environment variables from .env file
+    load_dotenv(Path(__file__).parent.parent / ".env")
+
     parser = argparse.ArgumentParser(
         description="Specialized Agent Orchestration Framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
