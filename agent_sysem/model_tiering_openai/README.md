@@ -2,6 +2,8 @@
 
 Intelligent model routing for OpenAI API to optimize costs while maintaining quality.
 
+[繁體中文文件](README.zh-TW.md) | [English](README.md)
+
 ## Overview
 
 This module implements multiple routing strategies to automatically select the appropriate OpenAI model (GPT-3.5-turbo, GPT-4, or GPT-4-turbo) based on task complexity, achieving up to **71% cost savings** compared to using GPT-4 for all requests.
