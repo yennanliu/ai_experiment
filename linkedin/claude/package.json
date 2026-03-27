@@ -5,7 +5,10 @@
   "main": "run_linkedin_automation.js",
   "scripts": {
     "start": "node run_linkedin_automation.js",
-    "info": "node -e \"require('./run_linkedin_automation.js')\""
+    "info": "node -e \"require('./run_linkedin_automation.js')\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "linkedin",
@@ -17,6 +20,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
   "engines": {
     "node": ">=22.0.0"
   }
