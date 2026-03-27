@@ -34,3 +34,6 @@ rag_poc/demo_1/simple-rag/chroma_db_v5/
 agent_sysem/agent_team_openai/agent_team/__pycache__
 agent_sysem/agent_team_openai/log/
 agent_sysem/agent_team_openai/output/
+
+
+linkedin/claude/.playwright-mcp/
