@@ -1,0 +1,2 @@
+# POC uses stdlib only; pin for optional dev tools later
+# pytest>=8.0
