@@ -212,3 +212,8 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_exp_verify(store, args.experiment_id)
 
     return 1
+
+
+def run() -> None:
+    """Installed as the `dvs` console script (uv / pip)."""
+    raise SystemExit(main())
