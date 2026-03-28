@@ -25,6 +25,10 @@ def cmd_init(store: Store) -> int:
 def cmd_add(store: Store, path: Path, tag: str | None) -> int:
     store.ensure_init()
     root = path.resolve()
+    if not root.exists():
+        print(f"Path does not exist: {root}", file=sys.stderr)
+        print("Hint: paths are relative to cwd (in Docker, use /workspace/...).", file=sys.stderr)
+        return 1
     if not root.is_dir():
         print(f"Not a directory: {root}", file=sys.stderr)
         return 1
