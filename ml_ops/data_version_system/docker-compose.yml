@@ -1,0 +1,7 @@
+services:
+  dvs:
+    build: .
+    image: dvs-mini:local
+    volumes:
+      - ./workspace:/workspace
+    working_dir: /workspace
