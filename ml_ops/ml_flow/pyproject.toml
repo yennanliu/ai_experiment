@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mlflow-poc"
+version = "0.1.0"
+description = "MLflow tracking server + demo training job (ML tooling POC)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mlflow>=2.17.0",
+    "scikit-learn>=1.5.0",
+    "numpy>=1.26.0",
+]
+
+[project.scripts]
+mfpoc-train = "mlflow_poc.train:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mlflow_poc"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[dependency-groups]
+dev = ["ruff>=0.8.0"]
