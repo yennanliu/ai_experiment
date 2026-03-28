@@ -44,11 +44,14 @@ The image runs `uv sync --frozen --no-dev` at build time (see [uv + Docker](http
 
 ```bash
 cd ml_ops/data_version_system
-docker compose build
+docker compose build   # first time only
+# Uses sample data in workspace/demo_data (or: mkdir -p workspace/demo_data && echo '{"a":1}' > workspace/demo_data/x.json)
 docker compose run --rm dvs init
 docker compose run --rm dvs add demo_data --tag v1
 docker compose run --rm dvs list
 ```
+
+Container `cwd` is `/workspace` (host folder `workspace/`), so `demo_data` means `workspace/demo_data` on your machine.
 
 Mount semantics: host `./workspace` → container `/workspace`; `.dvs` lives under whatever directory you use as `-C` / `cwd`.
 
