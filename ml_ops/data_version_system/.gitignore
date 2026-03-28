@@ -1,3 +1,4 @@
 workspace/.dvs/
+.venv/
 **/__pycache__/
 *.pyc
