@@ -6,7 +6,7 @@ WORKDIR /app
 RUN pip install uv
 
 # Copy project files
-COPY pyproject.toml .
+COPY pyproject.toml README.md ./
 COPY src/ src/
 
 # Install dependencies
