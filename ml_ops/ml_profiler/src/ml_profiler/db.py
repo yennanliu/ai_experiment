@@ -43,6 +43,7 @@ class ProfileDB:
             total_params=metrics.total_params,
             total_flops=metrics.total_flops,
             input_shape=metrics.input_shape,
+            top_kernels_json=metrics.top_kernels_json,
             notes=notes,
         )
         session.add(result)

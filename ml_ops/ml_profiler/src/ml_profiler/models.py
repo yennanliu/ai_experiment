@@ -29,6 +29,9 @@ class ProfileResult(Base):
     total_flops = Column(Float)
     input_shape = Column(String(255))
 
+    # Detailed kernel metrics (JSON)
+    top_kernels_json = Column(Text, default="[]")
+
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text)
