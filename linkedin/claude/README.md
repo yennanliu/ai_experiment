@@ -3,16 +3,17 @@
 Automated job application for LinkedIn using Chrome DevTools Protocol (CDP).
 Reuses existing browser session - no login handling required.
 
-## Quick Start with Claude Code
+## Quick Start with Claude Code (Recommended)
 
 ### 1. Prerequisites
 
 ```bash
-# Install chrome-cdp-skill
+# Node.js is available if using Playwright MCP (built-in)
+# Alternatively, install chrome-cdp-skill:
 cd ~/.claude/skills
 git clone https://github.com/pasky/chrome-cdp-skill.git chrome-cdp
 
-# Install Node.js 22+
+# Install Node.js 22+ (for cdp-skill)
 nvm install 22
 nvm use 22
 ```
@@ -24,27 +25,36 @@ nvm use 22
 3. Toggle the switch **ON**
 4. Open LinkedIn and login
 
-### 3. Run with Claude Code
+### 3. Using Claude Code with linkedin_automation_controller.js
 
-Simply tell Claude Code what you want:
+The main automation logic is in **`linkedin_automation_controller.js`** which provides:
+- Configuration object for job search parameters
+- Helper functions for DOM interaction (injected into browser)
+- Status tracking and UI indicator
+- Keyboard controls (P=Pause, R=Resume, Q=Quit)
+
+**Simply tell Claude Code what you want:**
 
 ```
 # Start Claude Code
 claude
 
-# Then tell it what to do:
-> Apply to 10 software engineer jobs in China on LinkedIn
+# Then tell it:
+> Apply to 10 software engineer jobs in Germany
 
-> Apply to 5 remote backend developer jobs in Taiwan
+> Apply to 5 remote backend developer jobs in France
 
-> Show me available jobs on LinkedIn for data scientist
+> How many jobs can I apply to in UK?
 ```
 
-Claude Code will automatically:
-- Connect to your Chrome browser via CDP
-- Navigate to LinkedIn job search
-- Find and apply to jobs matching your criteria
-- Handle the multi-step application flow
+**Claude Code will automatically:**
+- Use linkedin_automation_controller.js to build the search URL
+- Navigate to LinkedIn job search with your filters
+- Inject helper functions into the page
+- Click through jobs and apply automatically
+- Handle multi-step application forms
+- Fill numeric fields with default values
+- Track progress with status indicator
 - Skip already-applied jobs
 
 ### 4. Example Prompts for Claude Code
@@ -159,12 +169,47 @@ export LINKEDIN_TARGET=4BF87A
 
 | File | Description |
 |------|-------------|
+| **`linkedin_automation_controller.js`** | **Main automation controller** - Contains CONFIG object, URL builder, and INJECT_SCRIPT (required for Claude Code) |
+| `linkedin_auto_apply.js` | Browser-side helper functions (legacy) |
 | `cdp.sh` | Wrapper script for CDP commands |
-| `linkedin_auto_apply.js` | Browser-side helper functions |
-| `linkedin_automation_controller.js` | Main controller & configuration |
-| `CLAUDE.md` | Detailed automation guide |
+| `CLAUDE.md` | Detailed automation guide with all steps and selectors |
 | `README.md` | This quick start guide |
 | `README_zh-TW.md` | Traditional Chinese guide |
+
+### linkedin_automation_controller.js - Core Module
+
+This file is **the main entry point** for LinkedIn automation. It exports:
+
+```javascript
+// Edit CONFIG to customize searches
+CONFIG = {
+  jobTitle: 'Software Engineer',
+  locations: ['Germany', 'Remote'],
+  datePosted: 'Past week',
+  easyApplyOnly: true,
+  remoteOptions: ['Remote', 'Hybrid'],
+  maxApplications: 10,
+  delayBetweenApps: { min: 3000, max: 6000 }
+}
+
+// Build search URL from CONFIG
+buildSearchUrl(config)
+
+// Inject helper functions into browser page
+INJECT_SCRIPT
+
+// Get/update automation state
+CHECK_STATE_SCRIPT
+getUpdateCounterScript(type)
+```
+
+**How Claude Code uses it:**
+1. Reads CONFIG for search parameters
+2. Calls `buildSearchUrl()` to generate LinkedIn search URL
+3. Navigates to the URL
+4. Injects INJECT_SCRIPT to add helper functions to page
+5. Runs automation loop calling helper functions
+6. Returns results without large console logs
 
 ## Requirements
 
@@ -181,6 +226,96 @@ export LINKEDIN_TARGET=4BF87A
 | Messaging popup blocking | Navigate with `&refresh=true` |
 | Modal not appearing | Wait 2-3 seconds after click |
 | Additional questions | Use `./cdp.sh yes` to answer |
+
+## Handling Large Responses & Context Issues
+
+**Problem:** Large automation scripts can generate 50-100KB responses, causing token limit issues.
+
+**Solution:** Use **Batch Processing with Minimal Returns**
+
+1. **Return only summary data** (not full logs)
+   ```javascript
+   // Instead of logging to console (large output)
+   // Return structured summary
+   return { applied: 9, failed: 0, jobs: [...] }
+   ```
+
+2. **Process jobs incrementally**
+   - Apply to 5-10 jobs per batch
+   - Return summary, not raw logs
+   - Avoid storing full browser console output
+
+3. **Split large automations**
+   ```javascript
+   // Bad: One giant loop returning all logs
+   for (i = 0; i < 100; i++) { /* large loop */ }
+
+   // Good: Smaller batches
+   for (i = 0; i < 10; i++) { /* apply to 10 jobs */ }
+   return summary
+   // Then call again if needed
+   ```
+
+4. **Only read necessary parts of results**
+   - Use `Grep` to search for specific patterns
+   - Use `offset` and `limit` with `Read` tool
+   - Don't read entire large files at once
+
+5. **Example optimized approach:**
+   ```javascript
+   // Runs automation but returns only summary
+   async function autoApplyBatch(maxJobs = 10) {
+     const results = { applied: 0, failed: 0, jobs: [] };
+
+     for (let i = 0; i < maxJobs; i++) {
+       // ... apply to job ...
+       results.jobs.push({ index: i, status: 'SUCCESS' });
+     }
+
+     return results; // Small, structured output only
+   }
+   ```
+
+## Best Practices for Future Automations
+
+### 1. Reference linkedin_automation_controller.js
+Always start by asking Claude Code to use the existing controller:
+```
+> Apply to 10 backend engineer jobs in Singapore using linkedin_automation_controller.js
+
+> Use the CONFIG in linkedin_automation_controller.js to search for remote data engineer jobs
+```
+
+### 2. Customize CONFIG for your search
+The CONFIG object supports:
+- `jobTitle`: Any job role
+- `locations`: Multiple locations
+- `datePosted`: 'Past week' / 'Past month' / 'Any time'
+- `remoteOptions`: ['Remote'], ['Hybrid'], ['On-site'], or mix
+- `maxApplications`: Limit number of applications
+- `delayBetweenApps`: { min: 3000, max: 6000 } for safety
+
+### 3. Keep automations small
+- Apply to 10 jobs per run (maximum)
+- Return only summary results
+- Use pause/resume controls (P/R/Q) for real-time control
+
+### 4. Monitor progress
+Watch the blue automation status indicator (top-right corner):
+- 🤖 RUNNING - Currently applying
+- ⏸️  PAUSED - Press R to resume
+- 🛑 STOPPED - Automation ended
+- ✅ COMPLETED - Finished successfully
+
+### 5. Reading large result files
+If results are too large:
+```bash
+# Use grep to search for specific results
+grep "SUCCESS\|FAILED" result_file.txt
+
+# Use read with offset/limit
+read file_path --offset 1 --limit 100
+```
 
 ## Related
 
