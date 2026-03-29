@@ -11,10 +11,13 @@ from .profiler import ProfileMetrics
 
 def get_database_url() -> str:
     """Get database URL from environment or use SQLite default."""
-    return os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///mlprofiler.db",
-    )
+    if "DATABASE_URL" in os.environ:
+        return os.environ["DATABASE_URL"]
+
+    # Use data/ directory, create if needed
+    data_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(data_dir, exist_ok=True)
+    return f"sqlite:///{data_dir}/mlprofiler.db"
 
 
 class ProfileDB:

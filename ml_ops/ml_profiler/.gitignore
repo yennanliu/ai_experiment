@@ -13,3 +13,4 @@ venv/
 .env
 .uv/
 uv.lock
+data/
