@@ -1,185 +1,159 @@
-"""Streamlit dashboard for ML Profiler."""
+"""FastAPI dashboard for ML Profiler."""
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 
 from .db import ProfileDB
 
+app = FastAPI(title="ML Profiler Dashboard")
 
-def load_data():
-    """Load data from database."""
+
+def get_html_template(content: str, title: str = "ML Profiler") -> str:
+    """Simple HTML template."""
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>{title}</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; margin: 40px; background: #f5f5f5; }}
+        h1 {{ color: #333; }}
+        table {{ border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+        th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+        th {{ background: #4a90d9; color: white; }}
+        tr:nth-child(even) {{ background: #f9f9f9; }}
+        tr:hover {{ background: #f0f7ff; }}
+        .metric {{ display: inline-block; background: white; padding: 20px; margin: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+        .metric-value {{ font-size: 2em; font-weight: bold; color: #4a90d9; }}
+        .metric-label {{ color: #666; }}
+        .nav {{ margin-bottom: 20px; }}
+        .nav a {{ margin-right: 20px; color: #4a90d9; text-decoration: none; }}
+        .nav a:hover {{ text-decoration: underline; }}
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Dashboard</a>
+        <a href="/api/results">API: All Results</a>
+        <a href="/api/models">API: Models</a>
+    </div>
+    {content}
+</body>
+</html>"""
+
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard():
+    """Main dashboard page."""
     try:
         db = ProfileDB()
-        results = db.get_all(limit=500)
-        if not results:
-            return pd.DataFrame()
-
-        data = []
-        for r in results:
-            data.append({
-                "id": r.id,
-                "model": r.model_name,
-                "version": r.model_version,
-                "hardware": r.hardware_target,
-                "time_ms": r.total_time_ms,
-                "cpu_time_ms": r.cpu_time_ms,
-                "cuda_time_ms": r.cuda_time_ms,
-                "memory_mb": r.memory_allocated_mb,
-                "params": r.total_params,
-                "flops": r.total_flops,
-                "input_shape": r.input_shape,
-                "created_at": r.created_at,
-            })
-        return pd.DataFrame(data)
+        results = db.get_all(limit=100)
+        model_names = db.get_models()
     except Exception as e:
-        st.error(f"Database connection error: {e}")
-        return pd.DataFrame()
+        return get_html_template(f"<h1>Database Error</h1><p>{e}</p>")
+
+    if not results:
+        return get_html_template("""
+            <h1>ML Profiler Dashboard</h1>
+            <p>No data yet. Run profiling first:</p>
+            <pre>ml-profiler profile --model demo_model --demo</pre>
+        """)
+
+    # Metrics
+    total = len(results)
+    unique_models = len(model_names)
+    avg_time = sum(r.total_time_ms for r in results) / total
+
+    metrics_html = f"""
+    <div class="metric">
+        <div class="metric-value">{total}</div>
+        <div class="metric-label">Total Profiles</div>
+    </div>
+    <div class="metric">
+        <div class="metric-value">{unique_models}</div>
+        <div class="metric-label">Unique Models</div>
+    </div>
+    <div class="metric">
+        <div class="metric-value">{avg_time:.2f}ms</div>
+        <div class="metric-label">Avg Time</div>
+    </div>
+    """
+
+    # Table
+    rows = ""
+    for r in results[:50]:
+        rows += f"""<tr>
+            <td>{r.id}</td>
+            <td>{r.model_name}</td>
+            <td>{r.model_version}</td>
+            <td>{r.hardware_target}</td>
+            <td>{r.total_time_ms:.2f}</td>
+            <td>{r.total_params:,}</td>
+            <td>{r.created_at.strftime('%Y-%m-%d %H:%M')}</td>
+        </tr>"""
+
+    table_html = f"""
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Model</th>
+            <th>Version</th>
+            <th>Hardware</th>
+            <th>Time (ms)</th>
+            <th>Params</th>
+            <th>Date</th>
+        </tr>
+        {rows}
+    </table>
+    """
+
+    return get_html_template(f"""
+        <h1>ML Profiler Dashboard</h1>
+        {metrics_html}
+        <h2>Recent Profiles</h2>
+        {table_html}
+    """)
 
 
-def main():
-    st.set_page_config(
-        page_title="ML Profiler Dashboard",
-        page_icon="⚡",
-        layout="wide",
-    )
-
-    st.title("⚡ ML Profiler Dashboard")
-    st.markdown("Monitor and analyze ML model performance metrics")
-
-    # Load data
-    df = load_data()
-
-    if df.empty:
-        st.warning("No profiling data found. Run `ml-profiler profile` to generate data.")
-        st.code("ml-profiler profile --model resnet18 --version 1.0.0", language="bash")
-        return
-
-    # Sidebar filters
-    st.sidebar.header("Filters")
-    models = ["All"] + sorted(df["model"].unique().tolist())
-    selected_model = st.sidebar.selectbox("Model", models)
-
-    if selected_model != "All":
-        df = df[df["model"] == selected_model]
-
-    # Metrics overview
-    st.header("📊 Overview")
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric("Total Profiles", len(df))
-    with col2:
-        st.metric("Unique Models", df["model"].nunique())
-    with col3:
-        st.metric("Avg Time (ms)", f"{df['time_ms'].mean():.2f}")
-    with col4:
-        st.metric("Avg Memory (MB)", f"{df['memory_mb'].mean():.2f}")
-
-    # Performance over time
-    st.header("📈 Performance Over Time")
-
-    if len(df) > 1:
-        fig = px.line(
-            df.sort_values("created_at"),
-            x="created_at",
-            y="time_ms",
-            color="model",
-            markers=True,
-            title="Inference Time Over Time",
-        )
-        fig.update_layout(
-            xaxis_title="Date",
-            yaxis_title="Time (ms)",
-            height=400,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    # Model comparison
-    st.header("🔄 Model Comparison")
-    col1, col2 = st.columns(2)
-
-    with col1:
-        model_stats = df.groupby("model").agg({
-            "time_ms": "mean",
-            "memory_mb": "mean",
-            "params": "first",
-        }).reset_index()
-
-        fig = px.bar(
-            model_stats,
-            x="model",
-            y="time_ms",
-            title="Average Inference Time by Model",
-            color="model",
-        )
-        fig.update_layout(yaxis_title="Time (ms)", showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        fig = px.bar(
-            model_stats,
-            x="model",
-            y="memory_mb",
-            title="Average Memory Usage by Model",
-            color="model",
-        )
-        fig.update_layout(yaxis_title="Memory (MB)", showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
-
-    # Version comparison (bisection helper)
-    st.header("🔍 Version Bisection")
-    st.markdown("Compare performance across versions to identify regressions")
-
-    if selected_model != "All":
-        version_df = df.groupby("version").agg({
-            "time_ms": ["mean", "std", "count"],
-            "memory_mb": "mean",
-        }).reset_index()
-        version_df.columns = ["version", "time_mean", "time_std", "runs", "memory_mean"]
-
-        if len(version_df) > 1:
-            fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=version_df["version"],
-                y=version_df["time_mean"],
-                error_y=dict(type="data", array=version_df["time_std"]),
-                name="Inference Time",
-            ))
-            fig.update_layout(
-                title=f"Version Comparison: {selected_model}",
-                xaxis_title="Version",
-                yaxis_title="Time (ms)",
-                height=400,
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            # Regression detection
-            if len(version_df) >= 2:
-                latest = version_df.iloc[-1]
-                previous = version_df.iloc[-2]
-                diff_pct = ((latest["time_mean"] - previous["time_mean"]) / previous["time_mean"]) * 100
-
-                if diff_pct > 10:
-                    st.error(f"⚠️ Performance regression detected: {diff_pct:.1f}% slower than previous version")
-                elif diff_pct < -10:
-                    st.success(f"✅ Performance improvement: {abs(diff_pct):.1f}% faster than previous version")
-                else:
-                    st.info(f"ℹ️ Performance stable: {diff_pct:+.1f}% change from previous version")
-        else:
-            st.info("Add more versions to enable comparison")
-    else:
-        st.info("Select a specific model to compare versions")
-
-    # Raw data table
-    st.header("📋 Raw Data")
-    st.dataframe(
-        df[["model", "version", "hardware", "time_ms", "memory_mb", "params", "created_at"]]
-        .sort_values("created_at", ascending=False),
-        use_container_width=True,
-    )
+@app.get("/api/results")
+async def api_results(limit: int = 100):
+    """Get all results as JSON."""
+    db = ProfileDB()
+    results = db.get_all(limit=limit)
+    return [{
+        "id": r.id,
+        "model": r.model_name,
+        "version": r.model_version,
+        "hardware": r.hardware_target,
+        "time_ms": r.total_time_ms,
+        "params": r.total_params,
+        "created_at": r.created_at.isoformat(),
+    } for r in results]
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/api/models")
+async def api_models():
+    """Get list of models."""
+    db = ProfileDB()
+    return db.get_models()
+
+
+@app.get("/api/compare/{model_name}")
+async def api_compare(model_name: str):
+    """Compare versions of a model."""
+    db = ProfileDB()
+    results = db.compare_versions(model_name)
+
+    versions = {}
+    for r in results:
+        if r.model_version not in versions:
+            versions[r.model_version] = {"times": [], "params": r.total_params}
+        versions[r.model_version]["times"].append(r.total_time_ms)
+
+    return {
+        v: {
+            "avg_time_ms": sum(d["times"]) / len(d["times"]),
+            "runs": len(d["times"]),
+            "params": d["params"],
+        }
+        for v, d in versions.items()
+    }
