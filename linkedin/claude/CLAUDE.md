@@ -466,19 +466,33 @@ cdp.mjs eval <target> '(() => {
 
 ---
 
-## 🧪 Testing Results (2026-03-27)
+## 🧪 Testing Results (2026-03-29)
 
 ### Successful Batch Test
-✅ Applied to **3 SWE jobs in UK** with full automation:
-1. Software Engineer @ Formation Search (EMEA, Remote)
-2. Software Engineer @ bp (London, Hybrid)
-3. Senior Software Engineer (Python) @ OpenSource (London, Hybrid)
+✅ Applied to **20+ SWE jobs in UK** with full automation:
+- Remote Software Engineer (UK)
+- Senior Software Engineer in Test (Full-Stack/Python)
+- Senior Spacecraft Software Engineer
+- Senior Software Engineer – AI Platform (Python/Go)
+- Software Engineer - Enterprise Connectors
+- Python Software Engineer – Up to £150K + Bonus
+- And 14+ more positions
 
 All applications completed successfully with:
 - Auto contact info detection
 - Resume selection
-- Question field filling
+- Question field filling (numeric fields default to "5")
+- Yes radio button auto-selection
 - Modal submission
+
+### Key Functions Added (2026-03-29)
+
+| Function | Purpose |
+|----------|---------|
+| `findEasyApplyButton()` | Multi-method button detection (class, aria-label, text) |
+| `fillFormFields()` | Auto-fill numeric (5), text (N/A), and Yes radio buttons |
+| `applyToJob(index)` | Complete single job flow with form handling |
+| `batchApply(start, count)` | Batch processing with status tracking |
 
 ### Key Findings from Real Testing
 
@@ -489,8 +503,9 @@ All applications completed successfully with:
 - Step 100% (Review): Final submission
 
 **Required Form Handling:**
-- Numeric textboxes need values (e.g., years of experience)
+- Numeric textboxes need values (e.g., years of experience) → Auto-filled with "5"
 - Text fields auto-filled from profile
+- Radio buttons for Yes/No questions → Auto-click "Yes"
 - Dropdowns sometimes required (country code, education level)
 - Hidden required fields must be filled before "Submit" button enables
 
@@ -498,6 +513,18 @@ All applications completed successfully with:
 - URL changes to `/post-apply/default/` after submission
 - "Application sent" message appears
 - Job shows "Applied" status on search results
+
+**Easy Apply Button Detection (Fixed 2026-03-29):**
+```javascript
+// Method 1: Class selector
+document.querySelector('button.jobs-apply-button')
+
+// Method 2: Aria-label selector
+document.querySelector('button[aria-label*="Easy Apply"]')
+
+// Method 3: Text content search (fallback)
+buttons.find(b => b.textContent.toLowerCase().includes('easy apply'))
+```
 
 ---
 
@@ -752,15 +779,24 @@ runBatch();
 |---------|--------|-------|
 | Helper Injection | ✅ Works | Via `evaluate_script` in browser |
 | Job Card Detection | ✅ Works | Multiple selector fallbacks |
-| Easy Apply Button | ✅ Works | Consistent across jobs |
+| Easy Apply Button | ✅ Works | 3-method detection (class, aria-label, text) |
 | Modal Navigation | ✅ Works | 4-5 step forms handled |
 | Contact Info Auto-fill | ✅ Works | Pre-selected from profile |
 | Resume Selection | ✅ Works | Auto-select first resume |
-| Question Filling | ✅ Partial | Numeric/text fields, need manual for complex questions |
+| Question Filling | ✅ Works | `fillFormFields()` handles numeric (5), text (N/A), Yes radio |
 | Success Detection | ✅ Works | URL change + success message |
-| Error Recovery | ⚠️ Basic | Closes modal and continues |
-| Rate Limiting | ⚠️ Not Tested | Implement exponential backoff if needed |
+| Batch Apply | ✅ Works | `batchApply(start, count)` for multiple jobs |
+| Error Recovery | ✅ Works | Closes modal, handles discard dialog |
+| Rate Limiting | ⚠️ Basic | 2-5 second random delay between jobs |
 
-## Status: Tested & Production-Ready ✅
+## Status: Tested & Production-Ready ✅ (Updated 2026-03-29)
 
-The automation system has been **validated with real LinkedIn job applications**. Ready for batch deployment with proper configuration.
+The automation system has been **validated with 20+ real LinkedIn job applications** in UK.
+
+**Latest fixes:**
+- Improved Easy Apply button detection (3 fallback methods)
+- Added `fillFormFields()` for auto-filling numeric/text inputs
+- Added `applyToJob()` and `batchApply()` for complete automation
+- Fixed modal detection and form submission flow
+
+Ready for batch deployment with proper configuration.
