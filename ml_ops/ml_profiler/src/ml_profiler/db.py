@@ -10,10 +10,10 @@ from .profiler import ProfileMetrics
 
 
 def get_database_url() -> str:
-    """Get database URL from environment or use default."""
+    """Get database URL from environment or use SQLite default."""
     return os.environ.get(
         "DATABASE_URL",
-        "postgresql://mlprofiler:mlprofiler@localhost:5432/mlprofiler",
+        "sqlite:///mlprofiler.db",
     )
 
 

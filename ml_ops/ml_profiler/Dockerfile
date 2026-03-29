@@ -9,11 +9,11 @@ RUN pip install uv
 COPY pyproject.toml README.md ./
 COPY src/ src/
 
-# Install dependencies
-RUN uv pip install --system -e .
+# Install dependencies (lightweight, no torch)
+RUN uv pip install --system .
 
-# Expose Streamlit port
-EXPOSE 8501
+# Expose FastAPI port
+EXPOSE 8000
 
 # Default command runs the dashboard
-CMD ["streamlit", "run", "src/ml_profiler/dashboard.py", "--server.address=0.0.0.0"]
+CMD ["uvicorn", "ml_profiler.dashboard:app", "--host", "0.0.0.0", "--port", "8000"]

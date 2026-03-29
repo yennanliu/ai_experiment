@@ -1,83 +1,66 @@
 # Mini ML Profiler
 
-A lightweight ML model profiling tool with PostgreSQL storage and Streamlit dashboard.
+Lightweight ML model profiling tool with SQLite storage and FastAPI dashboard.
 
 ## Features
 
-- Profile PyTorch models (latency, memory, FLOPs, parameters)
-- Store metrics in PostgreSQL for historical analysis
-- Streamlit dashboard for visualization and version bisection
-- CLI for quick profiling and querying
+- Profile ML models (latency, parameters)
+- SQLite storage (PostgreSQL optional)
+- FastAPI dashboard with JSON API
+- Demo mode (no torch required)
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Using Docker
 
 ```bash
-# Start PostgreSQL and Dashboard
 docker-compose up -d
-
-# Open dashboard at http://localhost:8501
+# Dashboard at http://localhost:8000
 ```
 
 ### Local Development
 
 ```bash
-# Install uv if not installed
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies
+# Install
 uv sync
 
-# Start PostgreSQL (required)
-docker-compose up -d db
+# Profile (demo mode - no torch needed)
+uv run ml-profiler profile --model my_model --demo
 
-# Run profiler CLI
-uv run ml-profiler profile --model resnet18 --version 1.0.0
+# Profile with torch (optional)
+uv pip install ml-profiler[torch]
+uv run ml-profiler profile --model resnet18
 
 # View history
 uv run ml-profiler history
 
 # Start dashboard
-uv run streamlit run src/ml_profiler/dashboard.py
+uv run ml-profiler serve
 ```
 
 ## CLI Commands
 
 ```bash
-# Profile a model
-ml-profiler profile --model resnet18 --version 1.0.0 --batch-size 1
-
-# Available models: resnet18, resnet50, vit
-
-# View profiling history
+ml-profiler profile --model NAME --version 1.0.0 --demo
 ml-profiler history
-ml-profiler history --model resnet18 --limit 10
-
-# List profiled models
 ml-profiler models
-
-# Compare versions
-ml-profiler compare resnet18
+ml-profiler serve   # Start web dashboard
 ```
 
-## Architecture
+## API Endpoints
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   CLI       │────▶│  Profiler   │────▶│  PostgreSQL │
-└─────────────┘     └─────────────┘     └──────┬──────┘
-                                               │
-                    ┌─────────────┐             │
-                    │  Dashboard  │◀────────────┘
-                    │  (Streamlit)│
-                    └─────────────┘
-```
+- `GET /` - Dashboard
+- `GET /api/results` - All results (JSON)
+- `GET /api/models` - List models
+- `GET /api/compare/{model}` - Compare versions
 
-## Configuration
-
-Set `DATABASE_URL` environment variable:
+## Optional Dependencies
 
 ```bash
-export DATABASE_URL=postgresql://user:pass@host:5432/dbname
+# For real PyTorch profiling
+uv pip install ml-profiler[torch]
+
+# For PostgreSQL
+uv pip install ml-profiler[postgres]
+export DATABASE_URL=postgresql://user:pass@host:5432/db
 ```
