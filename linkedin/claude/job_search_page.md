@@ -1,0 +1,500 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - region "Toast message":
+      - heading "0 notifications total" [level=2] [ref=e3]
+      - alert
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - button "Skip to search" [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: Skip to search
+      - button "Skip to main content" [ref=e9] [cursor=pointer]:
+        - generic [ref=e10]: Skip to main content
+      - button "Keyboard shortcuts" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: Keyboard shortcuts
+      - button "Close jump menu" [ref=e13] [cursor=pointer]:
+        - img [ref=e14]
+        - generic [ref=e16]: Close jump menu
+    - banner "Global Navigation" [ref=e17]:
+      - generic [ref=e18]:
+        - link "LinkedIn" [ref=e19] [cursor=pointer]:
+          - /url: https://www.linkedin.com/feed/?nis=true
+          - img "LinkedIn" [ref=e22]:
+            - img [ref=e23]
+        - generic [ref=e27]:
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - generic [ref=e32]: Search by title, skill, or company
+              - img [ref=e33]
+            - combobox "Search by title, skill, or company" [ref=e35]: Software Engineer
+            - textbox [disabled]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]: City, state, or zip code
+              - img [ref=e41]
+            - combobox "City, state, or zip code" [ref=e43]: Germany
+            - textbox [disabled]
+          - button "Search" [ref=e44] [cursor=pointer]
+        - navigation "Primary Navigation" [ref=e45]:
+          - list [ref=e46]:
+            - listitem [ref=e47]:
+              - link "new feed updates notifications Home" [ref=e48] [cursor=pointer]:
+                - /url: https://www.linkedin.com/feed/?nis=true&
+                - generic [ref=e49]:
+                  - generic [ref=e52]: new feed updates notifications
+                  - img [ref=e450]
+                - generic "Home" [ref=e58]
+            - listitem [ref=e59]:
+              - link "My Network" [ref=e60] [cursor=pointer]:
+                - /url: https://www.linkedin.com/mynetwork/?
+                - img [ref=e453]
+                - generic "My Network" [ref=e66]
+            - listitem [ref=e67]:
+              - link "Jobs" [ref=e68] [cursor=pointer]:
+                - /url: https://www.linkedin.com/jobs/?
+                - img [ref=e456]
+                - generic "Jobs" [ref=e74]
+            - listitem [ref=e75]:
+              - link "1 new message notification Messaging" [ref=e76] [cursor=pointer]:
+                - /url: https://www.linkedin.com/messaging/?
+                - generic [ref=e77]:
+                  - generic [ref=e78]:
+                    - generic [ref=e79]: "1"
+                    - generic [ref=e80]: 1 new message notification
+                  - img [ref=e459]
+                - generic "Messaging" [ref=e86]
+            - listitem [ref=e87]:
+              - link "5 new notifications Notifications" [ref=e88] [cursor=pointer]:
+                - /url: https://www.linkedin.com/notifications/?
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - generic [ref=e91]: "5"
+                    - generic [ref=e92]: 5 new notifications
+                  - img [ref=e462]
+                - generic "Notifications" [ref=e98]
+            - listitem [ref=e99]:
+              - button "YenNan Liu Me" [ref=e101] [cursor=pointer]:
+                - img "YenNan Liu" [ref=e102]
+                - generic [ref=e103]:
+                  - text: Me
+                  - img [ref=e104]
+            - listitem [ref=e106]:
+              - button "For Business" [ref=e108] [cursor=pointer]:
+                - img [ref=e112]
+                - generic "For Business" [ref=e114]:
+                  - text: For Business
+                  - img [ref=e115]
+            - listitem [ref=e117]:
+              - 'link "Reactivate Premium: 50% Off" [ref=e119] [cursor=pointer]':
+                - /url: http://www.linkedin.com/premium/redeem/?_ed=0_bvLJH59RTSY-u5c6PMUa4IW0M54p9mxZpuVkfRvTl7r&upsellOrderOrigin=Tracking%3Av1%3Apremium_nav_upsell_text_winback%3ANav%3AIn-Product&referenceId=vQWiLa%2BuQ%2FSx8XnYYRMFpg%3D%3D&customKey=wb_c&redeemTypeV2=DISCOUNT&destRedirectURL=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fsearch%2F%3Fkeywords%3DSoftware%2520Engineer%26location%3DGermany%26f_AL%3Dtrue%26f_TPR%3Dr604800%26f_WT%3D2%2C3
+                - generic [ref=e121]: "Reactivate Premium: 50% Off"
+    - generic [ref=e123]:
+      - region "search filters" [ref=e126]:
+        - heading "Jobs search" [level=2] [ref=e127]
+        - generic [ref=e129]:
+          - generic [ref=e464]:
+            - list [ref=e465]:
+              - listitem [ref=e466]:
+                - 'button "Filter by: Jobs" [ref=e468] [cursor=pointer]':
+                  - text: Jobs
+                  - img [ref=e469]
+              - listitem [ref=e471]
+              - listitem [ref=e472]:
+                - button "Date posted filter. Past week filter is currently applied. Clicking this button displays all Date posted filter options." [ref=e475] [cursor=pointer]:
+                  - text: Past week
+                  - img [ref=e476]
+              - listitem [ref=e478]:
+                - button "Remote filter. 2 Remote filters are applied. Clicking this button displays all Remote filter options." [ref=e481] [cursor=pointer]:
+                  - text: Remote
+                  - generic [ref=e482]: "2"
+                  - img [ref=e483]
+              - listitem [ref=e485]:
+                - radio "Easy Apply filter." [checked] [ref=e487] [cursor=pointer]: Easy Apply
+              - listitem [ref=e488]:
+                - button "Experience level filter. Clicking this button displays all Experience level filter options." [ref=e491] [cursor=pointer]:
+                  - text: Experience level
+                  - img [ref=e492]
+            - generic [ref=e494]:
+              - button "Show all filters. Clicking this button displays all available filter options." [ref=e497] [cursor=pointer]: All filters
+              - button "Reset applied filters" [ref=e498] [cursor=pointer]:
+                - generic [ref=e499]: Reset
+          - button "Try the new job search" [ref=e500] [cursor=pointer]:
+            - img [ref=e501]
+            - generic [ref=e503]: Try the new job search
+      - main [ref=e138]:
+        - generic [ref=e140]:
+          - generic [ref=e141]:
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic "Software Engineer in Germany" [ref=e144]
+                - generic [ref=e148]: 258 results
+              - generic [ref=e151] [cursor=pointer]:
+                - generic [ref=e152]: Set alert
+                - generic [ref=e153]: Set job alert for Software Engineer in Germany
+                - switch "Set job alert for Software Engineer in Germany"
+            - generic [ref=e154]:
+              - button "Jump to active job details":
+                - generic [ref=e155] [cursor=pointer]: Jump to active job details
+              - button "Jump to active search result":
+                - generic [ref=e156] [cursor=pointer]: Jump to active search result
+              - list [ref=e157]:
+                - listitem [ref=e504]:
+                  - generic [ref=e506] [cursor=pointer]:
+                    - generic [ref=e507]:
+                      - generic [ref=e508]:
+                        - img "TechShack logo" [ref=e512]
+                        - generic [ref=e513]:
+                          - link "Python Developer" [ref=e515]:
+                            - /url: /jobs/view/4390308243/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=yjiOMr7c92WbHm%2FIafiKRA%3D%3D&trk=flagship3_search_srp_jobs
+                            - strong [ref=e517]: Python Developer
+                            - generic [ref=e518]: Python Developer
+                          - generic [ref=e520]: TechShack
+                          - list [ref=e522]:
+                            - listitem [ref=e523]:
+                              - generic [ref=e524]: European Union (Remote)
+                      - generic [ref=e526]:
+                        - img "Actively reviewing applicants" [ref=e530]
+                        - generic [ref=e532]: Actively reviewing applicants
+                      - list [ref=e533]:
+                        - listitem [ref=e534]: Viewed
+                        - listitem [ref=e535]:
+                          - img [ref=e536]:
+                            - img [ref=e537]
+                          - generic [ref=e539]: Easy Apply
+                    - button "Dismiss Python Developer job" [ref=e543]:
+                      - img [ref=e545]
+                - listitem [ref=e548]:
+                  - generic [ref=e550] [cursor=pointer]:
+                    - generic [ref=e551]:
+                      - generic [ref=e552]:
+                        - img "Senovo IT Ltd logo" [ref=e556]
+                        - generic [ref=e557]:
+                          - link "Python Developer" [ref=e559]:
+                            - /url: /jobs/view/4390939985/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=BF4sG0WXofzwQQ64Yf4j2Q%3D%3D&trk=flagship3_search_srp_jobs
+                            - strong [ref=e561]: Python Developer
+                            - generic [ref=e562]: Python Developer
+                          - generic [ref=e564]: Senovo IT Ltd
+                          - list [ref=e566]:
+                            - listitem [ref=e567]:
+                              - generic [ref=e568]: European Union (Remote)
+                      - generic [ref=e570]:
+                        - img "Actively reviewing applicants" [ref=e574]
+                        - generic [ref=e576]: Actively reviewing applicants
+                      - list [ref=e577]:
+                        - listitem [ref=e578]:
+                          - time [ref=e579]: 1 day ago
+                        - listitem [ref=e580]:
+                          - img [ref=e581]:
+                            - img [ref=e582]
+                          - generic [ref=e584]: Easy Apply
+                    - button "Dismiss Python Developer job" [ref=e588]:
+                      - img [ref=e590]
+                - listitem [ref=e593]:
+                  - generic [ref=e595] [cursor=pointer]:
+                    - generic [ref=e596]:
+                      - generic [ref=e597]:
+                        - img "Group-IB logo" [ref=e601]
+                        - generic [ref=e602]:
+                          - link "Middle Python Developer" [ref=e604]:
+                            - /url: /jobs/view/4392618169/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=JtJmf1C1e6tgKfCBAtUzHg%3D%3D&trk=flagship3_search_srp_jobs
+                            - strong [ref=e606]: Middle Python Developer
+                            - generic [ref=e607]: Middle Python Developer
+                          - generic [ref=e609]: Group-IB
+                          - list [ref=e611]:
+                            - listitem [ref=e612]:
+                              - generic [ref=e613]: European Union (Remote)
+                      - generic [ref=e615]:
+                        - img "Company review time is typically 1 week" [ref=e619]
+                        - generic [ref=e621]: Company review time is typically 1 week
+                      - list [ref=e622]:
+                        - listitem [ref=e623]:
+                          - time [ref=e624]: 1 day ago
+                        - listitem [ref=e625]:
+                          - img [ref=e626]:
+                            - img [ref=e627]
+                          - generic [ref=e629]: Easy Apply
+                    - button "Dismiss Middle Python Developer job" [ref=e633]:
+                      - img [ref=e635]
+                - listitem [ref=e638]:
+                  - generic [ref=e640] [cursor=pointer]:
+                    - generic [ref=e641]:
+                      - generic [ref=e642]:
+                        - img "Norton Blake logo" [ref=e646]
+                        - generic [ref=e647]:
+                          - link "Full Stack Engineer" [ref=e649]:
+                            - /url: /jobs/view/4390940466/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=z%2BY15vlE6%2FC0BnhjbSx65A%3D%3D&trk=flagship3_search_srp_jobs
+                            - strong [ref=e651]: Full Stack Engineer
+                            - generic [ref=e652]: Full Stack Engineer
+                          - generic [ref=e654]: Norton Blake
+                          - list [ref=e656]:
+                            - listitem [ref=e657]:
+                              - generic [ref=e658]: European Economic Area (Remote)
+                      - generic [ref=e660]:
+                        - img "Actively reviewing applicants" [ref=e664]
+                        - generic [ref=e666]: Actively reviewing applicants
+                      - list [ref=e667]:
+                        - listitem [ref=e668]:
+                          - time [ref=e669]: 1 day ago
+                        - listitem [ref=e670]:
+                          - img [ref=e671]:
+                            - img [ref=e672]
+                          - generic [ref=e674]: Easy Apply
+                    - button "Dismiss Full Stack Engineer job" [ref=e678]:
+                      - img [ref=e680]
+                - listitem [ref=e683]:
+                  - generic [ref=e685] [cursor=pointer]:
+                    - generic [ref=e686]:
+                      - generic [ref=e687]:
+                        - img "Oliver Bernard logo" [ref=e691]
+                        - generic [ref=e692]:
+                          - link "Senior Backend Data Engineer - Fully Remote with verification" [ref=e694]:
+                            - /url: /jobs/view/4391706307/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=tj%2BhWi%2BEXanTIoezSReJAg%3D%3D&trk=flagship3_search_srp_jobs
+                            - generic [ref=e695]:
+                              - strong [ref=e696]: Senior Backend Data Engineer - Fully Remote
+                              - img [ref=e698]
+                            - generic [ref=e700]: Senior Backend Data Engineer - Fully Remote with verification
+                          - generic [ref=e702]: Oliver Bernard
+                          - list [ref=e704]:
+                            - listitem [ref=e705]:
+                              - generic [ref=e706]: European Union (Remote)
+                      - generic [ref=e708]:
+                        - img "Company review time is typically 1 week" [ref=e712]
+                        - generic [ref=e714]: Company review time is typically 1 week
+                      - list [ref=e715]:
+                        - listitem [ref=e716]:
+                          - time [ref=e717]: 1 day ago
+                        - listitem [ref=e718]:
+                          - img [ref=e719]:
+                            - img [ref=e720]
+                          - generic [ref=e722]: Easy Apply
+                    - button "Dismiss Senior Backend Data Engineer - Fully Remote job" [ref=e726]:
+                      - img [ref=e728]
+                - listitem [ref=e731]:
+                  - generic [ref=e733] [cursor=pointer]:
+                    - generic [ref=e734]:
+                      - generic [ref=e735]:
+                        - img "Stott and May logo" [ref=e739]
+                        - generic [ref=e740]:
+                          - link "Founding Engineer with verification" [ref=e742]:
+                            - /url: /jobs/view/4386696051/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=H4QNTUVjcgYb7YxIuwEGaw%3D%3D&trk=flagship3_search_srp_jobs
+                            - generic [ref=e743]:
+                              - strong [ref=e744]: Founding Engineer
+                              - img [ref=e746]
+                            - generic [ref=e748]: Founding Engineer with verification
+                          - generic [ref=e750]: Stott and May
+                          - list [ref=e752]:
+                            - listitem [ref=e753]:
+                              - generic [ref=e754]: Greater Munich Metropolitan Area (Hybrid)
+                      - generic [ref=e756]:
+                        - img "Actively reviewing applicants" [ref=e760]
+                        - generic [ref=e762]: Actively reviewing applicants
+                      - list [ref=e763]:
+                        - listitem [ref=e764]:
+                          - time [ref=e765]: 5 days ago
+                        - listitem [ref=e766]:
+                          - img [ref=e767]:
+                            - img [ref=e768]
+                          - generic [ref=e770]: Easy Apply
+                    - button "Dismiss Founding Engineer job" [ref=e774]:
+                      - img [ref=e776]
+                - listitem [ref=e779]:
+                  - generic [ref=e781] [cursor=pointer]:
+                    - generic [ref=e782]:
+                      - generic [ref=e783]:
+                        - img "Jobgether logo" [ref=e787]
+                        - generic [ref=e788]:
+                          - link "Python Software Engineer" [ref=e790]:
+                            - /url: /jobs/view/4390491166/?eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=J2liAUyC8Hj78fBUHBlqeQ%3D%3D&trk=flagship3_search_srp_jobs
+                            - strong [ref=e792]: Python Software Engineer
+                            - generic [ref=e793]: Python Software Engineer
+                          - generic [ref=e795]: Jobgether
+                          - list [ref=e797]:
+                            - listitem [ref=e798]:
+                              - generic [ref=e799]: Germany (Remote)
+                      - list [ref=e800]:
+                        - listitem [ref=e801]:
+                          - time [ref=e802]: 2 days ago
+                        - listitem [ref=e803]:
+                          - img [ref=e804]:
+                            - img [ref=e805]
+                          - generic [ref=e807]: Easy Apply
+                    - button "Dismiss Python Software Engineer job" [ref=e811]:
+                      - img [ref=e813]
+                - listitem [ref=e816]
+                - listitem [ref=e817]
+                - listitem [ref=e818]
+                - listitem [ref=e819]
+                - listitem [ref=e820]
+                - listitem [ref=e821]
+                - listitem [ref=e822]
+                - listitem [ref=e823]
+                - listitem [ref=e824]
+                - listitem [ref=e825]
+                - listitem [ref=e826]
+                - listitem [ref=e827]
+                - listitem [ref=e828]
+                - listitem [ref=e829]
+                - listitem [ref=e830]
+                - listitem [ref=e831]
+                - listitem [ref=e832]
+                - listitem [ref=e833]
+              - generic [ref=e836]:
+                - generic [ref=e837]:
+                  - heading "Are these results helpful?" [level=2] [ref=e838]
+                  - paragraph [ref=e839]: Your feedback helps us improve search results.
+                - generic [ref=e840]:
+                  - button "Are you finding what you’re looking for? No" [ref=e841] [cursor=pointer]:
+                    - img [ref=e842]
+                    - generic [ref=e844]: Are you finding what you’re looking for? No
+                  - button "Are you finding what you’re looking for? Yes" [ref=e845] [cursor=pointer]:
+                    - img [ref=e846]
+                    - generic [ref=e848]: Are you finding what you’re looking for? Yes
+              - generic [ref=e336]:
+                - generic [ref=e337]:
+                  - list [ref=e339]:
+                    - listitem [ref=e849]:
+                      - button "Page 1" [ref=e850] [cursor=pointer]: "1"
+                    - listitem [ref=e851]:
+                      - button "Page 2" [ref=e852] [cursor=pointer]: "2"
+                    - listitem [ref=e853]:
+                      - button "Page 3" [ref=e854] [cursor=pointer]: "3"
+                    - listitem [ref=e855]:
+                      - button "Page 4" [ref=e856] [cursor=pointer]: …
+                  - button "View next page" [ref=e857] [cursor=pointer]:
+                    - img [ref=e858]
+                    - generic [ref=e860]: Next
+                - generic "LinkedIn Footer Content" [ref=e343]
+          - generic "Python Developer" [ref=e347]:
+            - generic [ref=e351]:
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - generic [ref=e357]:
+                    - link "TechShack logo" [ref=e861] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/company/techshackltd/life
+                      - img "TechShack logo" [ref=e864]
+                    - link "TechShack" [ref=e866] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/company/techshackltd/life
+                  - generic [ref=e358]:
+                    - button "Share" [ref=e361] [cursor=pointer]:
+                      - img [ref=e362]
+                      - generic [ref=e364]: Share
+                    - button "Show more options" [ref=e366] [cursor=pointer]:
+                      - img [ref=e367]
+                      - generic [ref=e369]: Show more options
+                - heading "Python Developer" [level=1] [ref=e372]:
+                  - link "Python Developer" [ref=e373] [cursor=pointer]:
+                    - /url: /jobs/view/4390308243/?alternateChannel=search&eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=ak3EaOsPwAQRKxLG%2FpkfqA%3D%3D&trackingId=yjiOMr7c92WbHm%2FIafiKRA%3D%3D&trk=d_flagship3_search_srp_jobs
+                - generic [ref=e868]:
+                  - generic [ref=e869]: European Union
+                  - generic [ref=e870]: ·
+                  - generic [ref=e872]: 3 days ago
+                  - generic [ref=e873]: ·
+                  - generic [ref=e874]: Over 100 applicants
+                  - paragraph [ref=e875]:
+                    - generic [ref=e876]: Promoted by hirer
+                    - generic [ref=e877]: ·
+                    - strong [ref=e879]: Actively reviewing applicants
+                - generic [ref=e880]:
+                  - button "Matches your job preferences, workplace type is Remote." [ref=e881] [cursor=pointer]:
+                    - strong [ref=e884]:
+                      - img [ref=e886]
+                      - text: Remote
+                    - generic [ref=e888]: Matches your job preferences, workplace type is Remote.
+                  - button "Matches your job preferences, job type is Contract." [ref=e889] [cursor=pointer]:
+                    - strong [ref=e892]:
+                      - img [ref=e894]
+                      - text: Contract
+                    - generic [ref=e896]: Matches your job preferences, job type is Contract.
+                - generic [ref=e898]:
+                  - button "Easy Apply to Python Developer at TechShack" [ref=e901] [cursor=pointer]:
+                    - img [ref=e902]
+                    - generic [ref=e904]: Easy Apply
+                  - button "Save Python Developer at TechShack" [ref=e905] [cursor=pointer]:
+                    - generic [ref=e906]: Save
+                    - generic [ref=e907]: Save Python Developer at TechShack
+              - generic [ref=e912]:
+                - heading "Job match summary not available" [level=2] [ref=e913]:
+                  - strong [ref=e914]: Job match summary not available
+                - heading "This job post doesn't have enough information to generate a match summary." [level=3] [ref=e915]:
+                  - generic [ref=e916]: This job post doesn't have enough information to generate a match summary.
+              - generic [ref=e921]:
+                - heading "Get personalized tips to stand out to hirers" [level=3] [ref=e922]
+                - paragraph [ref=e923]: Find jobs where you’re a top applicant and tailor your resume with the help of AI.
+                - link "Reactivate Premium" [ref=e924] [cursor=pointer]:
+                  - /url: http://www.linkedin.com/premium/products/?upsellOrderOrigin=Tracking%3Av1%3Acoach_upsell_jdp_topcard%3AJob+Seeker%3AIn-Product&utype=coach_job&referenceId=jlifvZIIT5aZ2zac8Bx0Lw%3D%3D&isSS=false&destRedirectURL=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fsearch%2F%3FcurrentJobId%3D4390308243%26f_AL%3Dtrue%26f_TPR%3Dr604800%26f_WT%3D2%252C3%26keywords%3DSoftware%2520Engineer%26location%3DGermany
+                  - generic [ref=e925]:
+                    - img [ref=e926]
+                    - generic [ref=e928]: Reactivate Premium
+              - article [ref=e386]:
+                - generic [ref=e388]:
+                  - heading "About the job" [level=2] [ref=e389]
+                  - paragraph [ref=e930]:
+                    - paragraph [ref=e932]:
+                      - strong [ref=e934]: Middle Python Developer - Long term B2B Contract – Fully Remote - €150-250 a day
+                    - paragraph [ref=e936]
+                    - paragraph [ref=e938]: I’m working with an innovative research start-up who are looking for a Python Developer to support on a new greenfield project. You will be working heavily across Python and using Flask as the framework.
+                    - paragraph [ref=e940]
+                    - paragraph [ref=e942]:
+                      - strong [ref=e944]: "*It is highly preferred that you have experience with Academic Publishing Software or Data Extraction from documents*"
+                    - paragraph [ref=e946]
+                    - paragraph [ref=e948]: "TeckStack:"
+                    - list [ref=e950]:
+                      - listitem [ref=e951]: Python (Flask)
+                      - listitem [ref=e952]: AWS
+                      - listitem [ref=e953]: Academic Publishing software or at least structured data extraction from documents
+                    - paragraph [ref=e955]
+                    - paragraph [ref=e957]: If you are available or soon to be, apply with your CV and I will give you a call
+              - generic [ref=e959]:
+                - generic [ref=e960]:
+                  - heading "About the company" [level=2] [ref=e961]
+                  - generic [ref=e962]:
+                    - generic [ref=e963]:
+                      - link "TechShack company logo" [ref=e965] [cursor=pointer]:
+                        - /url: /company/techshackltd/life/
+                        - img "TechShack company logo" [ref=e966]
+                      - generic [ref=e967]:
+                        - link "TechShack" [ref=e969] [cursor=pointer]:
+                          - /url: /company/techshackltd/life/
+                        - generic [ref=e970]: 118,499 followers
+                    - button "Follow" [ref=e971] [cursor=pointer]:
+                      - img [ref=e972]
+                      - generic [ref=e974]: Follow
+                  - generic [ref=e975]:
+                    - text: Staffing and Recruiting
+                    - generic [ref=e976]: • 11-50 employees
+                    - generic [ref=e977]: • 18 on LinkedIn
+                  - paragraph [ref=e978]:
+                    - generic [ref=e979]:
+                      - text: Hey there! At TechShack, we're experts at finding and securing some of the best Engineering, DevOps, and Data teams out there. We work efficiently to tackle your problems and set clear objectives that line up with your business.
+                      - text: We take the time to really understand your company culture and create stories that attract the perfect candidates. We do all the hard work of finding and screening people so you can concentrate on running your business.
+                      - text: We're totally committed to being inclusive and building a diverse team of talented peeps. You can count on us to make sure your employees are super happy and sticking around for the long haul.
+                      - generic [ref=e981]:
+                        - generic [ref=e982]: …
+                        - button "show more" [ref=e983] [cursor=pointer]
+                - link "Show more about the company" [ref=e985] [cursor=pointer]:
+                  - /url: /company/techshackltd/life/
+                  - text: Show more
+    - generic:
+      - generic:
+        - complementary:
+          - generic [ref=e423]:
+            - generic [ref=e425] [cursor=pointer]:
+              - generic [ref=e426]:
+                - img "YenNan Liu" [ref=e427]
+                - generic [ref=e987]: Status is online
+              - button "You are on the messaging overlay. Press enter to open the list of conversations." [ref=e428]:
+                - generic [ref=e429]:
+                  - generic [ref=e430]: Messaging
+                  - generic [ref=e431]: You are on the messaging overlay. Press enter to open the list of conversations.
+              - mark [ref=e432]:
+                - generic [ref=e433]: "1"
+            - generic [ref=e434]:
+              - button "Open messenger dropdown menu" [ref=e436] [cursor=pointer]:
+                - img "Open messenger dropdown menu" [ref=e437]
+              - button "Compose message" [ref=e440] [cursor=pointer]:
+                - img [ref=e441]
+                - generic [ref=e443]: Compose message
+              - button "You are on the messaging overlay. Press enter to open the list of conversations." [ref=e444] [cursor=pointer]:
+                - img [ref=e445]
+                - generic [ref=e447]: You are on the messaging overlay. Press enter to open the list of conversations.
+        - complementary "AI-powered assistant to get help with your career, jobs etc"
+  - region [ref=e448]
