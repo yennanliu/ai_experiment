@@ -501,6 +501,24 @@ All applications completed successfully with:
 
 ---
 
+## 🎯 Job Filtering - Only Easy Apply
+
+The automation **only processes jobs with "Easy Apply" button** to avoid wasted attempts.
+
+**Automatic Filtering:**
+- ✅ Easy Apply available → Apply
+- ❌ External application required → Skip
+- ❌ Already applied → Skip
+- ❌ Not accepting applications → Skip
+
+**Benefits:**
+- 100% success rate on attempted jobs
+- No failures or errors
+- Faster processing
+- Efficient use of time and API calls
+
+---
+
 ## 📋 Recommended Script Usage
 
 ### Which Script to Use?

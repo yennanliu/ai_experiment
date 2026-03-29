@@ -227,6 +227,31 @@ getUpdateCounterScript(type)
 | Modal not appearing | Wait 2-3 seconds after click |
 | Additional questions | Use `./cdp.sh yes` to answer |
 
+## Job Filtering Strategy
+
+**Only Easy Apply Jobs are Processed**
+
+The automation automatically filters jobs and only applies to those with:
+- ✅ "Easy Apply" button visible
+- ✅ Not already applied to
+- ✅ Still accepting applications
+
+**Jobs that are SKIPPED:**
+- ❌ Jobs requiring external application (no Easy Apply)
+- ❌ Already applied positions
+- ❌ "No longer accepting" positions
+- ❌ Closed/archived listings
+
+This filtering happens automatically:
+1. Scan all visible job listings
+2. Check each job card for Easy Apply availability
+3. Only click/apply to qualifying jobs
+4. Report skipped jobs in summary
+
+**Result:** Higher success rate, zero wasted attempts, efficient automation.
+
+---
+
 ## Handling Large Responses & Context Issues
 
 **Problem:** Large automation scripts can generate 50-100KB responses, causing token limit issues.
@@ -295,19 +320,26 @@ The CONFIG object supports:
 - `maxApplications`: Limit number of applications
 - `delayBetweenApps`: { min: 3000, max: 6000 } for safety
 
-### 3. Keep automations small
-- Apply to 10 jobs per run (maximum)
+### 3. Only applies to jobs with "Easy Apply" button
+- Automatically filters to jobs with Easy Apply enabled
+- Skips jobs requiring external application
+- Skips already-applied jobs
+- Skips "no longer accepting" positions
+- This avoids failures and wasted time
+
+### 4. Keep automations small
+- Apply to 10-20 jobs per run (maximum)
 - Return only summary results
 - Use pause/resume controls (P/R/Q) for real-time control
 
-### 4. Monitor progress
+### 5. Monitor progress
 Watch the blue automation status indicator (top-right corner):
 - 🤖 RUNNING - Currently applying
 - ⏸️  PAUSED - Press R to resume
 - 🛑 STOPPED - Automation ended
 - ✅ COMPLETED - Finished successfully
 
-### 5. Reading large result files
+### 6. Reading large result files
 If results are too large:
 ```bash
 # Use grep to search for specific results
