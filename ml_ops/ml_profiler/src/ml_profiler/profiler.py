@@ -1,15 +1,25 @@
 """Core profiling logic for ML models."""
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
 # Try to import torch, but make it optional
 try:
     import torch
+    from torch.profiler import profile, ProfilerActivity
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
+
+
+@dataclass
+class KernelMetric:
+    """Metrics for a single kernel/operation."""
+    name: str
+    cpu_time_ms: float
+    cuda_time_ms: float
+    calls: int
 
 
 @dataclass
@@ -27,6 +37,9 @@ class ProfileMetrics:
     total_params: int
     total_flops: float
     input_shape: str
+    # Detailed kernel breakdown (from torch.profiler)
+    kernel_metrics: list[KernelMetric] = field(default_factory=list)
+    top_kernels_json: str = "[]"  # JSON string for DB storage
 
 
 @runtime_checkable
@@ -81,10 +94,13 @@ def profile_torch_model(
     model_version: str = "1.0.0",
     warmup_runs: int = 3,
     profile_runs: int = 10,
+    detailed: bool = True,
 ) -> ProfileMetrics:
-    """Profile a PyTorch model (requires torch)."""
+    """Profile a PyTorch model with optional detailed kernel metrics."""
     if not TORCH_AVAILABLE:
         raise ImportError("torch is required. Install with: uv pip install ml-profiler[torch]")
+
+    import json
 
     device = next(model.parameters()).device
     hardware_target = "cuda" if device.type == "cuda" else "cpu"
@@ -100,7 +116,28 @@ def profile_torch_model(
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
 
-    # Profile
+    # Detailed profiling with torch.profiler
+    kernel_metrics = []
+    if detailed:
+        activities = [ProfilerActivity.CPU]
+        if hardware_target == "cuda":
+            activities.append(ProfilerActivity.CUDA)
+
+        with profile(activities=activities, record_shapes=True) as prof:
+            with torch.no_grad():
+                _ = model(input_tensor)
+
+        # Extract top operations
+        key_averages = prof.key_averages()
+        for evt in sorted(key_averages, key=lambda x: x.cpu_time_total, reverse=True)[:10]:
+            kernel_metrics.append(KernelMetric(
+                name=evt.key,
+                cpu_time_ms=evt.cpu_time_total / 1000,  # us to ms
+                cuda_time_ms=(evt.cuda_time_total / 1000) if hasattr(evt, 'cuda_time_total') else 0,
+                calls=evt.count,
+            ))
+
+    # Standard timing profiling
     cpu_times = []
     cuda_times = []
 
@@ -128,14 +165,20 @@ def profile_torch_model(
 
     # Memory
     if hardware_target == "cuda":
-        memory_allocated = torch.cuda.memory_allocated() / (1024 * 1024)
-        memory_reserved = torch.cuda.memory_reserved() / (1024 * 1024)
+        memory_allocated = torch.cuda.max_memory_allocated() / (1024 * 1024)
+        memory_reserved = torch.cuda.max_memory_reserved() / (1024 * 1024)
     else:
         memory_allocated = 0.0
         memory_reserved = 0.0
 
     # Params
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    # Serialize kernel metrics to JSON
+    top_kernels_json = json.dumps([
+        {"name": k.name, "cpu_time_ms": k.cpu_time_ms, "cuda_time_ms": k.cuda_time_ms, "calls": k.calls}
+        for k in kernel_metrics
+    ])
 
     return ProfileMetrics(
         model_name=model_name,
@@ -149,6 +192,8 @@ def profile_torch_model(
         total_params=total_params,
         total_flops=0.0,
         input_shape=str(list(input_tensor.shape)),
+        kernel_metrics=kernel_metrics,
+        top_kernels_json=top_kernels_json,
     )
 
 
