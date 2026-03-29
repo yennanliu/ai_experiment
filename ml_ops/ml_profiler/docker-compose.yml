@@ -5,20 +5,4 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
-    environment:
-      DATABASE_URL: sqlite:///data/mlprofiler.db
-
-# Optional: Uncomment for PostgreSQL instead of SQLite
-#  db:
-#    image: postgres:16-alpine
-#    environment:
-#      POSTGRES_USER: mlprofiler
-#      POSTGRES_PASSWORD: mlprofiler
-#      POSTGRES_DB: mlprofiler
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-#    ports:
-#      - "5432:5432"
-#
-#volumes:
-#  postgres_data:
+    working_dir: /app
