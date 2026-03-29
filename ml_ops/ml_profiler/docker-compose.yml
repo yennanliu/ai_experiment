@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mlprofiler
+      POSTGRES_PASSWORD: mlprofiler
+      POSTGRES_DB: mlprofiler
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlprofiler"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dashboard:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      DATABASE_URL: postgresql://mlprofiler:mlprofiler@db:5432/mlprofiler
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
