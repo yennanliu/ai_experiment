@@ -77,8 +77,7 @@ MLflow UI available at http://127.0.0.1:5000
 | `MFPOC_SVM_KERNEL` | `rbf` | SVM kernel type |
 | `MFPOC_RANDOM_SEED` | `42` | Reproducibility seed |
 
-## Code Style
+## Technical Notes
 
-- Python 3.12+
-- Ruff for linting (line-length: 100)
-- Build system: hatchling
+- **MLflow 2.17+ requires `--allowed-hosts`** for Docker networking (DNS rebinding protection)
+- Python 3.12+, Ruff for linting (line-length: 100), hatchling build system
