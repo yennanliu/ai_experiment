@@ -211,6 +211,33 @@ getUpdateCounterScript(type)
 5. Runs automation loop calling helper functions
 6. Returns results without large console logs
 
+### Key Functions (after INJECT_SCRIPT)
+
+After injecting the script, these functions are available on `window`:
+
+| Function | Description |
+|----------|-------------|
+| `findEasyApplyButton()` | Finds Easy Apply button using multiple selectors (class, aria-label, text) |
+| `clickEasyApply()` | Clicks the Easy Apply button if found |
+| `fillFormFields()` | Auto-fills numeric inputs (default: 5), text inputs, and Yes radio buttons |
+| `applyToJob(index)` | Complete single job application flow (click job → Easy Apply → fill form → submit) |
+| `batchApply(start, count)` | Apply to multiple jobs in batch with status tracking |
+| `getJobCards()` | Returns array of job cards with title, company, applied status |
+| `closeModal()` | Closes any open modal/dialog |
+| `handleDiscardDialog()` | Handles "Discard application?" confirmation |
+
+**Example usage in browser console:**
+```javascript
+// Apply to first 5 jobs
+await window.batchApply(0, 5);
+
+// Apply to single job by index
+await window.applyToJob(3);
+
+// Get list of available jobs
+window.getJobCards();
+```
+
 ## Requirements
 
 - Chrome browser with remote debugging enabled
