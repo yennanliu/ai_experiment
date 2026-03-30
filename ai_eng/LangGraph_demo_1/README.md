@@ -21,8 +21,9 @@ A minimal LangGraph chatbot demonstrating core concepts.
 # Install dependencies
 uv sync
 
-# Set OpenAI API key
-export OPENAI_API_KEY="your-key"
+# Create .env file with your API key
+cp .env.example .env
+# Edit .env and add your OpenAI API key
 
 # Run
 uv run python main.py

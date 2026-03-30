@@ -23,3 +23,7 @@
 ### CrewAi
 
 
+## Courses
+
+- https://www.youtube.com/@DataTalksClub/playlists
+
