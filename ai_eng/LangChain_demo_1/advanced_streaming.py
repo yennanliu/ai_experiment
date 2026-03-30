@@ -47,7 +47,7 @@ async def demo_async_streaming():
     print("\n")
 
 
-def demo_stream_events():
+async def demo_stream_events():
     """Stream events from chain execution"""
     print("=== Stream Events Demo ===\n")
 
@@ -57,7 +57,7 @@ def demo_stream_events():
     chain = prompt | llm | StrOutputParser()
 
     print("Events during execution:")
-    for event in chain.stream_events({"topic": "Python"}, version="v2"):
+    async for event in chain.astream_events({"topic": "Python"}, version="v2"):
         kind = event["event"]
         if kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"].content
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     asyncio.run(demo_async_streaming())
 
     print("-" * 50 + "\n")
-    demo_stream_events()
+    asyncio.run(demo_stream_events())
 
     print("-" * 50 + "\n")
     asyncio.run(demo_parallel_streaming())
