@@ -44,5 +44,43 @@ services:
       MFPOC_RUN_NAME: compose-demo
     command: ["mfpoc-train"]
 
+  # Multi-model comparison (SVM, RF, LogReg, GradientBoosting)
+  train-multimodel:
+    build: .
+    image: mlflow-poc:local
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MFPOC_DATASET: iris  # or "wine"
+    command: ["mfpoc-multimodel"]
+    profiles: ["multimodel"]
+
+  # Regression on California Housing dataset
+  train-regression:
+    build: .
+    image: mlflow-poc:local
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    command: ["mfpoc-regression"]
+    profiles: ["regression"]
+
+  # Hyperparameter optimization with GridSearchCV
+  train-hyperopt:
+    build: .
+    image: mlflow-poc:local
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MFPOC_CV_FOLDS: "5"
+    command: ["mfpoc-hyperopt"]
+    profiles: ["hyperopt"]
+
 volumes:
   mlflow_data:

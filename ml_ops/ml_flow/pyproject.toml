@@ -12,10 +12,14 @@ dependencies = [
     "mlflow>=2.17.0",
     "scikit-learn>=1.5.0",
     "numpy>=1.26.0",
+    "matplotlib>=3.8.0",
 ]
 
 [project.scripts]
 mfpoc-train = "mlflow_poc.train:main"
+mfpoc-multimodel = "mlflow_poc.train_multimodel:main"
+mfpoc-regression = "mlflow_poc.train_regression:main"
+mfpoc-hyperopt = "mlflow_poc.train_hyperopt:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mlflow_poc"]
