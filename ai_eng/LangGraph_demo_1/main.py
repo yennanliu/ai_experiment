@@ -2,10 +2,13 @@
 Basic LangGraph Demo - A simple chatbot with state management.
 """
 
-import os
 from typing import Annotated, TypedDict
 
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+
+# Load environment variables from .env
+load_dotenv()
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
