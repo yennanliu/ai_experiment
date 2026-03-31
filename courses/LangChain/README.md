@@ -8,9 +8,12 @@
 
 #### 1) Deepleanring.ai LangChain
 
+- Playlist
 - https://www.youtube.com/playlist?list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG
-- https://www.youtube.com/watch?v=VxAh0F08c9A&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=2
-- https://www.youtube.com/watch?v=rUPSs1lVvl4&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=3&pp=iAQB
+	- progress
+		- https://www.youtube.com/watch?v=VxAh0F08c9A&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=2
+		- https://www.youtube.com/watch?v=rUPSs1lVvl4&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=3&pp=iAQB
+		- https://www.youtube.com/watch?v=vLmK_mXuAsQ&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=5
 
 
 #### 2) Tiktok LangChain
