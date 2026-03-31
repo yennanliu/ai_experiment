@@ -1,0 +1,876 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic [ref=e5] [cursor=pointer]: 收合
+      - link [ref=e6] [cursor=pointer]:
+        - /url: https://www.104.com.tw/careerfair/2026?utm_source=Cweb&utm_medium=upbn&utm_campaign=UPBN0330
+        - img [ref=e7]
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - link "求職" [ref=e13] [cursor=pointer]:
+        - /url: //www.104.com.tw/
+      - link "職涯" [ref=e15] [cursor=pointer]:
+        - /url: https://career.104.com.tw/?utm_source=104&utm_medium=jobbank_home-header-tab
+      - link "學生" [ref=e17] [cursor=pointer]:
+        - /url: https://college.104.com.tw/?utm_medium=cweb_studentmainpage&utm_source=104
+        - generic [ref=e18]: 學生
+      - link "新鮮人" [ref=e19] [cursor=pointer]:
+        - /url: https://freshman.104.com.tw/?utm_source=104&utm_medium=cweb
+        - generic [ref=e20]: 新鮮人
+      - link "高階" [ref=e21] [cursor=pointer]:
+        - /url: https://talent.104.com.tw/?utm_source=104pc&utm_medium=nav&utm_campaign=104main_test
+      - link "中高齡" [ref=e22] [cursor=pointer]:
+        - /url: https://senior.104.com.tw/50talent/c/45plus?utm_source=web_104&utm_medium=Psersona
+      - link "Foreigners" [ref=e23] [cursor=pointer]:
+        - /url: //go.104.com.tw/expats/?utm_source=cweb_104&utm_medium=Persona
+    - link " 企業徵才" [ref=e25] [cursor=pointer]:
+      - /url: //vip.104.com.tw/oidc/auth?utm_source=104main&utm_medium=menu_2
+      - generic [ref=e26]: 
+      - generic [ref=e27]: 企業徵才
+  - generic [ref=e28]:
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - text: 
+        - textbox "關鍵字(例：工作職稱、公司名、技能專長...)" [ref=e37]
+        - button "地區 " [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: 地區
+          - generic [ref=e41]: 
+        - button "職務類別 " [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: 職務類別
+          - generic [ref=e45]: 
+      - button "搜尋" [ref=e47] [cursor=pointer]
+    - text: 
+    - generic:
+      - generic [ref=e48]:
+        - text: 
+        - generic [ref=e50]:
+          - generic [ref=e54] [cursor=pointer]:
+            - generic [ref=e55]: 工作
+            - generic [ref=e56]: 
+          - generic [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]: 公司
+            - generic [ref=e62]: 
+          - generic [ref=e66] [cursor=pointer]:
+            - generic [ref=e67]: 工具
+            - generic [ref=e68]: 
+          - generic [ref=e72] [cursor=pointer]:
+            - generic [ref=e73]: 職涯
+            - generic [ref=e74]: 
+          - generic [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]: 學習
+            - generic [ref=e80]: 
+          - generic [ref=e84] [cursor=pointer]:
+            - generic [ref=e85]: APP
+            - generic [ref=e86]: 
+          - link "所有服務" [ref=e89] [cursor=pointer]:
+            - /url: https://www.104.com.tw/jobs/main/sitemap
+        - link "104人力銀行" [ref=e90] [cursor=pointer]:
+          - /url: https://www.104.com.tw/
+          - img "104人力銀行" [ref=e91]
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - link "80間企業現場談" [ref=e95] [cursor=pointer]:
+              - /url: https://user125311.pse.is/8u4zbn
+            - text: 
+          - generic [ref=e97]:
+            - button " 99+" [ref=e99] [cursor=pointer]:
+              - text: 
+              - generic [ref=e100]: 99+
+            - button "" [ref=e102] [cursor=pointer]
+            - button " 1" [ref=e104] [cursor=pointer]:
+              - text: 
+              - generic [ref=e105]: "1"
+            - text: 
+          - generic [ref=e107]:
+            - generic [ref=e109] [cursor=pointer]:
+              - generic [ref=e110]: 劉彥男
+              - generic [ref=e111]: 
+            - text: 
+      - text:       
+  - text:  
+  - generic [ref=e112]:
+    - generic [ref=e113]:
+      - link "無經驗可" [ref=e114] [cursor=pointer]:
+        - /url: https://www.104.com.tw/jobs/search/?isJobList=1&jobexp=1&jobsource=index_hot_c&page=1&searchJobs=1&utm_medium=cweb_keyword&utm_source=104
+      - link "最新工作" [ref=e115] [cursor=pointer]:
+        - /url: https://www.104.com.tw/jobs/main/newestjob/?jobsource=index_hot_c&tab=job_1&utm_medium=cweb_keyword&utm_source=104
+      - link "週休二日" [ref=e116] [cursor=pointer]:
+        - /url: https://www.104.com.tw/jobs/search/?asc=0&expansionType=area%2Cspec%2Ccom%2Cjob%2Cwf%2Cwktm&hotJob=0&isnew=7&jobsource=index_hot_c&langFlag=0&langStatus=0&mode=s&order=7&page=1&recommendJob=1&ro=1&utm_source=104&wktm=1
+      - link "月薪4萬" [ref=e117] [cursor=pointer]:
+        - /url: https://www.104.com.tw/jobs/search/?asc=0&expansionType=area%2Cspec%2Ccom%2Cjob%2Cwf%2Cwktm&hotJob=0&jobsource=index_hot_c&langFlag=0&langStatus=0&mode=s&order=14&page=1&recommendJob=1&ro=1&scmin=40000&scneg=1&scstrict=1&sctp=M&utm_medium=cweb_keyword&utm_source=104
+      - link "育嬰留停職代" [ref=e118] [cursor=pointer]:
+        - /url: https://www.104.com.tw/jobs/search/?jobsource=index_hot_c&keyword=%E8%82%B2%E5%AC%B0%E7%95%99%E5%81%9C%E8%81%B7%E4%BB%A3&mode=s&page=1
+      - link "科技軟體業" [ref=e119] [cursor=pointer]:
+        - /url: https://www.104.com.tw/topic/digital-talent/jobs?category=software-engineer&custType=1&goto=lists&indcat=1001003000%2C1001001000%2C1001002000%2C1001006000&jobsource=index_hot_c&minMedianNonSupervisor=100&order=15&page=1&utm_medium=cweb_word&utm_source=104
+      - link "AI服務" [ref=e120] [cursor=pointer]:
+        - /url: https://www.104.com.tw/ai/services?jobsource=index_hot_c
+    - generic [ref=e121]:
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - generic [ref=e125] [cursor=pointer]: 工作快訊
+          - generic [ref=e126] [cursor=pointer]: 新鮮人情報
+          - generic [ref=e127] [cursor=pointer]: 學生話題
+          - generic [ref=e128] [cursor=pointer]: 中高齡工作
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - link "工作快訊" [ref=e131] [cursor=pointer]:
+              - /url: https://pda.104.com.tw/apply-report/?utm_source=104&utm_medium=cweb_bn
+              - img "工作快訊" [ref=e132]
+            - generic [ref=e133]:
+              - link "最新兼職職缺，搶先看👉 短期、展場活動、假日工讀等機會，別錯過" [ref=e134] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/search/?isJobList=1&searchJobs=1&ro=2&jobsource=joblist_search&page=1&utm_source=104cweb&utm_medium=word
+                - generic [ref=e135]: 最新兼職職缺，搶先看👉
+                - generic [ref=e136]: 短期、展場活動、假日工讀等機會，別錯過
+              - link "機會難得！80+ 企業現場徵才 免費報名 ➤ 北中南3場！快把握和企業面對面的機會！🤩" [ref=e137] [cursor=pointer]:
+                - /url: https://ocac.events.104.com.tw/exhibit?utm_source=104&utm_medium=cweb_word
+                - generic [ref=e138]: 機會難得！80+ 企業現場徵才 免費報名 ➤
+                - generic [ref=e139]: 北中南3場！快把握和企業面對面的機會！🤩
+              - link "想知道，為何沒錄取，如何開口不扣分？ 面試時相談甚歡，卻收到面試婉謝信，好想問為何沒錄取，資深HR提醒別問這一句👉" [ref=e140] [cursor=pointer]:
+                - /url: https://blog.104.com.tw/104data-clinicpodcast-ep385/?utm_source=Cweb&utm_medium=job-0330
+                - generic [ref=e141]: 想知道，為何沒錄取，如何開口不扣分？
+                - generic [ref=e142]: 面試時相談甚歡，卻收到面試婉謝信，好想問為何沒錄取，資深HR提醒別問這一句👉
+          - generic [ref=e146]:
+            - link "地區找工作 地區找工作 找家裡附近" [ref=e148] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/main/category/?utm_source=104&utm_medium=cweb_product
+              - img "地區找工作" [ref=e150]
+              - generic [ref=e151]:
+                - generic [ref=e152]: 地區找工作
+                - generic [ref=e153]: 找家裡附近
+            - link "轉職專區 轉職專區 主題推薦好工作" [ref=e155] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/main/changejob/?utm_source=104&utm_medium=cweb_product
+              - img "轉職專區" [ref=e157]
+              - generic [ref=e158]:
+                - generic [ref=e159]: 轉職專區
+                - generic [ref=e160]: 主題推薦好工作
+            - link "找公司 找公司 適合你的好公司" [ref=e162] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/main/
+              - img "找公司" [ref=e164]
+              - generic [ref=e165]:
+                - generic [ref=e166]: 找公司
+                - generic [ref=e167]: 適合你的好公司
+            - link "免費履歷健診 免費履歷健診 提升60%面試機會" [ref=e169] [cursor=pointer]:
+              - /url: https://resume-clinic.104.com.tw/search?topic=0&utm_source=104&utm_medium=cweb_product
+              - img "免費履歷健診" [ref=e171]
+              - generic [ref=e172]:
+                - generic [ref=e173]: 免費履歷健診
+                - generic [ref=e174]: 提升60%面試機會
+      - generic [ref=e176]:
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - generic [ref=e179]: 劉彥男
+            - link "前往履歷表 " [ref=e181] [cursor=pointer]:
+              - /url: //pda.104.com.tw/profile
+              - generic [ref=e182]: 前往履歷表
+              - generic [ref=e183]: 
+          - generic [ref=e184]:
+            - generic [ref=e185] [cursor=pointer]: 儲存未應徵
+            - generic [ref=e186] [cursor=pointer]: 應徵成效分析
+        - generic [ref=e189]:
+          - generic [ref=e190]: 我們發現跟同期的求職者相比，你的應徵成效尚可，查看分析進行調整。
+          - generic [ref=e191]:
+            - text: 應徵成效尚可
+            - generic [ref=e192]:
+              - generic [ref=e193]: 
+              - generic [ref=e194]: 應徵後獲得少部分邀約
+            - generic [ref=e195]:
+              - generic [ref=e196]: 履歷分析
+              - generic [ref=e197]:
+                - generic [ref=e198]: 符合
+                - generic [ref=e199]: "4"
+                - text: 項
+              - generic [ref=e200]:
+                - generic [ref=e201]: 改善
+                - generic [ref=e202]: "0"
+                - text: 項
+            - generic [ref=e203]:
+              - generic [ref=e204]: 
+              - generic [ref=e205]: 「應徵職類」與「希望職類」首選相符
+          - link "查看應徵成效分析 " [ref=e207] [cursor=pointer]:
+            - /url: //pda.104.com.tw/apply-report
+            - text: 查看應徵成效分析
+            - generic [ref=e208]: 
+    - generic [ref=e209]:
+      - heading "適合彥男的好工作" [level=2] [ref=e211]
+      - generic [ref=e213] [cursor=pointer]:
+        - link "AI推薦" [ref=e214]:
+          - /url: /?tab=job_1
+        - link "最新工作" [ref=e215]:
+          - /url: /?tab=job_2
+        - link "AI相關" [ref=e216]:
+          - /url: /?tab=job_3
+        - link "分紅與配股" [ref=e217]:
+          - /url: /?tab=job_4
+        - link "月薪5萬起" [ref=e218]:
+          - /url: /?tab=job_5
+        - link "知名企業" [ref=e219]:
+          - /url: /?tab=job_6
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - generic [ref=e224]:
+            - link "雲端工程師｜歡迎新鮮人從零開始，一起上雲！" [ref=e227] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/53ivn?jobsource=index_job_r
+            - link "統一資訊股份有限公司" [ref=e229] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/7f454u0?jobsource=index_job_r
+            - generic [ref=e230]:
+              - generic [ref=e231]: 台北市內湖區
+              - generic [ref=e232]: 1年以上
+              - generic [ref=e233]: 專科
+            - generic [ref=e234]:
+              - generic [ref=e235]: 待遇面議
+              - button "" [ref=e236] [cursor=pointer]:
+                - generic [ref=e237]: 
+          - generic [ref=e239]:
+            - link "[F]資訊_MES/CIM程式設計工程師(龜山/華亞)" [ref=e242] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/54tk6?jobsource=index_job_r
+            - link "穩懋半導體股份有限公司" [ref=e244] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/wi42ew8?jobsource=index_job_r
+            - generic [ref=e245]:
+              - generic [ref=e246]: 桃園市龜山區
+              - generic [ref=e247]: 1年以上
+              - generic [ref=e248]: 大學
+            - generic [ref=e249]:
+              - generic [ref=e250]: 待遇面議
+              - button "" [ref=e251] [cursor=pointer]:
+                - generic [ref=e252]: 
+          - generic [ref=e254]:
+            - link "資訊部OF系統開發 - J0312" [ref=e257] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/684xx?jobsource=index_job_r
+            - link "廣達電腦股份有限公司" [ref=e259] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/ahfsoq0?jobsource=index_job_r
+            - generic [ref=e260]:
+              - generic [ref=e261]: 桃園市龜山區
+              - generic [ref=e262]: 經歷不拘
+              - generic [ref=e263]: 大學
+            - generic [ref=e264]:
+              - generic [ref=e265]: 待遇面議
+              - button "" [ref=e266] [cursor=pointer]:
+                - generic [ref=e267]: 
+          - generic [ref=e269]:
+            - link "AI深度學習工程師" [ref=e272] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/68t3v?jobsource=index_job_r
+            - link "聰泰科技開發股份有限公司" [ref=e274] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/azb1cds?jobsource=index_job_r
+            - generic [ref=e275]:
+              - generic [ref=e276]: 台北市中正區
+              - generic [ref=e277]: 經歷不拘
+              - generic [ref=e278]: 專科
+            - generic [ref=e279]:
+              - generic [ref=e280]: 待遇面議
+              - button "" [ref=e281] [cursor=pointer]:
+                - generic [ref=e282]: 
+        - generic [ref=e283]:
+          - link "士林電機★新鮮人全台募集 贊助 工作生活超平衡，豐富資源＋導師帶你成長▸接軌國際，開啟職涯無限可能！ 優渥獎金分紅 更多好職等你來挑戰➜" [ref=e287] [cursor=pointer]:
+            - /url: https://freshman.events.104.com.tw/11039306/?jobsource=AD_699163_
+            - generic [ref=e289]:
+              - generic [ref=e290]: 士林電機★新鮮人全台募集 贊助
+              - generic [ref=e291]: 工作生活超平衡，豐富資源＋導師帶你成長▸接軌國際，開啟職涯無限可能！
+              - generic [ref=e292]:
+                - generic [ref=e293]: 優渥獎金分紅
+                - generic [ref=e294]: 更多好職等你來挑戰➜
+          - link "星展暑期實習計畫開跑➜ 贊助 雙軌培育+外商歷練，新鮮人首選，限額60名熱烈招募中！ 4/6截止 表現優秀者可轉正職" [ref=e298] [cursor=pointer]:
+            - /url: https://events.104.com.tw/dbs/20231108115714/?jobsource=AD_699164_
+            - generic [ref=e300]:
+              - generic [ref=e301]: 星展暑期實習計畫開跑➜ 贊助
+              - generic [ref=e302]: 雙軌培育+外商歷練，新鮮人首選，限額60名熱烈招募中！
+              - generic [ref=e303]:
+                - generic [ref=e304]: 4/6截止
+                - generic [ref=e305]: 表現優秀者可轉正職
+          - generic [ref=e307]:
+            - link "軟體研發工程師 (新竹)" [ref=e310] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/6ikfq?jobsource=index_job_r
+            - link "聚騰科技股份有限公司" [ref=e312] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bkrgv?jobsource=index_job_r
+            - generic [ref=e313]:
+              - generic [ref=e314]: 新竹市
+              - generic [ref=e315]: 經歷不拘
+              - generic [ref=e316]: 大學
+            - generic [ref=e317]:
+              - generic [ref=e318]: 待遇面議
+              - button "" [ref=e319] [cursor=pointer]:
+                - generic [ref=e320]: 
+          - generic [ref=e322]:
+            - link "【金融科技】機器學習工程師Machine Learning Engineer" [ref=e325] [cursor=pointer]:
+              - /url: https://www.104.com.tw/job/6dtcl?jobsource=index_job_r
+            - link "玉山銀行_玉山商業銀行股份有限公司" [ref=e327] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/13quahyo?jobsource=index_job_r
+            - generic [ref=e328]:
+              - generic [ref=e329]: 台北市松山區
+              - generic [ref=e330]: 經歷不拘
+              - generic [ref=e331]: 碩士
+            - generic [ref=e332]:
+              - generic [ref=e333]: 待遇面議
+              - button "" [ref=e334] [cursor=pointer]:
+                - generic [ref=e335]: 
+      - link "看更多工作 " [ref=e337] [cursor=pointer]:
+        - /url: https://pda.104.com.tw/work/mate/list/recommend/?asc=0&jobsource=index_job_r&latest=0&order=1&utm_medium=cweb_job_login&utm_source=104
+        - text: 看更多工作
+        - generic [ref=e338]: 
+    - generic [ref=e339]:
+      - heading "精選企業" [level=2] [ref=e341]
+      - generic [ref=e345]:
+        - generic [ref=e348]:
+          - link "【中央印製廠】 2026新進人員甄試開跑 即日報名起至4/15 起薪最高51K 優渥的薪酬與福利" [ref=e349] [cursor=pointer]:
+            - /url: https://cepp.mcu-edu.tw/?jobsource=AD_699190_
+            - generic [ref=e352]:
+              - generic [ref=e353]: 【中央印製廠】
+              - generic [ref=e354]:
+                - generic [ref=e355]: 2026新進人員甄試開跑
+                - list [ref=e356]:
+                  - listitem [ref=e357]:
+                    - generic [ref=e358]: 即日報名起至4/15
+                  - listitem [ref=e359]:
+                    - generic [ref=e360]: 起薪最高51K
+                  - listitem [ref=e361]:
+                    - generic [ref=e362]: 優渥的薪酬與福利
+          - link "新鮮人線上徵才博覽會 留友看▸夢幻工作都在這 天菜公司搶先加入 知名外商向你招手 上千免經驗好職都在這" [ref=e363] [cursor=pointer]:
+            - /url: https://freshman.104.com.tw/events/?utm_source=104PCAD&utm_medium=Featured&jobsource=AD_699189_
+            - generic [ref=e366]:
+              - generic [ref=e367]: 新鮮人線上徵才博覽會
+              - generic [ref=e368]:
+                - generic [ref=e369]: 留友看▸夢幻工作都在這
+                - list [ref=e370]:
+                  - listitem [ref=e371]:
+                    - generic [ref=e372]: 天菜公司搶先加入
+                  - listitem [ref=e373]:
+                    - generic [ref=e374]: 知名外商向你招手
+                  - listitem [ref=e375]:
+                    - generic [ref=e376]: 上千免經驗好職都在這
+        - link "4/11就業博覽會 台北車站▸多功能展演區 80間企業面對面交流 免費1對1履歷健診 持i僑卡再抽蘋果好禮" [ref=e383] [cursor=pointer]:
+          - /url: https://104ad.pse.is/8urxcp?jobsource=AD_699191_
+          - generic [ref=e386]:
+            - generic [ref=e387]: 4/11就業博覽會
+            - generic [ref=e388]:
+              - generic [ref=e389]: 台北車站▸多功能展演區
+              - list [ref=e390]:
+                - listitem [ref=e391]:
+                  - generic [ref=e392]: 80間企業面對面交流
+                - listitem [ref=e393]:
+                  - generic [ref=e394]: 免費1對1履歷健診
+                - listitem [ref=e395]:
+                  - generic [ref=e396]: 持i僑卡再抽蘋果好禮
+    - generic [ref=e400]:
+      - heading "適合彥男的好公司" [level=2] [ref=e402]
+      - generic [ref=e404] [cursor=pointer]:
+        - link "AI推薦" [ref=e405]:
+          - /url: /?tab=cmp_1
+        - link "外商公司" [ref=e406]:
+          - /url: /?tab=cmp_2
+        - link "上市上櫃" [ref=e407]:
+          - /url: /?tab=cmp_3
+      - generic [ref=e409]:
+        - generic [ref=e410]:
+          - generic [ref=e413]:
+            - generic [ref=e414]:
+              - link "東海大學 LOGO" [ref=e416] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/nw2bchx?jobsource=index_cmp
+                - img "東海大學 LOGO" [ref=e419]
+              - link "東海大學" [ref=e421] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/nw2bchx?jobsource=index_cmp
+            - generic [ref=e422]:
+              - generic [ref=e423]:
+                - generic [ref=e424]: 
+                - text: 台中市西屯區
+              - generic [ref=e425]:
+                - generic [ref=e426]: 
+                - text: 其他教育服務業
+            - generic [ref=e427]:
+              - link "後端工程師" [ref=e429] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/nw2bchx?roleJobCat=1_2007001016&jobsource=index_cmp#info06
+              - link "軟體工程師" [ref=e431] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/nw2bchx?roleJobCat=1_2007001004&jobsource=index_cmp#info06
+              - link "中等學校教師" [ref=e433] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/nw2bchx?roleJobCat=1_2016002004&jobsource=index_cmp#info06
+              - link "行政助理" [ref=e435] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/nw2bchx?roleJobCat=1_2002001012&jobsource=index_cmp#info06
+              - link "記帳／出納／一般會計" [ref=e437] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/nw2bchx?roleJobCat=1_2003001006&jobsource=index_cmp#info06
+            - link "查看工作機會(52)" [ref=e440] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/nw2bchx?jobsource=index_cmp#info06
+          - generic [ref=e443]:
+            - generic [ref=e444]:
+              - link "雲想科技股份有限公司 LOGO" [ref=e446] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bjxqs?jobsource=index_cmp
+                - img "雲想科技股份有限公司 LOGO" [ref=e449]
+              - link "雲想科技股份有限公司" [ref=e451] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bjxqs?jobsource=index_cmp
+            - generic [ref=e452]:
+              - generic [ref=e453]:
+                - generic [ref=e454]: 
+                - text: 台中市西屯區
+              - generic [ref=e455]:
+                - generic [ref=e456]: 
+                - text: 電腦系統整合服務業
+            - generic [ref=e457]:
+              - link "軟體工程師" [ref=e459] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjxqs?roleJobCat=1_2007001004&jobsource=index_cmp#info06
+              - link "後端工程師" [ref=e461] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjxqs?roleJobCat=1_2007001016&jobsource=index_cmp#info06
+              - link "系統工程師" [ref=e463] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjxqs?roleJobCat=1_2007002006&jobsource=index_cmp#info06
+              - link "專案經理" [ref=e465] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjxqs?roleJobCat=1_2004003006&jobsource=index_cmp#info06
+              - link "產品管理師" [ref=e467] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjxqs?roleJobCat=1_2004003005&jobsource=index_cmp#info06
+            - link "查看工作機會(11)" [ref=e470] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bjxqs?jobsource=index_cmp#info06
+          - generic [ref=e473]:
+            - generic [ref=e474]:
+              - link "台灣美光記憶體股份有限公司 LOGO" [ref=e476] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/d3mxc9s?jobsource=index_cmp
+                - img "台灣美光記憶體股份有限公司 LOGO" [ref=e479]
+              - link "台灣美光記憶體股份有限公司" [ref=e481] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/d3mxc9s?jobsource=index_cmp
+            - generic [ref=e482]:
+              - generic [ref=e483]:
+                - generic [ref=e484]: 
+                - text: 台中市后里區
+              - generic [ref=e485]:
+                - generic [ref=e486]: 
+                - text: 半導體製造業
+            - generic [ref=e487]:
+              - link "生產技術／製程工程師" [ref=e489] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/d3mxc9s?roleJobCat=1_2009002001&jobsource=index_cmp#info06
+              - link "半導體工程師" [ref=e491] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/d3mxc9s?roleJobCat=1_2008001016&jobsource=index_cmp#info06
+              - link "工業工程師／生產線規劃" [ref=e493] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/d3mxc9s?roleJobCat=1_2009001003&jobsource=index_cmp#info06
+            - link "查看工作機會(1)" [ref=e496] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/d3mxc9s?jobsource=index_cmp#info06
+          - generic [ref=e499]:
+            - generic [ref=e500]:
+              - link "璽亦科技有限公司 LOGO" [ref=e502] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bnczf?jobsource=index_cmp
+                - img "璽亦科技有限公司 LOGO" [ref=e505]
+              - link "璽亦科技有限公司" [ref=e507] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bnczf?jobsource=index_cmp
+            - generic [ref=e508]:
+              - generic [ref=e509]:
+                - generic [ref=e510]: 
+                - text: 台北市信義區
+              - generic [ref=e511]:
+                - generic [ref=e512]: 
+                - text: 電腦軟體服務業
+            - generic [ref=e513]:
+              - link "雲端工程師" [ref=e515] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnczf?roleJobCat=1_2007002010&jobsource=index_cmp#info06
+              - link "系統工程師" [ref=e517] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnczf?roleJobCat=1_2007002006&jobsource=index_cmp#info06
+              - link "網路管理工程師" [ref=e519] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnczf?roleJobCat=1_2007002005&jobsource=index_cmp#info06
+              - link "資料工程師" [ref=e521] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnczf?roleJobCat=1_2007001022&jobsource=index_cmp#info06
+              - link "數據分析師／資料分析師" [ref=e523] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnczf?roleJobCat=1_2007001018&jobsource=index_cmp#info06
+            - link "查看工作機會(2)" [ref=e526] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bnczf?jobsource=index_cmp#info06
+        - generic [ref=e527]:
+          - generic [ref=e530]:
+            - generic [ref=e531]:
+              - link "韓商現代樂鐵股份有限公司台灣分公司 LOGO" [ref=e533] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bjae8?jobsource=index_cmp
+                - img "韓商現代樂鐵股份有限公司台灣分公司 LOGO" [ref=e536]
+              - link "韓商現代樂鐵股份有限公司台灣分公司" [ref=e538] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bjae8?jobsource=index_cmp
+            - generic [ref=e539]:
+              - generic [ref=e540]:
+                - generic [ref=e541]: 
+                - text: 台北市中山區
+              - generic [ref=e542]:
+                - generic [ref=e543]: 
+                - text: 其他相關製造業
+            - generic [ref=e544]:
+              - link "英文翻譯" [ref=e546] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjae8?roleJobCat=1_2014001002&jobsource=index_cmp#info06
+              - link "文件管理師" [ref=e548] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjae8?roleJobCat=1_2002001007&jobsource=index_cmp#info06
+              - link "專案管理主管" [ref=e550] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjae8?roleJobCat=1_2004003001&jobsource=index_cmp#info06
+              - link "物管／資材" [ref=e552] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjae8?roleJobCat=1_2011001005&jobsource=index_cmp#info06
+              - link "其他翻譯" [ref=e554] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bjae8?roleJobCat=1_2014001004&jobsource=index_cmp#info06
+            - link "查看工作機會(16)" [ref=e557] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bjae8?jobsource=index_cmp#info06
+          - generic [ref=e560]:
+            - generic [ref=e561]:
+              - link "搜" [ref=e563] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bmwrx?jobsource=index_cmp
+                - generic [ref=e565]: 搜
+              - link "搜樂數位行銷有限公司" [ref=e567] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bmwrx?jobsource=index_cmp
+            - generic [ref=e568]:
+              - generic [ref=e569]:
+                - generic [ref=e570]: 
+                - text: 台中市西屯區
+              - generic [ref=e571]:
+                - generic [ref=e572]: 
+                - text: 多媒體傳播相關業
+            - generic [ref=e573]:
+              - link "軟體工程師" [ref=e575] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bmwrx?roleJobCat=1_2007001004&jobsource=index_cmp#info06
+              - link "全端工程師" [ref=e577] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bmwrx?roleJobCat=1_2007001017&jobsource=index_cmp#info06
+              - link "AI工程師" [ref=e579] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bmwrx?roleJobCat=1_2007001020&jobsource=index_cmp#info06
+              - link "DevOps 工程師" [ref=e581] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bmwrx?roleJobCat=1_2007001025&jobsource=index_cmp#info06
+              - link "其他研究人員" [ref=e583] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bmwrx?roleJobCat=1_2016001014&jobsource=index_cmp#info06
+            - link "查看工作機會(6)" [ref=e586] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bmwrx?jobsource=index_cmp#info06
+          - generic [ref=e589]:
+            - generic [ref=e590]:
+              - link "捷安特_巨大機械工業股份有限公司 LOGO" [ref=e592] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/pr194vs?jobsource=index_cmp
+                - img "捷安特_巨大機械工業股份有限公司 LOGO" [ref=e595]
+              - link "捷安特_巨大機械工業股份有限公司" [ref=e597] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/pr194vs?jobsource=index_cmp
+            - generic [ref=e598]:
+              - generic [ref=e599]:
+                - generic [ref=e600]: 
+                - text: 台中市西屯區
+              - generic [ref=e601]:
+                - generic [ref=e602]: 
+                - text: 自行車及其零件製造業
+            - generic [ref=e603]:
+              - link "其他客服人員" [ref=e605] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/pr194vs?roleJobCat=1_2005001005&jobsource=index_cmp#info06
+              - link "稽核人員" [ref=e607] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/pr194vs?roleJobCat=1_2003001008&jobsource=index_cmp#info06
+              - link "小客車／計程車及小貨車司機" [ref=e609] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/pr194vs?roleJobCat=1_2011002005&jobsource=index_cmp#info06
+              - link "領隊" [ref=e611] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/pr194vs?roleJobCat=1_2006002006&jobsource=index_cmp#info06
+              - link "廠務" [ref=e613] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/pr194vs?roleJobCat=1_2009004006&jobsource=index_cmp#info06
+            - link "查看工作機會(51)" [ref=e616] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/pr194vs?jobsource=index_cmp#info06
+          - generic [ref=e619]:
+            - generic [ref=e620]:
+              - link "昂鋐科創股份有限公司(籌備處) LOGO" [ref=e622] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bnl8n?jobsource=index_cmp
+                - img "昂鋐科創股份有限公司(籌備處) LOGO" [ref=e625]
+              - link "昂鋐科創股份有限公司(籌備處)" [ref=e627] [cursor=pointer]:
+                - /url: https://www.104.com.tw/company/1a2x6bnl8n?jobsource=index_cmp
+            - generic [ref=e628]:
+              - generic [ref=e629]:
+                - generic [ref=e630]: 
+                - text: 台北市松山區
+              - generic [ref=e631]:
+                - generic [ref=e632]: 
+                - text: 電腦軟體服務業
+            - generic [ref=e633]:
+              - link "後端工程師" [ref=e635] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnl8n?roleJobCat=1_2007001016&jobsource=index_cmp#info06
+              - link "全端工程師" [ref=e637] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnl8n?roleJobCat=1_2007001017&jobsource=index_cmp#info06
+              - link "資料科學家" [ref=e639] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnl8n?roleJobCat=1_2007001021&jobsource=index_cmp#info06
+              - link "系統工程師" [ref=e641] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnl8n?roleJobCat=1_2007002006&jobsource=index_cmp#info06
+              - link "前端工程師" [ref=e643] [cursor=pointer]:
+                - /url: //www.104.com.tw/company/1a2x6bnl8n?roleJobCat=1_2007001015&jobsource=index_cmp#info06
+            - link "查看工作機會(4)" [ref=e646] [cursor=pointer]:
+              - /url: https://www.104.com.tw/company/1a2x6bnl8n?jobsource=index_cmp#info06
+      - generic [ref=e647]:
+        - link "看更多公司 " [ref=e648] [cursor=pointer]:
+          - /url: https://www.104.com.tw/company/topic/recommend?jobsource=index_cmp&utm_medium=cweb_company&utm_source=104
+          - text: 看更多公司
+          - generic [ref=e649]: 
+        - text: 
+    - generic [ref=e650]:
+      - heading "熱門企業" [level=2] [ref=e652]
+      - generic [ref=e656]:
+        - generic [ref=e658]:
+          - link "台灣睛姿｜JINS 日本第一眼鏡品牌 全面調薪上看58K 工作機會(59)" [ref=e659] [cursor=pointer]:
+            - /url: https://events.104.com.tw/jins/20240805112433/?jobsource=AD_699166_
+            - generic [ref=e661]:
+              - generic [ref=e663]: 台灣睛姿｜JINS
+              - generic [ref=e664]: 日本第一眼鏡品牌
+              - generic [ref=e665]: 全面調薪上看58K
+              - generic [ref=e666]: 工作機會(59)
+          - link "台灣房屋 直營門市熱情招募中 優渥薪獎、完整培訓 工作機會(26)" [ref=e667] [cursor=pointer]:
+            - /url: https://www.104.com.tw/company/9rgf51c?jobsource=AD_699169_
+            - generic [ref=e669]:
+              - generic [ref=e671]: 台灣房屋
+              - generic [ref=e672]: 直營門市熱情招募中
+              - generic [ref=e673]: 優渥薪獎、完整培訓
+              - generic [ref=e674]: 工作機會(26)
+          - link "康思迅數位 桃園指標數位整合行銷 誠徵行銷企劃人員 工作機會(2)" [ref=e675] [cursor=pointer]:
+            - /url: https://www.104.com.tw/job/8q45a?jobsource=AD_699168_
+            - generic [ref=e677]:
+              - generic [ref=e679]: 康思迅數位
+              - generic [ref=e680]: 桃園指標數位整合行銷
+              - generic [ref=e681]: 誠徵行銷企劃人員
+              - generic [ref=e682]: 工作機會(2)
+          - link "◆光寶科技◆ 電源研發菁英招募中 研發職缺◆8萬5起薪 工作機會(20+)" [ref=e683] [cursor=pointer]:
+            - /url: https://www.104.com.tw/company/aqae7i0?keyword=%E3%80%90Pilot+Z%E3%80%91&page=1&pageSize=20&order=8&asc=0&jobsource=AD_699165_#info06
+            - generic [ref=e685]:
+              - generic [ref=e687]: ◆光寶科技◆
+              - generic [ref=e688]: 電源研發菁英招募中
+              - generic [ref=e689]: 研發職缺◆8萬5起薪
+              - generic [ref=e690]: 工作機會(20+)
+          - link "新鮮人徵才博覽會 多元產業★知名企業 上千免經驗好職募集 工作機會(99+)" [ref=e691] [cursor=pointer]:
+            - /url: https://freshman.104.com.tw/events/?utm_source=104PCAD&utm_medium=HOT&jobsource=AD_699170_
+            - generic [ref=e693]:
+              - generic [ref=e695]: 新鮮人徵才博覽會
+              - generic [ref=e696]: 多元產業★知名企業
+              - generic [ref=e697]: 上千免經驗好職募集
+              - generic [ref=e698]: 工作機會(99+)
+          - link "饗賓餐旅集團 致力提升餐飲人價值 最具餐飲規模與挑戰 工作機會(99+)" [ref=e699] [cursor=pointer]:
+            - /url: https://reurl.cc/YyzGx?jobsource=AD_699167_
+            - generic [ref=e701]:
+              - generic [ref=e703]: 饗賓餐旅集團
+              - generic [ref=e704]: 致力提升餐飲人價值
+              - generic [ref=e705]: 最具餐飲規模與挑戰
+              - generic [ref=e706]: 工作機會(99+)
+          - link "星巴克 福利健全、職涯透明 上班享有兩杯飲品 工作機會(99+)" [ref=e707] [cursor=pointer]:
+            - /url: https://events.104.com.tw/starbucks/20251027103711/?jobsource=AD_699171_
+            - generic [ref=e709]:
+              - generic [ref=e711]: 星巴克
+              - generic [ref=e712]: 福利健全、職涯透明
+              - generic [ref=e713]: 上班享有兩杯飲品
+              - generic [ref=e714]: 工作機會(99+)
+        - img [ref=e716] [cursor=pointer]
+        - img [ref=e719] [cursor=pointer]
+    - generic [ref=e725]:
+      - generic [ref=e726]:
+        - heading "職場新鮮事" [level=2] [ref=e728]
+        - generic [ref=e730] [cursor=pointer]:
+          - link "履歷撰寫" [ref=e731]:
+            - /url: /?tab=blog_1
+          - link "面試技巧" [ref=e732]:
+            - /url: /?tab=blog_2
+          - link "職涯規劃" [ref=e733]:
+            - /url: /?tab=blog_3
+          - link "轉職評估" [ref=e734]:
+            - /url: /?tab=blog_4
+        - generic [ref=e736]:
+          - link "AI履歷如何避免面試翻車？面試可以問薪資結構嗎？Z世代求職問題直球對決 AI寫履歷，完美卻容易被HR發現翻車？AI能力到底要多強才加分？面試可以問薪資結構或工作生活平衡嗎？查到公司負評能直接問嗎？104邀請4位不同產業HR直球解答，帶你從履歷準備到面試提問，一次破解AI時代最在意的求職問題！" [ref=e739] [cursor=pointer]:
+            - /url: https://blog.104.com.tw/ai-resume-interview-tips-hr/?utm_campaign=resume&utm_medium=104C_index&utm_source=104
+            - generic [ref=e741]:
+              - text: AI履歷如何避免面試翻車？面試可以問薪資結構嗎？Z世代求職問題直球對決
+              - text: AI寫履歷，完美卻容易被HR發現翻車？AI能力到底要多強才加分？面試可以問薪資結構或工作生活平衡嗎？查到公司負評能直接問嗎？104邀請4位不同產業HR直球解答，帶你從履歷準備到面試提問，一次破解AI時代最在意的求職問題！
+          - generic [ref=e742]:
+            - generic [ref=e744]:
+              - link "履歷又是無聲卡？人資教你這樣改，避開3大「看不出個人貢獻」錯誤" [ref=e746] [cursor=pointer]:
+                - /url: https://blog.104.com.tw/104data-podcastarticle-changejob7-ep225/?utm_campaign=resume&utm_medium=104C_index&utm_source=104
+              - generic [ref=e747]: 投了履歷卻石沈大海？104人力銀行2月份數據顯示，年後職缺數遠大於求職人數，但為什麼自己卻是無人聞問？十年自由工作者、去年轉入企業擔任部門副執行長的心智教練、運動員職涯導師曾荃鈺，分享進入企業後觀察到的「企業會想用的人才」三個特點。學習把這些特點轉化在履歷上呈現，讓你被企業看見機率爆增！
+            - generic [ref=e750]:
+              - link "新鮮人必備10大軟實力、硬技能，如何準備？104職涯教育長不藏私" [ref=e752] [cursor=pointer]:
+                - /url: https://blog.104.com.tw/fresh-graduates-skills/?utm_campaign=resume&utm_medium=104C_index&utm_source=104
+              - generic [ref=e753]: 新鮮人找工作，企業最看重哪些軟硬實力？面對職場轉型與AI浪潮，企業在招募時，特別重視求職者是否具備全方位的軟實力與硬技能，104人力銀行職涯教育長王榮春點出5大軟實力與5大硬技能，分享新鮮人如何由內而外養成軟硬實力，提升職場競爭力，為未來職涯打下堅實基礎！
+            - generic [ref=e756]:
+              - link "用AI寫履歷，HR怎麼看？「2大地雷」絕不能犯｜AI履歷生成3步驟" [ref=e758] [cursor=pointer]:
+                - /url: https://blog.104.com.tw/use-ai-to-write-resume/?utm_campaign=resume&utm_medium=104C_index&utm_source=104
+              - generic [ref=e759]: 寫AI履歷要注意哪些事？人資怎麼看AI生成履歷，有什麼大忌絕不能犯？企業會禁用AI寫履歷自傳嗎？104人力銀行人資侯成緯（Lester）現身說法，分享AI撰寫履歷常見缺點，以及如何用AI工具寫履歷、凸顯履歷個人亮點。切記寫履歷別全交給AI，唯有自己才能真正掌握個人特色及價值，祝福大家在AI浪潮下求職都能更順利！
+        - link "更多文章 " [ref=e762] [cursor=pointer]:
+          - /url: https://blog.104.com.tw/tag/%E5%B1%A5%E6%AD%B7%E6%95%99%E5%AD%B8/?utm_campaign=resume&utm_medium=104C_index&utm_source=104
+          - text: 更多文章
+          - generic [ref=e763]: 
+      - generic [ref=e764]:
+        - heading "大家都在問" [level=2] [ref=e766]
+        - generic [ref=e769]:
+          - generic [ref=e770]:
+            - link "投履歷都沒下文，想詢問HR是怎麼看一份履歷的? 回答 Giver Avatar Giver Avatar Giver Avatar +57 觀看 9999＋" [ref=e771] [cursor=pointer]:
+              - /url: https://giver.104.com.tw/question/fa8fb065-980a-4bf3-ae34-935b4cf31d92?utm_campaign=resume&utm_medium=cweb_index&utm_source=104
+              - generic [ref=e772]:
+                - generic [ref=e773]: 投履歷都沒下文，想詢問HR是怎麼看一份履歷的?
+                - generic [ref=e774]:
+                  - generic [ref=e775]: 回答
+                  - generic [ref=e776]:
+                    - img "Giver Avatar" [ref=e777]
+                    - img "Giver Avatar" [ref=e778]
+                    - img "Giver Avatar" [ref=e779]
+                  - generic [ref=e780]: "+57"
+                  - generic [ref=e781]: 觀看
+                  - generic [ref=e782]: 9999＋
+            - link "履歷中是否要提及目前還在職之工作經驗呢？ 回答 Giver Avatar Giver Avatar Giver Avatar +35 觀看 9999＋" [ref=e783] [cursor=pointer]:
+              - /url: https://giver.104.com.tw/question/5f97d539-ad47-4c7a-a97c-e7ec27e83627?utm_campaign=resume&utm_medium=cweb_index&utm_source=104
+              - generic [ref=e784]:
+                - generic [ref=e785]: 履歷中是否要提及目前還在職之工作經驗呢？
+                - generic [ref=e786]:
+                  - generic [ref=e787]: 回答
+                  - generic [ref=e788]:
+                    - img "Giver Avatar" [ref=e789]
+                    - img "Giver Avatar" [ref=e790]
+                    - img "Giver Avatar" [ref=e791]
+                  - generic [ref=e792]: "+35"
+                  - generic [ref=e793]: 觀看
+                  - generic [ref=e794]: 9999＋
+          - generic [ref=e795]:
+            - link "同一家公司同一個職務，可以用不同的履歷投遞嗎? 回答 Giver Avatar Giver Avatar Giver Avatar +31 觀看 9999＋" [ref=e796] [cursor=pointer]:
+              - /url: https://giver.104.com.tw/question/b3783d9c-d6d1-47c7-b5da-b370357f7b18?utm_campaign=resume&utm_medium=cweb_index&utm_source=104
+              - generic [ref=e797]:
+                - generic [ref=e798]: 同一家公司同一個職務，可以用不同的履歷投遞嗎?
+                - generic [ref=e799]:
+                  - generic [ref=e800]: 回答
+                  - generic [ref=e801]:
+                    - img "Giver Avatar" [ref=e802]
+                    - img "Giver Avatar" [ref=e803]
+                    - img "Giver Avatar" [ref=e804]
+                  - generic [ref=e805]: "+31"
+                  - generic [ref=e806]: 觀看
+                  - generic [ref=e807]: 9999＋
+            - link "我想請教有關履歷是否可加入過往特殊經驗？ 回答 Giver Avatar Giver Avatar Giver Avatar +30 觀看 9999＋" [ref=e808] [cursor=pointer]:
+              - /url: https://giver.104.com.tw/question/7d594075-494c-41f8-8ee3-654bffe600ad?utm_campaign=resume&utm_medium=cweb_index&utm_source=104
+              - generic [ref=e809]:
+                - generic [ref=e810]: 我想請教有關履歷是否可加入過往特殊經驗？
+                - generic [ref=e811]:
+                  - generic [ref=e812]: 回答
+                  - generic [ref=e813]:
+                    - img "Giver Avatar" [ref=e814]
+                    - img "Giver Avatar" [ref=e815]
+                    - img "Giver Avatar" [ref=e816]
+                  - generic [ref=e817]: "+30"
+                  - generic [ref=e818]: 觀看
+                  - generic [ref=e819]: 9999＋
+        - link "更多職場問答 " [ref=e821] [cursor=pointer]:
+          - /url: https://giver.104.com.tw/questionList/0/tag/2yP6Fmzdk?dn58=2yP6Fmzdk&orderType=latest&tagType=0&utm_campaign=resume&utm_medium=cweb_index&utm_source=104
+          - text: 更多職場問答
+          - generic [ref=e822]: 
+    - generic [ref=e824]:
+      - heading "求職指南針" [level=2] [ref=e826]
+      - generic [ref=e828]:
+        - generic [ref=e830] [cursor=pointer]:
+          - generic [ref=e831]:
+            - img "學生請進來" [ref=e832]
+            - img "學生請進來" [ref=e833]
+          - text: 學生請進來
+        - generic [ref=e835] [cursor=pointer]:
+          - generic [ref=e836]:
+            - img "第一次找正職" [ref=e837]
+            - img "第一次找正職" [ref=e838]
+          - text: 第一次找正職
+        - generic [ref=e840] [cursor=pointer]:
+          - generic [ref=e841]:
+            - img "打算換個工作" [ref=e842]
+            - img "打算換個工作" [ref=e843]
+          - text: 打算換個工作
+        - generic [ref=e845] [cursor=pointer]:
+          - generic [ref=e846]:
+            - img "高階/主管職" [ref=e847]
+            - img "高階/主管職" [ref=e848]
+          - text: 高階/主管職
+      - generic [ref=e849]:
+        - generic [ref=e850]:
+          - generic [ref=e851] [cursor=pointer]: 考慮換工作
+          - generic [ref=e852] [cursor=pointer]: 蒐集轉職情報
+          - generic [ref=e853] [cursor=pointer]: 準備履歷面試
+          - generic [ref=e854] [cursor=pointer]: 提升職場競爭力
+        - generic [ref=e855]:
+          - generic [ref=e856]:
+            - img "職場疑難雜症發問" [ref=e857]
+            - generic [ref=e858]: 職場疑難雜症發問
+            - generic [ref=e859]:
+              - text: 工作、職涯匿名發問與回答
+              - text: 資深職場前輩經驗分享
+            - link "前往職涯診所" [ref=e860] [cursor=pointer]:
+              - /url: //giver.104.com.tw/questionList/0/tag/2zu5atPev?orderType=latest&dn58=2zu5atPev&tagType=0&utm_source=104&utm_medium=cweb_transfer
+          - generic [ref=e861]:
+            - img "找合適你的工作" [ref=e862]
+            - generic [ref=e863]: 找合適你的工作
+            - generic [ref=e864]:
+              - text: 檢視職務適合度
+              - text: 幫助你找到理想職缺
+            - link "檢視職業適合度" [ref=e865] [cursor=pointer]:
+              - /url: https://nabi.104.com.tw/cjcat/?utm_source=104&utm_medium=cweb_changejob_cjcat
+          - generic [ref=e866]:
+            - img "職業必備技能及薪資發展" [ref=e867]
+            - generic [ref=e868]: 職業必備技能及薪資發展
+            - generic [ref=e869]:
+              - text: 了解職業需要具備的技能
+              - text: 薪資待遇與未來發展趨勢
+            - link "前往工作世界" [ref=e870] [cursor=pointer]:
+              - /url: https://guide.104.com.tw/wow/?utm_source=104_cweb&utm_medium=compass_transition
+  - generic [ref=e873]:
+    - generic [ref=e874]:
+      - generic [ref=e875]:
+        - text: 關於104
+        - generic [ref=e876]:
+          - generic [ref=e877]:
+            - link "企業網站" [ref=e878] [cursor=pointer]:
+              - /url: https://corp.104.com.tw/zh/home/
+            - link "新聞中心" [ref=e879] [cursor=pointer]:
+              - /url: https://corp.104.com.tw/zh/home/news
+            - link "104 AI 全服務" [ref=e880] [cursor=pointer]:
+              - /url: //www.104.com.tw/ai/services
+            - link "合作提案" [ref=e881] [cursor=pointer]:
+              - /url: https://corp.104.com.tw/zh/home/contact-us/
+            - link "粉絲專頁" [ref=e882] [cursor=pointer]:
+              - /url: https://www.facebook.com/104jobbank/
+          - generic [ref=e883]:
+            - link "加入104" [ref=e884] [cursor=pointer]:
+              - /url: https://corp.104.com.tw/zh/careers/join104/
+            - link "隱私中心" [ref=e885] [cursor=pointer]:
+              - /url: https://privacy.104.com.tw/policy/users
+            - link "所有服務" [ref=e886] [cursor=pointer]:
+              - /url: //www.104.com.tw/jobs/main/sitemap
+            - link "LINE官方帳號" [ref=e887] [cursor=pointer]:
+              - /url: https://lin.ee/S1ivc77
+      - generic [ref=e888]:
+        - text: 求職服務
+        - generic [ref=e890]:
+          - link "意見回饋" [ref=e891] [cursor=pointer]:
+            - /url: //www.104.com.tw/feedback/
+          - generic [ref=e892]: 專線：02-2912-6104 轉2
+          - generic [ref=e893]: 專線：02-7703-3104 轉2
+          - generic [ref=e894]: 服務時間
+          - generic [ref=e895]: 週一至週五 9:00-19:00
+      - generic [ref=e896]:
+        - text: 徵才服務
+        - generic [ref=e898]:
+          - link "意見回饋" [ref=e899] [cursor=pointer]:
+            - /url: //vip.104.com.tw/quickMsg/feedback
+          - generic [ref=e900]: 台北：02-2912-6104
+          - generic [ref=e901]: 台北：02-7703-3104
+          - generic [ref=e902]: 台中：04-3700-6104
+      - generic [ref=e903]:
+        - text: 多元徵才
+        - generic [ref=e905]:
+          - link "整合招募行銷" [ref=e906] [cursor=pointer]:
+            - /url: //vip.104.com.tw/preLogin/imc?utm_source=104cweb&utm_medium=footer&utm_content=y25
+          - link "中高階獵才顧問" [ref=e907] [cursor=pointer]:
+            - /url: https://hunter.104.com.tw/zh-tw?utm_source=104&utm_medium=jobbank_footer
+          - link "關鍵人才庫" [ref=e908] [cursor=pointer]:
+            - /url: https://mytalent.104.com.tw/?utm_source=104&utm_medium=homepage_footer
+    - generic [ref=e910]:
+      - text: 工作快找
+      - generic [ref=e911]:
+        - generic [ref=e912]:
+          - link "app_android_download" [ref=e913] [cursor=pointer]:
+            - /url: https://play.google.com/store/apps/details?id=com.m104
+            - img "app_android_download" [ref=e914]
+          - link "app_ios_download" [ref=e915] [cursor=pointer]:
+            - /url: https://apps.apple.com/tw/app/id437817158
+            - img "app_ios_download" [ref=e916]
+        - link "app_download" [ref=e917] [cursor=pointer]:
+          - /url: "\t\nhttps://104.onelink.me/RPgE/ap121syo"
+          - img "app_download" [ref=e918]
+  - generic [ref=e919]:
+    - generic [ref=e920]:
+      - generic [ref=e922] [cursor=pointer]:
+        - generic [ref=e923]: 
+        - generic [ref=e924]: 104客服
+      - link "常見問題" [ref=e925] [cursor=pointer]:
+        - /url: //www.104.com.tw/faq/104-jobbank
+      - link "職場安全諮詢" [ref=e926] [cursor=pointer]:
+        - /url: ""
+      - link "隱私中心" [ref=e927] [cursor=pointer]:
+        - /url: https://privacy.104.com.tw/policy/users?utm_source=104&utm_medium=104main
+    - generic [ref=e928]:
+      - generic [ref=e929]: 一零四資訊科技股份有限公司 版權所有 © 2026
+      - generic [ref=e930]: 建議瀏覽器 chrome / edge
+    - generic [ref=e931]:
+      - generic [ref=e932]: 統一編號 84598349
+      - generic [ref=e933]: 股票代號 3130
+      - generic [ref=e934]: 許可證號 1710
+      - generic [ref=e935]: 登記地址 新北市新店區寶中路119之1號10樓
+  - generic [ref=e937]:
+    - generic [ref=e938] [cursor=pointer]:
+      - generic [ref=e940]: 
+      - link [ref=e941]:
+        - /url: https://www.104.com.tw/careerfair/2026?utm_source=Cweb&utm_medium=upbn&utm_campaign=UPBN0330
+        - img [ref=e942]
+    - generic [ref=e944] [cursor=pointer]: 展開
+  - generic: 

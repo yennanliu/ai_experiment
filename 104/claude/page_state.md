@@ -1,0 +1,1389 @@
+- generic [ref=e3]:
+  - text: 
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - text: 
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - text: 
+          - generic [ref=e9]:
+            - generic [ref=e13] [cursor=pointer]:
+              - generic [ref=e14]: 工作
+              - generic [ref=e15]: 
+            - generic [ref=e19] [cursor=pointer]:
+              - generic [ref=e20]: 公司
+              - generic [ref=e21]: 
+            - generic [ref=e25] [cursor=pointer]:
+              - generic [ref=e26]: 工具
+              - generic [ref=e27]: 
+            - generic [ref=e31] [cursor=pointer]:
+              - generic [ref=e32]: 職涯
+              - generic [ref=e33]: 
+            - generic [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]: 學習
+              - generic [ref=e39]: 
+            - generic [ref=e43] [cursor=pointer]:
+              - generic [ref=e44]: APP
+              - generic [ref=e45]: 
+            - link "所有服務" [ref=e48] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/main/sitemap
+          - link "104人力銀行" [ref=e49] [cursor=pointer]:
+            - /url: https://www.104.com.tw/
+            - img "104人力銀行" [ref=e50]
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - link "80間企業現場談" [ref=e54] [cursor=pointer]:
+                - /url: https://user125311.pse.is/8u4zbn
+              - text: 
+            - generic [ref=e56]:
+              - button " 99+" [ref=e58] [cursor=pointer]:
+                - text: 
+                - generic [ref=e59]: 99+
+              - button "" [ref=e61] [cursor=pointer]
+              - button " 1" [ref=e63] [cursor=pointer]:
+                - text: 
+                - generic [ref=e64]: "1"
+              - text: 
+            - generic [ref=e66]:
+              - generic [ref=e68] [cursor=pointer]:
+                - generic [ref=e69]: 劉彥男
+                - generic [ref=e70]: 
+              - text: 
+        - text:       
+    - generic [ref=e74]:
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78] [cursor=pointer]: 
+          - textbox "關鍵字(例：職稱、公司名、技能專長...)" [ref=e79]: 軟體工程師
+        - button "台北市、新北市 " [ref=e81] [cursor=pointer]:
+          - generic [ref=e82]: 台北市、新北市
+          - generic [ref=e83]: 
+        - button "職務類別 " [ref=e85] [cursor=pointer]:
+          - generic [ref=e86]: 職務類別
+          - generic [ref=e87]: 
+        - text:          
+      - button "搜尋" [ref=e89] [cursor=pointer]
+    - generic [ref=e92]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - heading "AI推薦" [level=1] [ref=e97] [cursor=pointer]
+          - heading "找工作" [level=1] [ref=e98] [cursor=pointer]
+          - heading "找公司" [level=1] [ref=e99] [cursor=pointer]
+        - text: 
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - button "完全遠端 " [ref=e103] [cursor=pointer]:
+            - text: 完全遠端
+            - generic [ref=e105]: 
+          - button "部分遠端 " [ref=e107] [cursor=pointer]:
+            - text: 部分遠端
+            - generic [ref=e109]: 
+        - button " 所有篩選條件 (2)" [ref=e110] [cursor=pointer]:
+          - generic [ref=e111]: 
+          - generic [ref=e112]: 所有篩選條件 (2)
+    - text: 
+  - generic [ref=e114]:
+    - generic [ref=e115]:
+      - generic [ref=e197]:
+        - generic [ref=e198]: 找公司：
+        - link "宏碁股份有限公司" [ref=e199] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/9kgoqw8?jobsource=joblist_r_cust
+        - link "緯創軟體股份有限公司" [ref=e200] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/13u3sbvs?jobsource=joblist_r_cust
+        - link "Trend Micro_趨勢科技股份有限公司" [ref=e201] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/apio4y0?jobsource=joblist_r_cust
+        - link "瑞昱半導體股份有限公司" [ref=e202] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/aexwm9k?jobsource=joblist_r_cust
+        - link "SILICON LABORATORIES ASIA PACIFIC, LIMITED_香港商芯科實驗室亞太有限公司台灣分公司" [ref=e203] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/10wuv3fs?jobsource=joblist_r_cust
+        - link "更多公司 " [ref=e204] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/search/?jobsource=joblist_r_cust&keyword=    軟體工程師
+          - text: 更多公司
+          - generic [ref=e205]: 
+      - generic [ref=e117]:
+        - generic [ref=e118]: 共 663 筆
+        - text: 
+        - generic [ref=e120]:
+          - generic [ref=e121]: 排序
+          - button "符合度高" [ref=e123] [cursor=pointer]
+          - button "最近更新" [ref=e125] [cursor=pointer]
+          - generic [ref=e126]:
+            - button "薪資待遇" [ref=e127] [cursor=pointer]
+            - generic [ref=e128] [cursor=pointer]:
+              - generic [ref=e129]: 
+              - generic [ref=e130]: 
+          - generic [ref=e131]:
+            - button "應徵人數" [ref=e132] [cursor=pointer]
+            - generic [ref=e133] [cursor=pointer]:
+              - generic [ref=e134]: 
+              - generic [ref=e135]: 
+          - generic [ref=e136]:
+            - button "經驗" [ref=e137] [cursor=pointer]
+            - generic [ref=e138] [cursor=pointer]:
+              - generic [ref=e139]: 
+              - generic [ref=e140]: 
+          - generic [ref=e141]:
+            - button "學歷" [ref=e142] [cursor=pointer]
+            - generic [ref=e143] [cursor=pointer]:
+              - generic [ref=e144]: 
+              - generic [ref=e145]: 
+        - generic [ref=e146]:
+          - generic [ref=e149] [cursor=pointer]:
+            - text: 第 1 頁
+            - generic [ref=e150]: 
+          - generic [ref=e151]:
+            - button "" [ref=e152] [cursor=pointer]:
+              - generic [ref=e153]: 
+            - button "" [ref=e154] [cursor=pointer]:
+              - generic [ref=e155]: 
+      - generic [ref=e206]:
+        - generic [ref=e208]:
+          - generic [ref=e213]:
+            - generic [ref=e216]: 
+            - generic [ref=e217]:
+              - generic [ref=e219]:
+                - heading "【北士科】人機互動前端工程師 HCI Frontend Engineer" [level=2] [ref=e221]:
+                  - link "【北士科】人機互動前端工程師 HCI Frontend Engineer" [ref=e222] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/8vek6?jobsource=hotjob_chr_exp
+                    - text: 【北士科】人機互動前端
+                    - generic [ref=e223]: 工程師
+                    - text: HCI Frontend Engineer
+                - generic [ref=e224]:
+                  - link "沛思坦網路股份有限公司" [ref=e225] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6blk6g?jobsource=hotjob_chr_exp
+                  - link "網際網路相關業" [ref=e227] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1001001003&jobsource=joblist_search
+                - generic [ref=e228]:
+                  - link "台北市北投區" [ref=e230] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001001009&jobsource=joblist_search
+                  - link "5年以上" [ref=e232] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=10&jobsource=joblist_search
+                  - link "大學" [ref=e234] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                  - link "年薪1,000,000元以上" [ref=e236] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmin=1000000&sctp=Y
+                - generic [ref=e237]:
+                  - text: 及以上學位 2、前端經驗： 至少 5 年在
+                  - generic [ref=e238]: 軟體
+                  - text: 業擔任前端
+                  - generic [ref=e239]: 工程師
+                  - text: 的經驗，具備獨立開發複雜 Web 應用程式的能力 3、技術精通： 精通 HTML5 / CSS3 / JavaScript/TypeScript，並熟練掌握至少一個主流前端框架（如
+                - generic [ref=e240]:
+                  - link "年終獎金" [ref=e243] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e246] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "津貼/補助" [ref=e249] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                  - link "優於勞基法特休" [ref=e252] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf12
+                  - link "停車位" [ref=e255] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf18
+              - generic [ref=e256]:
+                - generic [ref=e258] [cursor=pointer]:
+                  - generic [ref=e259]: 
+                  - generic [ref=e260]: 6 天內聯絡過求職者
+                - generic [ref=e262] [cursor=pointer]: 徵才積極度：非常活躍
+            - generic [ref=e263]:
+              - generic [ref=e264]:
+                - button "儲存" [ref=e265] [cursor=pointer]:
+                  - generic [ref=e266]: 
+                  - text: 儲存
+                - generic [ref=e268] [cursor=pointer]: 近日已應徵
+              - link "11~30 人應徵" [ref=e270] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/8vek6?channel=104rpt&jobsource=hotjob_chr_exp
+          - generic [ref=e275]:
+            - generic [ref=e278]: 
+            - generic [ref=e279]:
+              - generic [ref=e281]:
+                - heading "Junior / Senior 品牌行銷企劃【 MarTech 】" [level=2] [ref=e283]:
+                  - link "Junior / Senior 品牌行銷企劃【 MarTech 】" [ref=e284] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/7wy87?jobsource=hotjob_chr_exp
+                - generic [ref=e285]:
+                  - link "圖靈數位股份有限公司" [ref=e286] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6bjxsx?jobsource=hotjob_chr_exp
+                  - link "其它軟體及網路相關業" [ref=e288] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1001001006&jobsource=joblist_search
+                - generic [ref=e289]:
+                  - link "台北市中正區" [ref=e291] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001001001&jobsource=joblist_search
+                  - link "經歷不拘" [ref=e293] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                  - link "大學" [ref=e295] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                  - link "月薪42,000~60,000元" [ref=e297] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=60000&scmin=42000&sctp=M
+                - generic [ref=e298]:
+                  - text: 超過 1500 家企業提供服務，服務強調兵貫神速，確實執行，深受業界好評。目前我們是 Google 和眾多大型企業（91APP、數位時代、Cyberbiz、Shopline）的合作夥伴。 2. 團隊組成 團隊由「分析師」、「資料科學家」和「
+                  - generic [ref=e299]: 工程師
+                - generic [ref=e300]:
+                  - link "距捷運台北車站約310公尺" [ref=e303] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?dist=0.31&jobsource=joblist_search&lat=25.0460819&lon=121.519485&mrt=99001002009
+                  - link "年終獎金" [ref=e306] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e309] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "員工旅遊" [ref=e312] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf3
+                  - link "部門聚餐" [ref=e315] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf29
+              - generic [ref=e316]:
+                - generic [ref=e318] [cursor=pointer]:
+                  - generic [ref=e319]: 
+                  - generic [ref=e320]: 14 小時前聯絡過求職者
+                - generic [ref=e322] [cursor=pointer]: 徵才積極度：極為活躍
+            - generic [ref=e323]:
+              - generic [ref=e324]:
+                - button "儲存" [ref=e325] [cursor=pointer]:
+                  - generic [ref=e326]: 
+                  - text: 儲存
+                - generic [ref=e328] [cursor=pointer]: 近日已應徵
+              - link "11~30 人應徵" [ref=e330] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/7wy87?channel=104rpt&jobsource=hotjob_chr_exp
+          - generic [ref=e333]:
+            - generic [ref=e335]:
+              - generic [ref=e337]: 3/24
+              - generic [ref=e338]:
+                - generic [ref=e340]:
+                  - heading "Omniverse Software Engineer（Application / Extension Developer） Omniverse 軟體工程師" [level=2] [ref=e342]:
+                    - link "Omniverse Software Engineer（Application / Extension Developer） Omniverse 軟體工程師" [ref=e343] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8wccm?jobsource=joblist_search
+                      - text: Omniverse
+                      - generic [ref=e344]: Software
+                      - generic [ref=e345]: Engineer
+                      - text: （Application / Extension Developer） Omniverse
+                      - generic [ref=e346]: 軟體工程師
+                  - generic [ref=e347]:
+                    - link "宇見智能科技股份有限公司" [ref=e348] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bmywq?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e350] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e351]:
+                    - link "台北市南港區" [ref=e353] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001011&jobsource=joblist_search
+                    - link "3年以上" [ref=e355] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=5&jobsource=joblist_search
+                    - link "大學" [ref=e357] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                    - link "年薪1,100,000~2,000,000元" [ref=e359] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=2000000&scmin=1100000&sctp=Y
+                  - generic [ref=e360]:
+                    - text: 我們正在尋找一位熟悉 3D 工具與遊戲引擎開發的
+                    - generic [ref=e361]: 工程師
+                    - text: ，能夠在 NVIDIA Omniverse 平台上從 0→1 建構 Application 與 Extension。你將與數位孿生（Digital Twin）、AI、產品與 3D 團隊密切合作
+                  - generic [ref=e362]:
+                    - link "遠端工作" [ref=e365] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "節日獎金/禮品" [ref=e368] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e371] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e374] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e377] [cursor=pointer]:
+                  - generic [ref=e378]: 
+                  - generic [ref=e379]: 7 小時前處理過履歷
+              - generic [ref=e380]:
+                - generic [ref=e381]:
+                  - button "儲存" [ref=e382] [cursor=pointer]:
+                    - generic [ref=e383]: 
+                    - text: 儲存
+                  - generic [ref=e385] [cursor=pointer]: 近日已應徵
+                - link "6~10 人應徵" [ref=e387] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8wccm?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e388] [cursor=pointer]: 
+          - generic [ref=e391]:
+            - generic [ref=e393]:
+              - generic [ref=e394]:
+                - generic [ref=e395]: 3/24
+                - generic [ref=e397]: 
+              - generic [ref=e398]:
+                - generic [ref=e400]:
+                  - heading "Software Engineer 軟體工程師/Senior Software Engineer 資深軟體工程師 (Hybrid Work混合辦公)" [level=2] [ref=e402]:
+                    - link "Software Engineer 軟體工程師/Senior Software Engineer 資深軟體工程師 (Hybrid Work混合辦公)" [ref=e403] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/87rgl?jobsource=joblist_search
+                      - generic [ref=e404]: Software
+                      - generic [ref=e405]: Engineer
+                      - generic [ref=e406]: 軟體工程師
+                      - text: /Senior
+                      - generic [ref=e407]: Software
+                      - generic [ref=e408]: Engineer
+                      - text: 資深
+                      - generic [ref=e409]: 軟體工程師
+                      - text: (Hybrid Work混合辦公)
+                  - generic [ref=e410]:
+                    - link "葳騰科技股份有限公司" [ref=e411] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/ohr8zjk?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e413] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e414]:
+                    - link "台北市內湖區" [ref=e416] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001010&jobsource=joblist_search
+                    - link "3年以上" [ref=e418] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=5&jobsource=joblist_search
+                    - link "專科" [ref=e420] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "待遇面議" [ref=e422] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e423]:
+                    - text: 【職位概述】 我們正在積極尋找一位充滿熱情、技術傑出的
+                    - generic [ref=e424]: 軟體開發工程師
+                    - text: ，加入我們以AI技術為核心的SaaS團隊。在這個職位上，你將參與BQool兩大產品AI-Powered Repricer及AI-Powered Advertising
+                  - generic [ref=e425]:
+                    - link "遠端工作" [ref=e428] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運西湖站約190公尺" [ref=e431] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.19&jobsource=joblist_search&lat=25.0805966&lon=121.5680368&mrt=99001001016
+                    - link "年終獎金" [ref=e434] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "津貼/補助" [ref=e437] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "生日假" [ref=e440] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf14
+                - generic [ref=e443] [cursor=pointer]:
+                  - generic [ref=e444]: 
+                  - generic [ref=e445]: 10 小時前處理過履歷
+              - generic [ref=e446]:
+                - generic [ref=e447]:
+                  - button "儲存" [ref=e448] [cursor=pointer]:
+                    - generic [ref=e449]: 
+                    - text: 儲存
+                  - generic [ref=e451] [cursor=pointer]: 近日已應徵
+                - link "6~10 人應徵" [ref=e453] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/87rgl?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e454] [cursor=pointer]: 
+          - generic [ref=e457]:
+            - generic [ref=e459]:
+              - generic [ref=e461]: 2/10
+              - generic [ref=e462]:
+                - generic [ref=e464]:
+                  - heading "軟體工程師" [level=2] [ref=e466]:
+                    - link "軟體工程師" [ref=e467] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8yaq1?jobsource=joblist_search
+                      - generic [ref=e468]: 軟體工程師
+                  - generic [ref=e469]:
+                    - link "卡繆科技有限公司" [ref=e470] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bnnhg?jobsource=joblist_search
+                    - link "網際網路相關業" [ref=e472] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001003&jobsource=joblist_search
+                  - generic [ref=e473]:
+                    - link "新北市永和區" [ref=e475] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001002014&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e477] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "高中" [ref=e479] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "時薪250~400元" [ref=e481] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=400&scmin=250&sctp=H
+                  - generic [ref=e482]:
+                    - text: 團隊由資深
+                    - generic [ref=e483]: 工程師
+                    - text: 帶領，適合想累積實戰經驗的你。 1. 參與 Web 應用程式的前端開發（React / Next.js） 2. 協助後端 API 開發與資料庫設計（Node.js / Python） 3. 視能力與興趣參與行動應用開發（React
+                  - generic [ref=e484]:
+                    - link "遠端工作" [ref=e487] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "彈性上下班" [ref=e490] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf8
+                    - link "帶寵物上班" [ref=e493] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf22
+                    - link "專業證照獎金" [ref=e496] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf32
+                - generic [ref=e497]:
+                  - generic [ref=e499] [cursor=pointer]:
+                    - generic [ref=e500]: 
+                    - generic [ref=e501]: 9 小時前聯絡過求職者
+                  - generic [ref=e503] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e504]:
+                - generic [ref=e505]:
+                  - button "儲存" [ref=e506] [cursor=pointer]:
+                    - generic [ref=e507]: 
+                    - text: 儲存
+                  - generic [ref=e509] [cursor=pointer]: 近日已應徵
+                - link "6~10 人應徵" [ref=e511] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8yaq1?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e512] [cursor=pointer]: 
+          - generic [ref=e515]:
+            - generic [ref=e517]:
+              - generic [ref=e518]:
+                - generic [ref=e519]: 3/25
+                - generic [ref=e521]: 
+              - generic [ref=e522]:
+                - generic [ref=e524]:
+                  - heading "IoT軟體工程師(台北)" [level=2] [ref=e526]:
+                    - link "IoT軟體工程師(台北)" [ref=e527] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/47bi4?jobsource=joblist_search
+                      - text: IoT
+                      - generic [ref=e528]: 軟體工程師
+                      - text: (台北)
+                  - generic [ref=e529]:
+                    - link "全景軟體股份有限公司" [ref=e530] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/7hzjbag?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e532] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e533]:
+                    - link "台北市中正區" [ref=e535] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001001&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e537] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "大學" [ref=e539] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪34,000~55,000元" [ref=e541] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=55000&scmin=34000&sctp=M
+                  - generic [ref=e542]:
+                    - text: 1.負責微控制器I2C通訊模組相關
+                    - generic [ref=e543]: 軟體
+                    - text: 開發、測試。 2.手冊文件撰寫。 3.熟C/C++。. 4.具MCU韌體開發相關工作及研究經驗尤佳。
+                  - generic [ref=e544]:
+                    - link "遠端工作" [ref=e547] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運西門站約310公尺" [ref=e550] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.31&jobsource=joblist_search&lat=25.042552&lon=121.511387&mrt=99001003013
+                    - link "年終獎金" [ref=e553] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "津貼/補助" [ref=e556] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e559] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e562] [cursor=pointer]:
+                  - generic [ref=e563]: 
+                  - generic [ref=e564]: 1 天內處理過履歷
+              - generic [ref=e565]:
+                - generic [ref=e566]:
+                  - button "儲存" [ref=e567] [cursor=pointer]:
+                    - generic [ref=e568]: 
+                    - text: 儲存
+                  - generic [ref=e570] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e572] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/47bi4?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e573] [cursor=pointer]: 
+          - generic [ref=e576]:
+            - generic [ref=e578]:
+              - generic [ref=e580]: 3/18
+              - generic [ref=e581]:
+                - generic [ref=e583]:
+                  - heading "【TenMax】資深後端軟體工程師 (Senior Software Engineer - Backend)" [level=2] [ref=e585]:
+                    - link "【TenMax】資深後端軟體工程師 (Senior Software Engineer - Backend)" [ref=e586] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/7dspg?jobsource=joblist_search
+                      - text: 【TenMax】資深後端
+                      - generic [ref=e587]: 軟體工程師
+                      - text: (Senior
+                      - generic [ref=e588]: Software
+                      - generic [ref=e589]: Engineer
+                      - text: "- Backend)"
+                  - generic [ref=e590]:
+                    - link "騰學廣告科技股份有限公司" [ref=e591] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bjg5x?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e593] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e594]:
+                    - link "台北市大安區" [ref=e596] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001005&jobsource=joblist_search
+                    - link "5年以上" [ref=e598] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=10&jobsource=joblist_search
+                    - link "大學" [ref=e600] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪75,000~100,000元" [ref=e602] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=100000&scmin=75000&sctp=M
+                  - generic [ref=e603]:
+                    - text: 團隊成員日常： - 參與設計與開發，並注重
+                    - generic [ref=e604]: 軟體
+                    - text: 品質 - 排查系統異常所造成的問題 - 協助處理營運與產品團隊遇到的商業問題 本職務
+                    - generic [ref=e605]: 軟體工程師
+                    - text: 相關的工作內容包含有： - 開發並維護高併發廣告服務系統 - 主動理解、溝通、討論商業需求 -
+                    - generic [ref=e606]: 軟體
+                    - text: 需求
+                  - generic [ref=e607]:
+                    - link "遠端工作" [ref=e610] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運六張犁站約280公尺" [ref=e613] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.28&jobsource=joblist_search&lat=25.0261452&lon=121.5540981&mrt=99001001007
+                    - link "年終獎金" [ref=e616] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e619] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e622] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                - generic [ref=e625] [cursor=pointer]:
+                  - generic [ref=e626]: 
+                  - generic [ref=e627]: 23 小時前處理過履歷
+              - generic [ref=e628]:
+                - generic [ref=e629]:
+                  - button "儲存" [ref=e630] [cursor=pointer]:
+                    - generic [ref=e631]: 
+                    - text: 儲存
+                  - generic [ref=e633] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e635] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/7dspg?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e636] [cursor=pointer]: 
+          - generic [ref=e639]:
+            - generic [ref=e641]:
+              - generic [ref=e643]: 3/18
+              - generic [ref=e644]:
+                - generic [ref=e646]:
+                  - heading "【TenMax】後端軟體工程師 (Software Engineer - Backend)" [level=2] [ref=e648]:
+                    - link "【TenMax】後端軟體工程師 (Software Engineer - Backend)" [ref=e649] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/7dspd?jobsource=joblist_search
+                      - text: 【TenMax】後端
+                      - generic [ref=e650]: 軟體工程師
+                      - text: (
+                      - generic [ref=e651]: Software
+                      - generic [ref=e652]: Engineer
+                      - text: "- Backend)"
+                  - generic [ref=e653]:
+                    - link "騰學廣告科技股份有限公司" [ref=e654] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bjg5x?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e656] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e657]:
+                    - link "台北市大安區" [ref=e659] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001005&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e661] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "大學" [ref=e663] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪50,000~75,000元" [ref=e665] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=75000&scmin=50000&sctp=M
+                  - generic [ref=e666]:
+                    - text: 團隊成員日常： - 參與設計與開發，並注重
+                    - generic [ref=e667]: 軟體
+                    - text: 品質 - 排查系統異常所造成的問題 - 協助處理營運與產品團隊遇到的商業問題 而本職務
+                    - generic [ref=e668]: 軟體工程師
+                    - text: "相關的工作內容包含有： - 參與開發並維護高併發廣告服務系統 條件要求 [技能需求]: - 熟悉"
+                  - generic [ref=e669]:
+                    - link "遠端工作" [ref=e672] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運六張犁站約280公尺" [ref=e675] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.28&jobsource=joblist_search&lat=25.0261452&lon=121.5540981&mrt=99001001007
+                    - link "年終獎金" [ref=e678] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e681] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e684] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                - generic [ref=e687] [cursor=pointer]:
+                  - generic [ref=e688]: 
+                  - generic [ref=e689]: 3 天內處理過履歷
+              - generic [ref=e690]:
+                - generic [ref=e691]:
+                  - button "儲存" [ref=e692] [cursor=pointer]:
+                    - generic [ref=e693]: 
+                    - text: 儲存
+                  - generic [ref=e695] [cursor=pointer]: 近日已應徵
+                - link "6~10 人應徵" [ref=e697] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/7dspd?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e698] [cursor=pointer]: 
+          - generic [ref=e701]:
+            - generic [ref=e703]:
+              - generic [ref=e705]: 3/30
+              - generic [ref=e706]:
+                - generic [ref=e708]:
+                  - heading "車載聯網軟體工程師(Software Engineer_ Vehicle Connectivity)" [level=2] [ref=e710]:
+                    - link "車載聯網軟體工程師(Software Engineer_ Vehicle Connectivity)" [ref=e711] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8u3ce?jobsource=joblist_search
+                      - text: 車載聯網
+                      - generic [ref=e712]: 軟體工程師
+                      - text: (
+                      - generic [ref=e713]: Software
+                      - generic [ref=e714]: Engineer
+                      - text: _ Vehicle Connectivity)
+                  - generic [ref=e715]:
+                    - link "富智捷股份有限公司" [ref=e716] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6blv1g?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e718] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e719]:
+                    - link "新北市土城區" [ref=e721] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001002016&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e723] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "大學" [ref=e725] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                    - link "待遇面議" [ref=e727] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e728]:
+                    - text: debug, and maintain
+                    - generic [ref=e729]: software
+                    - text: applications in support of the achievement of business requirements throughout the production life
+                  - generic [ref=e730]:
+                    - link "遠端工作" [ref=e733] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "年終獎金" [ref=e736] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e739] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e742] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "優於勞基法特休" [ref=e745] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf12
+                - generic [ref=e748] [cursor=pointer]:
+                  - generic [ref=e749]: 
+                  - generic [ref=e750]: 5 天內聯絡過求職者
+              - generic [ref=e751]:
+                - generic [ref=e752]:
+                  - button "儲存" [ref=e753] [cursor=pointer]:
+                    - generic [ref=e754]: 
+                    - text: 儲存
+                  - generic [ref=e756] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e758] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8u3ce?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e759] [cursor=pointer]: 
+          - generic [ref=e762]:
+            - generic [ref=e764]:
+              - generic [ref=e766]: 3/19
+              - generic [ref=e767]:
+                - generic [ref=e769]:
+                  - heading "Android 軟體工程師" [level=2] [ref=e771]:
+                    - link "Android 軟體工程師" [ref=e772] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/892tr?jobsource=joblist_search
+                      - text: Android
+                      - generic [ref=e773]: 軟體工程師
+                  - generic [ref=e774]:
+                    - link "愛比科技股份有限公司" [ref=e775] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/d6ec35c?jobsource=joblist_search
+                    - link "電子通訊／電腦週邊零售業" [ref=e777] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1003002015&jobsource=joblist_search
+                  - generic [ref=e778]:
+                    - link "台北市內湖區" [ref=e780] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001010&jobsource=joblist_search
+                    - link "1年以上" [ref=e782] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                    - link "大學" [ref=e784] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                    - link "待遇面議" [ref=e786] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e787]: 1. Vurbo.ai Android App 開發與維護。 2. 與UIUX 設計師良好溝通，將設計轉化成具體畫面。 3. 與後端團隊協作，進行 API 串接與資料流整合。 4. 接觸新事物、新觀念、自我提升技術水準並與其他同仁共享與討論。 5. 每週小組會議討論工作內容以及新技術。 *職務需求： 1. 重視並遵循團隊的 Coding Style 。 2. 具備責任心與正向的抗壓能力，樂於溝通，享受團隊合作的樂趣。 3. 能主動發現問題、解決問題，並以積極的態度完成每一項託付。 4. 具備使用 Kotlin 進行 Android App 開發之經驗。 5. 了解 Git Flow 且有版控的使用經驗。
+                  - generic [ref=e788]:
+                    - link "遠端工作" [ref=e791] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "年終獎金" [ref=e794] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e797] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e800] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e803] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e804]:
+                  - generic [ref=e806] [cursor=pointer]:
+                    - generic [ref=e807]: 
+                    - generic [ref=e808]: 17 小時前處理過履歷
+                  - generic [ref=e810] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e811]:
+                - generic [ref=e812]:
+                  - button "儲存" [ref=e813] [cursor=pointer]:
+                    - generic [ref=e814]: 
+                    - text: 儲存
+                  - generic [ref=e816] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e818] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/892tr?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e819] [cursor=pointer]: 
+          - generic [ref=e822]:
+            - generic [ref=e824]:
+              - generic [ref=e826]: 3/09
+              - generic [ref=e827]:
+                - generic [ref=e829]:
+                  - heading "視覺軟體工程師" [level=2] [ref=e831]:
+                    - link "視覺軟體工程師" [ref=e832] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8xzaj?jobsource=joblist_search
+                      - text: 視覺
+                      - generic [ref=e833]: 軟體工程師
+                  - generic [ref=e834]:
+                    - link "商瑞斯有限公司" [ref=e835] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bnmvb?jobsource=joblist_search
+                    - link "自動控制相關業" [ref=e837] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1002012001&jobsource=joblist_search
+                  - generic [ref=e838]:
+                    - link "台北市信義區" [ref=e840] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001007&jobsource=joblist_search
+                    - link "5年以上" [ref=e842] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=10&jobsource=joblist_search
+                    - link "大學" [ref=e844] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪50,000~100,000元" [ref=e846] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=100000&scmin=50000&sctp=M
+                  - generic [ref=e847]:
+                    - text: 位、測量、條碼辨識、3D檢測等 4.自動化設備視覺系統安裝調試及驗收支援；配合機構、PLC或其它
+                    - generic [ref=e848]: 軟體
+                    - text: 工位工作，共同完成專案 5.專案進度的推動與合理化改善，撰寫專案技術文檔，培訓交付
+                    - generic [ref=e849]: 工程師
+                    - text: 6.完成部門或領導佈置的其他任務 崗位要求： 1.熟悉
+                  - generic [ref=e850]:
+                    - link "遠端工作" [ref=e853] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運市政府站約130公尺" [ref=e856] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.13&jobsource=joblist_search&lat=25.0413179&lon=121.5650648&mrt=99001005018
+                    - link "年終獎金" [ref=e859] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "團體保險" [ref=e862] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf10
+                - generic [ref=e865] [cursor=pointer]:
+                  - generic [ref=e866]: 
+                  - generic [ref=e867]: 4 天內處理過履歷
+              - generic [ref=e868]:
+                - generic [ref=e869]:
+                  - button "儲存" [ref=e870] [cursor=pointer]:
+                    - generic [ref=e871]: 
+                    - text: 儲存
+                  - generic [ref=e873] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e875] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8xzaj?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e876] [cursor=pointer]: 
+          - generic [ref=e877]:
+            - generic [ref=e879]:
+              - generic [ref=e881]:
+                - generic [ref=e883]: 3/30
+                - generic [ref=e884]:
+                  - generic [ref=e886]:
+                    - heading "[實習/兼職]JAVA軟體工程師" [level=2] [ref=e888]:
+                      - link "[實習/兼職]JAVA軟體工程師" [ref=e889] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/job/7f3b5?jobsource=joblist_search
+                        - text: "[實習/兼職]JAVA"
+                        - generic [ref=e890]: 軟體工程師
+                    - generic [ref=e891]:
+                      - link "碩網資訊股份有限公司" [ref=e892] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/company/wbpdue0?jobsource=joblist_search
+                      - link "電腦軟體服務業" [ref=e894] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                    - generic [ref=e895]:
+                      - link "新北市新店區" [ref=e897] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?area=6001002011&jobsource=joblist_search
+                      - link "經歷不拘" [ref=e899] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                      - link "專科" [ref=e901] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?edu=3%2C4%2C5%2C6&jobsource=joblist_search
+                      - link "時薪200元以上" [ref=e903] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmin=200&sctp=H
+                    - generic [ref=e904]: 1、進行網站前後端技術研究與實作， 2、管理系統開發與維護， 3、具備基礎Java Web概念、前端HTML、Javascript概念。
+                    - generic [ref=e905]:
+                      - link "遠端工作" [ref=e908] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                      - link "距捷運新店區公所站約80公尺" [ref=e911] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?dist=0.08&jobsource=joblist_search&lat=24.96737&lon=121.5420849&mrt=99001003002
+                      - link "年終獎金" [ref=e914] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                      - link "節日獎金/禮品" [ref=e917] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                      - link "津貼/補助" [ref=e920] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                  - generic [ref=e923] [cursor=pointer]:
+                    - generic [ref=e924]: 
+                    - generic [ref=e925]: 7 小時前處理過履歷
+                - generic [ref=e926]:
+                  - generic [ref=e927]:
+                    - button "儲存" [ref=e928] [cursor=pointer]:
+                      - generic [ref=e929]: 
+                      - text: 儲存
+                    - generic [ref=e931] [cursor=pointer]: 近日已應徵
+                  - link "6~10 人應徵" [ref=e933] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/apply/analysis/7f3b5?channel=104rpt&jobsource=apply_analyze
+              - generic [ref=e934] [cursor=pointer]: 
+            - link "贊助 離家近、工時彈性：門市工作輕鬆上手，生活與工作更好平衡 摩斯、麥當勞、全聯等友善企業釋出機會，中高齡也能穩定久任 穩定排班、收入透明：門市職缺打造安心第二職涯，退休更從容 制度明確、流程清楚：完善SOP與話術指引，降低轉職的不確定感" [ref=e937] [cursor=pointer]:
+              - /url: https://senior.104.com.tw/50talent/c/jobs?keyword=%E5%AE%89%E5%BF%83%E9%A3%9F%E5%93%81%E6%9C%8D%E5%8B%99%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8%2C%E9%BA%A5%E7%95%B6%E5%8B%9E%2C%E5%85%A8%E8%81%AF&page=1&sort=1&utm_source=br&utm_medium=br&utm_campaign=104webad0316&jobsource=AD_699353_
+              - generic [ref=e938]: 贊助
+              - generic [ref=e939]:
+                - generic [ref=e940]: 離家近、工時彈性：門市工作輕鬆上手，生活與工作更好平衡
+                - generic [ref=e941]: 摩斯、麥當勞、全聯等友善企業釋出機會，中高齡也能穩定久任
+                - generic [ref=e942]:
+                  - text: 穩定排班、收入透明：門市職缺打造安心第二職涯，退休更從容
+                  - text: 制度明確、流程清楚：完善SOP與話術指引，降低轉職的不確定感
+              - img [ref=e944]
+          - generic [ref=e947]:
+            - generic [ref=e949]:
+              - generic [ref=e951]: 3/30
+              - generic [ref=e952]:
+                - generic [ref=e954]:
+                  - heading "軟體工程師 (另加績效獎金)" [level=2] [ref=e956]:
+                    - link "軟體工程師 (另加績效獎金)" [ref=e957] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8zjic?jobsource=joblist_search
+                      - generic [ref=e958]: 軟體工程師
+                      - text: (另加績效獎金)
+                  - generic [ref=e959]:
+                    - link "達世奇股份有限公司" [ref=e960] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bl55n?jobsource=joblist_search
+                    - link "消費性電子產品製造業" [ref=e962] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001003003&jobsource=joblist_search
+                  - generic [ref=e963]:
+                    - link "台北市中山區" [ref=e965] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001003&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e967] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "專科" [ref=e969] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪38,000元以上" [ref=e971] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmin=38000&sctp=M
+                  - generic [ref=e972]: 1. 孰悉Flutter程式語言開發。 2. 面試時，請攜帶作品（APP）進行展示，並將安排基礎能力相關的考題。 3. 部分時間可遠端工作及彈性工時，不須負擔管理工作。
+                  - generic [ref=e973]:
+                    - link "遠端工作" [ref=e976] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運中山國中站約100公尺" [ref=e979] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.1&jobsource=joblist_search&lat=25.0598433&lon=121.5438996&mrt=99001001012
+                    - link "年終獎金" [ref=e982] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e985] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "彈性上下班" [ref=e988] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf8
+                - generic [ref=e991] [cursor=pointer]:
+                  - generic [ref=e992]: 
+                  - generic [ref=e993]: 23 小時前聯絡過求職者
+              - generic [ref=e994]:
+                - generic [ref=e995]:
+                  - button "儲存" [ref=e996] [cursor=pointer]:
+                    - generic [ref=e997]: 
+                    - text: 儲存
+                  - generic [ref=e999] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e1001] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8zjic?channel=104rpt&jobsource=apply_analyze
+            - generic [ref=e1002] [cursor=pointer]: 
+          - generic [ref=e1005]:
+            - generic [ref=e1007]:
+              - generic [ref=e1009]: 3/11
+              - generic [ref=e1010]:
+                - generic [ref=e1012]:
+                  - heading "軟體工程師" [level=2] [ref=e1014]:
+                    - link "軟體工程師" [ref=e1015] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8yaq0?jobsource=joblist_search
+                      - generic [ref=e1016]: 軟體工程師
+                  - generic [ref=e1017]:
+                    - link "卡繆科技有限公司" [ref=e1018] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bnnhg?jobsource=joblist_search
+                    - link "網際網路相關業" [ref=e1020] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001003&jobsource=joblist_search
+                  - generic [ref=e1021]:
+                    - link "新北市永和區" [ref=e1023] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001002014&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e1025] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "高中" [ref=e1027] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "時薪300~1,000元" [ref=e1029] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=1000&scmin=300&sctp=H
+                  - generic [ref=e1030]:
+                    - text: 團隊由資深
+                    - generic [ref=e1031]: 工程師
+                    - text: 帶領，適合想累積實戰經驗的你。 1. 參與 Web 應用程式的前端開發（React / Next.js） 2. 協助後端 API 開發與資料庫設計（Node.js / Python） 3. 視能力與興趣參與行動應用開發（React
+                  - generic [ref=e1032]:
+                    - link "遠端工作" [ref=e1035] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "彈性上下班" [ref=e1038] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf8
+                    - link "帶寵物上班" [ref=e1041] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf22
+                    - link "專業證照獎金" [ref=e1044] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf32
+                - generic [ref=e1045]:
+                  - generic [ref=e1047] [cursor=pointer]:
+                    - generic [ref=e1048]: 
+                    - generic [ref=e1049]: 9 小時前處理過履歷
+                  - generic [ref=e1051] [cursor=pointer]: 徵才積極度：活躍
+              - generic [ref=e1052]:
+                - generic [ref=e1053]:
+                  - button "儲存" [ref=e1054] [cursor=pointer]:
+                    - generic [ref=e1055]: 
+                    - text: 儲存
+                  - generic [ref=e1057] [cursor=pointer]: 近日已應徵
+                - link "6~10 人應徵" [ref=e1059] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8yaq0?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1060] [cursor=pointer]: 
+          - generic [ref=e1063]:
+            - generic [ref=e1065]:
+              - generic [ref=e1067]: 3/24
+              - generic [ref=e1068]:
+                - generic [ref=e1070]:
+                  - heading "JAVA軟體工程師" [level=2] [ref=e1072]:
+                    - link "JAVA軟體工程師" [ref=e1073] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/6wxkx?jobsource=joblist_search
+                      - text: JAVA
+                      - generic [ref=e1074]: 軟體工程師
+                  - generic [ref=e1075]:
+                    - link "聖勝科技有限公司" [ref=e1076] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bl2uf?jobsource=joblist_search
+                    - link "其它軟體及網路相關業" [ref=e1078] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001006&jobsource=joblist_search
+                  - generic [ref=e1079]:
+                    - link "台北市內湖區" [ref=e1081] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001010&jobsource=joblist_search
+                    - link "2年以上" [ref=e1083] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                    - link "專科" [ref=e1085] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "待遇面議" [ref=e1087] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e1088]: 1. Restful API 開發與維護。 2. 功能性開發 / 測試程式開發與效能優化。 3. 主動針對開發中技術難點提出解決方案。 4. 產品技術升級。 5. 學習新技術與分享知識。 6. 編寫開發文檔、技術資料等。
+                  - generic [ref=e1089]:
+                    - link "遠端工作" [ref=e1092] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運西湖站約120公尺" [ref=e1095] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.12&jobsource=joblist_search&lat=25.0820144&lon=121.5660929&mrt=99001001016
+                    - link "年終獎金" [ref=e1098] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e1101] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e1104] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                - generic [ref=e1105]:
+                  - generic [ref=e1107] [cursor=pointer]:
+                    - generic [ref=e1108]: 
+                    - generic [ref=e1109]: 18 小時前聯絡過求職者
+                  - generic [ref=e1111] [cursor=pointer]: 徵才積極度：活躍
+              - generic [ref=e1112]:
+                - generic [ref=e1113]:
+                  - button "儲存" [ref=e1114] [cursor=pointer]:
+                    - generic [ref=e1115]: 
+                    - text: 儲存
+                  - generic [ref=e1117] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e1119] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/6wxkx?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1120] [cursor=pointer]: 
+          - generic [ref=e1123]:
+            - generic [ref=e1125]:
+              - generic [ref=e1127]: 3/24
+              - generic [ref=e1128]:
+                - generic [ref=e1130]:
+                  - heading "macOS 資深軟體工程師" [level=2] [ref=e1132]:
+                    - link "macOS 資深軟體工程師" [ref=e1133] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8v512?jobsource=joblist_search
+                      - text: macOS 資深
+                      - generic [ref=e1134]: 軟體工程師
+                  - generic [ref=e1135]:
+                    - link "愛比科技股份有限公司" [ref=e1136] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/d6ec35c?jobsource=joblist_search
+                    - link "電子通訊／電腦週邊零售業" [ref=e1138] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1003002015&jobsource=joblist_search
+                  - generic [ref=e1139]:
+                    - link "台北市內湖區" [ref=e1141] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001010&jobsource=joblist_search
+                    - link "3年以上" [ref=e1143] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=5&jobsource=joblist_search
+                    - link "大學" [ref=e1145] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                    - link "待遇面議" [ref=e1147] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e1148]: "1. Vurbo.ai、Visualizer、CamControl及其他macOS 應用程式 開發及維護 2. macOS 應用程式 上架 *必要技能: Xcode、Git、Figma、Swift、SwiftUI、AppKit、Network programming"
+                  - generic [ref=e1149]:
+                    - link "遠端工作" [ref=e1152] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "年終獎金" [ref=e1155] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e1158] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e1161] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e1164] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e1167] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e1168]:
+                - generic [ref=e1169]:
+                  - button "儲存" [ref=e1170] [cursor=pointer]:
+                    - generic [ref=e1171]: 
+                    - text: 儲存
+                  - generic [ref=e1173] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e1175] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8v512?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1176] [cursor=pointer]: 
+          - generic [ref=e1179]:
+            - generic [ref=e1181]:
+              - generic [ref=e1183]: 2/09
+              - generic [ref=e1184]:
+                - generic [ref=e1186]:
+                  - heading "軟體工程師 Fullstack Software Engineer" [level=2] [ref=e1188]:
+                    - link "軟體工程師 Fullstack Software Engineer" [ref=e1189] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/76lsw?jobsource=joblist_search
+                      - generic [ref=e1190]: 軟體工程師
+                      - text: Fullstack
+                      - generic [ref=e1191]: Software
+                      - generic [ref=e1192]: Engineer
+                  - generic [ref=e1193]:
+                    - link "巴涼科技股份有限公司" [ref=e1194] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6blhea?jobsource=joblist_search
+                    - link "自動控制相關業" [ref=e1196] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1002012001&jobsource=joblist_search
+                  - generic [ref=e1197]:
+                    - link "台北市南港區" [ref=e1199] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001011&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e1201] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "高中" [ref=e1203] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                    - link "月薪45,000~90,000元" [ref=e1205] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=90000&scmin=45000&sctp=M
+                  - generic [ref=e1206]:
+                    - text: "## 招募背景 隨著製造業邁向數位化與智能化，我們看到了"
+                    - generic [ref=e1207]: 工程
+                    - text: 圖資料被忽略的龐大價值潛力。因此，CADASU 的使命是通過 AI 技術，重新定義
+                    - generic [ref=e1208]: 工程
+                    - text: 圖的應用，幫助製造業客戶在圖紙管理、製程評估及報價流程中大幅提升效率與精確度。 隨著使用者人數的
+                  - generic [ref=e1209]:
+                    - link "遠端工作" [ref=e1212] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運後山埤站約80公尺" [ref=e1215] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.08&jobsource=joblist_search&lat=25.0452975&lon=121.5832315&mrt=99001005020
+                    - link "津貼/補助" [ref=e1218] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e1221] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e1222]:
+                  - generic [ref=e1224] [cursor=pointer]:
+                    - generic [ref=e1225]: 
+                    - generic [ref=e1226]: 9 小時前處理過履歷
+                  - generic [ref=e1228] [cursor=pointer]: 徵才積極度：活躍
+              - generic [ref=e1229]:
+                - generic [ref=e1230]:
+                  - button "儲存" [ref=e1231] [cursor=pointer]:
+                    - generic [ref=e1232]: 
+                    - text: 儲存
+                  - generic [ref=e1234] [cursor=pointer]: 近日已應徵
+                - link "11~30 人應徵" [ref=e1236] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/76lsw?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1237] [cursor=pointer]: 
+          - generic [ref=e1240]:
+            - generic [ref=e1242]:
+              - generic [ref=e1244]: 3/24
+              - generic [ref=e1245]:
+                - generic [ref=e1247]:
+                  - heading "Windows 軟體工程師" [level=2] [ref=e1249]:
+                    - link "Windows 軟體工程師" [ref=e1250] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8v4xg?jobsource=joblist_search
+                      - text: Windows
+                      - generic [ref=e1251]: 軟體工程師
+                  - generic [ref=e1252]:
+                    - link "愛比科技股份有限公司" [ref=e1253] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/d6ec35c?jobsource=joblist_search
+                    - link "電子通訊／電腦週邊零售業" [ref=e1255] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1003002015&jobsource=joblist_search
+                  - generic [ref=e1256]:
+                    - link "台北市內湖區" [ref=e1258] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001010&jobsource=joblist_search
+                    - link "1年以上" [ref=e1260] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                    - link "大學" [ref=e1262] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                    - link "待遇面議" [ref=e1264] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e1265]: "1. Vurbo.ai 開發及維護 2. Unit Testing 3. App 上架 4. 產品相關技術研究 5. 其他主管交辦事項 *必要技能: C#、WinUI 3、WPF、Git、Windows應用程式開發經驗、Network Programming"
+                  - generic [ref=e1266]:
+                    - link "遠端工作" [ref=e1269] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "年終獎金" [ref=e1272] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "節日獎金/禮品" [ref=e1275] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                    - link "津貼/補助" [ref=e1278] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                    - link "分紅配股" [ref=e1281] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                - generic [ref=e1284] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e1285]:
+                - generic [ref=e1286]:
+                  - button "儲存" [ref=e1287] [cursor=pointer]:
+                    - generic [ref=e1288]: 
+                    - text: 儲存
+                  - generic [ref=e1290] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e1292] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8v4xg?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1293] [cursor=pointer]: 
+          - generic [ref=e1296]:
+            - generic [ref=e1298]:
+              - generic [ref=e1300]: 3/24
+              - generic [ref=e1301]:
+                - generic [ref=e1303]:
+                  - heading "資訊軟體工程師" [level=2] [ref=e1305]:
+                    - link "資訊軟體工程師" [ref=e1306] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8fhx1?jobsource=joblist_search
+                      - text: 資訊
+                      - generic [ref=e1307]: 軟體工程師
+                  - generic [ref=e1308]:
+                    - link "長欣科技顧問有限公司" [ref=e1309] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6bn1tz?jobsource=joblist_search
+                    - link "電腦系統整合服務業" [ref=e1311] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001001&jobsource=joblist_search
+                  - generic [ref=e1312]:
+                    - link "台北市松山區" [ref=e1314] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001004&jobsource=joblist_search
+                    - link "經歷不拘" [ref=e1316] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                    - link "專科" [ref=e1318] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=3%2C4%2C5&jobsource=joblist_search
+                    - link "待遇面議" [ref=e1320] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                  - generic [ref=e1321]:
+                    - text: 1. Red Hat Enterprise Linux 作業系統維運。 2. Ansible Automation Platform 自動化腳本撰寫。 3. 提供資訊相關的諮詢與專業建議。 4. 有興趣加強本身專業技術的
+                    - generic [ref=e1322]: 工程師
+                    - text: 。
+                  - generic [ref=e1323]:
+                    - link "遠端工作" [ref=e1326] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運台北小巨蛋站約240公尺" [ref=e1329] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.24&jobsource=joblist_search&lat=25.0519742&lon=121.5495307&mrt=99001003018
+                    - link "年終獎金" [ref=e1332] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "分紅配股" [ref=e1335] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                    - link "彈性上下班" [ref=e1338] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf8
+                - generic [ref=e1339]:
+                  - generic [ref=e1341] [cursor=pointer]:
+                    - generic [ref=e1342]: 
+                    - generic [ref=e1343]: 23 分鐘前聯絡過求職者
+                  - generic [ref=e1345] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e1346]:
+                - generic [ref=e1347]:
+                  - button "儲存" [ref=e1348] [cursor=pointer]:
+                    - generic [ref=e1349]: 
+                    - text: 儲存
+                  - generic [ref=e1351] [cursor=pointer]: 近日已應徵
+                - link "0~5 人應徵" [ref=e1353] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8fhx1?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1354] [cursor=pointer]: 
+          - generic [ref=e1355]:
+            - generic [ref=e1357]:
+              - generic [ref=e1359]:
+                - generic [ref=e1361]: 3/02
+                - generic [ref=e1362]:
+                  - generic [ref=e1364]:
+                    - heading "軟體工程師(Visual / LiDAR SLAM)" [level=2] [ref=e1366]:
+                      - link "軟體工程師(Visual / LiDAR SLAM)" [ref=e1367] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/job/8jhmd?jobsource=joblist_search
+                        - generic [ref=e1368]: 軟體工程師
+                        - text: (Visual / LiDAR SLAM)
+                    - generic [ref=e1369]:
+                      - link "台灣智慧駕駛股份有限公司" [ref=e1370] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/company/1a2x6bkmrb?jobsource=joblist_search
+                      - link "電腦軟體服務業" [ref=e1372] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                    - generic [ref=e1373]:
+                      - link "新北市三重區" [ref=e1375] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?area=6001002020&jobsource=joblist_search
+                      - link "經歷不拘" [ref=e1377] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                      - link "碩士" [ref=e1379] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?edu=5%2C6&jobsource=joblist_search
+                      - link "待遇面議" [ref=e1381] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                    - generic [ref=e1382]:
+                      - text: · 與其他部門協作開發，以完善自動駕駛系統框架 任用資格： · 碩士以上學歷，主修電腦科學、機器人科學或其他相關科系 · 熟悉 Linux、CMake、Git 等開發環境及工具 · 具備 C/C++ 及 Python 的即時系統
+                      - generic [ref=e1383]: 軟體
+                      - text: 開發能力，並有
+                    - generic [ref=e1384]:
+                      - link "遠端工作" [ref=e1387] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                      - link "距捷運三重站約290公尺" [ref=e1390] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?dist=0.29&jobsource=joblist_search&lat=25.0548382&lon=121.4857556&mrt=99001004015
+                      - link "年終獎金" [ref=e1393] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                      - link "節日獎金/禮品" [ref=e1396] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                      - link "津貼/補助" [ref=e1399] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                  - generic [ref=e1400]:
+                    - generic [ref=e1402] [cursor=pointer]:
+                      - generic [ref=e1403]: 
+                      - generic [ref=e1404]: 5 天內聯絡過求職者
+                    - generic [ref=e1406] [cursor=pointer]: 徵才積極度：非常活躍
+                - generic [ref=e1407]:
+                  - generic [ref=e1408]:
+                    - button "儲存" [ref=e1409] [cursor=pointer]:
+                      - generic [ref=e1410]: 
+                      - text: 儲存
+                    - generic [ref=e1412] [cursor=pointer]: 近日已應徵
+                  - link "6~10 人應徵" [ref=e1414] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/apply/analysis/8jhmd?channel=104rpt&jobsource=joblist_bact_n
+              - generic [ref=e1415] [cursor=pointer]: 
+            - generic [ref=e1417]:
+              - generic [ref=e1418]: 沒看到喜歡的？試著搜這些關鍵字
+              - generic [ref=e1419]:
+                - link "軟體程式設計" [ref=e1420] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=軟體程式設計&order=15&page=1&remoteWork=1,2&searchJobs=1
+                  - generic [ref=e1423]: 軟體程式設計
+                - link "C#" [ref=e1424] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=C#&order=15&page=1&remoteWork=1,2&searchJobs=1
+                  - generic [ref=e1427]: C#
+                - link "軟體工程系統開發" [ref=e1428] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=軟體工程系統開發&order=15&page=1&remoteWork=1,2&searchJobs=1
+                  - generic [ref=e1431]: 軟體工程系統開發
+                - link "Python" [ref=e1432] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=Python&order=15&page=1&remoteWork=1,2&searchJobs=1
+                  - generic [ref=e1435]: Python
+                - link "C++" [ref=e1436] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=C++&order=15&page=1&remoteWork=1,2&searchJobs=1
+                  - generic [ref=e1439]: C++
+              - generic [ref=e1440]:
+                - generic [ref=e1441]: 或使用 AI 推薦工作，面試邀約率是自行查詢的 3.2 倍
+                - link "前往 AI 推薦 " [ref=e1442] [cursor=pointer]:
+                  - /url: //www.104.com.tw/jobs/recommend
+                  - text: 前往 AI 推薦
+                  - generic [ref=e1443]: 
+          - generic [ref=e1444]:
+            - generic [ref=e1446]:
+              - generic [ref=e1448]:
+                - generic [ref=e1450]: 3/28
+                - generic [ref=e1451]:
+                  - generic [ref=e1453]:
+                    - heading "AI軟體設計工程師" [level=2] [ref=e1455]:
+                      - link "AI軟體設計工程師" [ref=e1456] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/job/7yb9q?jobsource=joblist_search
+                        - text: AI
+                        - generic [ref=e1457]: 軟體設計工程師
+                    - generic [ref=e1458]:
+                      - link "格新智能股份有限公司" [ref=e1459] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/company/1a2x6bm93h?jobsource=joblist_search
+                      - link "電腦軟體服務業" [ref=e1461] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                    - generic [ref=e1462]:
+                      - link "台北市信義區" [ref=e1464] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?area=6001001007&jobsource=joblist_search
+                      - link "3年以上" [ref=e1466] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobexp=5&jobsource=joblist_search
+                      - link "大學" [ref=e1468] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                      - link "待遇面議" [ref=e1470] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                    - generic [ref=e1471]:
+                      - text: AI時代來臨，超過60%的
+                      - generic [ref=e1472]: 軟體
+                      - text: 程序未來會由AI完成，
+                      - generic [ref=e1473]: 軟體設計工程師
+                      - text: 的未來在哪裡？ 面臨翻天覆地的劇變 我們期待有AI世代思維的人才一起加入我們 打破傳統框架，用創新和挑戰的態度 創造出應用AI，貼近生活，與眾不同的新服務 專業需求： 1. 前
+                    - generic [ref=e1474]:
+                      - link "遠端工作" [ref=e1477] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                      - link "距捷運台北101/世貿站約100公尺" [ref=e1480] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?dist=0.1&jobsource=joblist_search&lat=25.0338483&lon=121.5623545&mrt=99001002002
+                      - link "分紅配股" [ref=e1483] [cursor=pointer]:
+                        - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf4
+                  - generic [ref=e1484]:
+                    - generic [ref=e1486] [cursor=pointer]:
+                      - generic [ref=e1487]: 
+                      - generic [ref=e1488]: 2 天內聯絡過求職者
+                    - generic [ref=e1490] [cursor=pointer]: 徵才積極度：非常活躍
+                - generic [ref=e1491]:
+                  - generic [ref=e1492]:
+                    - button "儲存" [ref=e1493] [cursor=pointer]:
+                      - generic [ref=e1494]: 
+                      - text: 儲存
+                    - generic [ref=e1496] [cursor=pointer]: 近日已應徵
+                  - link "6~10 人應徵" [ref=e1498] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/apply/analysis/7yb9q?channel=104rpt&jobsource=joblist_bact_n
+              - generic [ref=e1499] [cursor=pointer]: 
+            - link "贊助 留友看➜【新鮮人線上徵才博覽會】 ★上千筆精選職缺，火熱募集中★ 新手友善x無經驗OK，歡迎職場小白 科技大廠x產業龍頭，薪資福利都很香" [ref=e1502] [cursor=pointer]:
+              - /url: https://freshman.104.com.tw/events/?utm_source=104PCAD&utm_medium=ListP&jobsource=AD_699349_
+              - generic [ref=e1503]: 贊助
+              - generic [ref=e1504]:
+                - generic [ref=e1505]: 留友看➜【新鮮人線上徵才博覽會】
+                - generic [ref=e1506]: ★上千筆精選職缺，火熱募集中★
+                - generic [ref=e1507]:
+                  - text: 新手友善x無經驗OK，歡迎職場小白
+                  - text: 科技大廠x產業龍頭，薪資福利都很香
+              - img [ref=e1509]
+          - generic [ref=e1512]:
+            - generic [ref=e1514]:
+              - generic [ref=e1516]: 3/30
+              - generic [ref=e1517]:
+                - generic [ref=e1519]:
+                  - heading "資深軟體工程師｜Staff Software Engineer" [level=2] [ref=e1521]:
+                    - link "資深軟體工程師｜Staff Software Engineer" [ref=e1522] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/job/8zizx?jobsource=joblist_search
+                      - text: 資深
+                      - generic [ref=e1523]: 軟體工程師
+                      - text: ｜Staff
+                      - generic [ref=e1524]: Software
+                      - generic [ref=e1525]: Engineer
+                  - generic [ref=e1526]:
+                    - link "全通路科技有限公司" [ref=e1527] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/1a2x6blqb0?jobsource=joblist_search
+                    - link "電腦軟體服務業" [ref=e1529] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?indcat=1001001002&jobsource=joblist_search
+                  - generic [ref=e1530]:
+                    - link "台北市中山區" [ref=e1532] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?area=6001001003&jobsource=joblist_search
+                    - link "8年以上" [ref=e1534] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobexp=10&jobsource=joblist_search
+                    - link "大學" [ref=e1536] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                    - link "年薪1,500,000元以上" [ref=e1538] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmin=1500000&sctp=Y
+                  - generic [ref=e1539]:
+                    - text: 性與弱點修復】 。主導處理經由 Inspector 掃描發現的系統弱點（Vulnerabilities）。需具備評估風險優先級與實作修復方案的能力，在維持系統高可用性的前提下，優化
+                    - generic [ref=e1540]: 軟體
+                    - text: 依賴與代碼安全性。 。針對第三方平台的 Token 授權管理、
+                  - generic [ref=e1541]:
+                    - link "外商公司" [ref=e1544] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/company/search/?jobsource=joblist_search&zone=5%2C4
+                    - link "遠端工作" [ref=e1547] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&remoteWork=1%2C2
+                    - link "距捷運雙連站約270公尺" [ref=e1550] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?dist=0.27&jobsource=joblist_search&lat=25.05945&lon=121.5225471&mrt=99001002011
+                    - link "年終獎金" [ref=e1553] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                    - link "津貼/補助" [ref=e1556] [cursor=pointer]:
+                      - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                - generic [ref=e1557]:
+                  - generic [ref=e1559] [cursor=pointer]:
+                    - generic [ref=e1560]: 
+                    - generic [ref=e1561]: 15 小時前聯絡過求職者
+                  - generic [ref=e1563] [cursor=pointer]: 徵才積極度：非常活躍
+              - generic [ref=e1564]:
+                - generic [ref=e1565]:
+                  - button "儲存" [ref=e1566] [cursor=pointer]:
+                    - generic [ref=e1567]: 
+                    - text: 儲存
+                  - generic [ref=e1569] [cursor=pointer]: 近日已應徵
+                - link "11~30 人應徵" [ref=e1571] [cursor=pointer]:
+                  - /url: https://www.104.com.tw/jobs/apply/analysis/8zizx?channel=104rpt&jobsource=joblist_bact_n
+            - generic [ref=e1572] [cursor=pointer]: 
+        - generic [ref=e1573]:
+          - list [ref=e1574]:
+            - listitem:
+              - link "":
+                - /url: "?page=1"
+                - generic: 
+            - listitem [ref=e1575]:
+              - link "1" [ref=e1576] [cursor=pointer]:
+                - /url: "?page=1"
+            - listitem [ref=e1577]:
+              - link "2" [ref=e1578] [cursor=pointer]:
+                - /url: "?page=2"
+            - listitem [ref=e1579]:
+              - link "3" [ref=e1580] [cursor=pointer]:
+                - /url: "?page=3"
+            - listitem [ref=e1581]:
+              - link "4" [ref=e1582] [cursor=pointer]:
+                - /url: "?page=4"
+            - listitem [ref=e1583]:
+              - link "5" [ref=e1584] [cursor=pointer]:
+                - /url: "?page=5"
+            - listitem [ref=e1585]:
+              - link "" [ref=e1586] [cursor=pointer]:
+                - /url: "?page=2"
+                - generic [ref=e1587]: 
+          - generic [ref=e1588]:
+            - generic [ref=e1589]: 前往頁面
+            - textbox [ref=e1591]
+        - text: 
+    - generic [ref=e162] [cursor=pointer]:
+      - link [ref=e164]:
+        - /url: https://freshman.104.com.tw/events/?utm_source=104PCAD&utm_medium=build&jobsource=AD_699348_
+        - img [ref=e165]
+      - link [ref=e167]:
+        - /url: https://thmr.wda.gov.tw/News_Content.aspx?n=7737DC0A29BAF37F&sms=EC0931DF6A3357E3&s=38199626C1315E4B&jobsource=AD_699347_
+        - img [ref=e168]
+  - generic [ref=e171]:
+    - generic [ref=e173] [cursor=pointer]:
+      - generic [ref=e174]: 
+      - generic [ref=e175]: 104客服
+    - link "常見問題" [ref=e176] [cursor=pointer]:
+      - /url: //www.104.com.tw/faq/104-jobbank
+    - link "職場安全諮詢" [ref=e177] [cursor=pointer]:
+      - /url: ""
+    - link "隱私中心" [ref=e178] [cursor=pointer]:
+      - /url: //www.104.com.tw/privacy
+    - generic [ref=e179]:
+      - text: 一零四資訊科技股份有限公司 版權所有 © 2026建議瀏覽器 chrome / edge
+      - link "10/1起關閉支援TLS1.1" [ref=e180] [cursor=pointer]:
+        - /url: https://tls.support.104.com.tw/
+  - generic [ref=e181]:
+    - generic [ref=e186] [cursor=pointer]: 
+    - generic [ref=e188] [cursor=pointer]:
+      - img [ref=e189]
+      - generic [ref=e190]: 智能客服
+      - generic [ref=e191]: 
