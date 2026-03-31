@@ -14,6 +14,8 @@
 		- https://www.youtube.com/watch?v=VxAh0F08c9A&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=2
 		- https://www.youtube.com/watch?v=rUPSs1lVvl4&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=3&pp=iAQB
 		- https://www.youtube.com/watch?v=vLmK_mXuAsQ&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=5
+		- https://www.youtube.com/watch?v=LQlixWhNWzo&list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG&index=5
+			- 9:25
 
 
 #### 2) Tiktok LangChain
