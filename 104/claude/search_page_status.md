@@ -1,0 +1,427 @@
+- generic [ref=e3]:
+  - text: 
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - text: 
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - text: 
+          - generic [ref=e9]:
+            - generic [ref=e13] [cursor=pointer]:
+              - generic [ref=e14]: 工作
+              - generic [ref=e15]: 
+            - generic [ref=e19] [cursor=pointer]:
+              - generic [ref=e20]: 公司
+              - generic [ref=e21]: 
+            - generic [ref=e25] [cursor=pointer]:
+              - generic [ref=e26]: 工具
+              - generic [ref=e27]: 
+            - generic [ref=e31] [cursor=pointer]:
+              - generic [ref=e32]: 職涯
+              - generic [ref=e33]: 
+            - generic [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]: 學習
+              - generic [ref=e39]: 
+            - generic [ref=e43] [cursor=pointer]:
+              - generic [ref=e44]: APP
+              - generic [ref=e45]: 
+            - link "所有服務" [ref=e48] [cursor=pointer]:
+              - /url: https://www.104.com.tw/jobs/main/sitemap
+          - link "104人力銀行" [ref=e49] [cursor=pointer]:
+            - /url: https://www.104.com.tw/
+            - img "104人力銀行" [ref=e50]
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - link "80間企業現場談" [ref=e54] [cursor=pointer]:
+                - /url: https://user125311.pse.is/8u4zbn
+              - text: 
+            - generic [ref=e56]:
+              - button " 99+" [ref=e58] [cursor=pointer]:
+                - text: 
+                - generic [ref=e59]: 99+
+              - button "" [ref=e61] [cursor=pointer]
+              - button " 1" [ref=e63] [cursor=pointer]:
+                - text: 
+                - generic [ref=e64]: "1"
+              - text: 
+            - generic [ref=e66]:
+              - generic [ref=e68] [cursor=pointer]:
+                - generic [ref=e69]: 劉彥男
+                - generic [ref=e70]: 
+              - text: 
+        - text:       
+    - generic [ref=e74]:
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78] [cursor=pointer]: 
+          - textbox "關鍵字(例：職稱、公司名、技能專長...)" [ref=e79]: 軟體巨英師
+        - button "台北市、新北市 " [ref=e81] [cursor=pointer]:
+          - generic [ref=e82]: 台北市、新北市
+          - generic [ref=e83]: 
+        - button "職務類別 " [ref=e85] [cursor=pointer]:
+          - generic [ref=e86]: 職務類別
+          - generic [ref=e87]: 
+        - text:          
+      - button "搜尋" [ref=e89] [cursor=pointer]
+    - generic [ref=e92]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - heading "AI推薦" [level=1] [ref=e97] [cursor=pointer]
+          - heading "找工作" [level=1] [ref=e98] [cursor=pointer]
+          - heading "找公司" [level=1] [ref=e99] [cursor=pointer]
+        - text: 
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - button "完全遠端 " [ref=e103] [cursor=pointer]:
+            - text: 完全遠端
+            - generic [ref=e105]: 
+          - button "部分遠端 " [ref=e107] [cursor=pointer]:
+            - text: 部分遠端
+            - generic [ref=e109]: 
+        - button " 所有篩選條件 (2)" [ref=e110] [cursor=pointer]:
+          - generic [ref=e111]: 
+          - generic [ref=e112]: 所有篩選條件 (2)
+    - text: 
+  - generic [ref=e114]:
+    - generic [ref=e115]:
+      - generic [ref=e117]:
+        - generic [ref=e118]: 找公司：
+        - link "FPT_艾福提資訊有限公司" [ref=e119] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/1a2x6bmaz5?jobsource=joblist_r_cust
+        - link "宏碁股份有限公司" [ref=e120] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/9kgoqw8?jobsource=joblist_r_cust
+        - link "緯創軟體股份有限公司" [ref=e121] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/13u3sbvs?jobsource=joblist_r_cust
+        - link "Advantech_研華股份有限公司" [ref=e122] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/2d9ntmw?jobsource=joblist_r_cust
+        - link "HCL Technologies Taiwan_台灣愛渠西來技術股份有限公司" [ref=e123] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/1a2x6bl6ow?jobsource=joblist_r_cust
+        - link "更多公司 " [ref=e124] [cursor=pointer]:
+          - /url: //www.104.com.tw/company/search/?jobsource=joblist_r_cust&keyword=    軟體巨英師
+          - text: 更多公司
+          - generic [ref=e125]: 
+      - generic [ref=e127]:
+        - generic [ref=e128]: 共 0 筆
+        - text: 
+        - generic [ref=e130]:
+          - generic [ref=e131]: 排序
+          - button "符合度高" [ref=e133] [cursor=pointer]
+          - button "最近更新" [ref=e135] [cursor=pointer]
+          - generic [ref=e136]:
+            - button "薪資待遇" [ref=e137] [cursor=pointer]
+            - generic [ref=e138] [cursor=pointer]:
+              - generic [ref=e139]: 
+              - generic [ref=e140]: 
+          - generic [ref=e141]:
+            - button "應徵人數" [ref=e142] [cursor=pointer]
+            - generic [ref=e143] [cursor=pointer]:
+              - generic [ref=e144]: 
+              - generic [ref=e145]: 
+          - generic [ref=e146]:
+            - button "經驗" [ref=e147] [cursor=pointer]
+            - generic [ref=e148] [cursor=pointer]:
+              - generic [ref=e149]: 
+              - generic [ref=e150]: 
+          - generic [ref=e151]:
+            - button "學歷" [ref=e152] [cursor=pointer]
+            - generic [ref=e153] [cursor=pointer]:
+              - generic [ref=e154]: 
+              - generic [ref=e155]: 
+        - generic [ref=e156]:
+          - generic [ref=e159] [cursor=pointer]:
+            - text: 第 1 頁
+            - generic [ref=e160]: 
+          - generic [ref=e161]:
+            - button "" [ref=e162] [cursor=pointer]:
+              - generic [ref=e163]: 
+            - button "" [ref=e164] [cursor=pointer]:
+              - generic [ref=e165]: 
+      - generic [ref=e166]:
+        - generic [ref=e168]:
+          - img "empty" [ref=e169]
+          - generic [ref=e170]:
+            - generic [ref=e171]: 哎呀！目前條件搜尋結果有點少
+            - generic [ref=e172]: 看看下方的推薦工作吧～
+        - generic [ref=e173]:
+          - generic [ref=e174]: 推薦工作
+          - generic [ref=e178]:
+            - generic [ref=e180]: 3/31
+            - generic [ref=e181]:
+              - generic [ref=e183]:
+                - heading "蛋捲、糖果工廠作業員" [level=2] [ref=e185]:
+                  - link "蛋捲、糖果工廠作業員" [ref=e186] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/8r78u?jobsource=joblist_list_r
+                - generic [ref=e187]:
+                  - link "初心味蕾有限公司" [ref=e188] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6bnfmw?jobsource=joblist_list_r
+                  - link "糖果點心製造業" [ref=e190] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1002001005&jobsource=joblist_search
+                - generic [ref=e191]:
+                  - link "桃園市平鎮區" [ref=e193] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001005002&jobsource=joblist_search
+                  - link "2年以上" [ref=e195] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                  - link "學歷不拘" [ref=e197] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=1%2C2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                  - link "月薪32,000元" [ref=e199] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=32000&scmin=32000&sctp=M
+                - generic [ref=e200]: 上班地點： ★做糖果 桃園市大溪區埔頂六街2號 ★蛋捲工廠 桃園市平鎮區平東路659巷18號 午休一小時——雖然不包餐，但冰箱任你放便當，微波爐火力強大 全冷氣房，不必風吹雨打曬太陽，適合想要輕鬆轉場的人 月薪 NT$32000，三節禮金、聚餐活動都有，溫馨又實在 工作需久站，但簡單易上手，節奏不會太快，給你時間適應 工作內容 機台巡邏員：盯緊蛋捲機運作狀況，有問題舉手報告，不用手忙腳亂。 餡料灌灌樂：擠內餡進蛋捲，讓它甜進別人心裡。(通過考核有加薪喔！） 排排站達人：把蛋捲排好、排滿、排整齊，美感和秩序兼具。 清洗與保養小隊員： ． 生產完要清理廠區環境 ． 機器擦乾淨、器具洗乾淨（是的，包含洗器具！） ． 日常設備保養，讓蛋捲機長命百歲～ 【我們在找這樣的你】 沒經驗也OK，願意學就行 喜歡有規律、無壓力、零加班的好生活 二度就業也歡迎，這裡節奏剛剛好 有責任感、不怕站、不偷懶、不亂吃（嗯…吃可以，但不能吃太多啦）
+              - generic [ref=e203] [cursor=pointer]:
+                - generic [ref=e204]: 
+                - generic [ref=e205]: 1 天內聯絡過求職者
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - button "儲存" [ref=e208] [cursor=pointer]:
+                  - generic [ref=e209]: 
+                  - text: 儲存
+                - generic [ref=e211] [cursor=pointer]:
+                  - generic [ref=e212]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e214] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/8r78u?channel=104rpt&jobsource=apply_analyze
+          - generic [ref=e218]:
+            - generic [ref=e220]: 3/31
+            - generic [ref=e221]:
+              - generic [ref=e223]:
+                - heading "旺憂寵物-寵物保母" [level=2] [ref=e225]:
+                  - link "旺憂寵物-寵物保母" [ref=e226] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/7xso9?jobsource=joblist_list_r
+                - generic [ref=e227]:
+                  - link "旺憂寵物_旺憂有限公司" [ref=e228] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6bmg6s?jobsource=joblist_list_r
+                  - link "寵物相關服務業" [ref=e230] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1009007002&jobsource=joblist_search
+                - generic [ref=e231]:
+                  - link "台中市南屯區" [ref=e233] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001008008&jobsource=joblist_search
+                  - link "1年以上" [ref=e235] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                  - link "高中" [ref=e237] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                  - link "月薪30,000~45,000元" [ref=e239] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=45000&scmin=30000&sctp=M
+                - generic [ref=e240]: "***每月須配合數天夜間值班，津貼另計。*** （可以配合再投履歷） 1.照顧住宿及安親毛孩。 2.寵物旅館消毒整理及店內環境清潔。 3.陪伴住宿及安親毛孩放風互動，確保毛孩的安全。 4.需細心瞭解顧客及毛孩的需求和注意事項。 5.需即時回覆顧客訊息，回報毛孩照片及影片。 6.協助店內同仁完成作業，配合主管交辦事項。 7.需具有團隊精神、時間觀念、責任感，配合度佳者。 歡迎有能力且喜愛毛孩的夥伴加入！ 福利制度： 1.依照勞基法相關規定，月休八天起，國定假日雙倍/補休。 2.每月另有綜合績效獎金$2000。 3.底薪依能力調幅，底薪若無調幅則享年資金每年$500。 4.入職半年享中秋、端午獎金，入職一年享年終獎金。 5.購買店內商品享員工折扣。 6.不定期員工聚餐，不定時飲料、下午茶。 7.法定勞保、健保、勞退、特休。"
+                - generic [ref=e241]:
+                  - link "年終獎金" [ref=e244] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e247] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "免費下午茶" [ref=e250] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf26
+                  - link "員工優惠" [ref=e253] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf28
+                  - link "部門聚餐" [ref=e256] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf29
+              - generic [ref=e259] [cursor=pointer]:
+                - generic [ref=e260]: 
+                - generic [ref=e261]: 2 天內聯絡過求職者
+            - generic [ref=e262]:
+              - generic [ref=e263]:
+                - button "儲存" [ref=e264] [cursor=pointer]:
+                  - generic [ref=e265]: 
+                  - text: 儲存
+                - generic [ref=e267] [cursor=pointer]:
+                  - generic [ref=e268]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e270] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/7xso9?channel=104rpt&jobsource=apply_analyze
+          - generic [ref=e274]:
+            - generic [ref=e276]: 3/31
+            - generic [ref=e277]:
+              - generic [ref=e279]:
+                - heading "出納中階人員" [level=2] [ref=e281]:
+                  - link "出納中階人員" [ref=e282] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/8z44w?jobsource=joblist_list_r
+                - generic [ref=e283]:
+                  - link "中國航運股份有限公司" [ref=e284] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/k40bz00?jobsource=joblist_list_r
+                  - link "儲配／運輸物流業" [ref=e286] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1010002002&jobsource=joblist_search
+                - generic [ref=e287]:
+                  - link "台北市中正區" [ref=e289] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001001001&jobsource=joblist_search
+                  - link "經歷不拘" [ref=e291] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                  - link "大學" [ref=e293] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                  - link "月薪50,000~70,000元" [ref=e295] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=70000&scmin=50000&sctp=M
+                - generic [ref=e296]: 1. 銀行融資往來相關業務 2. 國內外公司之資金管理與收付款作業 3. 其他主管交辦事項
+                - generic [ref=e297]:
+                  - link "上市上櫃" [ref=e300] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/search/?jobsource=joblist_search&zone=16
+                  - link "距捷運善導寺站約270公尺" [ref=e303] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?dist=0.27&jobsource=joblist_search&lat=25.0426165&lon=121.5223845&mrt=99001005013
+                  - link "年終獎金" [ref=e306] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e309] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "津貼/補助" [ref=e312] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+              - generic [ref=e315] [cursor=pointer]:
+                - generic [ref=e316]: 
+                - generic [ref=e317]: 23 小時前聯絡過求職者
+            - generic [ref=e318]:
+              - generic [ref=e319]:
+                - button "儲存" [ref=e320] [cursor=pointer]:
+                  - generic [ref=e321]: 
+                  - text: 儲存
+                - generic [ref=e323] [cursor=pointer]:
+                  - generic [ref=e324]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e326] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/8z44w?channel=104rpt&jobsource=apply_analyze
+          - generic [ref=e330]:
+            - generic [ref=e332]: 3/31
+            - generic [ref=e333]:
+              - generic [ref=e335]:
+                - heading "理貨人員(無經驗可)" [level=2] [ref=e337]:
+                  - link "理貨人員(無經驗可)" [ref=e338] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/75qdi?jobsource=joblist_list_r
+                - generic [ref=e339]:
+                  - link "歐客衛浴設備有限公司" [ref=e340] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6blghf?jobsource=joblist_list_r
+                  - link "建物裝修及裝潢業" [ref=e342] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1011002002&jobsource=joblist_search
+                - generic [ref=e343]:
+                  - link "台中市梧棲區" [ref=e345] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001008025&jobsource=joblist_search
+                  - link "經歷不拘" [ref=e347] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                  - link "學歷不拘" [ref=e349] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=1%2C2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                  - link "月薪34,000~40,000元" [ref=e351] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=40000&scmin=34000&sctp=M
+                - generic [ref=e352]: 1. 備貨、理貨、庫存盤點整理 2. 維護倉庫內部及週邊環境整潔. 3. 完成主管交代事項。
+              - generic [ref=e355] [cursor=pointer]:
+                - generic [ref=e356]: 
+                - generic [ref=e357]: 10 小時前聯絡過求職者
+            - generic [ref=e358]:
+              - generic [ref=e359]:
+                - button "儲存" [ref=e360] [cursor=pointer]:
+                  - generic [ref=e361]: 
+                  - text: 儲存
+                - generic [ref=e363] [cursor=pointer]:
+                  - generic [ref=e364]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e366] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/75qdi?channel=104rpt&jobsource=apply_analyze
+          - generic [ref=e370]:
+            - generic [ref=e372]: 3/31
+            - generic [ref=e373]:
+              - generic [ref=e375]:
+                - heading "行政客服(見紅休+工作獎金)" [level=2] [ref=e377]:
+                  - link "行政客服(見紅休+工作獎金)" [ref=e378] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/8lw7o?jobsource=joblist_list_r
+                - generic [ref=e379]:
+                  - link "燁熹國際有限公司" [ref=e380] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/1a2x6bkuua?jobsource=joblist_list_r
+                  - link "其他金融及輔助業" [ref=e382] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1004001006&jobsource=joblist_search
+                - generic [ref=e383]:
+                  - link "高雄市左營區" [ref=e385] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001016011&jobsource=joblist_search
+                  - link "經歷不拘" [ref=e387] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=1&jobsource=joblist_search
+                  - link "學歷不拘" [ref=e389] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=1%2C2%2C3%2C4%2C5%2C6&jobsource=joblist_search
+                  - link "月薪30,500~37,500元" [ref=e391] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&scmax=37500&scmin=30500&sctp=M
+                - generic [ref=e392]: 【行政客服人員】 08:30～17:30 9:00-18:00 見紅休假.週休二日 最高薪資：30500-37500（含工作津貼0-5000+團體獎金0-2000+全勤1000) 備註:工作津貼/團體獎金，需考核通過才有發放 【工作內容】 1.資料整合 2.行政庶務 3.網路客服回復 4.電話諮詢回復 5.電腦系統登錄建 6.報表彙整與管理 7.文件收發與檔案管理 8.主管交辦事項
+                - generic [ref=e393]:
+                  - link "距捷運巨蛋站約350公尺" [ref=e396] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?dist=0.35&jobsource=joblist_search&lat=22.6657086&lon=120.3065168&mrt=99004001013
+                  - link "年終獎金" [ref=e399] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e402] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "津貼/補助" [ref=e405] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+                  - link "員工旅遊" [ref=e408] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf3
+              - generic [ref=e411] [cursor=pointer]:
+                - generic [ref=e412]: 
+                - generic [ref=e413]: 1 分鐘前聯絡過求職者
+            - generic [ref=e414]:
+              - generic [ref=e415]:
+                - button "儲存" [ref=e416] [cursor=pointer]:
+                  - generic [ref=e417]: 
+                  - text: 儲存
+                - generic [ref=e419] [cursor=pointer]:
+                  - generic [ref=e420]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e422] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/8lw7o?channel=104rpt&jobsource=apply_analyze
+          - generic [ref=e426]:
+            - generic [ref=e428]: 3/31
+            - generic [ref=e429]:
+              - generic [ref=e431]:
+                - heading "【中鋼集團】資訊工程師 (高雄市前鎮區)" [level=2] [ref=e433]:
+                  - link "【中鋼集團】資訊工程師 (高雄市前鎮區)" [ref=e434] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/job/8kcp5?jobsource=joblist_list_r
+                - generic [ref=e435]:
+                  - link "中聯資源股份有限公司" [ref=e436] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/13k9kiao?jobsource=joblist_list_r
+                  - link "其他非金屬礦物製品製造業" [ref=e438] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?indcat=1002010006&jobsource=joblist_search
+                - generic [ref=e439]:
+                  - link "高雄市前鎮區" [ref=e441] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?area=6001016007&jobsource=joblist_search
+                  - link "1年以上" [ref=e443] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobexp=3&jobsource=joblist_search
+                  - link "大學" [ref=e445] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?edu=4%2C5&jobsource=joblist_search
+                  - link "待遇面議" [ref=e447] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&sr=18
+                - generic [ref=e448]: "[不限科系，資訊、資工相關科系佳(對軟體開發有熱忱)]： 1.主要工作：ERP系統開發維護及ISO27001 (ISMS) 制度之推行與管理。 2.有 Java Web 開發經驗（熟悉 HTML5、CSS3、JavaScript，並具備如 jQuery, Vue.js 等前端框架經驗,熟悉Spring Boot者更佳） 3.撰寫高品質、可維護程式碼的能力。 4.關聯式資料庫設計與SQL優化能力。 5.良好的問題分析與溝通表達能力。 6.能團隊合作，願意接受培訓外派國外推動資訊系統工作。"
+                - generic [ref=e449]:
+                  - link "上市上櫃" [ref=e452] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/company/search/?jobsource=joblist_search&zone=16
+                  - link "距輕軌軟體園區站約130公尺" [ref=e455] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?dist=0.13&jobsource=joblist_search&lat=22.6048754&lon=120.3017271&mrt=99004003007
+                  - link "年終獎金" [ref=e458] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf1
+                  - link "節日獎金/禮品" [ref=e461] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf2
+                  - link "津貼/補助" [ref=e464] [cursor=pointer]:
+                    - /url: https://www.104.com.tw/jobs/search/?jobsource=joblist_search&label=wf7
+              - generic [ref=e467] [cursor=pointer]:
+                - generic [ref=e468]: 
+                - generic [ref=e469]: 13 小時前處理過履歷
+            - generic [ref=e470]:
+              - generic [ref=e471]:
+                - button "儲存" [ref=e472] [cursor=pointer]:
+                  - generic [ref=e473]: 
+                  - text: 儲存
+                - generic [ref=e475] [cursor=pointer]:
+                  - generic [ref=e476]: 
+                  - text: 應徵
+              - link "30 人以上應徵" [ref=e478] [cursor=pointer]:
+                - /url: https://www.104.com.tw/jobs/apply/analysis/8kcp5?channel=104rpt&jobsource=apply_analyze
+    - generic [ref=e485] [cursor=pointer]:
+      - link [ref=e487]:
+        - /url: https://thmr.wda.gov.tw/News_Content.aspx?n=7737DC0A29BAF37F&sms=EC0931DF6A3357E3&s=38199626C1315E4B&jobsource=AD_699347_
+        - img [ref=e488]
+      - link [ref=e490]:
+        - /url: https://freshman.104.com.tw/events/?utm_source=104PCAD&utm_medium=build&jobsource=AD_699348_
+        - img [ref=e491]
+  - generic [ref=e494]:
+    - generic [ref=e496] [cursor=pointer]:
+      - generic [ref=e497]: 
+      - generic [ref=e498]: 104客服
+    - link "常見問題" [ref=e499] [cursor=pointer]:
+      - /url: //www.104.com.tw/faq/104-jobbank
+    - link "職場安全諮詢" [ref=e500] [cursor=pointer]:
+      - /url: ""
+    - link "隱私中心" [ref=e501] [cursor=pointer]:
+      - /url: //www.104.com.tw/privacy
+    - generic [ref=e502]:
+      - text: 一零四資訊科技股份有限公司 版權所有 © 2026建議瀏覽器 chrome / edge
+      - link "10/1起關閉支援TLS1.1" [ref=e503] [cursor=pointer]:
+        - /url: https://tls.support.104.com.tw/
+  - generic [ref=e504]:
+    - generic [ref=e509] [cursor=pointer]: 
+    - generic [ref=e511] [cursor=pointer]:
+      - img [ref=e512]
+      - generic [ref=e513]: 智能客服
+      - generic [ref=e514]: 
