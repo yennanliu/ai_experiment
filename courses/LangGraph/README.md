@@ -7,9 +7,17 @@
 
 #### 1) `Deepleanring.ai `  LangGraph
 
-- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/qyrpc/introduction?utm_source=home&utm_medium=course-landing-page&utm_campaign=hero-cta-button&_gl=1*jqxdln*_gcl_au*NTc2Njc4MjI3LjE3NzQ5Mzg4OTU.*_ga*NjEyMDM5NDUzLjE3NzQ5Mzg4OTU.*_ga_PZF1GBS1R1*czE3NzUwMjU2MjAkbzIkZzAkdDE3NzUwMjU2MjEkajU5JGwwJGgw
+- Playlist
+	- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/information
+	- progress
+		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/c1l2c/build-an-agent-from-scratch
 
 
 #### 2) FreeCodeComp LangGraph
 
 - https://www.youtube.com/watch?v=jGg_1h0qzaM&t=1s
+
+
+#### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
+
+- https://www.youtube.com/watch?v=QVDDxgSVo5g&list=PLliocbKHJNwvDpX6UMPpY_RBWhkxUh_Uu
