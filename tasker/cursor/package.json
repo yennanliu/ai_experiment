@@ -1,0 +1,12 @@
+{
+  "name": "cursor-automation",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "tasker:apply": "node tasker/apply.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  }
+}
+
