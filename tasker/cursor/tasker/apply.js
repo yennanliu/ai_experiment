@@ -19,6 +19,11 @@ function envInt(name, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function envStr(name, fallback = "") {
+  const v = process.env[name];
+  return v == null ? fallback : String(v);
+}
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -88,6 +93,20 @@ async function clickByText(
     await sleep(250);
   }
   return false;
+}
+
+async function clickByPuppeteerText(page, text, timeoutMs = 12_000) {
+  const selector = `text/${text}`;
+  try {
+    const el = await page.waitForSelector(selector, { timeout: timeoutMs });
+    if (!el) return false;
+    await el.evaluate((node) => node.scrollIntoView({ block: "center", inline: "center" }));
+    await sleepRandom(150, 400);
+    await el.click();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function getFirstCaseUrl(page) {
@@ -271,7 +290,44 @@ async function openProposalPage(browser, page, timeoutMs = 20_000) {
     .then(() => ({ kind: "login_gate", page }))
     .catch(() => null);
 
-  const winner = await Promise.race([newTabPromise, navPromise, loginPromise]);
+  const paywallPromise = page
+    .waitForFunction(() => {
+      const t = (document.body && document.body.innerText) || "";
+      return /TaskerGo|解鎖\s*TaskerGo|立即開通|升級/i.test(t);
+    }, { timeout: timeoutMs })
+    .then(() => ({ kind: "paywall_gate", page }))
+    .catch(() => null);
+
+  const inlineFormPromise = page
+    .waitForFunction(() => {
+      const t = (document.body && document.body.innerText) || "";
+      if (t.includes("送出提案")) return true;
+      const inputs = Array.from(document.querySelectorAll("input"));
+      return inputs.some((i) => {
+        const type = (i.getAttribute("type") || "").toLowerCase();
+        if (type && !["text", "number", "tel"].includes(type)) return false;
+        const blob = [
+          i.getAttribute("name"),
+          i.getAttribute("id"),
+          i.getAttribute("placeholder"),
+          i.getAttribute("aria-label"),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return blob.includes("price") || blob.includes("金額") || blob.includes("費用") || blob.includes("報價");
+      });
+    }, { timeout: timeoutMs })
+    .then(() => ({ kind: "inline_form", page }))
+    .catch(() => null);
+
+  const winner = await Promise.race([
+    newTabPromise,
+    navPromise,
+    loginPromise,
+    paywallPromise,
+    inlineFormPromise,
+  ]);
   if (winner && winner.page) return winner;
 
   // One more fallback: SPA routes might change without navigation events.
@@ -311,6 +367,7 @@ async function main() {
   const slowMo = envInt("SLOW_MO_MS", 0);
   const startUrl = process.env.START_URL || DEFAULT_START_URL;
   const userDataDir = process.env.USER_DATA_DIR || DEFAULT_USER_DATA_DIR;
+  const debug = envFlag("DEBUG", false);
 
   let browser = null;
   let page = null;
@@ -346,15 +403,51 @@ async function main() {
     await page.goto(firstCaseUrl, { waitUntil: "domcontentloaded" });
     await sleepRandom(1000, 2500);
 
-    console.log('[tasker] Clicking "我要提案"');
-    const clicked = await clickByText(page, "我要提案", { timeoutMs: 12_000 });
-    if (!clicked) throw new Error('Could not find/click "我要提案"');
+    if (debug) {
+      const info = await page.evaluate(() => {
+        const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
+        const wanted = "我要提案";
+        const all = Array.from(document.querySelectorAll("*"))
+          .filter((el) => norm(el.textContent).includes(wanted))
+          .slice(0, 10)
+          .map((el) => ({
+            tag: el.tagName,
+            text: norm(el.textContent).slice(0, 80),
+            id: el.id || null,
+            className: el.className ? String(el.className).slice(0, 120) : null,
+            href: el.getAttribute && el.getAttribute("href"),
+            role: el.getAttribute && el.getAttribute("role"),
+          }));
+        return { url: location.href, matches: all };
+      });
+      console.log("[tasker][debug] Case page URL:", info.url);
+      console.log("[tasker][debug] '我要提案' matches:", JSON.stringify(info.matches, null, 2));
+      const file = await screenshot(page, "before-click");
+      console.log(`[tasker][debug] Screenshot saved: ${file}`);
+    }
+
+    console.log('[tasker] Clicking "我要接案" / "我要提案"');
+    const clicked =
+      (await clickByPuppeteerText(page, "我要接案", 12_000)) ||
+      (await clickByPuppeteerText(page, "我要提案", 12_000)) ||
+      (await clickByText(page, "我要接案", { timeoutMs: 12_000 })) ||
+      (await clickByText(page, "我要提案", { timeoutMs: 12_000 }));
+    if (!clicked) throw new Error('Could not find/click "我要接案" / "我要提案"');
+
+    if (debug) {
+      await sleepRandom(500, 900);
+      const file = await screenshot(page, "after-click");
+      console.log(`[tasker][debug] Screenshot saved: ${file}`);
+    }
 
     const proposal = await openProposalPage(browser, page, 20_000);
     const proposalPage = proposal.page;
     console.log(`[tasker] Proposal context: ${proposal.kind} @ ${proposalPage.url()}`);
     if (proposal.kind === "login_gate") {
-      throw new Error('Login required after clicking "我要提案"');
+      throw new Error('Login required after clicking "我要接案/我要提案"');
+    }
+    if (proposal.kind === "paywall_gate") {
+      throw new Error("Blocked by TaskerGo / paywall gate after clicking apply");
     }
 
     await proposalPage.bringToFront();
