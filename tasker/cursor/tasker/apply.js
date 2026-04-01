@@ -4,6 +4,7 @@ const puppeteer = require("puppeteer");
 
 const DEFAULT_START_URL = "https://www.tasker.com.tw/cases?selected_tags=1";
 const ARTIFACTS_DIR = path.join(__dirname, "..", "artifacts", "tasker");
+const DEFAULT_USER_DATA_DIR = path.join(ARTIFACTS_DIR, "profile");
 
 function envFlag(name, defaultValue) {
   const v = process.env[name];
@@ -45,7 +46,11 @@ async function screenshot(page, name) {
 async function clickByText(
   page,
   text,
-  { tag = "*", timeoutMs = 10_000, match = "contains" } = {}
+  {
+    tag = "button, a, [role='button'], input[type='button'], input[type='submit'], div",
+    timeoutMs = 10_000,
+    match = "contains",
+  } = {}
 ) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -61,9 +66,18 @@ async function clickByText(
         });
         if (!el) return false;
 
-        const clickable =
-          el.closest("button, a, [role='button'], input[type='button'], input[type='submit']") ||
-          el;
+        const clickable = el.closest("button, a, [role='button'], input[type='button'], input[type='submit']") || el;
+        const style = window.getComputedStyle(clickable);
+        const rect = clickable.getBoundingClientRect();
+        const visible =
+          rect.width > 2 &&
+          rect.height > 2 &&
+          style.visibility !== "hidden" &&
+          style.display !== "none" &&
+          style.pointerEvents !== "none" &&
+          style.opacity !== "0";
+        if (!visible) return false;
+
         clickable.scrollIntoView({ block: "center", inline: "center" });
         clickable.click();
         return true;
@@ -235,10 +249,68 @@ async function waitForNewTab(browser, openerPage, timeoutMs = 15_000) {
   return page;
 }
 
+async function openProposalPage(browser, page, timeoutMs = 20_000) {
+  const beforeUrl = page.url();
+
+  const newTabPromise = waitForNewTab(browser, page, timeoutMs)
+    .then((p) => ({ kind: "new_tab", page: p }))
+    .catch(() => null);
+
+  const navPromise = page
+    .waitForNavigation({ timeout: timeoutMs, waitUntil: "domcontentloaded" })
+    .then(() => ({ kind: "same_tab", page }))
+    .catch(() => null);
+
+  const loginPromise = page
+    .waitForFunction(() => {
+      const t = (document.body && document.body.innerText) || "";
+      const looksLikeLoginText = /登入|註冊|會員登入|login/i.test(t);
+      const hasPassword = Boolean(document.querySelector("input[type='password']"));
+      return looksLikeLoginText && (hasPassword || t.length > 0);
+    }, { timeout: timeoutMs })
+    .then(() => ({ kind: "login_gate", page }))
+    .catch(() => null);
+
+  const winner = await Promise.race([newTabPromise, navPromise, loginPromise]);
+  if (winner && winner.page) return winner;
+
+  // One more fallback: SPA routes might change without navigation events.
+  const urlChanged = await page
+    .waitForFunction((u) => location.href !== u, { timeout: 5_000 }, beforeUrl)
+    .then(() => true)
+    .catch(() => false);
+  if (urlChanged) return { kind: "spa_url_change", page };
+
+  throw new Error("Proposal page did not open (no new tab and no navigation)");
+}
+
+async function looksLikeProposalForm(page) {
+  return await page.evaluate(() => {
+    const t = (document.body && document.body.innerText) || "";
+    const hasSubmit = t.includes("送出提案");
+    const hasPriceInputs = Array.from(document.querySelectorAll("input")).some((i) => {
+      const type = (i.getAttribute("type") || "").toLowerCase();
+      if (type && !["text", "number", "tel"].includes(type)) return false;
+      const blob = [
+        i.getAttribute("name"),
+        i.getAttribute("id"),
+        i.getAttribute("placeholder"),
+        i.getAttribute("aria-label"),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return blob.includes("price") || blob.includes("金額") || blob.includes("費用") || blob.includes("報價");
+    });
+    return hasSubmit || hasPriceInputs;
+  });
+}
+
 async function main() {
   const headless = envFlag("HEADLESS", false);
   const slowMo = envInt("SLOW_MO_MS", 0);
   const startUrl = process.env.START_URL || DEFAULT_START_URL;
+  const userDataDir = process.env.USER_DATA_DIR || DEFAULT_USER_DATA_DIR;
 
   let browser = null;
   let page = null;
@@ -248,6 +320,7 @@ async function main() {
       headless: headless ? "new" : false,
       slowMo,
       defaultViewport: null,
+      userDataDir,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
@@ -277,10 +350,21 @@ async function main() {
     const clicked = await clickByText(page, "我要提案", { timeoutMs: 12_000 });
     if (!clicked) throw new Error('Could not find/click "我要提案"');
 
-    const proposalPage = await waitForNewTab(browser, page, 20_000);
+    const proposal = await openProposalPage(browser, page, 20_000);
+    const proposalPage = proposal.page;
+    console.log(`[tasker] Proposal context: ${proposal.kind} @ ${proposalPage.url()}`);
+    if (proposal.kind === "login_gate") {
+      throw new Error('Login required after clicking "我要提案"');
+    }
+
     await proposalPage.bringToFront();
     proposalPage.setDefaultTimeout(20_000);
     await sleepRandom(1200, 2600);
+
+    const isForm = await looksLikeProposalForm(proposalPage);
+    if (!isForm) {
+      throw new Error('Proposal form not detected (missing "送出提案" / price inputs)');
+    }
 
     console.log("[tasker] Extracting budget range");
     const budget = await extractBudgetRange(proposalPage);
