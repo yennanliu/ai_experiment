@@ -1,0 +1,26 @@
+
+
+### Optimized Prompt
+
+**Role:** Act as an expert Web Automation Engineer using Node.js and Puppeteer.
+
+**Task:** Write a JavaScript automation script to apply for Software Engineering cases on `tasker.com.tw`.
+
+**Target URL:** `https://www.tasker.com.tw/cases?selected_tags=1`
+
+**Workflow Requirements:**
+1.  **Navigation:** Launch a browser, navigate to the target URL, and wait for the case list to load.
+2.  **Selection:** Select the first available case and click the **"我要提案"** (I want to propose) button. 
+3.  **Tab Handling:** The site opens the proposal in a new tab. Ensure the script switches the driver context to the newly opened tab.
+4.  **Price Injection:** * Locate the case's budget range on the page.
+    * Fill the "Minimum Price" and "Maximum Price" inputs. 
+    * *Logic:* Set these values to be within the allowed range specified by the case.
+5.  **Submission:** Click the **"送出提案"** (Submit Proposal) button.
+6.  **Error Handling:** Include basic `try-catch` blocks and `console.log` statements to track progress or failures.
+
+**Technical Constraints:**
+* Use **Puppeteer** for the automation framework.
+* Include a realistic `User-Agent` to avoid immediate bot detection.
+* Add a small random delay (1–3 seconds) between actions to mimic human behavior.
+
+---
