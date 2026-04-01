@@ -42,15 +42,23 @@ async function screenshot(page, name) {
   return file;
 }
 
-async function clickByText(page, text, { tag = "*", timeoutMs = 10_000 } = {}) {
+async function clickByText(
+  page,
+  text,
+  { tag = "*", timeoutMs = 10_000, match = "contains" } = {}
+) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const didClick = await page.evaluate(
-      ({ text, tag }) => {
+      ({ text, tag, match }) => {
         const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
         const wanted = norm(text);
         const candidates = Array.from(document.querySelectorAll(tag));
-        const el = candidates.find((e) => norm(e.textContent) === wanted);
+        const el = candidates.find((e) => {
+          const got = norm(e.textContent);
+          if (!got) return false;
+          return match === "exact" ? got === wanted : got.includes(wanted);
+        });
         if (!el) return false;
 
         const clickable =
@@ -60,7 +68,7 @@ async function clickByText(page, text, { tag = "*", timeoutMs = 10_000 } = {}) {
         clickable.click();
         return true;
       },
-      { text, tag }
+      { text, tag, match }
     );
     if (didClick) return true;
     await sleep(250);
@@ -83,9 +91,20 @@ async function getFirstCaseUrl(page) {
       })
       .filter(Boolean);
 
-    // Heuristic: pick the first case-ish link on the listing page.
-    const preferred = candidates.find((u) => /\/cases\/\d+/.test(u) || /\/case\//.test(u));
-    return preferred || candidates.find((u) => u.includes("/cases/")) || null;
+    const isBad = (u) =>
+      u.includes("/case/post_instruction") ||
+      u.includes("/case/post") ||
+      u.includes("post_instruction") ||
+      u.includes("post_case") ||
+      u.includes("/cases/top");
+
+    const isCaseDetail = (u) => /\/cases\/\d+/.test(u) || /\/case\/\d+/.test(u);
+    const preferred = candidates.find((u) => !isBad(u) && isCaseDetail(u));
+    if (preferred) return preferred;
+
+    // Extra heuristic: sometimes there are query-based case links; try to find an href containing digits.
+    const maybe = candidates.find((u) => !isBad(u) && /\d{4,}/.test(u) && u.includes("/case"));
+    return maybe || null;
   });
   return url || null;
 }
