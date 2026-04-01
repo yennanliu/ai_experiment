@@ -6,7 +6,7 @@
 ### Courses
 
 
-#### 1) Deepleanring.ai LangChain
+#### 1) `Deepleanring.ai` LangChain (done)
 
 - Playlist
 - https://www.youtube.com/playlist?list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG
