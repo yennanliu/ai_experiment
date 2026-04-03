@@ -1,5 +1,11 @@
 # LangChain
 
+
+<p align="center"><img src ="../doc/pic/langchain_1.png" ></p>
+
+<p align="center"><img src ="../doc/pic/langchain_2.png" ></p>
+
+
 ## Ref
 
 

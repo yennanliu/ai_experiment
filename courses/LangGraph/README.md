@@ -1,5 +1,13 @@
 # LangGraph
 
+
+<p align="center"><img src ="../doc/pic/langgraph_1.png" ></p>
+
+<p align="center"><img src ="../doc/pic/langgraph_2.png" ></p>
+
+<p align="center"><img src ="../doc/pic/state_memory.png" ></p>
+
+
 ## Ref
 
 - LangChain Hub
