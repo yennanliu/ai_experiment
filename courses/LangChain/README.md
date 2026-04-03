@@ -12,7 +12,12 @@
 ### Courses
 
 
-#### 1) `Deepleanring.ai` LangChain (done)
+#### 0) `Deepleanring.ai` LangChain (done)
+
+- https://learn.deeplearning.ai/courses/langchain/lesson/xf7wh/models%2C-prompts-and-parsers
+
+
+#### 1) `Deepleanring.ai` LangChain (YT) (done)
 
 - Playlist
 - https://www.youtube.com/playlist?list=PLiuLMb-dLdWIYYBF3k5JI_6Od593EIuEG
