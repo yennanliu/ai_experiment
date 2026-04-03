@@ -16,6 +16,7 @@
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/c1l2c/build-an-agent-from-scratch
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/l7rgk/langgraph-components
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/oj6p9/agentic-search-tools
+		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/nj9ok/persistence-and-streaming
 
 
 #### 2) FreeCodeComp LangGraph
