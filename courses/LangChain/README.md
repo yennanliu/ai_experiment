@@ -31,9 +31,8 @@
 
 
 #### 2) Tiktok LangChain
+- https://www.youtube.com/watch?v=gqKTSBGZE-g
 
-- https://youtu.be/jGg_1h0qzaM?si=oNgNVQKvtID5iXtT
 
-
-#### 1) FreeCodeComp LangChain
-- https://youtu.be/gqKTSBGZE-g?si=Jx1c3J9JoIdfi2KE
+#### 3) FreeCodeComp LangChain
+- https://www.youtube.com/watch?v=jGg_1h0qzaM
