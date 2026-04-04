@@ -7,6 +7,9 @@
 
 <p align="center"><img src ="../doc/pic/state_memory.png" ></p>
 
+<p align="center"><img src ="../doc/pic/landgraph_exp_1.png" ></p>
+
+
 
 ## Ref
 
@@ -26,7 +29,8 @@
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/oj6p9/agentic-search-tools
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/nj9ok/persistence-and-streaming
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/k87e1/human-in-the-loop
-		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/m0x4m/essay-writer -- TODO
+		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/m0x4m/essay-writer
+		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/kyxeg/langchain-resources
 
 
 #### 2) FreeCodeComp LangGraph
