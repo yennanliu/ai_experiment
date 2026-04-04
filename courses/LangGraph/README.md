@@ -10,6 +10,17 @@
 <p align="center"><img src ="../doc/pic/landgraph_exp_1.png" ></p>
 
 
+---
+
+- Other Ref
+
+<p align="center"><img src ="../doc/pic/multi_agent.png" ></p>
+
+<p align="center"><img src ="../doc/pic/supervisor.png" ></p>
+
+<p align="center"><img src ="../doc/pic/flow_eng.png" ></p>
+
+
 
 ## Ref
 
@@ -19,7 +30,7 @@
 
 ### Courses
 
-#### 1) `Deepleanring.ai `  LangGraph
+#### 1) `Deepleanring.ai `  LangGraph (done)
 
 - Playlist
 	- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/information
@@ -31,6 +42,7 @@
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/k87e1/human-in-the-loop
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/m0x4m/essay-writer
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/kyxeg/langchain-resources
+		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/b43j5/conclusion
 
 
 #### 2) FreeCodeComp LangGraph
