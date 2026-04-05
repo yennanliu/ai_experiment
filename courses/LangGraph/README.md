@@ -59,7 +59,7 @@
 			- nb:
 				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph3.ipynb
 
-		- progress: 55:49
+		- progress: 55:49 (1:07:27)
 			- nb:
 				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Conditional_Agent.ipynb
 
