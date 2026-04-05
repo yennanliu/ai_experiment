@@ -1,0 +1,3 @@
+ */
+function getUpdateCounterScript(type) {
+  return `
