@@ -32,20 +32,3 @@
 
 #### 2) Tiktok LangChain
 - https://www.youtube.com/watch?v=gqKTSBGZE-g
-
-
-#### 3) FreeCodeComp LangChain
-- https://www.youtube.com/watch?v=jGg_1h0qzaM
-	- 20240404
-		- progress: 32:01
-			- nb:
-				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangChain/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph1.ipynb
-	- 20240405
-		- progress: 33:13
-			- nb:
-				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangChain/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph2.ipynb
-		- progress: 44:31
-			- nb:
-				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangChain/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph3.ipynb
-
-

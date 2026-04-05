@@ -45,9 +45,24 @@
 		- https://learn.deeplearning.ai/courses/ai-agents-in-langgraph/lesson/b43j5/conclusion
 
 
-#### 2) FreeCodeComp LangGraph
+#### 2) FreeCodeComp `LangGraph`
+- https://www.youtube.com/watch?v=jGg_1h0qzaM
+	- 20240404
+		- progress: 32:01
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph1.ipynb
+	- 20240405
+		- progress: 33:13
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph2.ipynb
+		- progress: 44:31
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph3.ipynb
 
-- https://www.youtube.com/watch?v=jGg_1h0qzaM&t=1s
+		- progress: 55:49
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Conditional_Agent.ipynb
+
 
 
 #### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
