@@ -36,4 +36,7 @@
 
 #### 3) FreeCodeComp LangChain
 - https://www.youtube.com/watch?v=jGg_1h0qzaM
-	- progress: 18:41
+	- progress: 32:01
+		- nb: https://github.com/yennanliu/ai_experiment/blob/main/courses/LangChain/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph1.ipynb
+
+
