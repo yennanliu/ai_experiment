@@ -62,7 +62,10 @@
 		- progress: 55:49 (1:07:27)
 			- nb:
 				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Conditional_Agent.ipynb
-
+	- 20240406
+		- progress: 1:14:19
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Looping.ipynb
 
 
 #### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
