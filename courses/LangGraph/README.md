@@ -73,6 +73,9 @@
 		- progress: 1:39:55
 			- nb:
 				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/Agent_Bot.py
+		- progress: 1:43:00
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/Memory_Agent.py
 
 
 #### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
