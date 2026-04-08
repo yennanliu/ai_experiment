@@ -80,6 +80,11 @@
 			- nb:
 				- https://github.com/yennanliu/ai_experiment/tree/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents
 
+	- 20240406
+		- progress: 2:13:50
+			- nb:
+				- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/ReAct.py
+
 
 #### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
 
