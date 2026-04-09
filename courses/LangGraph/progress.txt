@@ -1,0 +1,45 @@
+#### 2) FreeCodeComp `LangGraph`
+- https://www.youtube.com/watch?v=jGg_1h0qzaM
+
+- 20240404
+	- progress: 32:01
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph1.ipynb
+- 20240405
+	- progress: 33:13
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph2.ipynb
+	- progress: 44:31
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Exercises/Exercise_Graph3.ipynb
+
+	- progress: 55:49 (1:07:27)
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Conditional_Agent.ipynb
+- 20240406
+	- progress: 1:14:19
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Graphs/Looping.ipynb
+	- progress: 1:31:06
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/tree/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents
+- 20240406
+	- progress: 1:39:55
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/Agent_Bot.py
+	- progress: 1:43:00
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/Memory_Agent.py
+	- progress: 2:03:28
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/tree/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents
+
+- 20240406
+	- progress: 2:13:50
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/ReAct.py
+
+- 20240406
+	- progress: 2:13:50
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/ReAct.py
