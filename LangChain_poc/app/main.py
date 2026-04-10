@@ -6,7 +6,9 @@ from pathlib import Path
 # Allow importing from project root
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from core import make_chain, get_llm
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,6 +17,7 @@ from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
 
 app = FastAPI(title="LangChain API")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 # --- Chains / Graphs ---
 
@@ -72,6 +75,11 @@ class ResearchResponse(BaseModel):
 
 
 # --- Routes ---
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 
 @app.get("/health")
 def health():
