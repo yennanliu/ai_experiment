@@ -1,27 +1,26 @@
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+"""Entry point — run any example by name.
 
-load_dotenv()
+Usage: uv run main.py [example_name]
+"""
 
-llm = ChatOpenAI(model="gpt-4o-mini")
+import subprocess
+import sys
+from pathlib import Path
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant. Be concise."),
-    ("human", "{input}"),
-])
+EXAMPLES_DIR = Path(__file__).parent / "examples"
 
-chain = prompt | llm
+EXAMPLES = {p.stem: p for p in EXAMPLES_DIR.glob("*.py") if p.stem != "__init__"}
 
 
 def main():
-    print("LangChain Chat (type 'quit' to exit)\n")
-    while True:
-        user_input = input("You: ").strip()
-        if not user_input or user_input.lower() == "quit":
-            break
-        response = chain.invoke({"input": user_input})
-        print(f"AI: {response.content}\n")
+    name = sys.argv[1] if len(sys.argv) > 1 else "chat"
+
+    if name not in EXAMPLES:
+        print(f"Unknown example: {name}")
+        print(f"Available: {', '.join(sorted(EXAMPLES))}")
+        sys.exit(1)
+
+    subprocess.run([sys.executable, str(EXAMPLES[name])])
 
 
 if __name__ == "__main__":
