@@ -17,6 +17,15 @@ def make_chain(system_prompt: str = "You are a helpful assistant. Be concise.", 
     return prompt | get_llm(model)
 
 
+def print_graph(graph, title: str = "Workflow"):
+    """Print the compiled LangGraph workflow as ASCII art."""
+    print(f"\n{'=' * 40}")
+    print(f"  {title} — Graph")
+    print(f"{'=' * 40}")
+    print(graph.get_graph().draw_ascii())
+    print(f"{'=' * 40}\n")
+
+
 def chat_loop(chain, name: str = "LangChain Chat"):
     print(f"{name} (type 'quit' to exit)\n")
     while True:

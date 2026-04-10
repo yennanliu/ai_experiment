@@ -1,6 +1,6 @@
 # LangChain PoC
 
-A simple interactive chat app using LangChain and OpenAI.
+Interactive examples using LangChain + LangGraph + OpenAI.
 
 ## Setup
 
@@ -12,21 +12,26 @@ uv sync
 ## Run Examples
 
 ```bash
-# Simple chat
-uv run main.py chat
-
-# Multi-step: research a topic → structured summary
-uv run main.py multi_step
+uv run main.py chat          # Simple chat
+uv run main.py multi_step    # Research → structured summary
+uv run main.py router        # Auto-routes to code/math/general expert
+uv run main.py critique      # Generate → critique → revise loop
+uv run main.py parallel      # Parallel text analysis → merged report
 ```
+
+Each example prints its workflow graph on startup.
 
 ## Structure
 
 ```
-core.py              — shared LLM + chain helpers
+core.py              — shared helpers (LLM, chain builder, graph printer)
 main.py              — entry point, picks example by name
 examples/
-  chat.py            — basic conversation
-  multi_step.py      — research → summary pipeline
+  chat.py            — basic conversation (LangChain)
+  multi_step.py      — two-step pipeline (LangGraph)
+  router.py          — conditional routing by intent (LangGraph)
+  critique.py        — cyclic generate/critique/revise (LangGraph)
+  parallel.py        — fan-out analysis → fan-in merge (LangGraph)
 ```
 
-Add new examples by creating a file in `examples/` and registering it in `main.py`.
+Add new examples by dropping a `.py` file in `examples/` — auto-discovered.
