@@ -435,6 +435,10 @@ const clickProposalAndInspectForm = async (page, logResult, randomDelay) => {
                             if (casePageUrl.includes('/cases/') && !casePageUrl.includes('selected_tags')) {
                                 logResult('📝 Case detail page loaded');
                                 await inspectProposalForm(page, logResult);
+
+                                // Click proposal button to open form
+                                await randomDelay(1, 2);
+                                await clickProposalAndInspectForm(page, logResult, randomDelay);
                             } else {
                                 logResult('⚠️  Case page not loaded as expected: ' + casePageUrl);
                             }
