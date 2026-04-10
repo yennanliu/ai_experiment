@@ -17,10 +17,12 @@
     .btn-generate { background: #f59e0b; color: #0f0f13; }
     .btn-generate:hover { background: #d97706; }
     .btn-generate:disabled { opacity: .5; cursor: wait; }
-    .btn-play { background: #10b981; color: #fff; }
+    .btn-play { background: #10b981; color: #fff; display: none; }
     .btn-play:hover { background: #059669; }
-    .btn-stop { background: #ef4444; color: #fff; }
+    .btn-stop { background: #ef4444; color: #fff; display: none; }
     .btn-stop:hover { background: #dc2626; }
+    .btn-download { background: #6366f1; color: #fff; display: none; }
+    .btn-download:hover { background: #4f46e5; }
     .spinner { display: none; }
     .spinner.show { display: inline-block; }
     .spinner::after { content: ""; display: inline-block; width: 18px; height: 18px; border: 2px solid #f59e0b; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; }
@@ -35,6 +37,8 @@
     .presets { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
     .preset { padding: .35rem .8rem; border: 1px solid #333; border-radius: 16px; background: #1a1a24; color: #aaa; cursor: pointer; font-size: .8rem; transition: .2s; }
     .preset:hover { border-color: #f59e0b; color: #f59e0b; }
+    .status { font-size: .8rem; color: #10b981; display: none; }
+    .status.show { display: block; }
   </style>
 </head>
 <body>
@@ -55,11 +59,13 @@
 
     <div class="controls">
       <button class="btn-generate" id="btn-gen" onclick="generate()">Generate</button>
-      <button class="btn-play" id="btn-play" onclick="play()" style="display:none">Play</button>
-      <button class="btn-stop" id="btn-stop" onclick="stop()" style="display:none">Stop</button>
+      <button class="btn-play" id="btn-play" onclick="play()">Play</button>
+      <button class="btn-stop" id="btn-stop" onclick="stop()">Stop</button>
+      <button class="btn-download" id="btn-download">Download .abc</button>
       <span id="spinner" class="spinner"></span>
     </div>
 
+    <div class="status" id="status"></div>
     <div class="title-display" id="title"></div>
     <div class="sheet-music" id="sheet"></div>
 
@@ -69,11 +75,20 @@
 
   <script>
     let currentAbc = '';
-    let synthControl = null;
+    let currentFilename = '';
+    let audioCtx = null;
     let midiBuffer = null;
+    let isPlaying = false;
 
     function usePreset(el) {
       document.getElementById('prompt').value = el.textContent;
+    }
+
+    function showStatus(msg) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 4000);
     }
 
     async function generate() {
@@ -94,28 +109,29 @@
         });
         const data = await res.json();
         currentAbc = data.abc;
+        currentFilename = data.filename;
 
-        // Show title
+        // Title
         const titleEl = document.getElementById('title');
         titleEl.textContent = data.title;
         titleEl.classList.add('show');
 
-        // Render sheet music
+        // Sheet music
         const sheetEl = document.getElementById('sheet');
         sheetEl.classList.add('show');
-        ABCJS.renderAbc('sheet', currentAbc, {
-          responsive: 'resize',
-          staffwidth: 600,
-        });
+        ABCJS.renderAbc('sheet', currentAbc, { responsive: 'resize', staffwidth: 600 });
 
-        // Show ABC notation
+        // ABC notation
         const abcEl = document.getElementById('abc-output');
         abcEl.textContent = currentAbc;
         abcEl.classList.add('show');
         document.getElementById('abc-label').style.display = 'block';
 
-        // Show play button
+        // Show buttons
         document.getElementById('btn-play').style.display = '';
+        document.getElementById('btn-download').style.display = '';
+
+        showStatus('Saved to output/' + data.filename);
       } catch (e) {
         alert('Error: ' + e.message);
       }
@@ -124,29 +140,62 @@
       spinner.classList.remove('show');
     }
 
-    function play() {
-      if (!currentAbc) return;
-      stop();
+    async function play() {
+      if (!currentAbc || isPlaying) return;
 
-      if (ABCJS.synth.supportsAudio()) {
+      try {
+        // AudioContext must be created/resumed from user gesture
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+
         const visualObj = ABCJS.renderAbc('sheet', currentAbc, { responsive: 'resize' })[0];
         midiBuffer = new ABCJS.synth.CreateSynth();
-        midiBuffer.init({ visualObj }).then(() => {
-          midiBuffer.prime().then(() => {
-            midiBuffer.start();
-            document.getElementById('btn-stop').style.display = '';
-          });
+
+        await midiBuffer.init({
+          visualObj: visualObj,
+          audioContext: audioCtx,
+          options: { soundFontUrl: 'https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/' }
         });
+
+        await midiBuffer.prime();
+        midiBuffer.start();
+        isPlaying = true;
+
+        document.getElementById('btn-play').style.display = 'none';
+        document.getElementById('btn-stop').style.display = '';
+
+        // Reset when playback ends
+        midiBuffer.onEnded = () => {
+          isPlaying = false;
+          document.getElementById('btn-play').style.display = '';
+          document.getElementById('btn-stop').style.display = 'none';
+        };
+      } catch (e) {
+        console.error('Audio playback error:', e);
+        showStatus('Playback error: ' + e.message);
       }
     }
 
     function stop() {
-      if (midiBuffer) {
+      if (midiBuffer && isPlaying) {
         midiBuffer.stop();
-        midiBuffer = null;
       }
+      isPlaying = false;
+      midiBuffer = null;
+      document.getElementById('btn-play').style.display = currentAbc ? '' : 'none';
       document.getElementById('btn-stop').style.display = 'none';
     }
+
+    // Download
+    document.getElementById('btn-download').addEventListener('click', () => {
+      if (currentFilename) {
+        window.open('/download/' + encodeURIComponent(currentFilename), '_blank');
+      }
+    });
 
     // Enter to generate
     document.getElementById('prompt').addEventListener('keydown', e => {

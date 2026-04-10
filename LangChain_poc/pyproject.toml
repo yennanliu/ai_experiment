@@ -10,6 +10,8 @@ dependencies = [
     "langchain>=1.2.15",
     "langchain-openai>=1.1.12",
     "langgraph>=1.1.6",
+    "midi2audio>=0.1.1",
+    "midiutil>=1.2.1",
     "python-dotenv>=1.2.2",
     "uvicorn>=0.44.0",
 ]
