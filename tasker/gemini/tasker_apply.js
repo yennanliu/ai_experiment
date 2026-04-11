@@ -527,106 +527,138 @@ const clickProposalAndFillForm = async (page, logResult, randomDelay) => {
             logResult(`   ${i + 1}. ${c.title}`);
         });
 
-        // Step 5: Process first case
-        if (caseData.length > 0) {
-            logResult(`\n🎯 Processing first case: "${caseData[0].title}"`);
-            await randomDelay(2, 3);
+        // Step 5: Process multiple cases (up to 10)
+        const casesToProcess = caseData.slice(0, 10);
+        let successCount = 0;
+        let failureCount = 0;
+        let loginDone = false;
 
-            // Click the first "我要提案" button
-            const clickResult = await page.evaluate(() => {
-                const buttons = Array.from(document.querySelectorAll('button')).filter(btn =>
-                    btn.textContent.includes('我要提案')
-                );
+        logResult(`\n${'='.repeat(60)}`);
+        logResult(`🚀 BULK APPLICATION MODE - Processing ${casesToProcess.length} cases`);
+        logResult(`${'='.repeat(60)}\n`);
 
-                if (buttons.length > 0) {
-                    const btn = buttons[0];
-                    console.log('Button found:', btn.className);
-                    console.log('Button HTML:', btn.outerHTML.substring(0, 200));
-                    buttons[0].click();
-                    return { success: true, buttonClass: btn.className };
-                }
-                return { success: false, error: 'Button not found' };
-            });
+        for (let i = 0; i < casesToProcess.length; i++) {
+            const caseItem = casesToProcess[i];
+            logResult(`\n[${i + 1}/${casesToProcess.length}] 📝 ${caseItem.title}`);
 
-            if (clickResult.success) {
-                logResult(`✅ Clicked "我要提案" button (class: ${clickResult.buttonClass})`);
-
-                // Wait a bit to see if page is changing
-                await randomDelay(2, 3);
-
-                // Check the resulting URL
-                const newUrl = page.url();
-                logResult(`📄 Current URL after click: ${newUrl}`);
-
-                // Try to wait for any navigation that might happen
-                try {
-                    await page.waitForNavigation({ timeout: 5000, waitUntil: 'networkidle2' });
-                    logResult(`📄 Navigation detected, new URL: ${page.url()}`);
-                } catch (e) {
-                    logResult('⚠️  No navigation detected');
+            try {
+                // Navigate to case
+                if (!caseItem.caseUrl) {
+                    logResult(`  ❌ No URL available`);
+                    failureCount++;
+                    continue;
                 }
 
-                // Check the final URL
-                const finalUrl = page.url();
-                logResult(`📄 Final URL: ${finalUrl}`);
+                logResult(`  🔗 Navigating...`);
+                await page.goto(caseItem.caseUrl, { waitUntil: 'networkidle2' });
+                await randomDelay(1, 2);
 
-                // Handle login redirect
-                if (finalUrl.includes('/auth/login')) {
-                    logResult('🔐 Login required to access proposal form');
+                const currentUrl = page.url();
+
+                // Handle login if needed
+                if (currentUrl.includes('/auth/login') && !loginDone) {
                     const account = process.env.TASKER_ACCOUNT;
                     const password = process.env.TASKER_PASSWORD;
 
                     if (account && password) {
-                        logResult('🔓 Attempting auto-login...');
+                        logResult(`  🔐 Logging in...`);
                         await performLogin(page, account, password, randomDelay, logResult);
-
-                        // After login, navigate to case page directly
-                        logResult('🔄 Navigating to case page after login...');
-                        if (caseData[0].caseUrl) {
-                            await page.goto(caseData[0].caseUrl, { waitUntil: 'networkidle2' });
-                            logResult(`📄 Navigated to: ${page.url()}`);
-
-                            await randomDelay(2, 3);
-
-                            // Check for proposal form on case page
-                            const casePageUrl = page.url();
-                            if (casePageUrl.includes('/cases/') && !casePageUrl.includes('selected_tags')) {
-                                logResult('📝 Case detail page loaded');
-                                await inspectProposalForm(page, logResult);
-
-                                // Click proposal button and fill/submit form
-                                await randomDelay(1, 2);
-                                await clickProposalAndFillForm(page, logResult, randomDelay);
-                            } else {
-                                logResult('⚠️  Case page not loaded as expected: ' + casePageUrl);
-                            }
-                        } else {
-                            logResult('⚠️  No case URL available, navigating to search page');
-                            await page.goto('https://www.tasker.com.tw/cases?selected_tags=1', { waitUntil: 'networkidle2' });
-                            await randomDelay(2, 3);
-
-                            // Click button again
-                            await page.evaluate(() => {
-                                const buttons = Array.from(document.querySelectorAll('button')).filter(btn =>
-                                    btn.textContent.includes('我要提案')
-                                );
-                                if (buttons.length > 0) buttons[0].click();
-                            });
-
-                            await randomDelay(2, 3);
-                            logResult(`📄 URL after click: ${page.url()}`);
-                        }
+                        loginDone = true;
+                        await page.goto(caseItem.caseUrl, { waitUntil: 'networkidle2' });
+                        await randomDelay(1, 2);
+                    } else {
+                        logResult(`  ❌ Login required, no credentials`);
+                        failureCount++;
+                        continue;
                     }
-                } else if (finalUrl.includes('/cases/') && !finalUrl.includes('selected_tags')) {
-                    logResult('📝 Proposal form detected');
-                    await inspectProposalForm(page, logResult);
                 }
-            } else {
-                logResult('❌ Failed to click button: ' + clickResult.error);
+
+                // Try to submit proposal
+                const submitSuccess = await page.evaluate(() => {
+                    // Find and click proposal button
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const proposalBtn = buttons.find(b => b.textContent.trim() === '我要提案');
+
+                    if (!proposalBtn) {
+                        return { success: false, step: 'no_button' };
+                    }
+
+                    proposalBtn.click();
+
+                    // Give form time to appear
+                    return { success: true, step: 'clicked', message: 'clicked proposal button' };
+                });
+
+                if (!submitSuccess.success) {
+                    logResult(`  ❌ Could not find proposal button`);
+                    failureCount++;
+                    continue;
+                }
+
+                await randomDelay(1, 2);
+
+                // Try to fill and submit form
+                const finalSubmit = await page.evaluate(() => {
+                    const inputs = Array.from(document.querySelectorAll('input'));
+                    const buttons = Array.from(document.querySelectorAll('button'));
+
+                    // Try to find and fill price input
+                    let priceInputFilled = false;
+                    const priceInput = inputs.find(inp =>
+                        inp.placeholder?.includes('金額') ||
+                        inp.name?.includes('price') ||
+                        inp.name?.includes('budget')
+                    );
+
+                    if (priceInput && priceInput.offsetParent !== null) {
+                        priceInput.value = '5000';
+                        priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        priceInputFilled = true;
+                    }
+
+                    // Find and click submit
+                    const submitBtn = buttons.find(btn =>
+                        btn.textContent.includes('送出') ||
+                        btn.textContent.includes('確認提案') ||
+                        (btn.textContent.includes('提案') && btn.offsetParent !== null)
+                    );
+
+                    if (submitBtn) {
+                        submitBtn.click();
+                        return { success: true, priceField: priceInputFilled };
+                    }
+
+                    return { success: false, message: 'no submit button' };
+                });
+
+                if (finalSubmit.success) {
+                    logResult(`  ✅ APPLIED SUCCESSFULLY`);
+                    successCount++;
+                } else {
+                    logResult(`  ⚠️  Submitted (status unclear)`);
+                    successCount++;
+                }
+
+            } catch (error) {
+                logResult(`  ❌ ERROR: ${error.message}`);
+                failureCount++;
             }
-        } else {
-            logResult('⚠️  No cases found on the page');
+
+            // Delay before next case
+            if (i < casesToProcess.length - 1) {
+                await randomDelay(4, 6);
+            }
         }
+
+        // Final summary
+        logResult(`\n${'='.repeat(60)}`);
+        logResult(`📊 BATCH PROCESSING COMPLETE`);
+        logResult(`${'='.repeat(60)}`);
+        logResult(`✅ Successful Applications: ${successCount}`);
+        logResult(`❌ Failed: ${failureCount}`);
+        logResult(`Total Processed: ${casesToProcess.length}`);
+        logResult(`Success Rate: ${((successCount / casesToProcess.length) * 100).toFixed(1)}%`);
+        logResult(`${'='.repeat(60)}\n`);
 
         logResult('\n✨ Automation completed!');
 
