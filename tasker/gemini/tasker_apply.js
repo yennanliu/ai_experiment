@@ -164,74 +164,232 @@ const inspectProposalForm = async (page, logResult) => {
 };
 
 /**
- * Click proposal button and inspect the form modal/page
+ * Click proposal button and fill/submit the form
  */
-const clickProposalAndInspectForm = async (page, logResult, randomDelay) => {
+const clickProposalAndFillForm = async (page, logResult, randomDelay) => {
     try {
         logResult('🔘 Attempting to click "我要提案" button...');
 
         // Click the proposal button
         await page.evaluate(() => {
             const buttons = Array.from(document.querySelectorAll('button'));
-            const btn = buttons.find(b => b.textContent.includes('我要提案'));
+            const btn = buttons.find(b => b.textContent.trim() === '我要提案');
             if (btn) btn.click();
         });
 
         await randomDelay(2, 3);
-        logResult(`📄 URL after proposal button: ${page.url()}`);
 
-        // Inspect the form that should appear
+        // Check for modal or dialog
+        const hasModal = await page.evaluate(() => {
+            const modals = document.querySelectorAll('[role="dialog"], .modal, [class*="modal"], [class*="dialog"]');
+            return modals.length > 0;
+        });
+
+        logResult(`📋 Modal/Dialog detected: ${hasModal ? 'Yes' : 'No'}`);
+
+        // Inspect all form elements on the page
         const formInfo = await page.evaluate(() => {
             const inputs = Array.from(document.querySelectorAll('input'));
             const textareas = Array.from(document.querySelectorAll('textarea'));
             const selects = Array.from(document.querySelectorAll('select'));
+            const buttons = Array.from(document.querySelectorAll('button'));
+
+            // Find price/budget related inputs
+            const priceInputs = inputs.filter(inp =>
+                inp.placeholder?.includes('金額') ||
+                inp.placeholder?.includes('預算') ||
+                inp.name?.includes('price') ||
+                inp.name?.includes('budget') ||
+                inp.id?.includes('price') ||
+                inp.id?.includes('budget') ||
+                inp.getAttribute('aria-label')?.includes('金額') ||
+                inp.getAttribute('aria-label')?.includes('預算')
+            );
+
+            // Look for labels associated with inputs
+            const inputsWithLabels = inputs.map(inp => {
+                let label = '';
+                if (inp.labels && inp.labels.length > 0) {
+                    label = inp.labels[0].textContent;
+                } else if (inp.name) {
+                    const associatedLabel = document.querySelector(`label[for="${inp.name}"]`);
+                    if (associatedLabel) {
+                        label = associatedLabel.textContent;
+                    }
+                }
+                return {
+                    name: inp.name,
+                    id: inp.id,
+                    type: inp.type,
+                    placeholder: inp.placeholder,
+                    value: inp.value,
+                    label: label,
+                    visible: inp.offsetParent !== null,
+                    ariaLabel: inp.getAttribute('aria-label'),
+                    dataTestid: inp.getAttribute('data-testid')
+                };
+            });
 
             return {
-                inputs: inputs.map(inp => ({
+                inputs: inputsWithLabels,
+                priceInputs: priceInputs.map(inp => ({
                     name: inp.name,
                     placeholder: inp.placeholder,
                     id: inp.id,
-                    type: inp.type,
-                    label: inp.labels?.[0]?.textContent
+                    type: inp.type
                 })),
                 textareas: textareas.map(ta => ({
                     name: ta.name,
                     placeholder: ta.placeholder,
-                    id: ta.id
+                    id: ta.id,
+                    visible: ta.offsetParent !== null
                 })),
                 selects: selects.map(sel => ({
                     name: sel.name,
                     id: sel.id,
                     options: Array.from(sel.options).map(opt => opt.text)
+                })),
+                buttons: buttons.map(btn => ({
+                    text: btn.textContent.trim(),
+                    visible: btn.offsetParent !== null
                 }))
             };
         });
 
-        logResult(`📋 Form fields found:`);
+        logResult(`📋 Form structure:`);
+
         if (formInfo.inputs.length > 0) {
-            logResult(`   Input fields (${formInfo.inputs.length}):`);
-            formInfo.inputs.forEach((inp, i) => {
-                const label = inp.label || inp.placeholder || inp.name || 'Unknown';
-                logResult(`   ${i + 1}. [${inp.type}] ${label}`);
+            const visibleCount = formInfo.inputs.filter(i => i.visible).length;
+            logResult(`   Input fields (${formInfo.inputs.length} total, ${visibleCount} visible):`);
+
+            // Show visible inputs
+            const visibleInputs = formInfo.inputs.filter(i => i.visible);
+            if (visibleInputs.length > 0) {
+                visibleInputs.slice(0, 10).forEach((inp, i) => {
+                    const label = inp.label || inp.placeholder || inp.ariaLabel || inp.name || `Field ${i + 1}`;
+                    logResult(`   ${i + 1}. [${inp.type}] ${label}`);
+                });
+            }
+
+            // Show first few non-visible inputs for debugging
+            const hiddenInputs = formInfo.inputs.filter(i => !i.visible);
+            if (hiddenInputs.length > 0 && visibleCount === 0) {
+                logResult(`   ⚠️  (${hiddenInputs.length} hidden inputs - may be used by JavaScript):`);
+                hiddenInputs.slice(0, 8).forEach((inp, i) => {
+                    const label = inp.label || inp.placeholder || inp.name || `Hidden ${i + 1}`;
+                    logResult(`   H${i + 1}. [${inp.type}] ${label} (name: "${inp.name}")`);
+                });
+            }
+        }
+
+        if (formInfo.priceInputs.length > 0) {
+            logResult(`💰 Price/Budget inputs found:`);
+            formInfo.priceInputs.forEach((inp, i) => {
+                logResult(`   ${i + 1}. name="${inp.name}" placeholder="${inp.placeholder}"`);
             });
         }
 
         if (formInfo.textareas.length > 0) {
-            logResult(`   Textareas (${formInfo.textareas.length}):`);
-            formInfo.textareas.forEach((ta, i) => {
-                const label = ta.placeholder || ta.name || 'Text area';
-                logResult(`   ${i + 1}. ${label}`);
+            logResult(`   Textareas (${formInfo.textareas.filter(t => t.visible).length} visible):`);
+            formInfo.textareas.filter(t => t.visible).forEach((ta, i) => {
+                logResult(`   ${i + 1}. name="${ta.name}" placeholder="${ta.placeholder}"`);
             });
         }
 
         if (formInfo.selects.length > 0) {
-            logResult(`   Dropdown selects (${formInfo.selects.length}):`);
+            logResult(`   Dropdowns (${formInfo.selects.length}):`);
             formInfo.selects.forEach((sel, i) => {
-                logResult(`   ${i + 1}. ${sel.name || 'Select'} - Options: ${sel.options.slice(0, 3).join(', ')}`);
+                logResult(`   ${i + 1}. ${sel.name || 'Select'}`);
             });
         }
+
+        // Find submit button
+        const submitBtn = formInfo.buttons.find(b =>
+            b.text.includes('送出') ||
+            b.text.includes('提案') ||
+            b.text.includes('確認')
+        );
+
+        if (submitBtn) {
+            logResult(`📤 Submit button found: "${submitBtn.text}"`);
+
+            // Try to fill price inputs with a default quote
+            if (formInfo.priceInputs.length > 0) {
+                logResult('💵 Attempting to fill price fields with default quote...');
+
+                const filled = await page.evaluate((priceInputCount) => {
+                    const inputs = Array.from(document.querySelectorAll('input'));
+                    const priceInputs = inputs.filter(inp =>
+                        inp.placeholder?.includes('金額') ||
+                        inp.placeholder?.includes('預算') ||
+                        inp.name?.includes('price') ||
+                        inp.name?.includes('budget')
+                    );
+
+                    // Fill first price input with a quote (e.g., 5000)
+                    if (priceInputs.length > 0) {
+                        priceInputs[0].value = '5000';
+                        priceInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        priceInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+                        return { filled: true, count: 1 };
+                    }
+                    return { filled: false, count: 0 };
+                }, formInfo.priceInputs.length);
+
+                if (filled.filled) {
+                    logResult(`✅ Filled ${filled.count} price field(s) with 5000`);
+
+                    // Wait a moment for any handlers
+                    await randomDelay(1, 2);
+
+                    // Submit the form
+                    logResult(`📤 Submitting proposal...`);
+                    const submitResult = await page.evaluate(() => {
+                        const buttons = Array.from(document.querySelectorAll('button'));
+                        const btn = buttons.find(b =>
+                            b.textContent.includes('送出') ||
+                            b.textContent.includes('提案') ||
+                            b.textContent.includes('確認')
+                        );
+                        if (btn) {
+                            btn.click();
+                            return { success: true, text: btn.textContent.trim() };
+                        }
+                        return { success: false };
+                    });
+
+                    if (submitResult.success) {
+                        logResult(`✅ Clicked submit button: "${submitResult.text}"`);
+                        await randomDelay(2, 3);
+
+                        // Check for success message
+                        const successMsg = await page.evaluate(() => {
+                            const text = document.body.innerText;
+                            if (text.includes('成功') || text.includes('提案完成') || text.includes('應徵成功')) {
+                                return true;
+                            }
+                            return false;
+                        });
+
+                        if (successMsg) {
+                            logResult(`🎉 Proposal submitted successfully!`);
+                        } else {
+                            logResult(`📄 Form submitted. Final URL: ${page.url()}`);
+                        }
+                    } else {
+                        logResult(`❌ Could not find submit button`);
+                    }
+                } else {
+                    logResult(`⚠️  Could not fill price fields`);
+                }
+            } else {
+                logResult(`⚠️  No price inputs found. Manual inspection needed.`);
+            }
+        } else {
+            logResult(`⚠️  No submit button found`);
+        }
     } catch (error) {
-        logResult(`❌ Failed to inspect proposal form: ${error.message}`);
+        logResult(`❌ Failed to process proposal form: ${error.message}`);
     }
 };
 
@@ -436,9 +594,9 @@ const clickProposalAndInspectForm = async (page, logResult, randomDelay) => {
                                 logResult('📝 Case detail page loaded');
                                 await inspectProposalForm(page, logResult);
 
-                                // Click proposal button to open form
+                                // Click proposal button and fill/submit form
                                 await randomDelay(1, 2);
-                                await clickProposalAndInspectForm(page, logResult, randomDelay);
+                                await clickProposalAndFillForm(page, logResult, randomDelay);
                             } else {
                                 logResult('⚠️  Case page not loaded as expected: ' + casePageUrl);
                             }
@@ -476,7 +634,10 @@ const clickProposalAndInspectForm = async (page, logResult, randomDelay) => {
         logResult(`❌ ERROR: ${error.message}`);
         logResult(`   Stack: ${error.stack}`);
     } finally {
-        logResult('🔍 Browser remains open for inspection. Check the page and close manually.');
-        // Uncomment to auto-close: await browser.close();
+        // Close browser after automation
+        logResult('\n🔒 Closing browser...');
+        await randomDelay(2, 3);
+        await browser.close();
+        logResult('✅ Browser closed. Automation finished.');
     }
 })();
