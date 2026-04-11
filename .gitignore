@@ -42,3 +42,4 @@ tasker/cursor/artifacts
 tasker/gemini/test_run.sh
 tasker/gemini/automation_log.txt
 tasker/gemini/.playwright-mcp/
+tasker/.playwright-mcp/
