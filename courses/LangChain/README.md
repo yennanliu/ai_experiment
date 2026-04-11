@@ -8,6 +8,9 @@
 
 ## Ref
 
+### Blog posts
+
+1. [langgraph-langchain-intro](https://yennj12.js.org/yennj12_blog_V4/posts/langgraph-langchain-intro-zh/)
 
 ### Courses
 
