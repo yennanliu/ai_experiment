@@ -72,10 +72,34 @@ uv run demo.py
 |--------|------|-------------|
 | `POST` | `/tickets` | Submit a ticket `{"message": "..."}` → returns 202 immediately |
 | `GET` | `/tickets` | List all tickets |
+| `GET` | `/tickets/stats` | Aggregated counts by status / category / priority |
 | `GET` | `/tickets/{id}` | Get ticket status + result |
+| `GET` | `/graph` | LangGraph node/edge definition (used by UI) |
 | `GET` | `/` | Serve the UI |
 
 Tickets are processed asynchronously. Poll `GET /tickets/{id}` until `status` is `done` or `error`.
+
+---
+
+## Seed Script
+
+Submit random tickets in bulk for testing:
+
+```bash
+# 100 tickets (default)
+uv run scripts/seed_tickets.py
+
+# Custom count, concurrency, and server URL
+uv run scripts/seed_tickets.py --count 50 --concurrency 5 --url http://localhost:8000
+```
+
+Options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--count` | `100` | Number of tickets to submit |
+| `--concurrency` | `10` | Max parallel requests |
+| `--url` | `http://localhost:8000` | Server base URL |
 
 ---
 

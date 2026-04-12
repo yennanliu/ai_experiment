@@ -6,6 +6,8 @@
   <title>Ticket Processing System</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Dark (default) ── */
     :root {
       --bg:       #0f1117;
       --surface:  #1e2130;
@@ -14,8 +16,52 @@
       --muted:    #64748b;
       --indigo:   #6366f1;
       --indigo-d: #4f46e5;
+      --nav-active-bg: #1e1e3a;
+      --stat-val: #f8fafc;
+      --card-bg:  var(--bg);
+      --llm-bg:   #0d1020;
+      --llm-text: #475569;
+      --llm-span: #64748b;
+      --response-text: #cbd5e1;
+      --node-terminal-bg: #0d1020;
+      --node-terminal-border: #1e2a4a;
+      --node-terminal-text:   #475569;
+      --node-llm-border:  #3b4278;
+      --node-det-border:  #1a3a2a;
+      --node-active-bg:   #1a1d35;
+      --node-done-bg:     #0d2118;
+      --retry-stroke: #475569;
+      --retry-text:   #475569;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Light ── */
+    :root.light {
+      --bg:       #f1f5f9;
+      --surface:  #ffffff;
+      --border:   #e2e8f0;
+      --text:     #1e293b;
+      --muted:    #94a3b8;
+      --indigo:   #6366f1;
+      --indigo-d: #4f46e5;
+      --nav-active-bg: #ede9fe;
+      --stat-val: #0f172a;
+      --card-bg:  #f8fafc;
+      --llm-bg:   #f1f5f9;
+      --llm-text: #64748b;
+      --llm-span: #94a3b8;
+      --response-text: #475569;
+      --node-terminal-bg:     #e2e8f0;
+      --node-terminal-border: #cbd5e1;
+      --node-terminal-text:   #94a3b8;
+      --node-llm-border:  #a5b4fc;
+      --node-det-border:  #86efac;
+      --node-active-bg:   #ede9fe;
+      --node-done-bg:     #dcfce7;
+      --retry-stroke: #94a3b8;
+      --retry-text:   #94a3b8;
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .2s, color .2s; }
 
     /* ── Nav ── */
     nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 2rem; gap: 2rem; height: 52px; }
@@ -25,7 +71,7 @@
       cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; transition: all .15s;
     }
     nav button:hover { color: var(--text); background: var(--border); }
-    nav button.active { color: var(--indigo); background: #1e1e3a; }
+    nav button.active { color: var(--indigo); background: var(--nav-active-bg); }
 
     /* ── Pages ── */
     .page { display: none; padding: 2rem; max-width: 1200px; margin: 0 auto; }
@@ -56,7 +102,7 @@
     ═══════════════════════════════════════ */
     .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; }
-    .stat-card .val { font-size: 2rem; font-weight: 800; color: #f8fafc; }
+    .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--stat-val); }
     .stat-card .lbl { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: .05em; }
 
     .overview-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
@@ -84,7 +130,7 @@
     .btn-primary:disabled { background: #374151; cursor: not-allowed; }
 
     .ticket-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .ticket-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color .15s; }
+    .ticket-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color .15s, background .2s; }
     .ticket-card:hover { border-color: var(--indigo); }
     .ticket-card.open  { border-color: var(--indigo); }
     .tc-header { display: flex; align-items: center; gap: 0.75rem; }
@@ -99,7 +145,7 @@
     .meta-item label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 0.2rem; }
     .meta-item span  { font-size: 0.88rem; font-weight: 600; }
 
-    .response-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; line-height: 1.65; color: #cbd5e1; margin-bottom: 1rem; }
+    .response-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; line-height: 1.65; color: var(--response-text); margin-bottom: 1rem; }
 
     /* Process log */
     .log-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 0.5rem; }
@@ -109,8 +155,8 @@
     .log-entry .le-time { color: #475569; flex-shrink: 0; font-family: monospace; }
     .log-entry .le-node { color: #a5b4fc; font-weight: 700; min-width: 135px; }
     .log-entry .le-detail { color: #94a3b8; }
-    .log-entry .le-llm { margin-top: 0.25rem; padding: 0.4rem 0.6rem; background: #0d1020; border-radius: 6px; font-family: monospace; font-size: 0.72rem; color: #475569; line-height: 1.5; }
-    .log-entry .le-llm span { color: #64748b; display: block; }
+    .log-entry .le-llm { margin-top: 0.25rem; padding: 0.4rem 0.6rem; background: var(--llm-bg); border-radius: 6px; font-family: monospace; font-size: 0.72rem; color: var(--llm-text); line-height: 1.5; }
+    .log-entry .le-llm span { color: var(--llm-span); display: block; }
     .log-toggle { font-size: 0.7rem; color: var(--indigo); cursor: pointer; margin-top: 0.2rem; background: none; border: none; padding: 0; }
 
     /* ═══════════════════════════════════════
@@ -132,15 +178,15 @@
     .flow-node .fn-type  { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
     .flow-node .fn-desc  { font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; max-width: 110px; line-height: 1.4; }
 
-    .flow-node.terminal { background: #0d1020; border-color: #1e2a4a; min-width: 60px; padding: 0.5rem 0.75rem; }
-    .flow-node.terminal .fn-label { font-size: 0.75rem; color: #475569; }
-    .flow-node.type-llm          { border-color: #3b4278; }
-    .flow-node.type-deterministic{ border-color: #1a3a2a; }
+    .flow-node.terminal { background: var(--node-terminal-bg); border-color: var(--node-terminal-border); min-width: 60px; padding: 0.5rem 0.75rem; }
+    .flow-node.terminal .fn-label { font-size: 0.75rem; color: var(--node-terminal-text); }
+    .flow-node.type-llm          { border-color: var(--node-llm-border); }
+    .flow-node.type-deterministic{ border-color: var(--node-det-border); }
 
-    .flow-node.active   { border-color: var(--indigo); background: #1a1d35; box-shadow: 0 0 16px #6366f140; }
-    .flow-node.done     { border-color: #16a34a; background: #0d2118; }
-    .flow-node.active .fn-label { color: #a5b4fc; }
-    .flow-node.done  .fn-label  { color: #4ade80; }
+    .flow-node.active   { border-color: var(--indigo); background: var(--node-active-bg); box-shadow: 0 0 16px #6366f140; }
+    .flow-node.done     { border-color: #16a34a; background: var(--node-done-bg); }
+    .flow-node.active .fn-label { color: var(--indigo); }
+    .flow-node.done  .fn-label  { color: #16a34a; }
 
     /* Arrows between nodes */
     .flow-arrow { display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
@@ -164,10 +210,10 @@
     .ticket-select { width: 100%; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.82rem; outline: none; }
     .ticket-select:focus { border-color: var(--indigo); }
 
-    .node-detail-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem; min-height: 80px; }
-    .node-detail-card .nd-name  { font-weight: 700; font-size: 0.88rem; color: #a5b4fc; margin-bottom: 0.4rem; }
+    .node-detail-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem; min-height: 80px; }
+    .node-detail-card .nd-name  { font-weight: 700; font-size: 0.88rem; color: var(--indigo); margin-bottom: 0.4rem; }
     .node-detail-card .nd-info  { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
-    .node-detail-card .nd-entry { margin-top: 0.5rem; font-family: monospace; font-size: 0.72rem; color: #475569; white-space: pre-wrap; word-break: break-all; }
+    .node-detail-card .nd-entry { margin-top: 0.5rem; font-family: monospace; font-size: 0.72rem; color: var(--llm-text); white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -178,6 +224,7 @@
   <button id="nav-overview" onclick="goto('overview')" class="active">Overview</button>
   <button id="nav-tickets"  onclick="goto('tickets')">Tickets</button>
   <button id="nav-graph"    onclick="goto('graph')">Graph</button>
+  <button id="themeBtn" onclick="toggleTheme()" style="margin-left:auto;font-size:1rem;padding:0.3rem 0.6rem" title="Toggle light/dark mode">🌙</button>
 </nav>
 
 <!-- ═══════════════════════════════════════
@@ -484,16 +531,17 @@ function renderFlow(completedNodes, activeNode) {
   });
 
   // Retry arc (SVG curved arrow below, from quality_check back to generate_response)
+  const arcColor = getComputedStyle(document.documentElement).getPropertyValue('--retry-stroke').trim() || '#475569';
   document.getElementById('retryArc').innerHTML = `
     <div style="padding:0 1rem 0.5rem">
       <svg viewBox="0 0 600 40" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
         <defs>
           <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6 Z" fill="#475569"/>
+            <path d="M0,0 L6,3 L0,6 Z" fill="${arcColor}"/>
           </marker>
         </defs>
-        <path d="M 490,5 Q 380,40 260,5" stroke="#475569" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arr)"/>
-        <text x="375" y="36" fill="#475569" font-size="9" text-anchor="middle">score &lt; 0.8 · retry</text>
+        <path d="M 490,5 Q 380,40 260,5" stroke="${arcColor}" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <text x="375" y="36" fill="${arcColor}" font-size="9" text-anchor="middle">score &lt; 0.8 · retry</text>
       </svg>
     </div>`;
 }
@@ -562,9 +610,26 @@ setInterval(() => {
 }, 2000);
 
 // ══════════════════════════════════════════════════════════════
+// Theme toggle
+// ══════════════════════════════════════════════════════════════
+function applyTheme(light) {
+  document.documentElement.classList.toggle('light', light);
+  document.getElementById('themeBtn').textContent = light ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isLight ? '🌙' : '☀️';
+}
+
+// ══════════════════════════════════════════════════════════════
 // Boot
 // ══════════════════════════════════════════════════════════════
 (async () => {
+  // Restore saved theme
+  applyTheme(localStorage.getItem('theme') === 'light');
+
   await loadGraph();
 
   const res     = await fetch(`${API}/tickets`);
