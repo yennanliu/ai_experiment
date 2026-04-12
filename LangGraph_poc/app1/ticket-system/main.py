@@ -160,7 +160,8 @@ def build_graph():
 def process_ticket(ticket_id: str, message: str) -> TicketState:
     graph = build_graph()
     initial = TicketState(ticket_id=ticket_id, user_message=message)
-    return graph.invoke(initial)
+    result = graph.invoke(initial)
+    return TicketState(**result) if isinstance(result, dict) else result
 
 
 def print_result(state: TicketState) -> None:
