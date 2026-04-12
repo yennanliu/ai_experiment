@@ -2,6 +2,8 @@
 
 An AI-powered customer support ticket processor built with **LangGraph** and **OpenAI**.
 
+- [ref blog](https://yennj12.js.org/yennj12_blog_V4/posts/langgraph-ai-customer-ticket-system-zh/)
+
 ## Architecture
 
 ```

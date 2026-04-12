@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticket Processing System</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #f8fafc;
+    }
+
+    .layout { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+    /* Submit panel */
+    .panel {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .panel h2 { font-size: 0.9rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      padding: 0.75rem;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: #6366f1; }
+
+    button {
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.65rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover { background: #4f46e5; }
+    button:disabled { background: #374151; cursor: not-allowed; }
+
+    /* Ticket list */
+    .tickets { display: flex; flex-direction: column; gap: 1rem; }
+
+    .ticket {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    .ticket:hover { border-color: #6366f1; }
+    .ticket.expanded { border-color: #6366f1; }
+
+    .ticket-header { display: flex; align-items: center; gap: 0.75rem; }
+    .ticket-id { font-weight: 700; font-size: 0.85rem; color: #a5b4fc; }
+    .ticket-msg { flex: 1; font-size: 0.85rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .badge-pending   { background: #374151; color: #9ca3af; }
+    .badge-processing { background: #1e3a5f; color: #60a5fa; animation: pulse 1.5s infinite; }
+    .badge-done      { background: #14532d; color: #4ade80; }
+    .badge-error     { background: #4c1d1d; color: #f87171; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    /* Detail */
+    .detail { margin-top: 1rem; border-top: 1px solid #2d3148; padding-top: 1rem; display: none; }
+    .ticket.expanded .detail { display: block; }
+
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .meta-item label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 0.2rem; }
+    .meta-item span { font-size: 0.9rem; font-weight: 600; }
+
+    .response-box {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+    }
+
+    .timeline { list-style: none; }
+    .timeline li {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      color: #64748b;
+      padding: 0.3rem 0;
+      border-left: 2px solid #2d3148;
+      padding-left: 0.75rem;
+      margin-left: 0.5rem;
+    }
+    .timeline li .tl-node { color: #a5b4fc; font-weight: 600; min-width: 140px; }
+    .timeline li .tl-time { color: #475569; min-width: 65px; }
+
+    .priority-critical { color: #f87171; }
+    .priority-high     { color: #fb923c; }
+    .priority-medium   { color: #facc15; }
+    .priority-low      { color: #4ade80; }
+
+    .empty { text-align: center; color: #475569; padding: 2rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Ticket Processing System</h1>
+  <div class="layout">
+
+    <!-- Left: submit -->
+    <div class="panel">
+      <h2>New Ticket</h2>
+      <textarea id="msg" placeholder="Describe your issue…"></textarea>
+      <button id="submitBtn" onclick="submitTicket()">Submit Ticket</button>
+    </div>
+
+    <!-- Right: list -->
+    <div class="panel">
+      <h2>Tickets</h2>
+      <div class="tickets" id="ticketList">
+        <p class="empty">No tickets yet.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = '';
+    const pollers = {};      // ticket_id → interval id
+    const expanded = new Set();
+
+    async function submitTicket() {
+      const msg = document.getElementById('msg').value.trim();
+      if (!msg) return;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+
+      const res = await fetch(`${API}/tickets`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: msg}),
+      });
+      const ticket = await res.json();
+      document.getElementById('msg').value = '';
+      btn.disabled = false;
+      btn.textContent = 'Submit Ticket';
+
+      upsertTicketCard(ticket);
+      startPolling(ticket.ticket_id);
+    }
+
+    function startPolling(id) {
+      if (pollers[id]) return;
+      pollers[id] = setInterval(async () => {
+        const res = await fetch(`${API}/tickets/${id}`);
+        const ticket = await res.json();
+        upsertTicketCard(ticket);
+        if (ticket.status === 'done' || ticket.status === 'error') {
+          clearInterval(pollers[id]);
+          delete pollers[id];
+        }
+      }, 2000);
+    }
+
+    function priorityClass(p) {
+      return p ? `priority-${p}` : '';
+    }
+
+    function upsertTicketCard(ticket) {
+      const list = document.getElementById('ticketList');
+      const empty = list.querySelector('.empty');
+      if (empty) empty.remove();
+
+      let card = document.getElementById(`card-${ticket.ticket_id}`);
+      if (!card) {
+        card = document.createElement('div');
+        card.id = `card-${ticket.ticket_id}`;
+        card.className = 'ticket';
+        card.onclick = () => toggleExpand(ticket.ticket_id);
+        list.prepend(card);
+      }
+      if (expanded.has(ticket.ticket_id)) card.classList.add('expanded');
+
+      const r = ticket.result;
+      const history = r?.history ?? [];
+
+      card.innerHTML = `
+        <div class="ticket-header">
+          <span class="ticket-id">${ticket.ticket_id}</span>
+          <span class="ticket-msg">${escHtml(ticket.message)}</span>
+          <span class="badge badge-${ticket.status}">${ticket.status}</span>
+        </div>
+        <div class="detail">
+          ${r ? `
+          <div class="meta-grid">
+            <div class="meta-item"><label>Category</label><span>${r.category}</span></div>
+            <div class="meta-item"><label>Confidence</label><span>${(r.confidence*100).toFixed(0)}%</span></div>
+            <div class="meta-item"><label>Priority</label><span class="${priorityClass(r.priority)}">${r.priority}</span></div>
+            <div class="meta-item"><label>SLA</label><span>${r.sla_hours}h</span></div>
+            <div class="meta-item"><label>Department</label><span>${r.department}</span></div>
+            <div class="meta-item"><label>Quality</label><span>${(r.quality_score*100).toFixed(0)}%</span></div>
+          </div>
+          <div class="response-box">${escHtml(r.response)}</div>
+          <ul class="timeline">
+            ${history.map(h => `
+              <li>
+                <span class="tl-time">${h.time.slice(11,19)}</span>
+                <span class="tl-node">${h.node}</span>
+                <span>${escHtml(h.detail)}</span>
+              </li>`).join('')}
+          </ul>
+          ` : ticket.status === 'error' ? `<p style="color:#f87171">${escHtml(ticket.error)}</p>` : `<p style="color:#64748b">Processing…</p>`}
+        </div>`;
+    }
+
+    function toggleExpand(id) {
+      const card = document.getElementById(`card-${id}`);
+      if (expanded.has(id)) { expanded.delete(id); card.classList.remove('expanded'); }
+      else { expanded.add(id); card.classList.add('expanded'); }
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Load existing tickets on page open
+    (async () => {
+      const res = await fetch(`${API}/tickets`);
+      const tickets = await res.json();
+      tickets.sort((a,b) => a.submitted_at.localeCompare(b.submitted_at));
+      tickets.forEach(t => {
+        upsertTicketCard(t);
+        if (t.status === 'pending' || t.status === 'processing') startPolling(t.ticket_id);
+      });
+    })();
+  </script>
+</body>
+</html>
