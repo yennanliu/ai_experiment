@@ -3,10 +3,12 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
+from routers.graph_router import router as graph_router
 from routers.tickets import router as tickets_router
 
 app = FastAPI(title="Ticket Processing System")
 app.include_router(tickets_router)
+app.include_router(graph_router)
 
 
 @app.get("/")
