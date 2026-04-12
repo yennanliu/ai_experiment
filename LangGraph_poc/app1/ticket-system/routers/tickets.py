@@ -1,6 +1,7 @@
 """Tickets router — HTTP controller layer"""
 
 import asyncio
+from collections import Counter
 
 from fastapi import APIRouter, HTTPException
 
@@ -20,6 +21,20 @@ async def submit_ticket(body: SubmitRequest):
 @router.get("", response_model=list[TicketRecord])
 async def get_all_tickets():
     return list_tickets()
+
+
+@router.get("/stats", tags=["tickets"])
+async def get_stats():
+    tickets = list_tickets()
+    by_status   = Counter(t["status"] for t in tickets)
+    by_category = Counter(t["result"]["category"] for t in tickets if t.get("result"))
+    by_priority = Counter(t["result"]["priority"] for t in tickets if t.get("result"))
+    return {
+        "total": len(tickets),
+        "by_status":   dict(by_status),
+        "by_category": dict(by_category),
+        "by_priority": dict(by_priority),
+    }
 
 
 @router.get("/{ticket_id}", response_model=TicketRecord)
