@@ -9,7 +9,7 @@ from .state import AgentState
 def get_client() -> OpenAI:
     return OpenAI()
 
-EMAIL_TYPES = ["New PO", "Change Order", "Wrong Order", "Other"]
+EMAIL_TYPES = ["New PO", "Change Order", "Wrong Order / Quality Issue", "Inventory Inquiry", "Shipment Inquiry", "New Quote", "Other"]
 
 
 def classify(state: AgentState) -> AgentState:
@@ -45,11 +45,16 @@ def generate_draft(state: AgentState) -> AgentState:
             {
                 "role": "system",
                 "content": (
-                    "You are a professional business email assistant. "
-                    "Generate a reply email by filling in the provided template based on the inbound email context. "
-                    "Keep the tone professional, concise, and consistent. "
-                    "Replace all placeholders like [Customer Name], [PO Number], etc. with values extracted from the inbound email. "
-                    "If a value cannot be determined, keep the placeholder as-is.\n\n"
+                    "You are an email assistant for a Taiwan-based B2B manufacturer. "
+                    "Your job is to generate a reply email using the provided template. "
+                    "Rules:\n"
+                    "- Tone: professional, concise, factual — no unnecessary filler\n"
+                    "- Extract all values (PO numbers, part numbers, quantities, dates) directly from the inbound email\n"
+                    "- Where info is not provided, keep the [XXX] placeholder as-is — the user will fill these in\n"
+                    "- For HOT/urgent items, mark them clearly with (HOT)\n"
+                    "- For partial shipments, use bullet points as shown in the template\n"
+                    "- Always offer proforma invoice for New PO and Change Order types\n"
+                    "- Do NOT invent shipping dates, freight costs, or quantities — use [XXX] if unknown\n\n"
                     f"Template to use:\n{state['template']}"
                 ),
             },
@@ -74,10 +79,11 @@ def build_checklist(state: AgentState) -> AgentState:
             {
                 "role": "system",
                 "content": (
-                    "You are reviewing an inbound email to flag missing information. "
-                    f"Check if the following required fields are present: {', '.join(state['required_fields'])}. "
-                    "For each field that is missing or unclear, output one line: 'Missing: <field name>'. "
+                    "You are reviewing an inbound business email for a Taiwan manufacturer. "
+                    f"Check if the following required fields are present or inferable: {', '.join(state['required_fields'])}. "
+                    "For each field that is missing or unclear and cannot be inferred, output one line: 'Missing: <field name>'. "
                     "If nothing is missing, output 'All required fields present'. "
+                    "Note: shipping dates, freight costs, and production details are NOT expected in the inbound email — do not flag those. "
                     "Reply with only the checklist lines, nothing else."
                 ),
             },

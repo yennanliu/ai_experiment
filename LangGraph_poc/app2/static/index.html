@@ -109,6 +109,9 @@
     .badge-new-po      { background: #d1f0ff; color: #006fa6; }
     .badge-change      { background: #fff3cd; color: #856404; }
     .badge-wrong       { background: #ffe0e0; color: #c0392b; }
+    .badge-inventory   { background: #e8f5e9; color: #2e7d32; }
+    .badge-shipment    { background: #f3e5f5; color: #6a1b9a; }
+    .badge-quote       { background: #fff8e1; color: #f57f17; }
     .badge-other       { background: #e8e8e8; color: #555; }
 
     .draft-box {
@@ -246,9 +249,12 @@
   }
 
   function badgeClass(type) {
-    if (type === 'New PO')       return 'badge badge-new-po';
-    if (type === 'Change Order') return 'badge badge-change';
-    if (type === 'Wrong Order')  return 'badge badge-wrong';
+    if (type === 'New PO')                     return 'badge badge-new-po';
+    if (type === 'Change Order')               return 'badge badge-change';
+    if (type === 'Wrong Order / Quality Issue') return 'badge badge-wrong';
+    if (type === 'Inventory Inquiry')          return 'badge badge-inventory';
+    if (type === 'Shipment Inquiry')           return 'badge badge-shipment';
+    if (type === 'New Quote')                  return 'badge badge-quote';
     return 'badge badge-other';
   }
 

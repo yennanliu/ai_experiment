@@ -1,80 +1,83 @@
+# Mock emails covering common B2B manufacturer email scenarios
+# XXX = placeholders the user fills in manually before sending
+
 MOCK_EMAILS = [
     {
-        "label": "New PO — Standard order from ABC Corp",
+        "label": "New PO — Multiple POs, two marked HOT",
         "email": (
+            "Subject: New PO 5660 5661 5662\n\n"
             "Hi,\n\n"
-            "Please find attached our new purchase order PO-2026-0412.\n\n"
-            "- Customer: ABC Corporation\n"
-            "- Item: Industrial Filter Unit Model X200\n"
-            "- Quantity: 50 units\n"
-            "- Required delivery date: 2026-05-01\n"
-            "- Delivery address: 123 Factory Road, Taipei\n\n"
-            "Please confirm receipt and availability at your earliest convenience.\n\n"
-            "Best regards,\nJohn Chen\nABC Corporation"
+            "Please find attached our new purchase orders PO 5660, PO 5661, and PO 5662.\n\n"
+            "PO 5660 — 140-2201 (HOT), qty 80, due 05/15\n"
+            "PO 5661 — A450031, qty 300, due 05/20; qty 300, due 06/20\n"
+            "PO 5662 — B450078 (HOT), qty 100, due 05/10\n\n"
+            "PO 5660 and PO 5662 are hot...please expedite.\n\n"
+            "Thanks,\nDustin"
         ),
     },
     {
-        "label": "Change Order — Quantity update from Delta Ltd",
+        "label": "Change Order — Qty adjusted to fill 40HQ container",
         "email": (
-            "Hello,\n\n"
-            "We need to revise our existing order PO-2026-0388.\n\n"
-            "Original quantity was 30 units of SKU-7890 (Hydraulic Pump).\n"
-            "We'd like to increase this to 45 units due to higher-than-expected demand.\n\n"
-            "Can you confirm whether you can accommodate this change and whether it affects "
-            "the original delivery date of 2026-04-28?\n\n"
-            "Thank you,\nSarah Liu\nDelta Ltd"
-        ),
-    },
-    {
-        "label": "Wrong Order — Incorrect item received",
-        "email": (
-            "Dear Support Team,\n\n"
-            "We received our shipment today for order PO-2026-0375 but unfortunately the wrong "
-            "items were delivered.\n\n"
-            "We ordered: Pressure Valve Type A (SKU-1122), Qty: 20\n"
-            "We received: Pressure Valve Type B (SKU-1133), Qty: 20\n\n"
-            "This is causing a production line delay. Please advise on the fastest way to "
-            "get the correct items and arrange return pickup for the wrong shipment.\n\n"
-            "Regards,\nMike Wang\nSunrise Manufacturing"
-        ),
-    },
-    {
-        "label": "Wrong Order — Missing items in shipment",
-        "email": (
+            "Subject: PO 5780 — quantity change\n\n"
             "Hi,\n\n"
-            "Our shipment for order PO-2026-0401 arrived today but was short by 10 units.\n\n"
-            "Ordered: 30 units of Cable Harness H-500\n"
-            "Received: 20 units\n\n"
-            "Please arrange urgent delivery of the remaining 10 units. "
-            "Our assembly line is scheduled to start on 2026-04-20 and we cannot proceed without the full quantity.\n\n"
-            "Best,\nAnna Tsai\nVertex Electronics"
+            "Attached is our PO 5780.\n\n"
+            "OK to change the quantity of Food Strainers on this order to fill a 40FT HQ container.\n\n"
+            "Please confirm ship date and ETA.\n\n"
+            "Thanks,\nEllen"
         ),
     },
     {
-        "label": "Other — General enquiry about product specs",
+        "label": "Change Order — Revised PO date update",
         "email": (
-            "Hello,\n\n"
-            "We are evaluating suppliers for our upcoming project and came across your product catalogue.\n\n"
-            "Could you please provide detailed specifications and pricing for the following items?\n"
-            "- Industrial Conveyor Belt Series C\n"
-            "- Load capacity up to 500kg\n"
-            "- Operating temperature range: -10°C to 60°C\n\n"
-            "We would also like to know lead times for an initial order of ~100 units.\n\n"
-            "Thank you,\nDavid Ho\nNova Logistics"
+            "Subject: Revised PO 5660\n\n"
+            "Dear team,\n\n"
+            "Please see the revised PO 5660 attached.\n"
+            "We have updated the due date from 05/15 to 06/01.\n\n"
+            "Please arrange the shipment accordingly.\n\n"
+            "Best,\nAnthony"
         ),
     },
     {
-        "label": "New PO — Urgent order with bank transfer mention",
+        "label": "Wrong Order / Quality Issue — Mislabeled box",
         "email": (
-            "Dear Team,\n\n"
-            "Please process the attached PO-2026-0420 urgently.\n\n"
-            "- Item: Server Rack Unit R-900\n"
-            "- Quantity: 5 units\n"
-            "- Required by: 2026-04-18 (hard deadline)\n\n"
-            "We will arrange bank transfer payment upon your invoice. "
-            "Please send banking details along with the order confirmation.\n\n"
-            "This order is subject to our NDA signed on 2025-12-01.\n\n"
-            "Regards,\nTom Lin\nZenith IT Solutions"
+            "Subject: 35 wrong pick up tubes\n\n"
+            "FYI...we just realized in the B700XXXX box was instead the B667XXXX.\n\n"
+            "We have at least 24.\n\n"
+            "Can you investigate what happened?\n\n"
+            "And we found 1 box, X24 that the box was labeled B700XXX, but had the "
+            "B667XXX's in the box and that has been pulled and is also on QC hold.\n\n"
+            "Please advise.\n\n"
+            "Thanks"
+        ),
+    },
+    {
+        "label": "Inventory Inquiry — Low stock, need delivery schedule",
+        "email": (
+            "Subject: B666 XXX inventory\n\n"
+            "Hi,\n\n"
+            "B666 XXX — please confirm when I will receive more inventory...super low on hand.\n\n"
+            "Thanks"
+        ),
+    },
+    {
+        "label": "Shipment Inquiry — PO ready date + customer's own freight agent",
+        "email": (
+            "Subject: PO 5820 ship date\n\n"
+            "Hi,\n\n"
+            "Please advise the date that PO 5820 will be ready to ship.\n\n"
+            "This shipment is shipping directly to our customer and they want to use their shipping company.\n\n"
+            "I will provide the contact information for their agent in Taiwan soon.\n\n"
+            "Thanks,\nSarah"
+        ),
+    },
+    {
+        "label": "New Quote — New part, request for price + FA date",
+        "email": (
+            "Subject: Quote ECO 3100 / New PO 6001\n\n"
+            "Hi,...need quote and FA/production date for 100 units please.\n\n"
+            "New part: 120-00045 PUMP RELIEF TUBE.\n"
+            "Drawing attached.\n\n"
+            "Thanks"
         ),
     },
 ]
