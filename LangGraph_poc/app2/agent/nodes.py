@@ -102,3 +102,43 @@ def build_checklist(state: AgentState) -> AgentState:
             checklist.append(f"Risk flag: '{keyword}' detected in email")
 
     return {**state, "checklist": checklist}
+
+
+def score_draft(state: AgentState) -> AgentState:
+    response = get_client().chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a QA reviewer for a B2B manufacturer's email replies. "
+                    "Given the inbound email and the generated draft reply, assess the reply quality.\n"
+                    "Consider: correct email type handling, all key info extracted, placeholders used properly, "
+                    "tone is professional and concise, structure matches expected format.\n"
+                    "Respond in exactly this format (two lines, nothing else):\n"
+                    "SCORE: <integer 0-100>\n"
+                    "REASON: <one sentence explaining the score>"
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Inbound email:\n{state['inbound_email']}\n\n"
+                    f"Generated reply:\n{state['draft_reply']}"
+                ),
+            },
+        ],
+        temperature=0,
+    )
+    text = response.choices[0].message.content.strip()
+    score = 70
+    reason = ""
+    for line in text.splitlines():
+        if line.startswith("SCORE:"):
+            try:
+                score = int(line.split(":", 1)[1].strip())
+            except ValueError:
+                pass
+        elif line.startswith("REASON:"):
+            reason = line.split(":", 1)[1].strip()
+    return {**state, "confidence_score": score, "confidence_reason": reason}

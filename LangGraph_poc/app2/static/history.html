@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History — AI Email Reply Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+    header a { font-size: 13px; color: #0071e3; text-decoration: none; font-weight: 500; }
+    header a:hover { text-decoration: underline; }
+
+    .container { max-width: 1200px; margin: 32px auto; padding: 0 24px; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .toolbar span { font-size: 13px; color: #888; }
+
+    button {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .btn-primary { background: #0071e3; color: #fff; }
+    .btn-primary:hover { background: #0077ed; }
+    .btn-ghost { background: transparent; color: #0071e3; border: 1px solid #0071e3; }
+    .btn-ghost:hover { background: #e8f0fb; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0; }
+    thead { background: #f0f0f2; }
+    th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid #f0f0f0; vertical-align: top; }
+    tr:hover td { background: #fafafa; }
+
+    .col-id    { width: 50px; }
+    .col-time  { width: 150px; white-space: nowrap; }
+    .col-type  { width: 160px; }
+    .col-score { width: 100px; }
+    .col-status{ width: 130px; }
+    .col-email { max-width: 220px; }
+    .col-draft { max-width: 280px; }
+    .col-action{ width: 80px; }
+
+    .truncate {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      color: #444;
+      cursor: pointer;
+    }
+    .truncate:hover { color: #0071e3; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-new-po      { background: #d1f0ff; color: #006fa6; }
+    .badge-change      { background: #fff3cd; color: #856404; }
+    .badge-wrong       { background: #ffe0e0; color: #c0392b; }
+    .badge-inventory   { background: #e8f5e9; color: #2e7d32; }
+    .badge-shipment    { background: #f3e5f5; color: #6a1b9a; }
+    .badge-quote       { background: #fff8e1; color: #f57f17; }
+    .badge-other       { background: #e8e8e8; color: #555; }
+
+    /* Score pill */
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Status select */
+    select.status-select {
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: #fff;
+      cursor: pointer;
+      width: 100%;
+    }
+    select.status-select:focus { outline: none; border-color: #0071e3; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px;
+      max-width: 720px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 600; }
+    .modal-section label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing:.05em; display: block; margin-bottom: 6px; }
+    .modal-body {
+      background: #f9f9fb;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
+    .checklist-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .checklist-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .checklist-tag.missing { background: #fff8e1; color: #7a5c00; }
+    .checklist-tag.risk    { background: #ffeaea; color: #a00; }
+    .checklist-tag.ok      { background: #edfaf2; color: #1a7a3c; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>History</h1>
+  <a href="/">← Back to Draft Generator</a>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <span id="countLabel">Loading…</span>
+    <button class="btn-ghost" onclick="loadHistory()">↻ Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-id">#</th>
+          <th class="col-time">Time</th>
+          <th class="col-type">Type</th>
+          <th class="col-email">Inbound Email</th>
+          <th class="col-draft">Draft Reply</th>
+          <th class="col-score">Score</th>
+          <th class="col-status">Status</th>
+          <th class="col-action"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="8" class="empty-state">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <h3 id="modalTitle"></h3>
+    <div class="modal-section">
+      <label>Inbound Email</label>
+      <div class="modal-body" id="modalEmail"></div>
+    </div>
+    <div class="modal-section">
+      <label>Draft Reply</label>
+      <div class="modal-body" id="modalDraft"></div>
+    </div>
+    <div class="modal-section">
+      <label>Checklist</label>
+      <div class="checklist-tags" id="modalChecklist"></div>
+    </div>
+    <div class="modal-section">
+      <label>Confidence Score</label>
+      <div id="modalScore" style="font-size:14px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="copyModalDraft()">Copy Draft</button>
+      <button class="btn-primary" onclick="document.getElementById('modalOverlay').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentDraft = '';
+
+  function badgeClass(type) {
+    if (type === 'New PO')                      return 'badge badge-new-po';
+    if (type === 'Change Order')                return 'badge badge-change';
+    if (type === 'Wrong Order / Quality Issue') return 'badge badge-wrong';
+    if (type === 'Inventory Inquiry')           return 'badge badge-inventory';
+    if (type === 'Shipment Inquiry')            return 'badge badge-shipment';
+    if (type === 'New Quote')                   return 'badge badge-quote';
+    return 'badge badge-other';
+  }
+
+  function scoreColor(n) {
+    if (n >= 80) return '#34c759';
+    if (n >= 60) return '#f5a623';
+    return '#ff3b30';
+  }
+
+  function fmtTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function truncate(text, len = 120) {
+    return text.length > len ? text.slice(0, len) + '…' : text;
+  }
+
+  async function updateStatus(id, status) {
+    await fetch(`/history/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  function openModal(record) {
+    currentDraft = record.draft_reply;
+    document.getElementById('modalTitle').textContent =
+      `#${record.id} — ${record.email_type}  (${fmtTime(record.timestamp)})`;
+    document.getElementById('modalEmail').textContent = record.inbound_email;
+    document.getElementById('modalDraft').textContent = record.draft_reply;
+
+    const cl = document.getElementById('modalChecklist');
+    cl.innerHTML = '';
+    if (!record.checklist.length) {
+      cl.innerHTML = '<span class="checklist-tag ok">✅ All clear</span>';
+    } else {
+      record.checklist.forEach(item => {
+        const span = document.createElement('span');
+        span.textContent = item;
+        span.className = 'checklist-tag ' + (item.startsWith('Missing') ? 'missing' : 'risk');
+        cl.appendChild(span);
+      });
+    }
+
+    const color = scoreColor(record.confidence_score);
+    document.getElementById('modalScore').innerHTML =
+      `<span style="font-weight:700;color:${color};font-size:20px;">${record.confidence_score}</span>`+
+      `<span style="color:#888;font-size:12px;margin-left:8px;">${record.confidence_reason || ''}</span>`;
+
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) {
+      document.getElementById('modalOverlay').classList.remove('open');
+    }
+  }
+
+  function copyModalDraft() {
+    navigator.clipboard.writeText(currentDraft).then(() => {
+      const btn = document.querySelector('.modal-footer .btn-ghost');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Draft', 1500);
+    });
+  }
+
+  async function loadHistory() {
+    const res = await fetch('/history');
+    const records = await res.json();
+
+    const label = document.getElementById('countLabel');
+    label.textContent = `${records.length} email${records.length !== 1 ? 's' : ''} processed`;
+
+    const tbody = document.getElementById('tableBody');
+    if (!records.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No emails processed yet. Go generate some drafts!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = records.map(r => {
+      const color = scoreColor(r.confidence_score);
+      const statusOptions = ['Drafted', 'Reviewed', 'Sent', 'Rejected']
+        .map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s}</option>`)
+        .join('');
+
+      return `<tr>
+        <td class="col-id" style="color:#aaa;">${r.id}</td>
+        <td class="col-time" style="color:#888;">${fmtTime(r.timestamp)}</td>
+        <td class="col-type"><span class="${badgeClass(r.email_type)}">${r.email_type}</span></td>
+        <td class="col-email">
+          <div class="truncate" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>${truncate(r.inbound_email)}</div>
+        </td>
+        <td class="col-draft">
+          <div class="truncate" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>${truncate(r.draft_reply)}</div>
+        </td>
+        <td class="col-score">
+          <div class="score-pill">
+            <div class="score-dot" style="background:${color};"></div>
+            <span style="color:${color};">${r.confidence_score}</span>
+          </div>
+        </td>
+        <td class="col-status">
+          <select class="status-select" onchange="updateStatus(${r.id}, this.value)">
+            ${statusOptions}
+          </select>
+        </td>
+        <td class="col-action">
+          <button class="btn-ghost" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>View</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  loadHistory();
+</script>
+
+</body>
+</html>
