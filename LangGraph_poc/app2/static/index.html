@@ -14,50 +14,56 @@
       min-height: 100vh;
     }
 
-    header {
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 16px 32px;
+    /* ── Nav ── */
+    nav {
+      background: #1d1d1f;
+      padding: 0 32px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0;
+      height: 48px;
     }
-    header h1 { font-size: 18px; font-weight: 600; }
-    header span { font-size: 13px; color: #888; flex: 1; }
-    header a { font-size: 13px; color: #0071e3; text-decoration: none; font-weight: 500; }
-    header a:hover { text-decoration: underline; }
+    .nav-brand { font-size: 15px; font-weight: 700; color: #fff; margin-right: 32px; letter-spacing: -.01em; }
+    .nav-link {
+      font-size: 13px; font-weight: 500;
+      color: #aaa;
+      text-decoration: none;
+      padding: 0 16px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { color: #fff; border-bottom-color: #0071e3; }
 
+    /* ── Layout ── */
     .container {
       max-width: 1100px;
-      margin: 32px auto;
+      margin: 28px auto;
       padding: 0 24px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 20px;
     }
 
     .card {
       background: #fff;
       border-radius: 12px;
       border: 1px solid #e0e0e0;
-      padding: 24px;
+      padding: 22px;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
-
-    .card h2 { font-size: 14px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .05em; }
+    .card h2 { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; }
 
     textarea {
-      width: 100%;
-      height: 220px;
-      border: 1px solid #d0d0d0;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 14px;
-      resize: vertical;
-      font-family: inherit;
-      line-height: 1.6;
+      width: 100%; height: 200px;
+      border: 1px solid #d0d0d0; border-radius: 8px;
+      padding: 12px; font-size: 14px; resize: vertical;
+      font-family: inherit; line-height: 1.6;
       transition: border-color .2s;
     }
     textarea:focus { outline: none; border-color: #0071e3; }
@@ -65,13 +71,8 @@
     .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
     button {
-      padding: 9px 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: opacity .15s;
+      padding: 9px 20px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity .15s;
     }
     button:disabled { opacity: .45; cursor: not-allowed; }
     .btn-primary { background: #0071e3; color: #fff; }
@@ -79,120 +80,256 @@
     .btn-secondary { background: #f0f0f0; color: #333; }
     .btn-secondary:hover:not(:disabled) { background: #e5e5e5; }
 
-    .status-bar {
-      font-size: 13px;
-      color: #555;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #ccc;
-      flex-shrink: 0;
-    }
+    .status-bar { font-size: 13px; color: #555; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
     .dot.running { background: #f5a623; animation: pulse 1s infinite; }
     .dot.done    { background: #34c759; }
     .dot.error   { background: #ff3b30; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: .3; }
-    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
+      display: inline-block; padding: 3px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 600;
     }
-    .badge-new-po      { background: #d1f0ff; color: #006fa6; }
-    .badge-change      { background: #fff3cd; color: #856404; }
-    .badge-wrong       { background: #ffe0e0; color: #c0392b; }
-    .badge-inventory   { background: #e8f5e9; color: #2e7d32; }
-    .badge-shipment    { background: #f3e5f5; color: #6a1b9a; }
-    .badge-quote       { background: #fff8e1; color: #f57f17; }
-    .badge-other       { background: #e8e8e8; color: #555; }
+    .badge-new-po    { background:#d1f0ff; color:#006fa6; }
+    .badge-change    { background:#fff3cd; color:#856404; }
+    .badge-wrong     { background:#ffe0e0; color:#c0392b; }
+    .badge-inventory { background:#e8f5e9; color:#2e7d32; }
+    .badge-shipment  { background:#f3e5f5; color:#6a1b9a; }
+    .badge-quote     { background:#fff8e1; color:#f57f17; }
+    .badge-other     { background:#e8e8e8; color:#555; }
 
     .draft-box {
-      background: #f9f9fb;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 14px;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      min-height: 220px;
-      color: #1d1d1f;
+      background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 14px; font-size: 14px; line-height: 1.7;
+      white-space: pre-wrap; min-height: 200px; color: #1d1d1f;
     }
     .draft-box.empty { color: #aaa; font-style: italic; }
 
-    /* Confidence score */
+    /* Score */
     .score-row { display: flex; align-items: center; gap: 12px; }
-    .score-bar-wrap {
-      flex: 1;
-      background: #e8e8e8;
-      border-radius: 999px;
-      height: 8px;
-      overflow: hidden;
-    }
-    .score-bar {
-      height: 100%;
-      border-radius: 999px;
-      transition: width .5s ease;
-    }
-    .score-label { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
-    .score-reason { font-size: 12px; color: #777; font-style: italic; }
+    .score-bar-wrap { flex:1; background:#e8e8e8; border-radius:999px; height:8px; overflow:hidden; }
+    .score-bar { height:100%; border-radius:999px; transition: width .5s ease; }
+    .score-label { font-size:13px; font-weight:700; min-width:36px; text-align:right; }
+    .score-reason { font-size:12px; color:#777; font-style:italic; }
 
-    .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-    .checklist li {
-      font-size: 13px;
-      padding: 8px 12px;
-      border-radius: 7px;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-    }
-    .checklist li.missing { background: #fff8e1; color: #7a5c00; }
-    .checklist li.risk    { background: #ffeaea; color: #a00; }
-    .checklist li.ok      { background: #edfaf2; color: #1a7a3c; }
-    .checklist li::before { font-size: 15px; flex-shrink: 0; }
-    .checklist li.missing::before { content: "⚠️"; }
-    .checklist li.risk::before    { content: "🚩"; }
-    .checklist li.ok::before      { content: "✅"; }
+    /* Checklist */
+    .checklist { list-style:none; display:flex; flex-direction:column; gap:8px; }
+    .checklist li { font-size:13px; padding:8px 12px; border-radius:7px; display:flex; align-items:flex-start; gap:8px; }
+    .checklist li.missing { background:#fff8e1; color:#7a5c00; }
+    .checklist li.risk    { background:#ffeaea; color:#a00; }
+    .checklist li.ok      { background:#edfaf2; color:#1a7a3c; }
+    .checklist li::before { font-size:15px; flex-shrink:0; }
+    .checklist li.missing::before { content:"⚠️"; }
+    .checklist li.risk::before    { content:"🚩"; }
+    .checklist li.ok::before      { content:"✅"; }
 
     .full-width { grid-column: 1 / -1; }
 
-    .copy-btn {
-      align-self: flex-end;
-      padding: 6px 14px;
-      font-size: 12px;
-    }
+    .copy-btn { align-self:flex-end; padding:6px 14px; font-size:12px; }
 
     select {
-      border: 1px solid #d0d0d0;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 14px;
-      background: #fff;
-      cursor: pointer;
+      border:1px solid #d0d0d0; border-radius:8px;
+      padding:8px 12px; font-size:14px; background:#fff; cursor:pointer;
     }
-    select:focus { outline: none; border-color: #0071e3; }
+    select:focus { outline:none; border-color:#0071e3; }
 
-    .meta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .meta-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+    /* ── LangGraph Pipeline Viz ── */
+    .pipeline-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      padding: 22px 28px;
+      grid-column: 1 / -1;
+    }
+    .pipeline-card h2 { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 20px; }
+
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pipe-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+      position: relative;
+    }
+
+    .pipe-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      border: 2px solid #e0e0e0;
+      background: #f9f9fb;
+      transition: all .3s ease;
+      position: relative;
+    }
+
+    /* States */
+    .pipe-node.idle   .pipe-icon { border-color: #e0e0e0; background: #f9f9fb; }
+    .pipe-node.running .pipe-icon {
+      border-color: #f5a623;
+      background: #fff8ee;
+      animation: nodeGlow 1.2s ease-in-out infinite;
+      box-shadow: 0 0 0 4px rgba(245,166,35,.15);
+    }
+    .pipe-node.done   .pipe-icon { border-color: #34c759; background: #edfaf2; }
+    .pipe-node.error  .pipe-icon { border-color: #ff3b30; background: #fff0ef; }
+
+    @keyframes nodeGlow {
+      0%,100% { box-shadow: 0 0 0 4px rgba(245,166,35,.15); }
+      50%      { box-shadow: 0 0 0 8px rgba(245,166,35,.08); }
+    }
+
+    /* Tick badge on done */
+    .pipe-icon::after {
+      content: '';
+      position: absolute;
+      top: -6px; right: -6px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      font-size: 10px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .pipe-node.done  .pipe-icon::after { content:'✓'; background:#34c759; color:#fff; font-weight:700; opacity:1; display:flex; }
+    .pipe-node.error .pipe-icon::after { content:'✕'; background:#ff3b30; color:#fff; font-weight:700; opacity:1; display:flex; }
+
+    .pipe-label {
+      font-size: 11px; font-weight: 600;
+      color: #888; text-align: center;
+      text-transform: uppercase; letter-spacing: .04em;
+      line-height: 1.3;
+      transition: color .3s;
+    }
+    .pipe-node.running .pipe-label { color: #f5a623; }
+    .pipe-node.done    .pipe-label { color: #34c759; }
+    .pipe-node.error   .pipe-label { color: #ff3b30; }
+
+    .pipe-sublabel {
+      font-size: 10px; color: #bbb; text-align: center;
+      line-height: 1.3; min-height: 28px;
+      transition: color .3s;
+      padding: 0 4px;
+    }
+    .pipe-node.running .pipe-sublabel { color: #f5a623; }
+    .pipe-node.done    .pipe-sublabel { color: #aaa; }
+
+    /* Arrow connector */
+    .pipe-arrow {
+      flex: 1;
+      min-width: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 36px; /* offset for label height */
+    }
+    .pipe-arrow-line {
+      width: 100%;
+      height: 2px;
+      background: #e0e0e0;
+      position: relative;
+      transition: background .3s;
+    }
+    .pipe-arrow-line.active { background: #34c759; }
+    .pipe-arrow-line::after {
+      content: '';
+      position: absolute;
+      right: -1px; top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 7px solid #e0e0e0;
+      transition: border-left-color .3s;
+    }
+    .pipe-arrow-line.active::after { border-left-color: #34c759; }
+
+    /* START / END capsules */
+    .pipe-cap {
+      font-size: 10px; font-weight: 700;
+      color: #fff; background: #555;
+      padding: 4px 10px; border-radius: 999px;
+      letter-spacing: .06em;
+      margin-bottom: 36px;
+    }
+    .pipe-cap.end { background: #0071e3; }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>AI Email Reply Assistant</h1>
-  <span>FastAPI + LangGraph + GPT-4o</span>
-  <a href="/history-page">History →</a>
-</header>
+<!-- Nav -->
+<nav>
+  <span class="nav-brand">✉️ Email Assistant</span>
+  <a href="/" class="nav-link active">Draft Generator</a>
+  <a href="/history-page" class="nav-link">History</a>
+</nav>
 
 <div class="container">
+
+  <!-- LangGraph Pipeline -->
+  <div class="pipeline-card">
+    <h2>LangGraph Pipeline</h2>
+    <div class="pipeline">
+
+      <div class="pipe-cap">START</div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-0"></div></div>
+
+      <div class="pipe-node idle" id="node-classify">
+        <div class="pipe-icon">🏷️</div>
+        <div class="pipe-label">Classify</div>
+        <div class="pipe-sublabel" id="sub-classify">Detect email type</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-1"></div></div>
+
+      <div class="pipe-node idle" id="node-template">
+        <div class="pipe-icon">📋</div>
+        <div class="pipe-label">Template</div>
+        <div class="pipe-sublabel" id="sub-template">Select reply template</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-2"></div></div>
+
+      <div class="pipe-node idle" id="node-draft">
+        <div class="pipe-icon">✍️</div>
+        <div class="pipe-label">Generate Draft</div>
+        <div class="pipe-sublabel" id="sub-draft">GPT-4o fills template</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-3"></div></div>
+
+      <div class="pipe-node idle" id="node-checklist">
+        <div class="pipe-icon">🔍</div>
+        <div class="pipe-label">Checklist</div>
+        <div class="pipe-sublabel" id="sub-checklist">Flag missing info & risks</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-4"></div></div>
+
+      <div class="pipe-node idle" id="node-score">
+        <div class="pipe-icon">⭐</div>
+        <div class="pipe-label">Score</div>
+        <div class="pipe-sublabel" id="sub-score">Confidence assessment</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-5"></div></div>
+
+      <div class="pipe-cap end">END</div>
+
+    </div>
+  </div>
 
   <!-- Input -->
   <div class="card">
@@ -224,9 +361,8 @@
       <span id="emailTypeBadge"></span>
     </div>
 
-    <!-- Confidence score -->
     <div>
-      <div style="font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Confidence Score</div>
+      <div style="font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Confidence Score</div>
       <div class="score-row">
         <div class="score-bar-wrap">
           <div class="score-bar" id="scoreBar" style="width:0%;background:#ccc;"></div>
@@ -252,6 +388,83 @@
 
 <script>
   const MOCK_EMAILS = [];
+
+  // Pipeline node order matches LangGraph execution sequence
+  const NODES = [
+    { id: 'classify',  sub: 'sub-classify',  arrow: 'arrow-1', label: type => `→ ${type}` },
+    { id: 'template',  sub: 'sub-template',  arrow: 'arrow-2', label: () => 'Template loaded' },
+    { id: 'draft',     sub: 'sub-draft',     arrow: 'arrow-3', label: () => 'Draft written' },
+    { id: 'checklist', sub: 'sub-checklist', arrow: 'arrow-4', label: n => `${n} flag(s)` },
+    { id: 'score',     sub: 'sub-score',     arrow: 'arrow-5', label: s => `Score: ${s}` },
+  ];
+
+  function pipelineReset() {
+    NODES.forEach(n => {
+      document.getElementById('node-' + n.id).className = 'pipe-node idle';
+      document.getElementById(n.sub).textContent = {
+        classify:  'Detect email type',
+        template:  'Select reply template',
+        draft:     'GPT-4o fills template',
+        checklist: 'Flag missing info & risks',
+        score:     'Confidence assessment',
+      }[n.id];
+    });
+    for (let i = 0; i <= 5; i++) {
+      const el = document.getElementById('arrow-' + i);
+      if (el) el.classList.remove('active');
+    }
+  }
+
+  function pipelineStep(idx, state, sublabel) {
+    const n = NODES[idx];
+    document.getElementById('node-' + n.id).className = 'pipe-node ' + state;
+    if (sublabel) document.getElementById(n.sub).textContent = sublabel;
+    if (state === 'done' && n.arrow) {
+      document.getElementById(n.arrow).classList.add('active');
+    }
+  }
+
+  // Simulate per-node timing since backend runs synchronously
+  // Each node gets ~20% of elapsed wall time
+  let pipelineTimer = null;
+
+  function pipelineStart() {
+    pipelineReset();
+    document.getElementById('arrow-0').classList.add('active');
+    let step = 0;
+    // stagger: each node runs for ~3s before moving on (approximation)
+    const delays = [0, 3200, 6400, 9600, 12800];
+    delays.forEach((d, i) => {
+      setTimeout(() => pipelineStep(i, 'running'), d);
+      if (i > 0) setTimeout(() => pipelineStep(i - 1, 'done'), d);
+    });
+    // last node done is handled in pipelineFinish
+    pipelineTimer = { delays };
+  }
+
+  function pipelineFinish(data) {
+    // Mark last running node as done with actual results
+    setTimeout(() => {
+      pipelineStep(0, 'done', `→ ${data.email_type}`);
+      pipelineStep(1, 'done', 'Template loaded');
+      pipelineStep(2, 'done', 'Draft written');
+      pipelineStep(3, 'done', `${data.checklist.length} flag(s)`);
+      pipelineStep(4, 'done', `Score: ${data.confidence_score}`);
+      for (let i = 0; i <= 5; i++) {
+        const el = document.getElementById('arrow-' + i);
+        if (el) el.classList.add('active');
+      }
+    }, 200);
+  }
+
+  function pipelineError() {
+    NODES.forEach((n, i) => {
+      const el = document.getElementById('node-' + n.id);
+      if (el.className.includes('running')) {
+        pipelineStep(i, 'error', 'Failed');
+      }
+    });
+  }
 
   async function loadMocks() {
     try {
@@ -298,13 +511,13 @@
   }
 
   function renderScore(score, reason) {
-    const bar = document.getElementById('scoreBar');
-    const label = document.getElementById('scoreLabel');
+    const bar    = document.getElementById('scoreBar');
+    const label  = document.getElementById('scoreLabel');
     const reasonEl = document.getElementById('scoreReason');
-    bar.style.width = score + '%';
+    bar.style.width      = score + '%';
     bar.style.background = scoreColor(score);
-    label.textContent = score;
-    label.style.color = scoreColor(score);
+    label.textContent    = score;
+    label.style.color    = scoreColor(score);
     reasonEl.textContent = reason || '';
   }
 
@@ -314,6 +527,7 @@
 
     document.getElementById('generateBtn').disabled = true;
     setStatus('running', 'Generating…');
+    pipelineStart();
 
     try {
       const res = await fetch('/generate-draft', {
@@ -325,20 +539,18 @@
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
 
-      // Type badge
+      pipelineFinish(data);
+
       const badge = document.getElementById('emailTypeBadge');
       badge.textContent = data.email_type;
-      badge.className = badgeClass(data.email_type);
+      badge.className   = badgeClass(data.email_type);
 
-      // Confidence score
       renderScore(data.confidence_score, data.confidence_reason);
 
-      // Draft
       const box = document.getElementById('draftBox');
       box.textContent = data.draft_reply;
       box.classList.remove('empty');
 
-      // Checklist
       const list = document.getElementById('checklist');
       list.innerHTML = '';
       if (!data.checklist.length) {
@@ -354,6 +566,7 @@
 
       setStatus('done', 'Done');
     } catch (err) {
+      pipelineError();
       setStatus('error', err.message);
     } finally {
       document.getElementById('generateBtn').disabled = false;
@@ -365,12 +578,13 @@
     document.getElementById('draftBox').textContent = 'Draft will appear here…';
     document.getElementById('draftBox').classList.add('empty');
     document.getElementById('emailTypeBadge').textContent = '';
-    document.getElementById('emailTypeBadge').className = '';
+    document.getElementById('emailTypeBadge').className   = '';
     document.getElementById('checklist').innerHTML = '<li class="ok">No issues flagged yet.</li>';
-    document.getElementById('scoreBar').style.width = '0%';
+    document.getElementById('scoreBar').style.width   = '0%';
     document.getElementById('scoreLabel').textContent = '—';
     document.getElementById('scoreReason').textContent = '';
     setStatus('', 'Idle');
+    pipelineReset();
   }
 
   function copyDraft() {
