@@ -23,7 +23,9 @@
       gap: 12px;
     }
     header h1 { font-size: 18px; font-weight: 600; }
-    header span { font-size: 13px; color: #888; }
+    header span { font-size: 13px; color: #888; flex: 1; }
+    header a { font-size: 13px; color: #0071e3; text-decoration: none; font-weight: 500; }
+    header a:hover { text-decoration: underline; }
 
     .container {
       max-width: 1100px;
@@ -127,6 +129,23 @@
     }
     .draft-box.empty { color: #aaa; font-style: italic; }
 
+    /* Confidence score */
+    .score-row { display: flex; align-items: center; gap: 12px; }
+    .score-bar-wrap {
+      flex: 1;
+      background: #e8e8e8;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .score-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width .5s ease;
+    }
+    .score-label { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
+    .score-reason { font-size: 12px; color: #777; font-style: italic; }
+
     .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
     .checklist li {
       font-size: 13px;
@@ -170,6 +189,7 @@
 <header>
   <h1>AI Email Reply Assistant</h1>
   <span>FastAPI + LangGraph + GPT-4o</span>
+  <a href="/history-page">History →</a>
 </header>
 
 <div class="container">
@@ -203,6 +223,19 @@
       <span style="font-size:13px;color:#888;">Type:</span>
       <span id="emailTypeBadge"></span>
     </div>
+
+    <!-- Confidence score -->
+    <div>
+      <div style="font-size:12px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Confidence Score</div>
+      <div class="score-row">
+        <div class="score-bar-wrap">
+          <div class="score-bar" id="scoreBar" style="width:0%;background:#ccc;"></div>
+        </div>
+        <div class="score-label" id="scoreLabel">—</div>
+      </div>
+      <div class="score-reason" id="scoreReason" style="margin-top:5px;"></div>
+    </div>
+
     <div class="draft-box empty" id="draftBox">Draft will appear here…</div>
     <button class="btn-secondary copy-btn" onclick="copyDraft()">Copy Draft</button>
   </div>
@@ -249,13 +282,30 @@
   }
 
   function badgeClass(type) {
-    if (type === 'New PO')                     return 'badge badge-new-po';
-    if (type === 'Change Order')               return 'badge badge-change';
+    if (type === 'New PO')                      return 'badge badge-new-po';
+    if (type === 'Change Order')                return 'badge badge-change';
     if (type === 'Wrong Order / Quality Issue') return 'badge badge-wrong';
-    if (type === 'Inventory Inquiry')          return 'badge badge-inventory';
-    if (type === 'Shipment Inquiry')           return 'badge badge-shipment';
-    if (type === 'New Quote')                  return 'badge badge-quote';
+    if (type === 'Inventory Inquiry')           return 'badge badge-inventory';
+    if (type === 'Shipment Inquiry')            return 'badge badge-shipment';
+    if (type === 'New Quote')                   return 'badge badge-quote';
     return 'badge badge-other';
+  }
+
+  function scoreColor(n) {
+    if (n >= 80) return '#34c759';
+    if (n >= 60) return '#f5a623';
+    return '#ff3b30';
+  }
+
+  function renderScore(score, reason) {
+    const bar = document.getElementById('scoreBar');
+    const label = document.getElementById('scoreLabel');
+    const reasonEl = document.getElementById('scoreReason');
+    bar.style.width = score + '%';
+    bar.style.background = scoreColor(score);
+    label.textContent = score;
+    label.style.color = scoreColor(score);
+    reasonEl.textContent = reason || '';
   }
 
   async function generate() {
@@ -279,6 +329,9 @@
       const badge = document.getElementById('emailTypeBadge');
       badge.textContent = data.email_type;
       badge.className = badgeClass(data.email_type);
+
+      // Confidence score
+      renderScore(data.confidence_score, data.confidence_reason);
 
       // Draft
       const box = document.getElementById('draftBox');
@@ -314,6 +367,9 @@
     document.getElementById('emailTypeBadge').textContent = '';
     document.getElementById('emailTypeBadge').className = '';
     document.getElementById('checklist').innerHTML = '<li class="ok">No issues flagged yet.</li>';
+    document.getElementById('scoreBar').style.width = '0%';
+    document.getElementById('scoreLabel').textContent = '—';
+    document.getElementById('scoreReason').textContent = '';
     setStatus('', 'Idle');
   }
 

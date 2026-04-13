@@ -8,3 +8,5 @@ class AgentState(TypedDict):
     required_fields: list[str]
     draft_reply: str
     checklist: list[str]
+    confidence_score: int        # 0–100, LLM self-assessment of reply quality
+    confidence_reason: str       # brief explanation of the score
