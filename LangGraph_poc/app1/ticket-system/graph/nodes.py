@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Literal
 
 from graph.state import TicketState
+from tools.web_search import web_search
 from utils.llm import chat
 from utils.logger import log
 
@@ -43,6 +44,23 @@ Categories: technical, billing, account, feature_request, bug_report, other"""
     return state
 
 
+RESEARCH_CATEGORIES = {"technical", "bug_report"}
+
+
+def research(state: TicketState) -> TicketState:
+    """Web-search for context on technical / bug tickets; skip others."""
+    log.info("starting", extra={"node": "research", "ticket_id": state.ticket_id})
+    if state.category not in RESEARCH_CATEGORIES:
+        _log(state, "research", f"skipped (category={state.category})")
+        return state
+
+    query = f"{state.category} issue: {state.user_message[:200]}"
+    notes = web_search(query)
+    state.research_notes = notes
+    _log(state, "research", f"fetched {len(notes)} chars of context", prompt=query, response=notes[:300])
+    return state
+
+
 def prioritize(state: TicketState) -> TicketState:
     log.info("starting", extra={"node": "prioritize", "ticket_id": state.ticket_id})
     system = """You assess the urgency of a support ticket.
@@ -78,10 +96,12 @@ def generate_response(state: TicketState) -> TicketState:
     log.info("starting", extra={"node": "generate_response", "ticket_id": state.ticket_id})
     system = """You write concise, professional customer support replies (150-300 chars).
 Acknowledge the issue, provide next steps, and mention the SLA."""
+    research_section = f"\nResearch context:\n{state.research_notes[:500]}" if state.research_notes else ""
     prompt = (
         f"Ticket: {state.user_message}\n"
         f"Category: {state.category} | Priority: {state.priority} | "
         f"Department: {state.department} | SLA: {state.sla_hours}h"
+        f"{research_section}"
     )
     raw = chat(system, prompt)
     state.response = raw
