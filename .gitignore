@@ -47,3 +47,4 @@ tasker/.playwright-mcp/
 .playwright-mcp
 
 LangGraph_poc/app2/agent/__pycache__
+LangGraph_poc/app2/__pycache__/
