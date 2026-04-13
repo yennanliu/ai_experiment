@@ -31,6 +31,17 @@ def list_tickets() -> list[dict]:
     return list(_store.values())
 
 
+def reprocess_ticket(ticket_id: str) -> dict | None:
+    """Reset a ticket to pending and schedule a fresh pipeline run."""
+    record = _store.get(ticket_id)
+    if not record:
+        return None
+    record["status"] = "pending"
+    record["result"] = None
+    record["error"] = None
+    return record
+
+
 async def run_pipeline(ticket_id: str, message: str) -> None:
     _store[ticket_id]["status"] = "processing"
     try:
@@ -42,6 +53,7 @@ async def run_pipeline(ticket_id: str, message: str) -> None:
             priority=state.priority,
             sla_hours=state.sla_hours,
             department=state.department,
+            research_notes=state.research_notes,
             response=state.response,
             quality_score=round(state.quality_score, 2),
             retry_count=state.retry_count,

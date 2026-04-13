@@ -4,9 +4,11 @@ import asyncio
 from collections import Counter
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
 from models.ticket import SubmitRequest, TicketRecord
-from services.ticket_service import create_ticket, get_ticket, list_tickets, run_pipeline
+from services.ticket_service import create_ticket, get_ticket, list_tickets, reprocess_ticket, run_pipeline
+from tools.pdf_export import ticket_to_pdf
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -43,3 +45,25 @@ async def get_one_ticket(ticket_id: str):
     if not record:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return record
+
+
+@router.post("/{ticket_id}/reprocess", response_model=TicketRecord, status_code=202)
+async def reprocess_one_ticket(ticket_id: str):
+    record = reprocess_ticket(ticket_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    asyncio.create_task(run_pipeline(ticket_id, record["message"]))
+    return record
+
+
+@router.get("/{ticket_id}/pdf")
+async def export_ticket_pdf(ticket_id: str):
+    record = get_ticket(ticket_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    pdf_bytes = ticket_to_pdf(record)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{ticket_id}.pdf"'},
+    )

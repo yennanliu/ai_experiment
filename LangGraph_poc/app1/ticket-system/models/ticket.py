@@ -15,6 +15,7 @@ class TicketResult(BaseModel):
     priority: str
     sla_hours: int
     department: str
+    research_notes: str = ""
     response: str
     quality_score: float
     retry_count: int

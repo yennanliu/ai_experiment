@@ -20,6 +20,9 @@ class TicketState:
     # Routing
     department: str = ""
 
+    # Research (web search results for technical/bug tickets)
+    research_notes: str = ""
+
     # Response
     response: str = ""
     quality_score: float = 0.0
