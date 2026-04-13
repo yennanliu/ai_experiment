@@ -9,54 +9,58 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
-      min-height: 100vh;
+      background: #f5f5f7; color: #1d1d1f; min-height: 100vh;
     }
 
     nav {
-      background: #1d1d1f;
-      padding: 0 32px;
-      display: flex;
-      align-items: center;
-      gap: 0;
-      height: 48px;
+      background: #1d1d1f; padding: 0 32px;
+      display: flex; align-items: center; gap: 0; height: 48px;
     }
     .nav-brand { font-size: 15px; font-weight: 700; color: #fff; margin-right: 32px; letter-spacing: -.01em; }
     .nav-link {
-      font-size: 13px; font-weight: 500;
-      color: #aaa; text-decoration: none;
-      padding: 0 16px; height: 100%;
-      display: flex; align-items: center;
-      border-bottom: 2px solid transparent;
-      transition: color .15s, border-color .15s;
+      font-size: 13px; font-weight: 500; color: #aaa; text-decoration: none;
+      padding: 0 16px; height: 100%; display: flex; align-items: center;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
     }
     .nav-link:hover { color: #fff; }
     .nav-link.active { color: #fff; border-bottom-color: #0071e3; }
 
-    .container { max-width: 1200px; margin: 32px auto; padding: 0 24px; }
+    .container { max-width: 1200px; margin: 28px auto; padding: 0 24px; }
 
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
+    /* ── Filter bar ── */
+    .filter-bar {
+      background: #fff; border: 1px solid #e0e0e0; border-radius: 12px;
+      padding: 16px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     }
-    .toolbar span { font-size: 13px; color: #888; }
+    .filter-bar label { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .07em; }
+    .filter-group { display: flex; align-items: center; gap: 7px; }
+
+    select.filter-select {
+      border: 1px solid #d0d0d0; border-radius: 7px;
+      padding: 6px 10px; font-size: 13px; background: #fff; cursor: pointer;
+    }
+    select.filter-select:focus { outline: none; border-color: #0071e3; }
+
+    /* Score range */
+    .score-range { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    input[type=range] { width: 100px; accent-color: #0071e3; cursor: pointer; }
+    .score-range-val { font-weight: 700; min-width: 28px; color: #0071e3; }
+
+    .filter-divider { width: 1px; height: 28px; background: #e8e8e8; }
+
+    .filter-summary { font-size: 13px; color: #888; margin-left: auto; }
 
     button {
-      padding: 7px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
+      padding: 7px 14px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 13px; font-weight: 500;
     }
     .btn-primary { background: #0071e3; color: #fff; }
     .btn-primary:hover { background: #0077ed; }
     .btn-ghost { background: transparent; color: #0071e3; border: 1px solid #0071e3; }
     .btn-ghost:hover { background: #e8f0fb; }
+    .btn-clear { background: transparent; color: #888; border: 1px solid #d0d0d0; font-size: 12px; padding: 5px 10px; }
+    .btn-clear:hover { background: #f5f5f5; }
 
     /* Table */
     .table-wrap { overflow-x: auto; }
@@ -68,101 +72,62 @@
 
     .col-id    { width: 50px; }
     .col-time  { width: 150px; white-space: nowrap; }
-    .col-type  { width: 160px; }
-    .col-score { width: 100px; }
+    .col-type  { width: 170px; }
+    .col-score { width: 90px; }
     .col-status{ width: 130px; }
-    .col-email { max-width: 220px; }
-    .col-draft { max-width: 280px; }
-    .col-action{ width: 80px; }
+    .col-email { max-width: 200px; }
+    .col-draft { max-width: 260px; }
+    .col-action{ width: 70px; }
 
     .truncate {
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      color: #444;
-      cursor: pointer;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      color: #444; cursor: pointer;
     }
     .truncate:hover { color: #0071e3; }
 
     .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      white-space: nowrap;
+      display: inline-block; padding: 3px 8px;
+      border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap;
     }
-    .badge-new-po      { background: #d1f0ff; color: #006fa6; }
-    .badge-change      { background: #fff3cd; color: #856404; }
-    .badge-wrong       { background: #ffe0e0; color: #c0392b; }
-    .badge-inventory   { background: #e8f5e9; color: #2e7d32; }
-    .badge-shipment    { background: #f3e5f5; color: #6a1b9a; }
-    .badge-quote       { background: #fff8e1; color: #f57f17; }
-    .badge-other       { background: #e8e8e8; color: #555; }
+    .badge-new-po    { background:#d1f0ff; color:#006fa6; }
+    .badge-change    { background:#fff3cd; color:#856404; }
+    .badge-wrong     { background:#ffe0e0; color:#c0392b; }
+    .badge-inventory { background:#e8f5e9; color:#2e7d32; }
+    .badge-shipment  { background:#f3e5f5; color:#6a1b9a; }
+    .badge-quote     { background:#fff8e1; color:#f57f17; }
+    .badge-other     { background:#e8e8e8; color:#555; }
 
-    /* Score pill */
-    .score-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 700;
-      font-size: 13px;
-    }
-    .score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .score-pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+    .score-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-    /* Status select */
     select.status-select {
-      border: 1px solid #d0d0d0;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 12px;
-      background: #fff;
-      cursor: pointer;
-      width: 100%;
+      border: 1px solid #d0d0d0; border-radius: 6px;
+      padding: 4px 8px; font-size: 12px; background: #fff; cursor: pointer; width: 100%;
     }
     select.status-select:focus { outline: none; border-color: #0071e3; }
 
     /* Modal */
     .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.45);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 100;
+      align-items: center; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
     .modal {
-      background: #fff;
-      border-radius: 14px;
-      padding: 28px;
-      max-width: 720px;
-      width: 90%;
-      max-height: 85vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      background: #fff; border-radius: 14px; padding: 28px;
+      max-width: 720px; width: 90%; max-height: 85vh; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 16px;
     }
     .modal h3 { font-size: 16px; font-weight: 600; }
     .modal-section label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing:.05em; display: block; margin-bottom: 6px; }
     .modal-body {
-      background: #f9f9fb;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 13px;
-      line-height: 1.7;
-      white-space: pre-wrap;
+      background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-wrap;
     }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
     .checklist-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .checklist-tag {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
+    .checklist-tag { font-size: 11px; padding: 3px 8px; border-radius: 6px; }
     .checklist-tag.missing { background: #fff8e1; color: #7a5c00; }
     .checklist-tag.risk    { background: #ffeaea; color: #a00; }
     .checklist-tag.ok      { background: #edfaf2; color: #1a7a3c; }
@@ -176,14 +141,59 @@
   <span class="nav-brand">✉️ Email Assistant</span>
   <a href="/" class="nav-link">Draft Generator</a>
   <a href="/history-page" class="nav-link active">History</a>
+  <a href="/templates-page" class="nav-link">Templates</a>
 </nav>
 
 <div class="container">
-  <div class="toolbar">
-    <span id="countLabel">Loading…</span>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Type</label>
+      <select class="filter-select" id="filterType" onchange="applyFilters()">
+        <option value="">All types</option>
+        <option>New PO</option>
+        <option>Change Order</option>
+        <option>Wrong Order / Quality Issue</option>
+        <option>Inventory Inquiry</option>
+        <option>Shipment Inquiry</option>
+        <option>New Quote</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-group">
+      <label>Status</label>
+      <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option>Drafted</option>
+        <option>Reviewed</option>
+        <option>Sent</option>
+        <option>Rejected</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-group">
+      <label>Min Score</label>
+      <div class="score-range">
+        <input type="range" id="filterScore" min="0" max="100" value="0" step="5" oninput="onScoreSlide(this.value)">
+        <span class="score-range-val" id="filterScoreVal">0</span>
+      </div>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
     <button class="btn-ghost" onclick="loadHistory()">↻ Refresh</button>
+
+    <span class="filter-summary" id="filterSummary"></span>
   </div>
 
+  <!-- Table -->
   <div class="table-wrap">
     <table>
       <thead>
@@ -207,7 +217,7 @@
 
 <!-- Detail Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
+  <div class="modal">
     <h3 id="modalTitle"></h3>
     <div class="modal-section">
       <label>Inbound Email</label>
@@ -223,7 +233,7 @@
     </div>
     <div class="modal-section">
       <label>Confidence Score</label>
-      <div id="modalScore" style="font-size:14px;"></div>
+      <div id="modalScore"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="copyModalDraft()">Copy Draft</button>
@@ -233,16 +243,19 @@
 </div>
 
 <script>
+  let allRecords = [];
   let currentDraft = '';
+  let scoreMin = 0;
 
   function badgeClass(type) {
-    if (type === 'New PO')                      return 'badge badge-new-po';
-    if (type === 'Change Order')                return 'badge badge-change';
-    if (type === 'Wrong Order / Quality Issue') return 'badge badge-wrong';
-    if (type === 'Inventory Inquiry')           return 'badge badge-inventory';
-    if (type === 'Shipment Inquiry')            return 'badge badge-shipment';
-    if (type === 'New Quote')                   return 'badge badge-quote';
-    return 'badge badge-other';
+    const map = {
+      'New PO': 'badge-new-po', 'Change Order': 'badge-change',
+      'Wrong Order / Quality Issue': 'badge-wrong',
+      'Inventory Inquiry': 'badge-inventory',
+      'Shipment Inquiry': 'badge-shipment',
+      'New Quote': 'badge-quote',
+    };
+    return 'badge ' + (map[type] || 'badge-other');
   }
 
   function scoreColor(n) {
@@ -260,12 +273,87 @@
     return text.length > len ? text.slice(0, len) + '…' : text;
   }
 
+  function onScoreSlide(val) {
+    scoreMin = parseInt(val);
+    document.getElementById('filterScoreVal').textContent = val;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const typeFilter   = document.getElementById('filterType').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+
+    const filtered = allRecords.filter(r => {
+      if (typeFilter   && r.email_type !== typeFilter)  return false;
+      if (statusFilter && r.status     !== statusFilter) return false;
+      if (r.confidence_score < scoreMin)                return false;
+      return true;
+    });
+
+    renderTable(filtered);
+
+    const summary = filtered.length === allRecords.length
+      ? `${allRecords.length} record${allRecords.length !== 1 ? 's' : ''}`
+      : `${filtered.length} of ${allRecords.length} records`;
+    document.getElementById('filterSummary').textContent = summary;
+  }
+
+  function clearFilters() {
+    document.getElementById('filterType').value   = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterScore').value  = 0;
+    document.getElementById('filterScoreVal').textContent = '0';
+    scoreMin = 0;
+    applyFilters();
+  }
+
   async function updateStatus(id, status) {
     await fetch(`/history/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
+    // update local cache so filters still work after status change
+    const rec = allRecords.find(r => r.id === id);
+    if (rec) rec.status = status;
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('tableBody');
+    if (!records.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No records match the current filters.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = records.map(r => {
+      const color = scoreColor(r.confidence_score);
+      const statusOptions = ['Drafted', 'Reviewed', 'Sent', 'Rejected']
+        .map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s}</option>`)
+        .join('');
+      const safe = JSON.stringify(r).replace(/'/g, '&#39;');
+
+      return `<tr>
+        <td class="col-id" style="color:#aaa;">${r.id}</td>
+        <td class="col-time" style="color:#888;">${fmtTime(r.timestamp)}</td>
+        <td class="col-type"><span class="${badgeClass(r.email_type)}">${r.email_type}</span></td>
+        <td class="col-email"><div class="truncate" onclick='openModal(${safe})'>${truncate(r.inbound_email)}</div></td>
+        <td class="col-draft"><div class="truncate" onclick='openModal(${safe})'>${truncate(r.draft_reply)}</div></td>
+        <td class="col-score">
+          <div class="score-pill">
+            <div class="score-dot" style="background:${color};"></div>
+            <span style="color:${color};">${r.confidence_score}</span>
+          </div>
+        </td>
+        <td class="col-status">
+          <select class="status-select" onchange="updateStatus(${r.id}, this.value)">
+            ${statusOptions}
+          </select>
+        </td>
+        <td class="col-action">
+          <button class="btn-ghost" onclick='openModal(${safe})'>View</button>
+        </td>
+      </tr>`;
+    }).join('');
   }
 
   function openModal(record) {
@@ -290,16 +378,15 @@
 
     const color = scoreColor(record.confidence_score);
     document.getElementById('modalScore').innerHTML =
-      `<span style="font-weight:700;color:${color};font-size:20px;">${record.confidence_score}</span>`+
-      `<span style="color:#888;font-size:12px;margin-left:8px;">${record.confidence_reason || ''}</span>`;
+      `<span style="font-weight:700;color:${color};font-size:22px;">${record.confidence_score}</span>` +
+      `<span style="color:#888;font-size:12px;margin-left:10px;">${record.confidence_reason || ''}</span>`;
 
     document.getElementById('modalOverlay').classList.add('open');
   }
 
   function closeModal(e) {
-    if (e.target === document.getElementById('modalOverlay')) {
+    if (e.target === document.getElementById('modalOverlay'))
       document.getElementById('modalOverlay').classList.remove('open');
-    }
   }
 
   function copyModalDraft() {
@@ -312,49 +399,8 @@
 
   async function loadHistory() {
     const res = await fetch('/history');
-    const records = await res.json();
-
-    const label = document.getElementById('countLabel');
-    label.textContent = `${records.length} email${records.length !== 1 ? 's' : ''} processed`;
-
-    const tbody = document.getElementById('tableBody');
-    if (!records.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No emails processed yet. Go generate some drafts!</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = records.map(r => {
-      const color = scoreColor(r.confidence_score);
-      const statusOptions = ['Drafted', 'Reviewed', 'Sent', 'Rejected']
-        .map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s}</option>`)
-        .join('');
-
-      return `<tr>
-        <td class="col-id" style="color:#aaa;">${r.id}</td>
-        <td class="col-time" style="color:#888;">${fmtTime(r.timestamp)}</td>
-        <td class="col-type"><span class="${badgeClass(r.email_type)}">${r.email_type}</span></td>
-        <td class="col-email">
-          <div class="truncate" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>${truncate(r.inbound_email)}</div>
-        </td>
-        <td class="col-draft">
-          <div class="truncate" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>${truncate(r.draft_reply)}</div>
-        </td>
-        <td class="col-score">
-          <div class="score-pill">
-            <div class="score-dot" style="background:${color};"></div>
-            <span style="color:${color};">${r.confidence_score}</span>
-          </div>
-        </td>
-        <td class="col-status">
-          <select class="status-select" onchange="updateStatus(${r.id}, this.value)">
-            ${statusOptions}
-          </select>
-        </td>
-        <td class="col-action">
-          <button class="btn-ghost" onclick='openModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>View</button>
-        </td>
-      </tr>`;
-    }).join('');
+    allRecords = await res.json();
+    applyFilters();
   }
 
   loadHistory();
