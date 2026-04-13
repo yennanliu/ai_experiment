@@ -78,18 +78,29 @@ async function downloadCourse(page, course, outputDir) {
       await page.goto(ch.url, { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForTimeout(1500);
 
+      // Set wider viewport so content doesn't overflow on PDF export
+      await page.setViewportSize({ width: 1400, height: 900 });
+
       // Hide sidebar for cleaner PDF
       await page.evaluate(() => {
         const sidebar = document.querySelector('.ant-layout-sider, [class*="sider"], [class*="Sider"]');
         if (sidebar) sidebar.style.display = 'none';
         const header = document.querySelector('header');
         if (header) header.style.display = 'none';
+
+        // Center and constrain main content width to prevent right-side clipping
+        const main = document.querySelector('main, [class*="content"], article');
+        if (main) {
+          main.style.maxWidth = '900px';
+          main.style.margin = '0 auto';
+        }
       });
 
       await page.pdf({
         path: pdfPath,
         format: 'A4',
         printBackground: true,
+        scale: 0.85,
         margin: { top: '15mm', bottom: '15mm', left: '15mm', right: '15mm' }
       });
 
