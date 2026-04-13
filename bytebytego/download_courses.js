@@ -1,177 +1,146 @@
-#!/usr/bin/env node
 /**
  * ByteByteGo Course PDF Downloader
- *
- * Usage:
- *   node download_courses.js
- *
- * Prerequisites:
- *   npm install playwright
- *   npx playwright install chromium
- *
- * Set env vars or edit the credentials below:
- *   BBG_EMAIL=your@email.com
- *   BBG_PASSWORD=yourpassword
+ * Run via: node download_courses.js
+ * Requires: npm install playwright
  */
 
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const EMAIL = process.env.BBG_EMAIL || '';
-const PASSWORD = process.env.BBG_PASSWORD || '';
-const OUTPUT_DIR = process.env.BBG_OUTPUT_DIR || path.join(__dirname, 'pdfs');
+const OUTPUT_DIR = path.join(__dirname, 'pdfs');
 
-if (!EMAIL || !PASSWORD) {
-  console.error('Error: Set BBG_EMAIL and BBG_PASSWORD environment variables.');
-  process.exit(1);
-}
+const COURSES = [
+  { name: 'How_to_Write_a_Good_Resume', startUrl: 'https://bytebytego.com/courses/tech-resume/p0-c2-introduction' },
+  { name: 'Coding_Interview_Patterns', startUrl: 'https://bytebytego.com/courses/coding-interview-patterns/introduction' },
+  { name: 'System_Design_Interview', startUrl: 'https://bytebytego.com/courses/system-design-interview/foreword' },
+  { name: 'Object_Oriented_Design_Interview', startUrl: 'https://bytebytego.com/courses/ood-interview/introduction' },
+  { name: 'Machine_Learning_System_Design', startUrl: 'https://bytebytego.com/courses/machine-learning-system-design-interview/introduction' },
+  { name: 'Mobile_System_Design', startUrl: 'https://bytebytego.com/courses/mobile-system-design-interview/introduction' },
+  { name: 'Generative_AI_System_Design', startUrl: 'https://bytebytego.com/courses/genai-system-design-interview/introduction' },
+];
 
-async function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-async function login(page) {
-  console.log('Navigating to login page...');
-  await page.goto('https://bytebytego.com/sign-in', { waitUntil: 'networkidle' });
-
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]');
-
-  // Wait for redirect after login
-  await page.waitForURL('**/my-courses**', { timeout: 15000 }).catch(() => {
-    // May redirect elsewhere; check if we're logged in
-  });
-  await sleep(2000);
-  console.log('Logged in.');
-}
-
-async function getCourseLinks(page) {
-  console.log('Fetching course list from /my-courses...');
-  await page.goto('https://bytebytego.com/my-courses', { waitUntil: 'networkidle' });
-  await sleep(2000);
-
-  const courses = await page.evaluate(() => {
-    const links = [];
-    // Course cards typically have links to /courses/<slug>
-    document.querySelectorAll('a[href*="/courses/"]').forEach(el => {
-      const href = el.href;
-      const title = el.innerText.trim() || el.querySelector('h2,h3,h4,span')?.innerText.trim() || href;
-      if (!links.find(c => c.url === href)) {
-        links.push({ url: href, title: title.substring(0, 80) });
-      }
-    });
-    return links;
-  });
-
-  console.log(`Found ${courses.length} course link(s).`);
-  return courses;
-}
-
-async function getChapterLinks(page, courseUrl) {
-  await page.goto(courseUrl, { waitUntil: 'networkidle' });
-  await sleep(2000);
-
-  // Collect all chapter/lesson links within the course
-  const chapters = await page.evaluate(() => {
-    const links = [];
+async function getChapterUrls(page) {
+  return await page.evaluate(() => {
+    const results = [];
     const seen = new Set();
-    document.querySelectorAll('a[href*="/courses/"]').forEach(el => {
-      const href = el.href;
-      if (!seen.has(href) && href !== window.location.href) {
-        seen.add(href);
-        links.push({ url: href, title: el.innerText.trim().substring(0, 80) });
+    document.querySelectorAll('*').forEach(el => {
+      const menuId = el.getAttribute('data-menu-id');
+      if (menuId && menuId.includes('/courses/')) {
+        // Extract the path from "rc-menu-uuid-XXXX-/courses/..."
+        const match = menuId.match(/\/courses\/.+/);
+        if (match && !seen.has(match[0])) {
+          seen.add(match[0]);
+          results.push({
+            title: el.innerText.trim().split('\n')[0],
+            url: 'https://bytebytego.com' + match[0]
+          });
+        }
       }
     });
-    return links;
-  });
-
-  return chapters;
-}
-
-async function savePageAsPdf(page, url, outputPath) {
-  await page.goto(url, { waitUntil: 'networkidle' });
-  await sleep(2000);
-
-  // Expand any collapsed sections
-  await page.evaluate(() => {
-    document.querySelectorAll('[aria-expanded="false"]').forEach(el => el.click());
-  });
-  await sleep(1000);
-
-  await page.pdf({
-    path: outputPath,
-    format: 'A4',
-    printBackground: true,
-    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+    return results;
   });
 }
 
-function sanitizeFilename(name) {
-  return name.replace(/[^a-zA-Z0-9\-_\u4e00-\u9fff ]/g, '_').trim().substring(0, 100);
+async function downloadCourse(page, course, outputDir) {
+  console.log(`\n=== Downloading: ${course.name} ===`);
+
+  // Navigate to first chapter to load sidebar
+  await page.goto(course.startUrl, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.waitForTimeout(2000);
+
+  const chapters = await getChapterUrls(page);
+  console.log(`  Found ${chapters.length} chapters`);
+
+  if (chapters.length === 0) {
+    console.log(`  WARNING: No chapters found, saving current page only`);
+    const pdfPath = path.join(outputDir, `${course.name}.pdf`);
+    await page.pdf({ path: pdfPath, format: 'A4', printBackground: true, margin: { top: '15mm', bottom: '15mm', left: '10mm', right: '10mm' } });
+    console.log(`  Saved: ${pdfPath}`);
+    return;
+  }
+
+  const courseDir = path.join(outputDir, course.name);
+  if (!fs.existsSync(courseDir)) fs.mkdirSync(courseDir, { recursive: true });
+
+  for (let i = 0; i < chapters.length; i++) {
+    const ch = chapters[i];
+    const safeName = ch.title.replace(/[^a-zA-Z0-9\-_ ]/g, '_').trim().substring(0, 80);
+    const pdfPath = path.join(courseDir, `${String(i + 1).padStart(2, '0')}_${safeName}.pdf`);
+
+    if (fs.existsSync(pdfPath)) {
+      console.log(`  [${i+1}/${chapters.length}] SKIP (exists): ${safeName}`);
+      continue;
+    }
+
+    console.log(`  [${i+1}/${chapters.length}] Saving: ${safeName}`);
+    try {
+      await page.goto(ch.url, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.waitForTimeout(1500);
+
+      // Hide sidebar for cleaner PDF
+      await page.evaluate(() => {
+        const sidebar = document.querySelector('.ant-layout-sider, [class*="sider"], [class*="Sider"]');
+        if (sidebar) sidebar.style.display = 'none';
+        const header = document.querySelector('header');
+        if (header) header.style.display = 'none';
+      });
+
+      await page.pdf({
+        path: pdfPath,
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '15mm', bottom: '15mm', left: '15mm', right: '15mm' }
+      });
+
+      await page.waitForTimeout(800);
+    } catch (err) {
+      console.log(`  [${i+1}/${chapters.length}] FAILED: ${err.message}`);
+    }
+  }
+
+  console.log(`  Done! PDFs in: ${courseDir}`);
 }
 
 async function main() {
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: false }); // headless:false so you can handle 2FA if needed
-  const context = await browser.newContext();
+  // Connect to existing Chrome session via remote debugging
+  let browser;
+  try {
+    browser = await chromium.connectOverCDP('http://localhost:9222');
+    console.log('Connected to existing Chrome session');
+  } catch (e) {
+    console.log('Could not connect to Chrome on port 9222, launching new browser...');
+    browser = await chromium.launch({ headless: false });
+  }
+
+  const contexts = browser.contexts();
+  const context = contexts[0] || await browser.newContext();
   const page = await context.newPage();
 
   try {
-    await login(page);
+    // Verify logged in
+    await page.goto('https://bytebytego.com/my-courses', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(2000);
+    const url = page.url();
+    if (url.includes('sign-in') || url.includes('login')) {
+      console.error('Not logged in! Please log in first.');
+      process.exit(1);
+    }
+    console.log('Logged in. Starting downloads...\n');
 
-    const courses = await getCourseLinks(page);
-    if (courses.length === 0) {
-      console.error('No courses found. Are you logged in? Check the selectors.');
-      return;
+    for (const course of COURSES) {
+      await downloadCourse(page, course, OUTPUT_DIR);
     }
 
-    for (const course of courses) {
-      const courseName = sanitizeFilename(course.title || 'course');
-      const courseDir = path.join(OUTPUT_DIR, courseName);
-      if (!fs.existsSync(courseDir)) fs.mkdirSync(courseDir, { recursive: true });
-
-      console.log(`\n=== Course: ${courseName} ===`);
-      console.log(`URL: ${course.url}`);
-
-      // Option A: Save entire course overview as one PDF
-      const overviewPdf = path.join(OUTPUT_DIR, `${courseName}.pdf`);
-      console.log(`Saving course overview PDF: ${overviewPdf}`);
-      await savePageAsPdf(page, course.url, overviewPdf);
-
-      // Option B: Also save individual chapters
-      const chapters = await getChapterLinks(page, course.url);
-      console.log(`Found ${chapters.length} chapter(s) in course.`);
-
-      for (let i = 0; i < chapters.length; i++) {
-        const ch = chapters[i];
-        const chName = sanitizeFilename(ch.title || `chapter_${i + 1}`);
-        const chPdf = path.join(courseDir, `${String(i + 1).padStart(2, '0')}_${chName}.pdf`);
-
-        if (fs.existsSync(chPdf)) {
-          console.log(`  [SKIP] ${chName} (already exists)`);
-          continue;
-        }
-
-        console.log(`  [${i + 1}/${chapters.length}] Saving: ${chName}`);
-        try {
-          await savePageAsPdf(page, ch.url, chPdf);
-          await sleep(1500 + Math.random() * 1000);
-        } catch (err) {
-          console.error(`  [FAIL] ${chName}: ${err.message}`);
-        }
-      }
-    }
-
-    console.log('\nDone! PDFs saved to:', OUTPUT_DIR);
+    console.log(`\n✓ All done! PDFs saved to: ${OUTPUT_DIR}`);
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 
 main().catch(err => {
-  console.error('Fatal error:', err);
+  console.error('Error:', err);
   process.exit(1);
 });
