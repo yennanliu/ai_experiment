@@ -45,3 +45,5 @@ tasker/gemini/.playwright-mcp/
 tasker/.playwright-mcp/
 
 .playwright-mcp
+
+#LangGraph_poc/app2/agent/__pycache__
