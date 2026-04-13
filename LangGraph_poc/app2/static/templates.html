@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Templates — AI Email Reply Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f7; color: #1d1d1f; min-height: 100vh;
+    }
+
+    nav {
+      background: #1d1d1f; padding: 0 32px;
+      display: flex; align-items: center; gap: 0; height: 48px;
+    }
+    .nav-brand { font-size: 15px; font-weight: 700; color: #fff; margin-right: 32px; letter-spacing: -.01em; }
+    .nav-link {
+      font-size: 13px; font-weight: 500; color: #aaa; text-decoration: none;
+      padding: 0 16px; height: 100%; display: flex; align-items: center;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+    }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { color: #fff; border-bottom-color: #0071e3; }
+
+    .container { max-width: 1000px; margin: 32px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    .page-header { display: flex; align-items: baseline; gap: 16px; }
+    .page-header h1 { font-size: 22px; font-weight: 700; }
+    .page-header span { font-size: 13px; color: #888; }
+
+    /* Type tabs */
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab {
+      padding: 7px 16px; border-radius: 8px; border: 1px solid #d0d0d0;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: #fff; color: #555; transition: all .15s;
+    }
+    .tab:hover { border-color: #0071e3; color: #0071e3; }
+    .tab.active { background: #0071e3; border-color: #0071e3; color: #fff; }
+
+    /* Template card */
+    .tpl-card {
+      background: #fff; border-radius: 12px; border: 1px solid #e0e0e0;
+      overflow: hidden; display: none;
+    }
+    .tpl-card.visible { display: block; }
+
+    .tpl-header {
+      padding: 18px 24px; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .tpl-title { font-size: 16px; font-weight: 700; }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 600;
+    }
+    .badge-new-po    { background:#d1f0ff; color:#006fa6; }
+    .badge-change    { background:#fff3cd; color:#856404; }
+    .badge-wrong     { background:#ffe0e0; color:#c0392b; }
+    .badge-inventory { background:#e8f5e9; color:#2e7d32; }
+    .badge-shipment  { background:#f3e5f5; color:#6a1b9a; }
+    .badge-quote     { background:#fff8e1; color:#f57f17; }
+    .badge-other     { background:#e8e8e8; color:#555; }
+
+    .tpl-body { display: grid; grid-template-columns: 220px 1fr; }
+
+    .tpl-meta {
+      padding: 20px 20px; border-right: 1px solid #f0f0f0;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .meta-section label {
+      font-size: 11px; font-weight: 700; color: #aaa;
+      text-transform: uppercase; letter-spacing: .07em;
+      display: block; margin-bottom: 8px;
+    }
+    .field-tag {
+      display: inline-block; padding: 4px 9px; border-radius: 6px;
+      background: #f0f4ff; color: #3352cc; font-size: 12px; font-weight: 500;
+      margin: 3px 3px 3px 0;
+    }
+    .field-tag.none { background: #f0f0f0; color: #aaa; font-style: italic; }
+
+    .xxx-note {
+      font-size: 12px; color: #888; line-height: 1.6;
+      padding: 10px 12px; background: #fffdf0; border-radius: 8px;
+      border: 1px solid #f0e8c0;
+    }
+
+    .tpl-text-wrap { padding: 20px 24px; position: relative; }
+    .tpl-text {
+      font-family: "SF Mono", "Fira Mono", "Menlo", monospace;
+      font-size: 13px; line-height: 1.75;
+      white-space: pre-wrap; color: #1d1d1f;
+      background: #f9f9fb; border: 1px solid #e8e8e8;
+      border-radius: 8px; padding: 16px;
+      max-height: 480px; overflow-y: auto;
+    }
+
+    /* highlight [XXX] placeholders */
+    .tpl-text .ph { color: #c0392b; font-weight: 600; }
+
+    .copy-tpl-btn {
+      position: absolute; top: 28px; right: 32px;
+      padding: 5px 12px; border-radius: 7px; border: 1px solid #d0d0d0;
+      background: #fff; font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: background .15s;
+    }
+    .copy-tpl-btn:hover { background: #f0f0f0; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">✉️ Email Assistant</span>
+  <a href="/" class="nav-link">Draft Generator</a>
+  <a href="/history-page" class="nav-link">History</a>
+  <a href="/templates-page" class="nav-link active">Templates</a>
+</nav>
+
+<div class="container">
+
+  <div class="page-header">
+    <h1>Reply Templates</h1>
+    <span id="countLabel"></span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div id="cards"></div>
+
+</div>
+
+<script>
+  const TYPE_ICONS = {
+    'New PO':                     '📦',
+    'Change Order':               '✏️',
+    'Wrong Order / Quality Issue':'⚠️',
+    'Inventory Inquiry':          '📊',
+    'Shipment Inquiry':           '🚢',
+    'New Quote':                  '💬',
+    'Other':                      '📄',
+  };
+
+  function badgeClass(type) {
+    const map = {
+      'New PO': 'badge-new-po', 'Change Order': 'badge-change',
+      'Wrong Order / Quality Issue': 'badge-wrong',
+      'Inventory Inquiry': 'badge-inventory',
+      'Shipment Inquiry': 'badge-shipment',
+      'New Quote': 'badge-quote', 'Other': 'badge-other',
+    };
+    return 'badge ' + (map[type] || 'badge-other');
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlightPlaceholders(text) {
+    // highlight [XXX] style placeholders
+    return escapeHtml(text).replace(/\[([^\]]+)\]/g, '<span class="ph">[$1]</span>');
+  }
+
+  let allTemplates = [];
+  let activeType = null;
+
+  function showTab(type) {
+    activeType = type;
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.type === type);
+    });
+    document.querySelectorAll('.tpl-card').forEach(c => {
+      c.classList.toggle('visible', c.dataset.type === type);
+    });
+  }
+
+  function copyTemplate(type) {
+    const tpl = allTemplates.find(t => t.email_type === type);
+    if (!tpl) return;
+    navigator.clipboard.writeText(tpl.template).then(() => {
+      const btn = document.querySelector(`.tpl-card[data-type="${CSS.escape(type)}"] .copy-tpl-btn`);
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+    });
+  }
+
+  async function load() {
+    const res = await fetch('/templates');
+    allTemplates = await res.json();
+
+    document.getElementById('countLabel').textContent = `${allTemplates.length} types`;
+
+    const tabs   = document.getElementById('tabs');
+    const cards  = document.getElementById('cards');
+    tabs.innerHTML  = '';
+    cards.innerHTML = '';
+
+    allTemplates.forEach((tpl, i) => {
+      const icon = TYPE_ICONS[tpl.email_type] || '📄';
+
+      // Tab
+      const tab = document.createElement('button');
+      tab.className = 'tab' + (i === 0 ? ' active' : '');
+      tab.dataset.type = tpl.email_type;
+      tab.textContent = icon + ' ' + tpl.email_type;
+      tab.onclick = () => showTab(tpl.email_type);
+      tabs.appendChild(tab);
+
+      // Card
+      const fieldsHtml = tpl.required_fields.length
+        ? tpl.required_fields.map(f => `<span class="field-tag">${escapeHtml(f)}</span>`).join('')
+        : '<span class="field-tag none">none</span>';
+
+      const card = document.createElement('div');
+      card.className = 'tpl-card' + (i === 0 ? ' visible' : '');
+      card.dataset.type = tpl.email_type;
+      card.innerHTML = `
+        <div class="tpl-header">
+          <span style="font-size:24px;">${icon}</span>
+          <span class="tpl-title">${escapeHtml(tpl.email_type)}</span>
+          <span class="${badgeClass(tpl.email_type)}">${escapeHtml(tpl.email_type)}</span>
+        </div>
+        <div class="tpl-body">
+          <div class="tpl-meta">
+            <div class="meta-section">
+              <label>Required Fields</label>
+              <div>${fieldsHtml}</div>
+            </div>
+            <div class="meta-section">
+              <label>Placeholders</label>
+              <div class="xxx-note">
+                Values inside <strong style="color:#c0392b;">[brackets]</strong> must be filled in manually before sending.<br><br>
+                Use <strong>[XXX]</strong> if the value is unknown — the AI will keep it as-is.
+              </div>
+            </div>
+          </div>
+          <div class="tpl-text-wrap">
+            <button class="copy-tpl-btn" onclick="copyTemplate('${tpl.email_type.replace(/'/g,"\\'")}')">Copy</button>
+            <div class="tpl-text">${highlightPlaceholders(tpl.template)}</div>
+          </div>
+        </div>`;
+      cards.appendChild(card);
+    });
+
+    if (allTemplates.length) activeType = allTemplates[0].email_type;
+  }
+
+  load();
+</script>
+
+</body>
+</html>

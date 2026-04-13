@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from agent.graph import email_agent
+from agent.templates import TEMPLATES
 from mock_data import MOCK_EMAILS
 
 app = FastAPI(title="AI Email Reply Assistant")
@@ -91,6 +92,23 @@ async def update_status(record_id: int, body: dict):
             record["status"] = body.get("status", record["status"])
             return record
     return {"error": "not found"}
+
+
+@app.get("/templates-page")
+async def templates_page():
+    return FileResponse("static/templates.html")
+
+
+@app.get("/templates")
+async def get_templates():
+    return [
+        {
+            "email_type": k,
+            "required_fields": v["required_fields"],
+            "template": v["template"],
+        }
+        for k, v in TEMPLATES.items()
+    ]
 
 
 @app.get("/mock-emails")
