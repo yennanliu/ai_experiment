@@ -303,6 +303,14 @@
 
       <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-2"></div></div>
 
+      <div class="pipe-node idle" id="node-retrieve">
+        <div class="pipe-icon">🔎</div>
+        <div class="pipe-label">Retrieve</div>
+        <div class="pipe-sublabel" id="sub-retrieve">ChromaDB RAG lookup</div>
+      </div>
+
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-2b"></div></div>
+
       <div class="pipe-node idle" id="node-draft">
         <div class="pipe-icon">✍️</div>
         <div class="pipe-label">Generate Draft</div>
@@ -392,11 +400,12 @@
 
   // Pipeline node order matches LangGraph execution sequence
   const NODES = [
-    { id: 'classify',  sub: 'sub-classify',  arrow: 'arrow-1', label: type => `→ ${type}` },
-    { id: 'template',  sub: 'sub-template',  arrow: 'arrow-2', label: () => 'Template loaded' },
-    { id: 'draft',     sub: 'sub-draft',     arrow: 'arrow-3', label: () => 'Draft written' },
-    { id: 'checklist', sub: 'sub-checklist', arrow: 'arrow-4', label: n => `${n} flag(s)` },
-    { id: 'score',     sub: 'sub-score',     arrow: 'arrow-5', label: s => `Score: ${s}` },
+    { id: 'classify',  sub: 'sub-classify',  arrow: 'arrow-1',  label: type => `→ ${type}` },
+    { id: 'template',  sub: 'sub-template',  arrow: 'arrow-2',  label: () => 'Template loaded' },
+    { id: 'retrieve',  sub: 'sub-retrieve',  arrow: 'arrow-2b', label: n => `${n} example(s) found` },
+    { id: 'draft',     sub: 'sub-draft',     arrow: 'arrow-3',  label: () => 'Draft written' },
+    { id: 'checklist', sub: 'sub-checklist', arrow: 'arrow-4',  label: n => `${n} flag(s)` },
+    { id: 'score',     sub: 'sub-score',     arrow: 'arrow-5',  label: s => `Score: ${s}` },
   ];
 
   function pipelineReset() {
@@ -434,7 +443,7 @@
     document.getElementById('arrow-0').classList.add('active');
     let step = 0;
     // stagger: each node runs for ~3s before moving on (approximation)
-    const delays = [0, 3200, 6400, 9600, 12800];
+    const delays = [0, 2600, 5200, 7800, 10400, 13000];
     delays.forEach((d, i) => {
       setTimeout(() => pipelineStep(i, 'running'), d);
       if (i > 0) setTimeout(() => pipelineStep(i - 1, 'done'), d);
@@ -448,10 +457,11 @@
     setTimeout(() => {
       pipelineStep(0, 'done', `→ ${data.email_type}`);
       pipelineStep(1, 'done', 'Template loaded');
-      pipelineStep(2, 'done', 'Draft written');
-      pipelineStep(3, 'done', `${data.checklist.length} flag(s)`);
-      pipelineStep(4, 'done', `Score: ${data.confidence_score}`);
-      for (let i = 0; i <= 5; i++) {
+      pipelineStep(2, 'done', `${data.retrieved_count ?? 0} example(s) found`);
+      pipelineStep(3, 'done', 'Draft written');
+      pipelineStep(4, 'done', `${data.checklist.length} flag(s)`);
+      pipelineStep(5, 'done', `Score: ${data.confidence_score}`);
+      for (let i = 0; i <= 6; i++) {
         const el = document.getElementById('arrow-' + i);
         if (el) el.classList.add('active');
       }
