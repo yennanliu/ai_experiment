@@ -140,6 +140,60 @@ load_dotenv()
 
 ---
 
+## Build Phases
+
+### Phase 1 — Core Pipeline (MVP)
+> Goal: Get a working end-to-end tailored resume from CLI
+
+- [ ] Set up project with `uv init`, `pyproject.toml`, `.env`
+- [ ] Define `ResumeState` in `agent/state.py`
+- [ ] Implement `parse_inputs`, `ats_simulate`, `rewrite_resume` nodes
+- [ ] Wire LangGraph in `agent/graph.py`, compile agent
+- [ ] Write system prompts for ATS Simulator and Resume Writer in `agent/prompts.py`
+- [ ] Test via Python script: `resume_agent.invoke({raw_resume, job_description})`
+
+**Deliverable:** CLI invocation produces a tailored resume with ATS report.
+
+---
+
+### Phase 2 — Cover Letter + Full Agent Panel
+> Goal: Add remaining agents and complete the pipeline
+
+- [ ] Add `write_cover_letter` node (Resume Writer persona)
+- [ ] Add `recruiter_review` node + prompt
+- [ ] Add `hiring_manager_review` node + prompt
+- [ ] Add `score_output` node to aggregate `final_score`
+- [ ] Test full 7-node pipeline end-to-end
+
+**Deliverable:** Full output — tailored resume, cover letter, all agent feedback, final score.
+
+---
+
+### Phase 3 — FastAPI + Basic UI
+> Goal: Expose the agent via HTTP and add a simple web interface
+
+- [ ] Create `main.py` with `POST /tailor` (sync)
+- [ ] Add `POST /tailor-stream` SSE endpoint for per-node progress
+- [ ] Build `static/index.html` — paste resume + JD, display results
+- [ ] Run with `uvicorn main:app --reload`
+
+**Deliverable:** Web UI where you can paste a resume + JD and see results in real time.
+
+---
+
+### Phase 4 — Polish & Enhancements
+> Goal: Make it production-ready and more useful
+
+- [ ] Accept resume as file upload (`.pdf`, `.docx`, `.md`)
+- [ ] Add history persistence (SQLite) to track past tailoring runs
+- [ ] Show diff between original and tailored resume
+- [ ] Add retry logic if LLM returns malformed output
+- [ ] Support multiple JD profiles saved and reused
+
+**Deliverable:** A polished, reusable tool for job application prep.
+
+---
+
 ## Node Prompts (prompts.py)
 
 Each agent has a distinct system prompt persona:
