@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Tailor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+
+    nav {
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      padding: 0 28px; height: 52px;
+      display: flex; align-items: center; gap: 24px;
+    }
+    .nav-brand { font-weight: 700; font-size: 15px; }
+    .nav-link { font-size: 14px; color: #555; text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
+    .nav-link.active, .nav-link:hover { color: #0071e3; border-bottom-color: #0071e3; }
+
+    .container { max-width: 1200px; margin: 24px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 18px; }
+
+    .card {
+      background: #fff; border-radius: 12px; border: 1px solid #e0e0e0;
+      padding: 22px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .card-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    textarea {
+      width: 100%; height: 220px; border: 1px solid #d0d0d0; border-radius: 8px;
+      padding: 12px; font-size: 13px; resize: vertical; font-family: inherit; line-height: 1.6;
+      transition: border-color .2s;
+    }
+    textarea:focus { outline: none; border-color: #0071e3; }
+
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    button {
+      padding: 9px 20px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity .15s;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: #0071e3; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #005bb5; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover:not(:disabled) { background: #e0e0e0; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+    .status-bar { font-size: 13px; color: #555; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .dot.running { background: #f5a623; animation: pulse 1s infinite; }
+    .dot.done    { background: #34c759; }
+    .dot.error   { background: #ff3b30; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Pipeline ── */
+    .pipeline { display: flex; align-items: center; overflow-x: auto; padding-bottom: 4px; }
+    .pipe-node { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 100px; }
+    .pipe-icon {
+      width: 48px; height: 48px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      border: 2px solid #e0e0e0; background: #f9f9fb;
+      transition: all .3s ease; position: relative;
+    }
+    .pipe-node.running .pipe-icon { border-color: #f5a623; background: #fff8ee; animation: nodeGlow 1.2s infinite; }
+    .pipe-node.done    .pipe-icon { border-color: #34c759; background: #edfaf2; }
+    .pipe-node.error   .pipe-icon { border-color: #ff3b30; background: #fff0ef; }
+    @keyframes nodeGlow { 0%,100%{box-shadow:0 0 0 4px rgba(245,166,35,.15)} 50%{box-shadow:0 0 0 8px rgba(245,166,35,.08)} }
+    .pipe-icon::after {
+      content: ''; position: absolute; top: -6px; right: -6px;
+      width: 16px; height: 16px; border-radius: 50%; font-size: 10px;
+      display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s;
+    }
+    .pipe-node.done  .pipe-icon::after { content:'✓'; background:#34c759; color:#fff; font-weight:700; opacity:1; display:flex; }
+    .pipe-node.error .pipe-icon::after { content:'✕'; background:#ff3b30; color:#fff; font-weight:700; opacity:1; display:flex; }
+    .pipe-label { font-size: 10px; font-weight: 600; color: #999; text-align: center; text-transform: uppercase; letter-spacing: .04em; line-height: 1.3; transition: color .3s; }
+    .pipe-sublabel { font-size: 10px; color: #bbb; text-align: center; min-height: 26px; padding: 0 2px; transition: color .3s; }
+    .pipe-node.running .pipe-label, .pipe-node.running .pipe-sublabel { color: #f5a623; }
+    .pipe-node.done    .pipe-label { color: #34c759; }
+    .pipe-arrow { flex: 1; min-width: 24px; display: flex; align-items: center; justify-content: center; padding-bottom: 38px; }
+    .pipe-arrow-line { width: 100%; height: 2px; background: #e0e0e0; position: relative; transition: background .3s; }
+    .pipe-arrow-line.active { background: #34c759; }
+    .pipe-arrow-line::after {
+      content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+      width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+      border-left: 7px solid #e0e0e0; transition: border-left-color .3s;
+    }
+    .pipe-arrow-line.active::after { border-left-color: #34c759; }
+    .pipe-cap { font-size: 10px; font-weight: 700; color: #fff; background: #555; padding: 4px 10px; border-radius: 999px; letter-spacing: .06em; margin-bottom: 38px; }
+    .pipe-cap.end { background: #0071e3; }
+
+    /* ── Score bar ── */
+    .score-row { display: flex; align-items: center; gap: 12px; }
+    .score-bar-wrap { flex: 1; background: #e8e8e8; border-radius: 999px; height: 8px; overflow: hidden; }
+    .score-bar { height: 100%; border-radius: 999px; transition: width .5s ease; }
+    .score-label { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e0e0e0; }
+    .tab {
+      padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+      border-radius: 8px 8px 0 0; color: #888; background: none; border: none;
+      border-bottom: 2px solid transparent; transition: all .15s;
+    }
+    .tab.active { color: #0071e3; border-bottom-color: #0071e3; background: #f0f6ff; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Content boxes ── */
+    .content-box {
+      background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 14px; font-size: 13px; line-height: 1.8;
+      white-space: pre-wrap; min-height: 180px; color: #1d1d1f;
+    }
+    .content-box.empty { color: #aaa; font-style: italic; }
+
+    /* ── Diff ── */
+    .diff-box { background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; min-height: 180px; font-size: 13px; line-height: 1.8; font-family: 'SF Mono', 'Menlo', monospace; overflow-x: auto; }
+    .diff-add { background: #e6ffed; color: #1a7a3c; display: block; }
+    .diff-remove { background: #ffeef0; color: #a00; display: block; }
+    .diff-ctx { display: block; color: #555; }
+
+    /* ── Feedback panels ── */
+    .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .feedback-panel { background: #f9f9fb; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; }
+    .feedback-panel h3 { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+    .feedback-panel p { font-size: 13px; line-height: 1.7; color: #333; white-space: pre-wrap; }
+    .verdict { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+    .verdict.pass { background: #edfaf2; color: #1a7a3c; }
+    .verdict.concern { background: #fff8e1; color: #7a5c00; }
+    .verdict.reject { background: #ffeaea; color: #a00; }
+    .verdict.strong-yes { background: #edfaf2; color: #1a7a3c; }
+    .verdict.yes { background: #e8f4ff; color: #005bb5; }
+    .verdict.maybe { background: #fff8e1; color: #7a5c00; }
+    .verdict.no { background: #ffeaea; color: #a00; }
+
+    /* ── ATS ── */
+    .ats-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: start; font-size: 13px; }
+    .ats-label { font-weight: 600; color: #555; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; background: #ffeaea; color: #a00; }
+    .tag.suggestion { background: #e8f4ff; color: #005bb5; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">📄 Resume Tailor</span>
+  <a href="/" class="nav-link active">Tailor</a>
+  <a href="/history-page" class="nav-link">History</a>
+</nav>
+
+<div class="container">
+
+  <!-- Pipeline -->
+  <div class="card">
+    <div class="card-title">LangGraph Pipeline</div>
+    <div class="pipeline">
+      <div class="pipe-cap">START</div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-0"></div></div>
+      <div class="pipe-node idle" id="node-parse_inputs">
+        <div class="pipe-icon">📥</div>
+        <div class="pipe-label">Parse</div>
+        <div class="pipe-sublabel" id="sub-parse_inputs">Validate inputs</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-1"></div></div>
+      <div class="pipe-node idle" id="node-ats_simulate">
+        <div class="pipe-icon">🤖</div>
+        <div class="pipe-label">ATS Scan</div>
+        <div class="pipe-sublabel" id="sub-ats_simulate">Keyword analysis</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-2"></div></div>
+      <div class="pipe-node idle" id="node-rewrite_resume">
+        <div class="pipe-icon">✍️</div>
+        <div class="pipe-label">Rewrite</div>
+        <div class="pipe-sublabel" id="sub-rewrite_resume">Tailor resume</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-3"></div></div>
+      <div class="pipe-node idle" id="node-write_cover_letter">
+        <div class="pipe-icon">💌</div>
+        <div class="pipe-label">Cover Letter</div>
+        <div class="pipe-sublabel" id="sub-write_cover_letter">Generate letter</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-4"></div></div>
+      <div class="pipe-node idle" id="node-recruiter_review">
+        <div class="pipe-icon">👤</div>
+        <div class="pipe-label">Recruiter</div>
+        <div class="pipe-sublabel" id="sub-recruiter_review">30s scan</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-5"></div></div>
+      <div class="pipe-node idle" id="node-hiring_manager_review">
+        <div class="pipe-icon">🎯</div>
+        <div class="pipe-label">Hiring Mgr</div>
+        <div class="pipe-sublabel" id="sub-hiring_manager_review">Fit evaluation</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-6"></div></div>
+      <div class="pipe-node idle" id="node-score_output">
+        <div class="pipe-icon">⭐</div>
+        <div class="pipe-label">Score</div>
+        <div class="pipe-sublabel" id="sub-score_output">Final score</div>
+      </div>
+      <div class="pipe-arrow"><div class="pipe-arrow-line" id="arrow-7"></div></div>
+      <div class="pipe-cap end">END</div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Your Resume</div>
+      <textarea id="resumeInput" placeholder="Paste your resume here (plain text or markdown)…"></textarea>
+    </div>
+    <div class="card">
+      <div class="card-title">Job Description</div>
+      <textarea id="jdInput" placeholder="Paste the job description here…"></textarea>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card" style="flex-direction:row; align-items:center; flex-wrap:wrap;">
+    <div class="actions" style="flex:1;">
+      <button class="btn-primary" id="tailorBtn" onclick="tailor()">Tailor Resume</button>
+      <button class="btn-secondary" onclick="clearAll()">Clear</button>
+      <div class="status-bar">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusText">Idle</span>
+      </div>
+    </div>
+    <div class="score-row" style="width:260px;">
+      <div style="font-size:11px;color:#888;font-weight:700;white-space:nowrap;">Final Score</div>
+      <div class="score-bar-wrap"><div class="score-bar" id="scoreBar" style="width:0%;background:#ccc;"></div></div>
+      <div class="score-label" id="scoreLabel">—</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card" id="resultsCard">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('resume')">Tailored Resume</button>
+      <button class="tab" onclick="switchTab('diff')">Diff View</button>
+      <button class="tab" onclick="switchTab('cover')">Cover Letter</button>
+      <button class="tab" onclick="switchTab('ats')">ATS Report</button>
+      <button class="tab" onclick="switchTab('feedback')">Agent Feedback</button>
+    </div>
+
+    <!-- Tailored Resume -->
+    <div class="tab-panel active" id="panel-resume">
+      <div class="content-box empty" id="resumeOutput">Tailored resume will appear here…</div>
+      <div class="actions" style="margin-top:10px;">
+        <button class="btn-secondary btn-sm" onclick="copyText('resumeOutput')">Copy</button>
+      </div>
+    </div>
+
+    <!-- Diff -->
+    <div class="tab-panel" id="panel-diff">
+      <div class="diff-box" id="diffOutput"><span style="color:#aaa;font-style:italic;">Diff will appear after tailoring…</span></div>
+    </div>
+
+    <!-- Cover Letter -->
+    <div class="tab-panel" id="panel-cover">
+      <div class="content-box empty" id="coverOutput">Cover letter will appear here…</div>
+      <div class="actions" style="margin-top:10px;">
+        <button class="btn-secondary btn-sm" onclick="copyText('coverOutput')">Copy</button>
+      </div>
+    </div>
+
+    <!-- ATS Report -->
+    <div class="tab-panel" id="panel-ats">
+      <div id="atsOutput" style="color:#aaa;font-style:italic;font-size:13px;">ATS report will appear after tailoring…</div>
+    </div>
+
+    <!-- Agent Feedback -->
+    <div class="tab-panel" id="panel-feedback">
+      <div class="feedback-grid" id="feedbackOutput">
+        <div style="color:#aaa;font-style:italic;font-size:13px;grid-column:1/-1;">Agent feedback will appear after tailoring…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const NODES = [
+    { key: 'parse_inputs',           arrow: 'arrow-1', label: 'Parsing…' },
+    { key: 'ats_simulate',           arrow: 'arrow-2', label: 'Scanning keywords…' },
+    { key: 'rewrite_resume',         arrow: 'arrow-3', label: 'Rewriting resume…' },
+    { key: 'write_cover_letter',     arrow: 'arrow-4', label: 'Writing cover letter…' },
+    { key: 'recruiter_review',       arrow: 'arrow-5', label: 'Recruiter scanning…' },
+    { key: 'hiring_manager_review',  arrow: 'arrow-6', label: 'Evaluating fit…' },
+    { key: 'score_output',           arrow: 'arrow-7', label: 'Scoring…' },
+  ];
+  const NODE_IDX = Object.fromEntries(NODES.map((n, i) => [n.key, i]));
+
+  const DEFAULT_SUBS = {
+    parse_inputs: 'Validate inputs', ats_simulate: 'Keyword analysis',
+    rewrite_resume: 'Tailor resume', write_cover_letter: 'Generate letter',
+    recruiter_review: '30s scan', hiring_manager_review: 'Fit evaluation',
+    score_output: 'Final score',
+  };
+
+  function pipelineReset() {
+    NODES.forEach(n => {
+      document.getElementById('node-' + n.key).className = 'pipe-node idle';
+      document.getElementById('sub-' + n.key).textContent = DEFAULT_SUBS[n.key];
+    });
+    for (let i = 0; i <= 7; i++) {
+      const el = document.getElementById('arrow-' + i);
+      if (el) el.classList.remove('active');
+    }
+  }
+
+  function pipeStep(key, state, sublabel) {
+    const el = document.getElementById('node-' + key);
+    if (el) el.className = 'pipe-node ' + state;
+    const sub = document.getElementById('sub-' + key);
+    if (sub && sublabel) sub.textContent = sublabel;
+    const idx = NODE_IDX[key];
+    if (state === 'done' && idx !== undefined) {
+      const arrow = document.getElementById(NODES[idx].arrow);
+      if (arrow) arrow.classList.add('active');
+    }
+  }
+
+  function pipelineStart() {
+    pipelineReset();
+    document.getElementById('arrow-0').classList.add('active');
+    pipeStep('parse_inputs', 'running', 'Parsing…');
+  }
+
+  function onNodeEvent(data) {
+    const key = data.node;
+    const idx = NODE_IDX[key];
+    if (idx === undefined) return;
+
+    let sublabel = 'Done';
+    if (key === 'ats_simulate') sublabel = `ATS: ${data.ats_score}% · ${data.missing} missing`;
+    else if (key === 'score_output') sublabel = `Score: ${data.final_score}`;
+
+    pipeStep(key, 'done', sublabel);
+    if (idx + 1 < NODES.length) pipeStep(NODES[idx + 1].key, 'running', NODES[idx + 1].label);
+  }
+
+  function setStatus(state, text) {
+    document.getElementById('statusDot').className = 'dot ' + state;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  function scoreColor(n) {
+    if (n >= 75) return '#34c759';
+    if (n >= 50) return '#f5a623';
+    return '#ff3b30';
+  }
+
+  function renderScore(score) {
+    const bar = document.getElementById('scoreBar');
+    const label = document.getElementById('scoreLabel');
+    bar.style.width = score + '%';
+    bar.style.background = scoreColor(score);
+    label.textContent = score;
+    label.style.color = scoreColor(score);
+  }
+
+  function renderResult(data) {
+    // Resume
+    const resumeBox = document.getElementById('resumeOutput');
+    resumeBox.textContent = data.tailored_resume;
+    resumeBox.classList.remove('empty');
+
+    // Diff
+    renderDiff(document.getElementById('resumeInput').value, data.tailored_resume);
+
+    // Cover letter
+    const coverBox = document.getElementById('coverOutput');
+    coverBox.textContent = data.cover_letter;
+    coverBox.classList.remove('empty');
+
+    // ATS
+    renderATS(data.ats_report);
+
+    // Feedback
+    renderFeedback(data.recruiter_feedback, data.hiring_manager_feedback);
+
+    // Score
+    renderScore(data.final_score);
+  }
+
+  function renderATS(ats) {
+    const el = document.getElementById('atsOutput');
+    const score = ats.score || 0;
+    const missing = ats.missing_keywords || [];
+    const suggestions = ats.suggestions || [];
+    el.innerHTML = `
+      <div class="score-row" style="margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:600;color:#555;white-space:nowrap;">ATS Score</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${score}%;background:${scoreColor(score)};"></div></div>
+        <div class="score-label" style="color:${scoreColor(score)};">${score}</div>
+      </div>
+      <div class="ats-grid">
+        <div class="ats-label">Missing keywords</div>
+        <div class="tag-list">${missing.length ? missing.map(k => `<span class="tag">${k}</span>`).join('') : '<span style="color:#34c759;font-size:13px;">None 🎉</span>'}</div>
+        <div class="ats-label">Suggestions</div>
+        <div class="tag-list">${suggestions.length ? suggestions.map(k => `<span class="tag suggestion">${k}</span>`).join('') : '<span style="color:#888;font-size:13px;">None</span>'}</div>
+      </div>
+    `;
+  }
+
+  function verdictClass(text) {
+    const t = text.toLowerCase();
+    if (t.includes('strong yes')) return 'strong-yes';
+    if (t.includes('pass with') || t.includes('maybe')) return 'concern';
+    if (t.includes('yes')) return 'yes';
+    if (t.includes('pass')) return 'pass';
+    if (t.includes('reject') || t.includes('no')) return 'reject';
+    return '';
+  }
+
+  function parseKeyValue(text, key) {
+    for (const line of text.split('\n')) {
+      if (line.startsWith(key + ':')) return line.slice(key.length + 1).trim();
+    }
+    return '';
+  }
+
+  function renderFeedback(recruiter, hm) {
+    const el = document.getElementById('feedbackOutput');
+    const rVerdict = parseKeyValue(recruiter, 'VERDICT');
+    const rFeedback = parseKeyValue(recruiter, 'FEEDBACK');
+    const hmScore = parseKeyValue(hm, 'SCORE');
+    const hmVerdict = parseKeyValue(hm, 'VERDICT');
+    const hmRationale = parseKeyValue(hm, 'RATIONALE');
+
+    el.innerHTML = `
+      <div class="feedback-panel">
+        <h3>👤 Recruiter (30s scan)</h3>
+        ${rVerdict ? `<span class="verdict ${verdictClass(rVerdict)}">${rVerdict}</span>` : ''}
+        <p>${rFeedback || recruiter}</p>
+      </div>
+      <div class="feedback-panel">
+        <h3>🎯 Hiring Manager</h3>
+        ${hmVerdict ? `<span class="verdict ${verdictClass(hmVerdict)}">${hmVerdict}</span>` : ''}
+        ${hmScore ? `<div style="font-size:12px;color:#888;margin-bottom:6px;">Score: ${hmScore}/100</div>` : ''}
+        <p>${hmRationale || hm}</p>
+      </div>
+    `;
+  }
+
+  // Simple line-level diff
+  function renderDiff(original, tailored) {
+    const el = document.getElementById('diffOutput');
+    const aLines = original.split('\n');
+    const bLines = tailored.split('\n');
+    const bSet = new Set(bLines);
+    const aSet = new Set(aLines);
+
+    let html = '';
+    // Show removed lines (in original but not tailored)
+    aLines.forEach(line => {
+      if (!bSet.has(line)) html += `<span class="diff-remove">- ${escHtml(line)}</span>`;
+    });
+    // Show added lines (in tailored but not original)
+    bLines.forEach(line => {
+      if (!aSet.has(line)) html += `<span class="diff-add">+ ${escHtml(line)}</span>`;
+    });
+    // Show unchanged lines (sample)
+    bLines.forEach(line => {
+      if (aSet.has(line) && line.trim()) html += `<span class="diff-ctx">  ${escHtml(line)}</span>`;
+    });
+
+    el.innerHTML = html || '<span style="color:#aaa;font-style:italic;">No differences found.</span>';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const panels = ['resume','diff','cover','ats','feedback'];
+      t.classList.toggle('active', panels[i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === 'panel-' + name);
+    });
+  }
+
+  async function tailor() {
+    const resume = document.getElementById('resumeInput').value.trim();
+    const jd = document.getElementById('jdInput').value.trim();
+    if (!resume || !jd) { alert('Please paste both a resume and a job description.'); return; }
+
+    document.getElementById('tailorBtn').disabled = true;
+    setStatus('running', 'Tailoring…');
+    pipelineStart();
+
+    try {
+      const response = await fetch('/tailor-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resume, job_description: jd }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop();
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          let eventType = 'message', dataStr = '';
+          for (const line of part.split('\n')) {
+            if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+            if (line.startsWith('data: '))  dataStr   = line.slice(6).trim();
+          }
+          if (!dataStr) continue;
+          const data = JSON.parse(dataStr);
+          if      (eventType === 'node')  onNodeEvent(data);
+          else if (eventType === 'done')  { renderResult(data); setStatus('done', 'Done'); }
+          else if (eventType === 'error') throw new Error(data.message || 'Unknown error');
+        }
+      }
+    } catch (err) {
+      NODES.forEach(n => {
+        const el = document.getElementById('node-' + n.key);
+        if (el && el.className.includes('running')) pipeStep(n.key, 'error', 'Failed');
+      });
+      setStatus('error', err.message);
+    } finally {
+      document.getElementById('tailorBtn').disabled = false;
+    }
+  }
+
+  function clearAll() {
+    document.getElementById('resumeInput').value = '';
+    document.getElementById('jdInput').value = '';
+    document.getElementById('resumeOutput').textContent = 'Tailored resume will appear here…';
+    document.getElementById('resumeOutput').classList.add('empty');
+    document.getElementById('coverOutput').textContent = 'Cover letter will appear here…';
+    document.getElementById('coverOutput').classList.add('empty');
+    document.getElementById('diffOutput').innerHTML = '<span style="color:#aaa;font-style:italic;">Diff will appear after tailoring…</span>';
+    document.getElementById('atsOutput').innerHTML = '<span style="color:#aaa;font-style:italic;">ATS report will appear after tailoring…</span>';
+    document.getElementById('feedbackOutput').innerHTML = '<div style="color:#aaa;font-style:italic;font-size:13px;grid-column:1/-1;">Agent feedback will appear after tailoring…</div>';
+    document.getElementById('scoreBar').style.width = '0%';
+    document.getElementById('scoreLabel').textContent = '—';
+    setStatus('', 'Idle');
+    pipelineReset();
+    switchTab('resume');
+  }
+
+  function copyText(id) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btns = document.querySelectorAll('.btn-sm');
+      btns.forEach(b => { if (b.getAttribute('onclick')?.includes(id)) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1500); } });
+    });
+  }
+</script>
+</body>
+</html>

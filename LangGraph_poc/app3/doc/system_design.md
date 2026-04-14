@@ -172,10 +172,10 @@ load_dotenv()
 ### Phase 3 — FastAPI + Basic UI
 > Goal: Expose the agent via HTTP and add a simple web interface
 
-- [ ] Create `main.py` with `POST /tailor` (sync)
-- [ ] Add `POST /tailor-stream` SSE endpoint for per-node progress
-- [ ] Build `static/index.html` — paste resume + JD, display results
-- [ ] Run with `uvicorn main:app --reload`
+- [x] Create `main.py` with `POST /tailor` (sync)
+- [x] Add `POST /tailor-stream` SSE endpoint for per-node progress
+- [x] Build `static/index.html` — paste resume + JD, display results
+- [x] Run with `uvicorn main:app --reload`
 
 **Deliverable:** Web UI where you can paste a resume + JD and see results in real time.
 
@@ -185,8 +185,8 @@ load_dotenv()
 > Goal: Make it production-ready and more useful
 
 - [ ] Accept resume as file upload (`.pdf`, `.docx`, `.md`)
-- [ ] Add history persistence (SQLite) to track past tailoring runs
-- [ ] Show diff between original and tailored resume
+- [x] Add history persistence (SQLite) to track past tailoring runs
+- [x] Show diff between original and tailored resume
 - [ ] Add retry logic if LLM returns malformed output
 - [ ] Support multiple JD profiles saved and reused
 
