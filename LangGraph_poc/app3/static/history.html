@@ -6,66 +6,265 @@
   <title>History — Resume Tailor</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1d1d1f; }
 
     nav {
       background: #fff; border-bottom: 1px solid #e0e0e0;
-      padding: 0 28px; height: 52px;
-      display: flex; align-items: center; gap: 24px;
+      padding: 0 32px; height: 56px;
+      display: flex; align-items: center; gap: 28px; position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
     }
-    .nav-brand { font-weight: 700; font-size: 15px; }
-    .nav-link { font-size: 14px; color: #555; text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
-    .nav-link.active, .nav-link:hover { color: #0071e3; border-bottom-color: #0071e3; }
+    .nav-brand { font-weight: 800; font-size: 16px; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
+    .nav-brand span { color: #0071e3; }
+    .nav-link { font-size: 14px; color: #666; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-weight: 500; transition: all .15s; }
+    .nav-link.active { color: #0071e3; background: #e8f0fe; }
+    .nav-link:hover:not(.active) { background: #f5f5f7; color: #333; }
 
-    .container { max-width: 1000px; margin: 24px auto; padding: 0 24px; }
+    .page { max-width: 1100px; margin: 0 auto; padding: 28px 28px 60px; }
 
-    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-subtitle { font-size: 13px; color: #aaa; margin-top: 2px; }
+
+    /* ── Table ── */
+    .table-wrap { background: #fff; border-radius: 16px; border: 1px solid #e8e8e8; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+    table { width: 100%; border-collapse: collapse; }
     thead { background: #f5f5f7; }
-    th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; text-align: left; }
-    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid #f0f0f0; vertical-align: top; }
-    tr:hover td { background: #fafafa; }
+    th { padding: 12px 18px; font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .08em; text-align: left; white-space: nowrap; }
+    td { padding: 14px 18px; font-size: 13px; border-top: 1px solid #f0f0f0; vertical-align: middle; }
+    tbody tr { cursor: pointer; transition: background .12s; }
+    tbody tr:hover td { background: #f5f8ff; }
+    tbody tr.active-row td { background: #e8f0fe; }
 
-    .score-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .score-high   { background: #edfaf2; color: #1a7a3c; }
-    .score-mid    { background: #fff8e1; color: #7a5c00; }
-    .score-low    { background: #ffeaea; color: #a00; }
-
-    .status-select { border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 8px; font-size: 12px; background: #fff; cursor: pointer; }
-
-    .truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #555; }
+    .truncate { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #555; }
     .ts { color: #aaa; font-size: 12px; white-space: nowrap; }
 
-    .empty-msg { text-align: center; padding: 48px; color: #aaa; font-size: 14px; }
+    .score-chip { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .score-high { background: #edfaf2; color: #1a7a3c; }
+    .score-mid  { background: #fff8e1; color: #7a5c00; }
+    .score-low  { background: #ffeaea; color: #a00; }
+
+    .status-select { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; background: #fff; cursor: pointer; transition: border-color .15s; }
+    .status-select:focus { outline: none; border-color: #0071e3; }
+
+    .empty-msg { text-align: center; padding: 56px; color: #aaa; font-size: 14px; }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+    /* ── Drawer overlay ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 300;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+
+    /* ── Detail drawer ── */
+    .drawer {
+      position: fixed; top: 0; right: 0; width: min(780px, 100vw); height: 100vh;
+      background: #fff; z-index: 400; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 32px rgba(0,0,0,.12);
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid #e8e8e8; flex-shrink: 0;
+    }
+    .drawer-title { font-size: 16px; font-weight: 700; }
+    .drawer-meta { font-size: 12px; color: #aaa; margin-top: 3px; }
+    .close-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: none; background: #f0f0f0;
+      cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+      transition: background .15s; flex-shrink: 0;
+    }
+    .close-btn:hover { background: #e0e0e0; }
+
+    /* Score summary bar in drawer */
+    .drawer-scores {
+      display: flex; gap: 24px; padding: 16px 24px; background: #f9f9fb;
+      border-bottom: 1px solid #e8e8e8; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .score-stat { text-align: center; }
+    .score-stat-num { font-size: 24px; font-weight: 800; line-height: 1; }
+    .score-stat-label { font-size: 11px; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+    .score-stat-bar { width: 80px; height: 5px; border-radius: 999px; background: #e0e0e0; margin-top: 5px; overflow: hidden; }
+    .score-stat-fill { height: 100%; border-radius: 999px; }
+
+    /* Drawer body */
+    .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Drawer tabs */
+    .dtabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .dtab {
+      padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+      border-radius: 10px; color: #999; background: #f5f5f7; border: none; transition: all .15s;
+    }
+    .dtab.active { color: #0071e3; background: #e8f0fe; }
+    .dtab:hover:not(.active) { background: #ebebeb; color: #555; }
+    .dtab-panel { display: none; }
+    .dtab-panel.active { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Diff side-by-side inside drawer */
+    .diff-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .diff-col-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+    .diff-col-label.before { color: #a00; }
+    .diff-col-label.after  { color: #1a7a3c; }
+    .diff-box {
+      background: #f9f9fb; border: 1.5px solid #e8e8e8; border-radius: 10px;
+      padding: 12px; font-size: 12px; line-height: 1.75; min-height: 200px; max-height: 400px;
+      font-family: 'SF Mono', 'Menlo', monospace; overflow-y: auto; white-space: pre-wrap;
+    }
+    .diff-add    { background: #e6ffed; color: #1a7a3c; display: block; border-radius: 3px; padding: 0 2px; }
+    .diff-remove { background: #ffeef0; color: #a00;    display: block; border-radius: 3px; padding: 0 2px; }
+    .diff-ctx    { display: block; color: #555; }
+
+    /* Content areas */
+    .content-box {
+      background: #f9f9fb; border: 1.5px solid #e8e8e8; border-radius: 10px;
+      padding: 14px; font-size: 13px; line-height: 1.8;
+      white-space: pre-wrap; max-height: 400px; overflow-y: auto; color: #1d1d1f;
+    }
+
+    /* Section heading */
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #aaa; }
+
+    /* Feedback panels */
+    .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .feedback-panel { background: #f9f9fb; border: 1.5px solid #e8e8e8; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .feedback-panel-title { font-size: 12px; font-weight: 700; color: #555; display: flex; align-items: center; gap: 6px; }
+    .verdict { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .verdict.pass       { background: #edfaf2; color: #1a7a3c; }
+    .verdict.concern    { background: #fff8e1; color: #7a5c00; }
+    .verdict.reject     { background: #ffeaea; color: #a00; }
+    .verdict.strong-yes { background: #edfaf2; color: #1a7a3c; }
+    .verdict.yes        { background: #e8f4ff; color: #005bb5; }
+    .verdict.maybe      { background: #fff8e1; color: #7a5c00; }
+    .verdict.no         { background: #ffeaea; color: #a00; }
+    .feedback-text { font-size: 13px; line-height: 1.7; color: #444; }
+
+    /* ATS in drawer */
+    .ats-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .ats-big { font-size: 32px; font-weight: 800; line-height: 1; }
+    .score-bar-wrap { flex: 1; background: #e8e8e8; border-radius: 999px; height: 8px; overflow: hidden; }
+    .score-bar { height: 100%; border-radius: 999px; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tag { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #ffeaea; color: #a00; }
+    .tag.suggestion { background: #e8f4ff; color: #005bb5; }
+    .tag.none { background: #f0f0f0; color: #aaa; font-style: italic; font-weight: 400; }
+
+    button.copy-small {
+      padding: 5px 12px; border-radius: 8px; border: 1.5px solid #e0e0e0;
+      background: #fff; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; align-self: flex-start;
+      transition: all .15s;
+    }
+    button.copy-small:hover { background: #f5f5f7; border-color: #0071e3; color: #0071e3; }
   </style>
 </head>
 <body>
 
 <nav>
-  <span class="nav-brand">📄 Resume Tailor</span>
-  <a href="/" class="nav-link">Tailor</a>
-  <a href="/history-page" class="nav-link active">History</a>
+  <div class="nav-brand">📄 <span>Resume</span>Tailor</div>
+  <a href="/" class="nav-link">✨ Tailor</a>
+  <a href="/history-page" class="nav-link active">🕐 History</a>
 </nav>
 
-<div class="container">
-  <table id="historyTable">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Date</th>
-        <th>Job Description (excerpt)</th>
-        <th>ATS</th>
-        <th>Score</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="historyBody">
-      <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
-    </tbody>
-  </table>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Application History</div>
+      <div class="page-subtitle">Click any row to see full details</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Job Description</th>
+          <th>ATS</th>
+          <th>Final Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr><td colspan="6" class="empty-msg"><div class="empty-icon">⏳</div>Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<!-- Detail Drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="drawerTitle">Application Detail</div>
+      <div class="drawer-meta" id="drawerMeta"></div>
+    </div>
+    <button class="close-btn" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <!-- Score summary -->
+  <div class="drawer-scores" id="drawerScores"></div>
+
+  <div class="drawer-body">
+    <!-- Tabs -->
+    <div class="dtabs">
+      <button class="dtab active" onclick="switchDTab('diff')">🔀 Before vs After</button>
+      <button class="dtab" onclick="switchDTab('cover')">💌 Cover Letter</button>
+      <button class="dtab" onclick="switchDTab('ats')">🤖 ATS Report</button>
+      <button class="dtab" onclick="switchDTab('feedback')">💬 Agent Feedback</button>
+      <button class="dtab" onclick="switchDTab('jd')">💼 Job Description</button>
+    </div>
+
+    <!-- Before vs After -->
+    <div class="dtab-panel active" id="dpanel-diff">
+      <div class="diff-wrap">
+        <div>
+          <div class="diff-col-label before">— Original Resume</div>
+          <div class="diff-box" id="drawerDiffBefore"></div>
+        </div>
+        <div>
+          <div class="diff-col-label after">+ Tailored Resume</div>
+          <div class="diff-box" id="drawerDiffAfter"></div>
+        </div>
+      </div>
+      <button class="copy-small" onclick="copyDrawer('drawerDiffAfter','copyAfterFeedback')">Copy Tailored</button>
+      <span id="copyAfterFeedback" style="font-size:12px;color:#34c759;"></span>
+    </div>
+
+    <!-- Cover Letter -->
+    <div class="dtab-panel" id="dpanel-cover">
+      <div class="content-box" id="drawerCover"></div>
+      <button class="copy-small" onclick="copyDrawer('drawerCover','copyCoverFeedback')">Copy</button>
+      <span id="copyCoverFeedback" style="font-size:12px;color:#34c759;"></span>
+    </div>
+
+    <!-- ATS Report -->
+    <div class="dtab-panel" id="dpanel-ats">
+      <div id="drawerATS"></div>
+    </div>
+
+    <!-- Agent Feedback -->
+    <div class="dtab-panel" id="dpanel-feedback">
+      <div id="drawerFeedback"></div>
+    </div>
+
+    <!-- Job Description -->
+    <div class="dtab-panel" id="dpanel-jd">
+      <div class="content-box" id="drawerJD"></div>
+    </div>
+  </div>
 </div>
 
 <script>
   const STATUSES = ['Draft', 'Applied', 'Interviewing', 'Rejected', 'Offer'];
+  let records = [];
+  let activeId = null;
 
   function scoreClass(n) {
     if (n >= 75) return 'score-high';
@@ -73,26 +272,37 @@
     return 'score-low';
   }
 
+  function scoreColor(n) {
+    if (n >= 75) return '#34c759';
+    if (n >= 50) return '#f5a623';
+    return '#ff3b30';
+  }
+
   function fmt(ts) {
-    try { return new Date(ts).toLocaleString(); } catch { return ts; }
+    try { return new Date(ts).toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+    catch { return ts; }
+  }
+
+  function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   async function load() {
     const res = await fetch('/history');
-    const data = await res.json();
+    records = await res.json();
     const tbody = document.getElementById('historyBody');
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No history yet. Go tailor a resume!</td></tr>';
+    if (!records.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-msg"><div class="empty-icon">📭</div>No history yet. <a href="/" style="color:#0071e3;">Go tailor a resume!</a></td></tr>`;
       return;
     }
-    tbody.innerHTML = data.map(r => `
-      <tr>
-        <td>${r.id}</td>
+    tbody.innerHTML = records.map(r => `
+      <tr onclick="openDrawer(${r.id})" data-id="${r.id}">
+        <td style="color:#aaa;font-size:12px;">#${r.id}</td>
         <td class="ts">${fmt(r.timestamp)}</td>
-        <td class="truncate" title="${r.job_description}">${r.job_description.slice(0, 120)}…</td>
+        <td class="truncate">${escHtml(r.job_description.slice(0, 140))}</td>
         <td><span class="score-chip ${scoreClass(r.ats_report?.score || 0)}">${r.ats_report?.score ?? '—'}</span></td>
         <td><span class="score-chip ${scoreClass(r.final_score)}">${r.final_score}</span></td>
-        <td>
+        <td onclick="event.stopPropagation()">
           <select class="status-select" data-id="${r.id}" onchange="updateStatus(this)">
             ${STATUSES.map(s => `<option ${s === r.status ? 'selected' : ''}>${s}</option>`).join('')}
           </select>
@@ -109,6 +319,178 @@
       body: JSON.stringify({ status: sel.value }),
     });
   }
+
+  function openDrawer(id) {
+    const r = records.find(x => x.id === id);
+    if (!r) return;
+    activeId = id;
+
+    // Highlight row
+    document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('active-row'));
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.classList.add('active-row');
+
+    // Header
+    document.getElementById('drawerTitle').textContent = `Application #${r.id}`;
+    document.getElementById('drawerMeta').textContent = fmt(r.timestamp) + ' · ' + r.status;
+
+    // Score summary
+    const atsScore = r.ats_report?.score || 0;
+    document.getElementById('drawerScores').innerHTML = `
+      <div class="score-stat">
+        <div class="score-stat-num" style="color:${scoreColor(atsScore)};">${atsScore}</div>
+        <div class="score-stat-label">ATS Score</div>
+        <div class="score-stat-bar"><div class="score-stat-fill" style="width:${atsScore}%;background:${scoreColor(atsScore)};"></div></div>
+      </div>
+      <div class="score-stat">
+        <div class="score-stat-num" style="color:${scoreColor(r.final_score)};">${r.final_score}</div>
+        <div class="score-stat-label">Final Score</div>
+        <div class="score-stat-bar"><div class="score-stat-fill" style="width:${r.final_score}%;background:${scoreColor(r.final_score)};"></div></div>
+      </div>
+      <div class="score-stat" style="flex:1;">
+        <div style="font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Missing Keywords</div>
+        <div style="font-size:13px;color:#a00;font-weight:600;">${(r.ats_report?.missing_keywords || []).length} term(s)</div>
+      </div>
+    `;
+
+    // Diff
+    renderDrawerDiff(r.raw_resume, r.tailored_resume);
+
+    // Cover letter
+    document.getElementById('drawerCover').textContent = r.cover_letter || '(none)';
+
+    // ATS
+    renderDrawerATS(r.ats_report);
+
+    // Feedback
+    renderDrawerFeedback(r.recruiter_feedback, r.hiring_manager_feedback);
+
+    // JD
+    document.getElementById('drawerJD').textContent = r.job_description;
+
+    switchDTab('diff');
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+    document.body.style.overflow = '';
+    document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('active-row'));
+    activeId = null;
+  }
+
+  function switchDTab(name) {
+    const panels = ['diff','cover','ats','feedback','jd'];
+    document.querySelectorAll('.dtab').forEach((t, i) => t.classList.toggle('active', panels[i] === name));
+    document.querySelectorAll('.dtab-panel').forEach(p => p.classList.toggle('active', p.id === 'dpanel-' + name));
+  }
+
+  function renderDrawerDiff(original, tailored) {
+    const aLines = (original || '').split('\n');
+    const bLines = (tailored || '').split('\n');
+    const bSet = new Set(bLines);
+    const aSet = new Set(aLines);
+
+    let beforeHtml = '', afterHtml = '';
+    aLines.forEach(line => {
+      if (!bSet.has(line)) beforeHtml += `<span class="diff-remove">${escHtml(line) || '&nbsp;'}</span>`;
+      else if (line.trim()) beforeHtml += `<span class="diff-ctx">${escHtml(line)}</span>`;
+    });
+    bLines.forEach(line => {
+      if (!aSet.has(line)) afterHtml += `<span class="diff-add">${escHtml(line) || '&nbsp;'}</span>`;
+      else if (line.trim()) afterHtml += `<span class="diff-ctx">${escHtml(line)}</span>`;
+    });
+
+    document.getElementById('drawerDiffBefore').innerHTML = beforeHtml || '<span style="color:#bbb;font-style:italic;">No changes</span>';
+    document.getElementById('drawerDiffAfter').innerHTML  = afterHtml  || '<span style="color:#bbb;font-style:italic;">No changes</span>';
+  }
+
+  function renderDrawerATS(ats) {
+    const score = ats?.score || 0;
+    const missing = ats?.missing_keywords || [];
+    const suggestions = ats?.suggestions || [];
+    const color = scoreColor(score);
+    document.getElementById('drawerATS').innerHTML = `
+      <div class="ats-row">
+        <div>
+          <div class="ats-big" style="color:${color};">${score}</div>
+          <div style="font-size:11px;color:#aaa;font-weight:600;">/ 100</div>
+        </div>
+        <div style="flex:1;">
+          <div class="score-bar-wrap"><div class="score-bar" style="width:${score}%;background:${color};"></div></div>
+          <div style="font-size:11px;color:#aaa;margin-top:5px;">
+            ${score >= 75 ? '✅ Likely to pass ATS filters' : score >= 50 ? '⚠️ Borderline — add missing keywords' : '❌ High risk of being filtered out'}
+          </div>
+        </div>
+      </div>
+      <div class="section-title" style="margin-bottom:6px;">Missing Keywords</div>
+      <div class="tag-list">${missing.length ? missing.map(k => `<span class="tag">${escHtml(k)}</span>`).join('') : '<span class="tag none">None 🎉</span>'}</div>
+      <div class="section-title" style="margin-top:14px;margin-bottom:6px;">Suggestions</div>
+      <div class="tag-list">${suggestions.length ? suggestions.map(k => `<span class="tag suggestion">${escHtml(k)}</span>`).join('') : '<span class="tag none">None</span>'}</div>
+    `;
+  }
+
+  function parseKV(text, key) {
+    for (const line of (text || '').split('\n')) {
+      if (line.startsWith(key + ':')) return line.slice(key.length + 1).trim();
+    }
+    return '';
+  }
+
+  function verdictClass(text) {
+    const t = (text || '').toLowerCase();
+    if (t.includes('strong yes')) return 'strong-yes';
+    if (t.includes('pass with') || t.includes('maybe')) return 'concern';
+    if (t.includes('yes')) return 'yes';
+    if (t.includes('pass')) return 'pass';
+    if (t.includes('reject') || t.includes('no')) return 'reject';
+    return '';
+  }
+
+  function renderDrawerFeedback(recruiter, hm) {
+    const rVerdict  = parseKV(recruiter, 'VERDICT');
+    const rFeedback = parseKV(recruiter, 'FEEDBACK') || recruiter;
+    const hmScore   = parseInt(parseKV(hm, 'SCORE')) || 0;
+    const hmVerdict = parseKV(hm, 'VERDICT');
+    const hmRatio   = parseKV(hm, 'RATIONALE') || hm;
+    const hmColor   = scoreColor(hmScore);
+
+    document.getElementById('drawerFeedback').innerHTML = `
+      <div class="feedback-grid">
+        <div class="feedback-panel">
+          <div class="feedback-panel-title">👤 Recruiter <span style="font-weight:400;color:#aaa;">(30s scan)</span></div>
+          ${rVerdict ? `<span class="verdict ${verdictClass(rVerdict)}">${escHtml(rVerdict)}</span>` : ''}
+          <div class="feedback-text">${escHtml(rFeedback)}</div>
+        </div>
+        <div class="feedback-panel">
+          <div class="feedback-panel-title">🎯 Hiring Manager <span style="font-weight:400;color:#aaa;">(technical fit)</span></div>
+          ${hmVerdict ? `<span class="verdict ${verdictClass(hmVerdict)}">${escHtml(hmVerdict)}</span>` : ''}
+          ${hmScore ? `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:11px;color:#aaa;font-weight:600;white-space:nowrap;">FIT SCORE</div>
+            <div class="score-bar-wrap"><div class="score-bar" style="width:${hmScore}%;background:${hmColor};"></div></div>
+            <div style="font-size:13px;font-weight:700;color:${hmColor};min-width:32px;text-align:right;">${hmScore}</div>
+          </div>` : ''}
+          <div class="feedback-text">${escHtml(hmRatio)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function copyDrawer(boxId, feedbackId) {
+    const text = document.getElementById(boxId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const el = document.getElementById(feedbackId);
+      el.textContent = '✓ Copied!';
+      setTimeout(() => el.textContent = '', 2000);
+    });
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
   load();
 </script>
