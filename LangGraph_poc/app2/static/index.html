@@ -400,29 +400,47 @@
 
   // Pipeline node order matches LangGraph execution sequence
   const NODES = [
-    { id: 'classify',  sub: 'sub-classify',  arrow: 'arrow-1',  label: type => `→ ${type}` },
-    { id: 'template',  sub: 'sub-template',  arrow: 'arrow-2',  label: () => 'Template loaded' },
-    { id: 'retrieve',  sub: 'sub-retrieve',  arrow: 'arrow-2b', label: n => `${n} example(s) found` },
-    { id: 'draft',     sub: 'sub-draft',     arrow: 'arrow-3',  label: () => 'Draft written' },
-    { id: 'checklist', sub: 'sub-checklist', arrow: 'arrow-4',  label: n => `${n} flag(s)` },
-    { id: 'score',     sub: 'sub-score',     arrow: 'arrow-5',  label: s => `Score: ${s}` },
+    { id: 'classify',  sub: 'sub-classify',  arrow: 'arrow-1'  },
+    { id: 'template',  sub: 'sub-template',  arrow: 'arrow-2'  },
+    { id: 'retrieve',  sub: 'sub-retrieve',  arrow: 'arrow-2b' },
+    { id: 'draft',     sub: 'sub-draft',     arrow: 'arrow-3'  },
+    { id: 'checklist', sub: 'sub-checklist', arrow: 'arrow-4'  },
+    { id: 'score',     sub: 'sub-score',     arrow: 'arrow-5'  },
+  ];
+
+  const DEFAULT_SUBLABELS = {
+    classify:  'Detect email type',
+    template:  'Select reply template',
+    retrieve:  'ChromaDB RAG lookup',
+    draft:     'GPT-4o fills template',
+    checklist: 'Flag missing info & risks',
+    score:     'Confidence assessment',
+  };
+
+  // Maps LangGraph backend node names → NODES index
+  const BACKEND_NODE = {
+    classify:          0,
+    select_template:   1,
+    retrieve_examples: 2,
+    generate_draft:    3,
+    build_checklist:   4,
+    score_draft:       5,
+  };
+
+  const RUNNING_LABELS = [
+    'Classifying…', 'Loading template…', 'Fetching examples…',
+    'Drafting reply…', 'Checking fields…', 'Scoring draft…',
   ];
 
   function pipelineReset() {
     NODES.forEach(n => {
       document.getElementById('node-' + n.id).className = 'pipe-node idle';
-      document.getElementById(n.sub).textContent = {
-        classify:  'Detect email type',
-        template:  'Select reply template',
-        draft:     'GPT-4o fills template',
-        checklist: 'Flag missing info & risks',
-        score:     'Confidence assessment',
-      }[n.id];
+      document.getElementById(n.sub).textContent = DEFAULT_SUBLABELS[n.id];
     });
-    for (let i = 0; i <= 5; i++) {
-      const el = document.getElementById('arrow-' + i);
+    ['arrow-0','arrow-1','arrow-2','arrow-2b','arrow-3','arrow-4','arrow-5'].forEach(id => {
+      const el = document.getElementById(id);
       if (el) el.classList.remove('active');
-    }
+    });
   }
 
   function pipelineStep(idx, state, sublabel) {
@@ -434,47 +452,34 @@
     }
   }
 
-  // Simulate per-node timing since backend runs synchronously
-  // Each node gets ~20% of elapsed wall time
-  let pipelineTimer = null;
-
   function pipelineStart() {
     pipelineReset();
     document.getElementById('arrow-0').classList.add('active');
-    let step = 0;
-    // stagger: each node runs for ~3s before moving on (approximation)
-    const delays = [0, 2600, 5200, 7800, 10400, 13000];
-    delays.forEach((d, i) => {
-      setTimeout(() => pipelineStep(i, 'running'), d);
-      if (i > 0) setTimeout(() => pipelineStep(i - 1, 'done'), d);
-    });
-    // last node done is handled in pipelineFinish
-    pipelineTimer = { delays };
-  }
-
-  function pipelineFinish(data) {
-    // Mark last running node as done with actual results
-    setTimeout(() => {
-      pipelineStep(0, 'done', `→ ${data.email_type}`);
-      pipelineStep(1, 'done', 'Template loaded');
-      pipelineStep(2, 'done', `${data.retrieved_count ?? 0} example(s) found`);
-      pipelineStep(3, 'done', 'Draft written');
-      pipelineStep(4, 'done', `${data.checklist.length} flag(s)`);
-      pipelineStep(5, 'done', `Score: ${data.confidence_score}`);
-      for (let i = 0; i <= 6; i++) {
-        const el = document.getElementById('arrow-' + i);
-        if (el) el.classList.add('active');
-      }
-    }, 200);
+    pipelineStep(0, 'running', RUNNING_LABELS[0]);
   }
 
   function pipelineError() {
     NODES.forEach((n, i) => {
       const el = document.getElementById('node-' + n.id);
-      if (el.className.includes('running')) {
-        pipelineStep(i, 'error', 'Failed');
-      }
+      if (el.className.includes('running')) pipelineStep(i, 'error', 'Failed');
     });
+  }
+
+  // Called for each SSE 'node' event — marks that node done and advances to next
+  function onNodeEvent(data) {
+    const idx = BACKEND_NODE[data.node];
+    if (idx === undefined) return;
+
+    let sublabel = null;
+    if      (data.node === 'classify')           sublabel = data.email_type ? `→ ${data.email_type}` : 'Done';
+    else if (data.node === 'select_template')    sublabel = 'Template loaded';
+    else if (data.node === 'retrieve_examples')  sublabel = `${data.count} example(s) found`;
+    else if (data.node === 'generate_draft')     sublabel = 'Draft written';
+    else if (data.node === 'build_checklist')    sublabel = `${data.flags} flag(s)`;
+    else if (data.node === 'score_draft')        sublabel = `Score: ${data.score}`;
+
+    pipelineStep(idx, 'done', sublabel);
+    if (idx + 1 < NODES.length) pipelineStep(idx + 1, 'running', RUNNING_LABELS[idx + 1]);
   }
 
   async function loadMocks() {
@@ -522,14 +527,39 @@
   }
 
   function renderScore(score, reason) {
-    const bar    = document.getElementById('scoreBar');
-    const label  = document.getElementById('scoreLabel');
+    const bar      = document.getElementById('scoreBar');
+    const label    = document.getElementById('scoreLabel');
     const reasonEl = document.getElementById('scoreReason');
     bar.style.width      = score + '%';
     bar.style.background = scoreColor(score);
     label.textContent    = score;
     label.style.color    = scoreColor(score);
     reasonEl.textContent = reason || '';
+  }
+
+  function renderResult(data) {
+    const badge = document.getElementById('emailTypeBadge');
+    badge.textContent = data.email_type;
+    badge.className   = badgeClass(data.email_type);
+
+    renderScore(data.confidence_score, data.confidence_reason);
+
+    const box = document.getElementById('draftBox');
+    box.textContent = data.draft_reply;
+    box.classList.remove('empty');
+
+    const list = document.getElementById('checklist');
+    list.innerHTML = '';
+    if (!data.checklist.length) {
+      list.innerHTML = '<li class="ok">All checks passed — no issues found.</li>';
+    } else {
+      data.checklist.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        li.className = item.startsWith('Missing') ? 'missing' : 'risk';
+        list.appendChild(li);
+      });
+    }
   }
 
   async function generate() {
@@ -541,41 +571,46 @@
     pipelineStart();
 
     try {
-      const res = await fetch('/generate-draft', {
+      const response = await fetch('/generate-draft-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
-
-      pipelineFinish(data);
-
-      const badge = document.getElementById('emailTypeBadge');
-      badge.textContent = data.email_type;
-      badge.className   = badgeClass(data.email_type);
-
-      renderScore(data.confidence_score, data.confidence_reason);
-
-      const box = document.getElementById('draftBox');
-      box.textContent = data.draft_reply;
-      box.classList.remove('empty');
-
-      const list = document.getElementById('checklist');
-      list.innerHTML = '';
-      if (!data.checklist.length) {
-        list.innerHTML = '<li class="ok">All checks passed — no issues found.</li>';
-      } else {
-        data.checklist.forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = item;
-          li.className = item.startsWith('Missing') ? 'missing' : 'risk';
-          list.appendChild(li);
-        });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error: ${response.status}`);
       }
 
-      setStatus('done', 'Done');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE events are delimited by double newlines
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop(); // keep any incomplete trailing event
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          let eventType = 'message', dataStr = '';
+          for (const line of part.split('\n')) {
+            if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+            if (line.startsWith('data: '))  dataStr   = line.slice(6).trim();
+          }
+          if (!dataStr) continue;
+          const data = JSON.parse(dataStr);
+
+          if      (eventType === 'node')  onNodeEvent(data);
+          else if (eventType === 'done')  { renderResult(data); setStatus('done', 'Done'); }
+          else if (eventType === 'error') throw new Error(data.message || 'Unknown error');
+        }
+      }
+
     } catch (err) {
       pipelineError();
       setStatus('error', err.message);

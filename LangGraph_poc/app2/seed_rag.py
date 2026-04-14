@@ -197,17 +197,26 @@ def seed(reset: bool = False) -> None:
         # reset lru_cache so get_collection re-creates it
         get_collection.cache_clear()
 
-    before = count()
+    col = get_collection()
+    existing_ids: set[str] = set(col.get()["ids"]) if col.count() > 0 else set()
+
+    inserted = updated = 0
     for ex in EXAMPLES:
+        is_new = ex["id"] not in existing_ids
         add_example(
             doc_id=ex["id"],
             inbound_email=ex["email"],
             reply=ex["reply"],
             email_type=ex["email_type"],
         )
+        if is_new:
+            inserted += 1
+            print(f"  [NEW]     {ex['id']}")
+        else:
+            updated += 1
+            print(f"  [UPSERT]  {ex['id']}")
 
-    after = count()
-    print(f"Seeded {len(EXAMPLES)} examples  ({before} → {after} total in collection)")
+    print(f"\nDone: {inserted} inserted, {updated} already existed (total {col.count()} in collection)")
     print("\nBreakdown:")
     from collections import Counter
     c = Counter(e["email_type"] for e in EXAMPLES)
