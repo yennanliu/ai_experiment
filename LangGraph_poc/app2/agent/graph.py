@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from .nodes import classify, select_template, generate_draft, build_checklist, score_draft
+from .nodes import classify, select_template, retrieve_examples, generate_draft, build_checklist, score_draft
 
 
 def build_graph():
@@ -8,13 +8,15 @@ def build_graph():
 
     graph.add_node("classify", classify)
     graph.add_node("select_template", select_template)
+    graph.add_node("retrieve_examples", retrieve_examples)
     graph.add_node("generate_draft", generate_draft)
     graph.add_node("build_checklist", build_checklist)
     graph.add_node("score_draft", score_draft)
 
     graph.set_entry_point("classify")
     graph.add_edge("classify", "select_template")
-    graph.add_edge("select_template", "generate_draft")
+    graph.add_edge("select_template", "retrieve_examples")
+    graph.add_edge("retrieve_examples", "generate_draft")
     graph.add_edge("generate_draft", "build_checklist")
     graph.add_edge("build_checklist", "score_draft")
     graph.add_edge("score_draft", END)

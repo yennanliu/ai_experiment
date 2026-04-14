@@ -2,6 +2,7 @@ from __future__ import annotations
 from functools import lru_cache
 from openai import OpenAI
 from .templates import TEMPLATES, RISK_KEYWORDS
+from .retriever import retrieve
 from .state import AgentState
 
 
@@ -38,7 +39,26 @@ def select_template(state: AgentState) -> AgentState:
     return {**state, "template": template_data["template"], "required_fields": template_data["required_fields"]}
 
 
+def retrieve_examples(state: AgentState) -> AgentState:
+    """RAG node — fetch similar historical email→reply pairs from ChromaDB."""
+    examples = retrieve(state["inbound_email"], state["email_type"])
+    return {**state, "retrieved_examples": examples}
+
+
 def generate_draft(state: AgentState) -> AgentState:
+    # Build few-shot block from retrieved examples (if any)
+    examples = state.get("retrieved_examples") or []
+    few_shot = ""
+    if examples:
+        parts = []
+        for i, ex in enumerate(examples, 1):
+            parts.append(
+                f"--- Example {i} ({ex['email_type']}) ---\n"
+                f"Inbound:\n{ex['email']}\n\n"
+                f"Reply:\n{ex['reply']}"
+            )
+        few_shot = "\n\nHere are similar historical replies for reference:\n\n" + "\n\n".join(parts)
+
     response = get_client().chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -54,8 +74,10 @@ def generate_draft(state: AgentState) -> AgentState:
                     "- For HOT/urgent items, mark them clearly with (HOT)\n"
                     "- For partial shipments, use bullet points as shown in the template\n"
                     "- Always offer proforma invoice for New PO and Change Order types\n"
-                    "- Do NOT invent shipping dates, freight costs, or quantities — use [XXX] if unknown\n\n"
+                    "- Do NOT invent shipping dates, freight costs, or quantities — use [XXX] if unknown\n"
+                    "- If historical examples are provided, match their tone and structure closely\n\n"
                     f"Template to use:\n{state['template']}"
+                    f"{few_shot}"
                 ),
             },
             {
@@ -72,7 +94,6 @@ def generate_draft(state: AgentState) -> AgentState:
 def build_checklist(state: AgentState) -> AgentState:
     checklist = []
 
-    # Check for missing required fields
     response = get_client().chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -95,7 +116,6 @@ def build_checklist(state: AgentState) -> AgentState:
     if missing != "All required fields present":
         checklist.extend([line for line in missing.splitlines() if line.startswith("Missing:")])
 
-    # Rule-based risk keyword scan
     email_lower = state["inbound_email"].lower()
     for keyword in RISK_KEYWORDS:
         if keyword.lower() in email_lower:

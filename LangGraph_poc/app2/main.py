@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from agent.graph import email_agent
 from agent.templates import TEMPLATES
+from agent.retriever import count as rag_count
 from mock_data import MOCK_EMAILS
 
 app = FastAPI(title="AI Email Reply Assistant")
@@ -28,6 +29,7 @@ class DraftResponse(BaseModel):
     email_type: str
     draft_reply: str
     checklist: list[str]
+    retrieved_count: int
     confidence_score: int
     confidence_reason: str
 
@@ -53,6 +55,7 @@ async def generate_draft(request: EmailRequest):
         "required_fields": [],
         "draft_reply": "",
         "checklist": [],
+        "retrieved_examples": [],
         "confidence_score": 0,
         "confidence_reason": "",
     })
@@ -75,6 +78,7 @@ async def generate_draft(request: EmailRequest):
         email_type=result["email_type"],
         draft_reply=result["draft_reply"],
         checklist=result["checklist"],
+        retrieved_count=len(result.get("retrieved_examples") or []),
         confidence_score=result["confidence_score"],
         confidence_reason=result["confidence_reason"],
     )
@@ -114,6 +118,11 @@ async def get_templates():
 @app.get("/mock-emails")
 async def mock_emails():
     return MOCK_EMAILS
+
+
+@app.get("/rag-status")
+async def rag_status():
+    return {"documents": rag_count()}
 
 
 @app.get("/health")
