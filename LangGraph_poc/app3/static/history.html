@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History — Resume Tailor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+
+    nav {
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      padding: 0 28px; height: 52px;
+      display: flex; align-items: center; gap: 24px;
+    }
+    .nav-brand { font-weight: 700; font-size: 15px; }
+    .nav-link { font-size: 14px; color: #555; text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
+    .nav-link.active, .nav-link:hover { color: #0071e3; border-bottom-color: #0071e3; }
+
+    .container { max-width: 1000px; margin: 24px auto; padding: 0 24px; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0; }
+    thead { background: #f5f5f7; }
+    th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .07em; text-align: left; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid #f0f0f0; vertical-align: top; }
+    tr:hover td { background: #fafafa; }
+
+    .score-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .score-high   { background: #edfaf2; color: #1a7a3c; }
+    .score-mid    { background: #fff8e1; color: #7a5c00; }
+    .score-low    { background: #ffeaea; color: #a00; }
+
+    .status-select { border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 8px; font-size: 12px; background: #fff; cursor: pointer; }
+
+    .truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #555; }
+    .ts { color: #aaa; font-size: 12px; white-space: nowrap; }
+
+    .empty-msg { text-align: center; padding: 48px; color: #aaa; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">📄 Resume Tailor</span>
+  <a href="/" class="nav-link">Tailor</a>
+  <a href="/history-page" class="nav-link active">History</a>
+</nav>
+
+<div class="container">
+  <table id="historyTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Job Description (excerpt)</th>
+        <th>ATS</th>
+        <th>Score</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="historyBody">
+      <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  const STATUSES = ['Draft', 'Applied', 'Interviewing', 'Rejected', 'Offer'];
+
+  function scoreClass(n) {
+    if (n >= 75) return 'score-high';
+    if (n >= 50) return 'score-mid';
+    return 'score-low';
+  }
+
+  function fmt(ts) {
+    try { return new Date(ts).toLocaleString(); } catch { return ts; }
+  }
+
+  async function load() {
+    const res = await fetch('/history');
+    const data = await res.json();
+    const tbody = document.getElementById('historyBody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No history yet. Go tailor a resume!</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td class="ts">${fmt(r.timestamp)}</td>
+        <td class="truncate" title="${r.job_description}">${r.job_description.slice(0, 120)}…</td>
+        <td><span class="score-chip ${scoreClass(r.ats_report?.score || 0)}">${r.ats_report?.score ?? '—'}</span></td>
+        <td><span class="score-chip ${scoreClass(r.final_score)}">${r.final_score}</span></td>
+        <td>
+          <select class="status-select" data-id="${r.id}" onchange="updateStatus(this)">
+            ${STATUSES.map(s => `<option ${s === r.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function updateStatus(sel) {
+    const id = sel.dataset.id;
+    await fetch(`/history/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: sel.value }),
+    });
+  }
+
+  load();
+</script>
+</body>
+</html>
