@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import io
 import json
 import os
 from typing import Literal
@@ -31,6 +32,7 @@ async def startup():
 class TailorRequest(BaseModel):
     resume: str = Field(..., min_length=1, max_length=8000)
     job_description: str = Field(..., min_length=1, max_length=4000)
+    materials: str = Field(default="", max_length=4000)   # optional extra context
 
 
 class TailorResponse(BaseModel):
@@ -45,6 +47,11 @@ class TailorResponse(BaseModel):
 
 class StatusUpdate(BaseModel):
     status: Literal["Draft", "Applied", "Interviewing", "Rejected", "Offer"]
+
+
+class ExportRequest(BaseModel):
+    content: str = Field(..., min_length=1)
+    title: str = Field(default="Resume")
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -64,6 +71,7 @@ async def tailor(request: TailorRequest):
     result = resume_agent.invoke({
         "raw_resume": request.resume,
         "job_description": request.job_description,
+        "materials": request.materials,
     })
     record = insert_record(
         raw_resume=request.resume,
@@ -84,6 +92,7 @@ async def tailor_stream(request: TailorRequest):
     initial_state = {
         "raw_resume": request.resume,
         "job_description": request.job_description,
+        "materials": request.materials,
     }
 
     def event_stream():
@@ -132,6 +141,75 @@ async def tailor_stream(request: TailorRequest):
         event_stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.post("/export-pdf")
+async def export_pdf(request: ExportRequest):
+    """PDF Agent — converts resume/cover letter text to a clean downloadable PDF."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.enums import TA_LEFT
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=2.5 * cm, rightMargin=2.5 * cm,
+        topMargin=2.5 * cm, bottomMargin=2.5 * cm,
+    )
+
+    styles = getSampleStyleSheet()
+    style_normal = ParagraphStyle(
+        "body", fontName="Helvetica", fontSize=10, leading=15,
+        textColor=colors.HexColor("#1d1d1f"), spaceAfter=6,
+    )
+    style_heading = ParagraphStyle(
+        "heading", fontName="Helvetica-Bold", fontSize=13, leading=18,
+        textColor=colors.HexColor("#111827"), spaceBefore=14, spaceAfter=4,
+    )
+    style_section = ParagraphStyle(
+        "section", fontName="Helvetica-Bold", fontSize=10, leading=14,
+        textColor=colors.HexColor("#4F46E5"), spaceBefore=12, spaceAfter=2,
+    )
+
+    story = []
+    lines = request.content.split("\n")
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            story.append(Spacer(1, 6))
+            continue
+
+        # Heuristic: all-caps short lines → section header
+        if stripped.isupper() and len(stripped) < 40:
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e0e0e0"), spaceAfter=4))
+            story.append(Paragraph(stripped, style_section))
+        # Lines starting with # → heading
+        elif stripped.startswith("# "):
+            story.append(Paragraph(stripped[2:], style_heading))
+        elif stripped.startswith("## "):
+            story.append(Paragraph(stripped[3:], style_section))
+        # Bullet lines
+        elif stripped.startswith("- ") or stripped.startswith("• "):
+            bullet_text = "• " + stripped[2:]
+            story.append(Paragraph(bullet_text, style_normal))
+        else:
+            story.append(Paragraph(stripped, style_normal))
+
+    doc.build(story)
+    buf.seek(0)
+
+    safe_title = "".join(c for c in request.title if c.isalnum() or c in " _-").strip() or "document"
+    filename = safe_title.replace(" ", "_") + ".pdf"
+
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
