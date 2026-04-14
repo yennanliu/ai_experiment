@@ -14,6 +14,7 @@ def parse_inputs(state: ResumeState) -> ResumeState:
     """Validate inputs and initialize empty output fields."""
     return {
         **state,
+        "materials": state.get("materials") or "",
         "tailored_resume": "",
         "cover_letter": "",
         "ats_report": {},
@@ -83,7 +84,11 @@ def rewrite_resume(state: ResumeState) -> ResumeState:
 
 
 def write_cover_letter(state: ResumeState) -> ResumeState:
-    """Resume Writer — generate a tailored cover letter."""
+    """Resume Writer — generate a tailored cover letter, optionally using extra materials."""
+    materials_block = ""
+    if state.get("materials", "").strip():
+        materials_block = f"\n\nAdditional Materials (bio, past cover letters, achievements):\n{state['materials']}"
+
     response = get_client().chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -93,6 +98,7 @@ def write_cover_letter(state: ResumeState) -> ResumeState:
                 "content": (
                     f"Job Description:\n{state['job_description']}\n\n"
                     f"Tailored Resume:\n{state['tailored_resume']}"
+                    f"{materials_block}"
                 ),
             },
         ],
