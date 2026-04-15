@@ -38,10 +38,13 @@ async def _chat(*, model: str, system: str, user: str, json_mode: bool = False, 
     return response.choices[0].message.content.strip()
 
 
-async def parse_inputs(state: ResumeState) -> ResumeState:
+async def parse_inputs(state: ResumeState) -> dict:
     """Validate inputs and initialize empty output fields."""
+    # Return ONLY changed/new fields — never re-emit unchanged fields.
+    # LangGraph merges partial returns automatically; returning the full
+    # state via {**state, ...} causes InvalidUpdateError on parallel branches
+    # because multiple nodes try to write the same channel in one superstep.
     return {
-        **state,
         "materials": state.get("materials") or "",
         "tailored_resume": "",
         "cover_letter": "",
@@ -67,7 +70,7 @@ async def ats_simulate(state: ResumeState) -> ResumeState:
         "missing_keywords": data.get("missing_keywords") or [],
         "suggestions": data.get("suggestions") or [],
     }
-    return {**state, "ats_report": ats_report}
+    return {"ats_report": ats_report}
 
 
 async def rewrite_resume(state: ResumeState) -> ResumeState:
@@ -88,7 +91,7 @@ async def rewrite_resume(state: ResumeState) -> ResumeState:
         ),
         temperature=0.3,
     )
-    return {**state, "tailored_resume": tailored}
+    return {"tailored_resume": tailored}
 
 
 async def write_cover_letter(state: ResumeState) -> ResumeState:
@@ -108,7 +111,7 @@ async def write_cover_letter(state: ResumeState) -> ResumeState:
         ),
         temperature=0.4,
     )
-    return {**state, "cover_letter": cover_letter}
+    return {"cover_letter": cover_letter}
 
 
 async def recruiter_review(state: ResumeState) -> ResumeState:
@@ -128,7 +131,7 @@ async def recruiter_review(state: ResumeState) -> ResumeState:
         "verdict": data.get("verdict", ""),
         "feedback": data.get("feedback", ""),
     }
-    return {**state, "recruiter_feedback": feedback}
+    return {"recruiter_feedback": feedback}
 
 
 async def hiring_manager_review(state: ResumeState) -> ResumeState:
@@ -149,7 +152,7 @@ async def hiring_manager_review(state: ResumeState) -> ResumeState:
         "verdict": data.get("verdict", ""),
         "rationale": data.get("rationale", ""),
     }
-    return {**state, "hiring_manager_feedback": feedback}
+    return {"hiring_manager_feedback": feedback}
 
 
 async def score_output(state: ResumeState) -> ResumeState:
@@ -157,4 +160,4 @@ async def score_output(state: ResumeState) -> ResumeState:
     ats_score = state["ats_report"].get("score", 0)
     hm_score = state["hiring_manager_feedback"].get("score", 0)
     final_score = round(ats_score * 0.4 + hm_score * 0.6)
-    return {**state, "final_score": final_score}
+    return {"final_score": final_score}
