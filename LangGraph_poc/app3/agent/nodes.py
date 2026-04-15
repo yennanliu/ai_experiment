@@ -1,16 +1,44 @@
 from __future__ import annotations
-from functools import lru_cache
-from openai import OpenAI
+
+import json
+
+from openai import AsyncOpenAI
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from .config import get_settings
+from .prompts import ATS_SIMULATOR, COVER_LETTER_WRITER, HIRING_MANAGER, RECRUITER, RESUME_WRITER
 from .state import ResumeState
-from .prompts import ATS_SIMULATOR, RESUME_WRITER, COVER_LETTER_WRITER, RECRUITER, HIRING_MANAGER
+
+# Module-level async client — created once, reused across all requests
+_client: AsyncOpenAI | None = None
 
 
-@lru_cache(maxsize=1)
-def get_client() -> OpenAI:
-    return OpenAI()
+def _get_client() -> AsyncOpenAI:
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=get_settings().openai_api_key)
+    return _client
 
 
-def parse_inputs(state: ResumeState) -> ResumeState:
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type(Exception),
+    reraise=True,
+)
+async def _chat(*, model: str, system: str, user: str, json_mode: bool = False, temperature: float = 0) -> str:
+    kwargs: dict = dict(
+        model=model,
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        temperature=temperature,
+    )
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+    response = await _get_client().chat.completions.create(**kwargs)
+    return response.choices[0].message.content.strip()
+
+
+async def parse_inputs(state: ResumeState) -> ResumeState:
     """Validate inputs and initialize empty output fields."""
     return {
         **state,
@@ -18,145 +46,115 @@ def parse_inputs(state: ResumeState) -> ResumeState:
         "tailored_resume": "",
         "cover_letter": "",
         "ats_report": {},
-        "recruiter_feedback": "",
-        "hiring_manager_feedback": "",
+        "recruiter_feedback": {},
+        "hiring_manager_feedback": {},
         "final_score": 0,
     }
 
 
-def ats_simulate(state: ResumeState) -> ResumeState:
+async def ats_simulate(state: ResumeState) -> ResumeState:
     """ATS Simulator — score keyword match between resume and JD."""
-    response = get_client().chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": ATS_SIMULATOR},
-            {
-                "role": "user",
-                "content": (
-                    f"Job Description:\n{state['job_description']}\n\n"
-                    f"Resume:\n{state['raw_resume']}"
-                ),
-            },
-        ],
-        temperature=0,
+    cfg = get_settings()
+    raw = await _chat(
+        model=cfg.openai_model_fast,
+        system=ATS_SIMULATOR,
+        user=f"Job Description:\n{state['job_description']}\n\nResume:\n{state['raw_resume']}",
+        json_mode=True,
     )
-    text = response.choices[0].message.content.strip()
-    ats_report = {"score": 0, "missing_keywords": [], "suggestions": []}
-    for line in text.splitlines():
-        if line.startswith("SCORE:"):
-            try:
-                ats_report["score"] = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
-        elif line.startswith("MISSING:"):
-            raw = line.split(":", 1)[1].strip()
-            ats_report["missing_keywords"] = [] if raw == "None" else [k.strip() for k in raw.split(",")]
-        elif line.startswith("SUGGESTIONS:"):
-            raw = line.split(":", 1)[1].strip()
-            ats_report["suggestions"] = [] if raw == "None" else [k.strip() for k in raw.split(",")]
+    data = json.loads(raw)
+    ats_report = {
+        "score": int(data.get("score", 0)),
+        "missing_keywords": data.get("missing_keywords") or [],
+        "suggestions": data.get("suggestions") or [],
+    }
     return {**state, "ats_report": ats_report}
 
 
-def rewrite_resume(state: ResumeState) -> ResumeState:
+async def rewrite_resume(state: ResumeState) -> ResumeState:
     """Resume Writer — tailor resume to JD using ATS report."""
+    cfg = get_settings()
     ats = state["ats_report"]
     missing = ", ".join(ats.get("missing_keywords", [])) or "None"
     suggestions = ", ".join(ats.get("suggestions", [])) or "None"
 
-    response = get_client().chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": RESUME_WRITER},
-            {
-                "role": "user",
-                "content": (
-                    f"Job Description:\n{state['job_description']}\n\n"
-                    f"ATS Missing Keywords: {missing}\n"
-                    f"ATS Suggestions: {suggestions}\n\n"
-                    f"Original Resume:\n{state['raw_resume']}"
-                ),
-            },
-        ],
+    tailored = await _chat(
+        model=cfg.openai_model_writer,
+        system=RESUME_WRITER,
+        user=(
+            f"Job Description:\n{state['job_description']}\n\n"
+            f"ATS Missing Keywords: {missing}\n"
+            f"ATS Suggestions: {suggestions}\n\n"
+            f"Original Resume:\n{state['raw_resume']}"
+        ),
         temperature=0.3,
     )
-    tailored = response.choices[0].message.content.strip()
     return {**state, "tailored_resume": tailored}
 
 
-def write_cover_letter(state: ResumeState) -> ResumeState:
-    """Resume Writer — generate a tailored cover letter, optionally using extra materials."""
+async def write_cover_letter(state: ResumeState) -> ResumeState:
+    """Cover Letter Writer — generate a tailored cover letter."""
+    cfg = get_settings()
     materials_block = ""
     if state.get("materials", "").strip():
-        materials_block = f"\n\nAdditional Materials (bio, past cover letters, achievements):\n{state['materials']}"
+        materials_block = f"\n\nAdditional Materials:\n{state['materials']}"
 
-    response = get_client().chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": COVER_LETTER_WRITER},
-            {
-                "role": "user",
-                "content": (
-                    f"Job Description:\n{state['job_description']}\n\n"
-                    f"Tailored Resume:\n{state['tailored_resume']}"
-                    f"{materials_block}"
-                ),
-            },
-        ],
+    cover_letter = await _chat(
+        model=cfg.openai_model_writer,
+        system=COVER_LETTER_WRITER,
+        user=(
+            f"Job Description:\n{state['job_description']}\n\n"
+            f"Tailored Resume:\n{state['tailored_resume']}"
+            f"{materials_block}"
+        ),
         temperature=0.4,
     )
-    cover_letter = response.choices[0].message.content.strip()
     return {**state, "cover_letter": cover_letter}
 
 
-def recruiter_review(state: ResumeState) -> ResumeState:
+async def recruiter_review(state: ResumeState) -> ResumeState:
     """Recruiter agent — 30-second scan feedback."""
-    response = get_client().chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": RECRUITER},
-            {
-                "role": "user",
-                "content": (
-                    f"Role applied for (from JD):\n{state['job_description'][:500]}\n\n"
-                    f"Resume:\n{state['tailored_resume']}"
-                ),
-            },
-        ],
-        temperature=0,
+    cfg = get_settings()
+    raw = await _chat(
+        model=cfg.openai_model_fast,
+        system=RECRUITER,
+        user=(
+            f"Role applied for (from JD):\n{state['job_description'][:500]}\n\n"
+            f"Resume:\n{state['tailored_resume']}"
+        ),
+        json_mode=True,
     )
-    return {**state, "recruiter_feedback": response.choices[0].message.content.strip()}
+    data = json.loads(raw)
+    feedback = {
+        "verdict": data.get("verdict", ""),
+        "feedback": data.get("feedback", ""),
+    }
+    return {**state, "recruiter_feedback": feedback}
 
 
-def hiring_manager_review(state: ResumeState) -> ResumeState:
+async def hiring_manager_review(state: ResumeState) -> ResumeState:
     """Hiring Manager agent — technical fit evaluation."""
-    response = get_client().chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": HIRING_MANAGER},
-            {
-                "role": "user",
-                "content": (
-                    f"Job Description:\n{state['job_description']}\n\n"
-                    f"Resume:\n{state['tailored_resume']}"
-                ),
-            },
-        ],
-        temperature=0,
+    cfg = get_settings()
+    raw = await _chat(
+        model=cfg.openai_model_fast,
+        system=HIRING_MANAGER,
+        user=(
+            f"Job Description:\n{state['job_description']}\n\n"
+            f"Resume:\n{state['tailored_resume']}"
+        ),
+        json_mode=True,
     )
-    return {**state, "hiring_manager_feedback": response.choices[0].message.content.strip()}
+    data = json.loads(raw)
+    feedback = {
+        "score": int(data.get("score", 0)),
+        "verdict": data.get("verdict", ""),
+        "rationale": data.get("rationale", ""),
+    }
+    return {**state, "hiring_manager_feedback": feedback}
 
 
-def score_output(state: ResumeState) -> ResumeState:
+async def score_output(state: ResumeState) -> ResumeState:
     """Aggregate a final score from ATS + hiring manager scores."""
     ats_score = state["ats_report"].get("score", 0)
-
-    hm_score = 0
-    for line in state["hiring_manager_feedback"].splitlines():
-        if line.startswith("SCORE:"):
-            try:
-                hm_score = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
-
+    hm_score = state["hiring_manager_feedback"].get("score", 0)
     final_score = round(ats_score * 0.4 + hm_score * 0.6)
     return {**state, "final_score": final_score}
