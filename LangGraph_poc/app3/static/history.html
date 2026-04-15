@@ -6,36 +6,16 @@
   <title>History — Resume Tailor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
   <style>
-    :root {
-      --primary: #4F46E5; --primary-light: #EEF2FF; --primary-dark: #3730A3;
-      --success: #10B981; --success-light: #D1FAE5;
-      --warning: #F59E0B; --warning-light: #FEF3C7;
-      --danger: #EF4444;  --danger-light: #FEE2E2;
-      --text: #111827; --text-2: #6B7280; --text-3: #9CA3AF;
-      --border: #E5E7EB; --surface: #F9FAFB; --white: #ffffff;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.08);
-      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: #F3F4F6; color: var(--text); }
-
-    nav {
-      background: var(--white); border-bottom: 1px solid var(--border);
-      padding: 0 32px; height: 60px; display: flex; align-items: center; gap: 32px;
-      position: sticky; top: 0; z-index: 200; box-shadow: var(--shadow-sm);
-    }
-    .nav-logo { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -.4px; display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-logo-icon { width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .nav-links { display: flex; gap: 4px; }
-    .nav-link { font-size: 14px; font-weight: 500; color: var(--text-2); text-decoration: none; padding: 6px 14px; border-radius: var(--radius-sm); transition: all .15s; }
-    .nav-link:hover { background: var(--surface); color: var(--text); }
-    .nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
-
     .page { max-width: 1100px; margin: 0 auto; padding: 32px 28px 80px; }
     .page-header { margin-bottom: 24px; }
     .page-title { font-size: 26px; font-weight: 800; letter-spacing: -.4px; }
     .page-sub { font-size: 14px; color: var(--text-2); margin-top: 5px; }
+
+    /* Pagination */
+    .pagination { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+    .pagination-info { flex: 1; }
 
     /* Table */
     .table-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
@@ -47,9 +27,9 @@
     tbody tr:hover td { background: #F5F3FF; }
     tbody tr.selected td { background: var(--primary-light); }
 
-    .row-id { font-size: 12px; color: var(--text-3); font-weight: 600; }
-    .row-ts { font-size: 12px; color: var(--text-3); white-space: nowrap; }
-    .row-jd { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
+    .row-id  { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .row-ts  { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+    .row-jd  { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
     .chip { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
     .chip-high { background: var(--success-light); color: #065F46; }
     .chip-mid  { background: var(--warning-light);  color: #92400E; }
@@ -66,10 +46,9 @@
     .empty-row td { text-align: center; padding: 64px; color: var(--text-3); }
     .empty-icon { font-size: 36px; margin-bottom: 12px; }
 
-    /* ── Drawer ── */
+    /* Drawer */
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 300; opacity: 0; pointer-events: none; transition: opacity .25s; backdrop-filter: blur(2px); }
     .overlay.open { opacity: 1; pointer-events: auto; }
-
     .drawer {
       position: fixed; top: 0; right: 0; width: min(820px,100vw); height: 100vh;
       background: var(--white); z-index: 400; display: flex; flex-direction: column;
@@ -77,17 +56,12 @@
       box-shadow: -8px 0 40px rgba(0,0,0,.12);
     }
     .drawer.open { transform: translateX(0); }
-
     .drawer-top { flex-shrink: 0; }
-
-    /* Drawer header */
     .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 28px 18px; border-bottom: 1px solid var(--border); gap: 16px; }
     .drawer-title { font-size: 17px; font-weight: 700; }
     .drawer-ts { font-size: 12px; color: var(--text-3); margin-top: 3px; }
     .close-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; color: var(--text-2); }
-    .close-btn:hover { background: var(--surface); color: var(--text); border-color: var(--text-3); }
-
-    /* Score bar */
+    .close-btn:hover { background: var(--surface); color: var(--text); }
     .drawer-scores { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
     .dscore { flex: 1; padding: 14px 22px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
     .dscore:last-child { border-right: none; }
@@ -95,61 +69,15 @@
     .dscore-num   { font-size: 26px; font-weight: 800; line-height: 1; }
     .dscore-track { height: 4px; background: var(--border); border-radius: 999px; overflow: hidden; }
     .dscore-fill  { height: 100%; border-radius: 999px; }
-
-    /* Drawer tabs */
     .drawer-tabs { display: flex; gap: 4px; padding: 14px 22px; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
     .dtab { padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 7px; color: var(--text-2); background: none; border: none; font-family: inherit; white-space: nowrap; transition: all .15s; }
     .dtab.active { background: var(--primary-light); color: var(--primary); }
     .dtab:hover:not(.active) { background: var(--surface); }
-
-    /* Drawer body */
     .drawer-body { flex: 1; overflow-y: auto; padding: 22px 28px; }
     .dpanel { display: none; flex-direction: column; gap: 14px; }
     .dpanel.active { display: flex; }
 
-    /* Shared inner styles */
-    .content-box { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 16px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; max-height: 420px; overflow-y: auto; color: var(--text); }
-    .diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .diff-col-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 7px; }
-    .diff-col-head.before { color: var(--danger); }
-    .diff-col-head.after  { color: var(--success); }
-    .diff-box { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px; min-height: 160px; max-height: 400px; font-size: 12px; line-height: 1.75; font-family: 'SF Mono','Menlo',monospace; overflow-y: auto; white-space: pre-wrap; }
-    .diff-add    { background: #D1FAE5; color: #065F46; display:block; border-radius:3px; padding:0 3px; margin:1px 0; }
-    .diff-remove { background: #FEE2E2; color: #991B1B; display:block; border-radius:3px; padding:0 3px; margin:1px 0; }
-    .diff-ctx    { display:block; color: var(--text-2); }
-
-    .ats-header { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
-    .ats-big { font-size: 40px; font-weight: 800; line-height: 1; }
-    .ats-track { flex: 1; height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 5px; }
-    .ats-fill  { height: 100%; border-radius: 999px; }
-    .ats-msg   { font-size: 12px; color: var(--text-2); }
-    .sec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); margin-bottom: 8px; }
-    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .tag { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .tag-miss { background: var(--danger-light);  color: #991B1B; }
-    .tag-sugg { background: var(--primary-light); color: var(--primary-dark); }
-    .tag-none { background: var(--surface); color: var(--text-3); font-style: italic; font-weight: 400; }
-
-    .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .feedback-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 16px; display: flex; flex-direction: column; gap: 9px; }
-    .fc-title { font-size: 13px; font-weight: 700; color: var(--text); }
-    .fc-sub   { font-size: 11px; color: var(--text-3); font-weight: 500; }
-    .verdict { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-    .v-pass{background:var(--success-light);color:#065F46} .v-concern{background:var(--warning-light);color:#92400E}
-    .v-reject{background:var(--danger-light);color:#991B1B} .v-strong-yes{background:var(--success-light);color:#065F46}
-    .v-yes{background:var(--primary-light);color:var(--primary-dark)} .v-maybe{background:var(--warning-light);color:#92400E}
-    .v-no{background:var(--danger-light);color:#991B1B}
-    .fit-row { display: flex; align-items: center; gap: 9px; }
-    .fit-track { flex: 1; height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
-    .fit-fill  { height: 100%; border-radius: 999px; }
-    .fb-text { font-size: 13px; line-height: 1.75; color: var(--text-2); }
-
-    .btn-row { display: flex; gap: 8px; align-items: center; }
-    .btn-sm { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; border: 1.5px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; color: var(--text-2); }
-    .btn-sm:hover { background: var(--surface); color: var(--text); border-color: var(--primary); }
-    .copy-fb { font-size: 12px; color: var(--success); font-weight: 600; }
-
-    @media (max-width: 680px) { .diff-cols, .feedback-grid { grid-template-columns: 1fr; } .drawer { width: 100vw; } }
+    @media (max-width: 680px) { .drawer { width: 100vw; } }
   </style>
 </head>
 <body>
@@ -181,12 +109,18 @@
           <th>ATS</th>
           <th>Score</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="histBody">
-        <tr class="empty-row"><td colspan="6"><div class="empty-icon">⏳</div>Loading…</td></tr>
+        <tr class="empty-row"><td colspan="7"><div class="empty-icon">⏳</div>Loading…</td></tr>
       </tbody>
     </table>
+    <div class="pagination" id="pagination" style="display:none;">
+      <span class="pagination-info" id="paginationInfo"></span>
+      <button class="btn btn-ghost btn-sm" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+      <button class="btn btn-ghost btn-sm" id="nextBtn" onclick="changePage(1)">Next →</button>
+    </div>
   </div>
 </div>
 
@@ -200,7 +134,10 @@
         <div class="drawer-title" id="dTitle">Detail</div>
         <div class="drawer-ts" id="dMeta"></div>
       </div>
-      <button class="close-btn" onclick="closeDrawer()">✕</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-danger btn-sm" id="deleteBtn" onclick="deleteRecord()">🗑 Delete</button>
+        <button class="close-btn" onclick="closeDrawer()">✕</button>
+      </div>
     </div>
     <div class="drawer-scores" id="dScores"></div>
     <div class="drawer-tabs">
@@ -213,7 +150,6 @@
   </div>
 
   <div class="drawer-body">
-    <!-- Before / After -->
     <div class="dpanel active" id="dpanel-diff">
       <div class="diff-cols">
         <div>
@@ -226,41 +162,42 @@
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn-sm" onclick="copyDrawer('dDiffAfter','fbDiff')">Copy Tailored</button>
-        <button class="btn-sm" onclick="downloadDrawerPDF('dDiffAfter','Tailored_Resume')">⬇ PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyToClipboard(document.getElementById('dDiffAfter').textContent,'fbDiff')">Copy Tailored</button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadPDFContent(document.getElementById('dDiffAfter').textContent,'Tailored_Resume')">⬇ PDF</button>
         <span class="copy-fb" id="fbDiff"></span>
       </div>
     </div>
 
-    <!-- Cover Letter -->
     <div class="dpanel" id="dpanel-cover">
       <div class="content-box" id="dCover"></div>
       <div class="btn-row">
-        <button class="btn-sm" onclick="copyDrawer('dCover','fbCover')">Copy</button>
-        <button class="btn-sm" onclick="downloadDrawerPDF('dCover','Cover_Letter')">⬇ PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyToClipboard(document.getElementById('dCover').textContent,'fbCover')">Copy</button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadPDFContent(document.getElementById('dCover').textContent,'Cover_Letter')">⬇ PDF</button>
         <span class="copy-fb" id="fbCover"></span>
       </div>
     </div>
 
-    <!-- ATS -->
     <div class="dpanel" id="dpanel-ats">
       <div id="dATS"></div>
     </div>
 
-    <!-- Feedback -->
     <div class="dpanel" id="dpanel-feedback">
       <div id="dFeedback"></div>
     </div>
 
-    <!-- JD -->
     <div class="dpanel" id="dpanel-jd">
       <div class="content-box" id="dJD"></div>
     </div>
   </div>
 </div>
 
+<script src="/static/app.js"></script>
 <script>
+  const PAGE_SIZE = 50;
+  let currentPage = 0;
+  let totalRecords = 0;
   let records = [];
+  let openRecordId = null;
 
   function chipClass(n) {
     if (!n && n !== 0) return 'chip-na';
@@ -269,33 +206,27 @@
     return 'chip-low';
   }
 
-  function scoreColor(n) {
-    if (n >= 75) return 'var(--success)';
-    if (n >= 50) return 'var(--warning)';
-    return 'var(--danger)';
-  }
-
-  function fmt(ts) {
-    try { return new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
-    catch { return ts; }
-  }
-
-  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
   const STATUSES = ['Draft','Applied','Interviewing','Rejected','Offer'];
 
-  async function load() {
-    const res = await fetch('/history');
-    records = await res.json();
+  async function load(page = 0) {
+    currentPage = page;
+    const offset = page * PAGE_SIZE;
+    const res = await fetch(`/history?limit=${PAGE_SIZE}&offset=${offset}`);
+    const data = await res.json();
+    totalRecords = data.total;
+    records = data.items;
+
     const tbody = document.getElementById('histBody');
     if (!records.length) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-icon">📭</div><a href="/" style="color:var(--primary);font-weight:600;">No history yet — go tailor a resume!</a></td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-icon">📭</div><a href="/" style="color:var(--primary);font-weight:600;">No history yet — go tailor a resume!</a></td></tr>`;
+      document.getElementById('pagination').style.display = 'none';
       return;
     }
+
     tbody.innerHTML = records.map(r => `
       <tr onclick="openDrawer(${r.id})" data-id="${r.id}">
         <td class="row-id">#${r.id}</td>
-        <td class="row-ts">${fmt(r.timestamp)}</td>
+        <td class="row-ts">${fmtDate(r.timestamp)}</td>
         <td class="row-jd" title="${esc(r.job_description)}">${esc(r.job_description.slice(0,150))}</td>
         <td><span class="chip ${chipClass(r.ats_report?.score)}">${r.ats_report?.score ?? '—'}</span></td>
         <td><span class="chip ${chipClass(r.final_score)}">${r.final_score}</span></td>
@@ -304,27 +235,63 @@
             ${STATUSES.map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}
           </select>
         </td>
+        <td onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="confirmDelete(${r.id})" title="Delete">🗑</button>
+        </td>
       </tr>
     `).join('');
+
+    const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
+    const pag = document.getElementById('pagination');
+    if (totalRecords > PAGE_SIZE) {
+      pag.style.display = 'flex';
+      document.getElementById('paginationInfo').textContent =
+        `Showing ${offset + 1}–${Math.min(offset + records.length, totalRecords)} of ${totalRecords}`;
+      document.getElementById('prevBtn').disabled = page === 0;
+      document.getElementById('nextBtn').disabled = page >= totalPages - 1;
+    } else {
+      pag.style.display = 'none';
+    }
+  }
+
+  function changePage(dir) {
+    load(currentPage + dir);
   }
 
   async function patchStatus(sel) {
-    await fetch(`/history/${sel.dataset.id}/status`,{
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({status: sel.value}),
+    await fetch(`/history/${sel.dataset.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: sel.value }),
     });
+  }
+
+  async function confirmDelete(id) {
+    if (!confirm(`Delete record #${id}? This cannot be undone.`)) return;
+    const res = await fetch(`/history/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      if (openRecordId === id) closeDrawer();
+      load(currentPage);
+    } else {
+      alert('Delete failed');
+    }
+  }
+
+  async function deleteRecord() {
+    if (openRecordId) await confirmDelete(openRecordId);
   }
 
   function openDrawer(id) {
     const r = records.find(x => x.id === id);
     if (!r) return;
+    openRecordId = id;
 
     document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('selected'));
     const row = document.querySelector(`tr[data-id="${id}"]`);
     if (row) row.classList.add('selected');
 
     document.getElementById('dTitle').textContent = `Application #${r.id}`;
-    document.getElementById('dMeta').textContent  = fmt(r.timestamp) + ' · ' + r.status;
+    document.getElementById('dMeta').textContent  = fmtDate(r.timestamp) + ' · ' + r.status;
 
     const atsScore = r.ats_report?.score || 0;
     const missing  = (r.ats_report?.missing_keywords || []).length;
@@ -345,10 +312,10 @@
         <div style="font-size:11px;color:var(--text-3);margin-top:4px;">${missing===0?'Full coverage ✅':'term(s) to add'}</div>
       </div>`;
 
-    renderDiff(r.raw_resume, r.tailored_resume);
+    renderDiff(r.raw_resume, r.tailored_resume, 'dDiffBefore', 'dDiffAfter');
     document.getElementById('dCover').textContent = r.cover_letter || '(not generated)';
-    renderATSDrawer(r.ats_report);
-    renderFeedbackDrawer(r.recruiter_feedback, r.hiring_manager_feedback);
+    renderATSPanel(r.ats_report, 'dATS');
+    renderFeedbackPanel(r.recruiter_feedback, r.hiring_manager_feedback, 'dFeedback');
     document.getElementById('dJD').textContent = r.job_description;
 
     switchDTab('diff');
@@ -358,6 +325,7 @@
   }
 
   function closeDrawer() {
+    openRecordId = null;
     document.getElementById('overlay').classList.remove('open');
     document.getElementById('drawer').classList.remove('open');
     document.body.style.overflow = '';
@@ -370,92 +338,6 @@
     const names = ['diff','cover','ats','feedback','jd'];
     document.querySelectorAll('.dtab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.dpanel').forEach(p => p.classList.toggle('active', p.id === 'dpanel-'+name));
-  }
-
-  function renderDiff(original, tailored) {
-    const aLines = (original||'').split('\n');
-    const bLines = (tailored||'').split('\n');
-    const bSet = new Set(bLines), aSet = new Set(aLines);
-    let bHtml='', aHtml='';
-    aLines.forEach(l => { bHtml += !bSet.has(l) ? `<span class="diff-remove">${esc(l)||'&nbsp;'}</span>` : (l.trim()?`<span class="diff-ctx">${esc(l)}</span>`:''); });
-    bLines.forEach(l => { aHtml += !aSet.has(l) ? `<span class="diff-add">${esc(l)||'&nbsp;'}</span>`    : (l.trim()?`<span class="diff-ctx">${esc(l)}</span>`:''); });
-    document.getElementById('dDiffBefore').innerHTML = bHtml || '<span style="color:var(--text-3);font-style:italic;">No removed lines</span>';
-    document.getElementById('dDiffAfter').innerHTML  = aHtml || '<span style="color:var(--text-3);font-style:italic;">No added lines</span>';
-  }
-
-  function renderATSDrawer(ats) {
-    const score = ats?.score||0, missing = ats?.missing_keywords||[], suggestions = ats?.suggestions||[];
-    const col = scoreColor(score);
-    const msg = score>=75?'✅ Likely to pass ATS filters':score>=50?'⚠️ Borderline — add missing keywords':'❌ High risk of being filtered out';
-    document.getElementById('dATS').innerHTML = `
-      <div class="ats-header">
-        <div><div class="ats-big" style="color:${col};">${score}</div><div style="font-size:11px;color:var(--text-3);font-weight:600;">/100 ATS</div></div>
-        <div style="flex:1;"><div class="ats-track"><div class="ats-fill" style="width:${score}%;background:${col};"></div></div><div class="ats-msg">${msg}</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div><div class="sec-title">Missing Keywords</div><div class="tags">${missing.length?missing.map(k=>`<span class="tag tag-miss">${esc(k)}</span>`).join(''):'<span class="tag tag-none">None 🎉</span>'}</div></div>
-        <div><div class="sec-title">Suggestions</div><div class="tags">${suggestions.length?suggestions.map(k=>`<span class="tag tag-sugg">${esc(k)}</span>`).join(''):'<span class="tag tag-none">None</span>'}</div></div>
-      </div>`;
-  }
-
-  function parseKV(text, key) {
-    for (const l of (text||'').split('\n')) if (l.startsWith(key+':')) return l.slice(key.length+1).trim();
-    return '';
-  }
-
-  function vClass(text) {
-    const t=(text||'').toLowerCase();
-    if (t.includes('strong yes')) return 'v-strong-yes';
-    if (t.includes('pass with')||t.includes('maybe')) return 'v-concern';
-    if (t.includes('yes')) return 'v-yes';
-    if (t.includes('pass')) return 'v-pass';
-    if (t.includes('reject')||t.includes('no')) return 'v-no';
-    return '';
-  }
-
-  function renderFeedbackDrawer(recruiter, hm) {
-    const rVerdict  = parseKV(recruiter,'VERDICT');
-    const rFeedback = parseKV(recruiter,'FEEDBACK') || recruiter;
-    const hmScore   = parseInt(parseKV(hm,'SCORE'))||0;
-    const hmVerdict = parseKV(hm,'VERDICT');
-    const hmRatio   = parseKV(hm,'RATIONALE')||hm;
-    const hmCol = scoreColor(hmScore);
-    document.getElementById('dFeedback').innerHTML = `
-      <div class="feedback-grid">
-        <div class="feedback-card">
-          <div class="fc-title">👤 Recruiter <span class="fc-sub">30-second scan</span></div>
-          ${rVerdict?`<div><span class="verdict ${vClass(rVerdict)}">${esc(rVerdict)}</span></div>`:''}
-          <div class="fb-text">${esc(rFeedback)}</div>
-        </div>
-        <div class="feedback-card">
-          <div class="fc-title">🎯 Hiring Manager <span class="fc-sub">technical fit</span></div>
-          ${hmVerdict?`<div><span class="verdict ${vClass(hmVerdict)}">${esc(hmVerdict)}</span></div>`:''}
-          ${hmScore?`<div class="fit-row"><span style="font-size:11px;color:var(--text-3);font-weight:700;white-space:nowrap;">FIT SCORE</span><div class="fit-track"><div class="fit-fill" style="width:${hmScore}%;background:${hmCol};"></div></div><span style="font-size:13px;font-weight:700;color:${hmCol};min-width:32px;text-align:right;">${hmScore}</span></div>`:''}
-          <div class="fb-text">${esc(hmRatio)}</div>
-        </div>
-      </div>`;
-  }
-
-  function copyDrawer(boxId, fbId) {
-    navigator.clipboard.writeText(document.getElementById(boxId).textContent).then(() => {
-      const el = document.getElementById(fbId);
-      el.textContent = '✓ Copied!';
-      setTimeout(() => el.textContent = '', 2000);
-    });
-  }
-
-  async function downloadDrawerPDF(boxId, title) {
-    const content = document.getElementById(boxId).textContent;
-    const res = await fetch('/export-pdf',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({content, title}),
-    });
-    if (!res.ok) { alert('PDF generation failed'); return; }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href=url; a.download=title+'.pdf'; a.click();
-    URL.revokeObjectURL(url);
   }
 
   load();

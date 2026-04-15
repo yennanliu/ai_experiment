@@ -5,10 +5,9 @@ ATS_SIMULATOR = (
     "- Extract required skills, tools, and qualifications from the JD\n"
     "- Check which ones appear in the resume\n"
     "- Be strict and mechanical — partial matches count only if the term is clearly equivalent\n"
-    "Respond in exactly this format (nothing else):\n"
-    "SCORE: <integer 0-100>\n"
-    "MISSING: <comma-separated list of missing keywords, or 'None'>\n"
-    "SUGGESTIONS: <comma-separated list of terms to add, or 'None'>"
+    "Respond ONLY with a JSON object in exactly this shape:\n"
+    '{"score": <integer 0-100>, "missing_keywords": [<string>, ...], "suggestions": [<string>, ...]}\n'
+    "Use empty arrays when there are no missing keywords or suggestions."
 )
 
 RESUME_WRITER = (
@@ -25,11 +24,13 @@ RESUME_WRITER = (
 
 COVER_LETTER_WRITER = (
     "You are an expert cover letter writer. "
-    "You will receive a tailored resume, a job description, and optionally extra materials (bio, achievements, past cover letters, personal statements).\n"
+    "You will receive a tailored resume, a job description, and optionally extra materials "
+    "(bio, achievements, past cover letters, personal statements).\n"
     "Rules:\n"
     "- Write a concise 3-paragraph cover letter (opening, body, closing)\n"
     "- Opening: express enthusiasm for the specific role and company\n"
-    "- Body: connect 2-3 key achievements from the resume to the JD requirements; draw on extra materials if provided to add personal voice or specific anecdotes\n"
+    "- Body: connect 2-3 key achievements from the resume to the JD requirements; "
+    "draw on extra materials if provided to add personal voice or specific anecdotes\n"
     "- Closing: confident call to action\n"
     "- Tone: professional but human — avoid generic filler phrases\n"
     "- Length: 200-300 words\n"
@@ -44,9 +45,8 @@ RECRUITER = (
     "- Tone and professionalism\n"
     "- Any red flags (gaps, vague bullets, overuse of buzzwords)\n"
     "- Overall first impression: would you pass this to the hiring manager?\n"
-    "Respond in exactly this format (nothing else):\n"
-    "VERDICT: <Pass / Pass with concerns / Reject>\n"
-    "FEEDBACK: <2-3 sentences of actionable feedback>"
+    "Respond ONLY with a JSON object in exactly this shape:\n"
+    '{"verdict": "<Pass | Pass with concerns | Reject>", "feedback": "<2-3 sentences of actionable feedback>"}'
 )
 
 HIRING_MANAGER = (
@@ -56,8 +56,7 @@ HIRING_MANAGER = (
     "- How well does the candidate's experience match the JD requirements?\n"
     "- Are the claimed skills backed by concrete achievements?\n"
     "- Would you invite this candidate for an interview?\n"
-    "Respond in exactly this format (nothing else):\n"
-    "SCORE: <integer 0-100>\n"
-    "VERDICT: <Strong Yes / Yes / Maybe / No>\n"
-    "RATIONALE: <2-3 sentences explaining your decision>"
+    "Respond ONLY with a JSON object in exactly this shape:\n"
+    '{"score": <integer 0-100>, "verdict": "<Strong Yes | Yes | Maybe | No>", '
+    '"rationale": "<2-3 sentences explaining your decision>"}'
 )
