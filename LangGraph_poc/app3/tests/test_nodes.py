@@ -43,15 +43,15 @@ async def test_score_output_zeros():
 
 
 @pytest.mark.asyncio
-async def test_score_output_preserves_state():
+async def test_score_output_returns_only_delta():
+    """score_output returns only final_score (partial state); LangGraph merges the rest."""
     state = _state(
         ats_report={"score": 50, "missing_keywords": ["Python"], "suggestions": []},
         hiring_manager_feedback={"score": 60, "verdict": "Maybe", "rationale": "Close."},
     )
     result = await score_output(state)
-    assert result["tailored_resume"] == "tailored"
-    assert result["cover_letter"] == "cover"
-    assert result["ats_report"]["missing_keywords"] == ["Python"]
+    assert "final_score" in result
+    assert list(result.keys()) == ["final_score"]
 
 
 @pytest.mark.asyncio
