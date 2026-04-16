@@ -127,6 +127,64 @@
     .ats-bar-fill  { height: 100%; border-radius: 999px; transition: width .6s; }
     .ats-bar-msg   { font-size: 12px; color: var(--text-2); }
 
+    /* Inline select */
+    .inline-select {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; font-weight: 500; color: var(--text);
+      background: var(--surface); cursor: pointer; transition: border-color .15s;
+      appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239CA3AF' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .inline-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+
+    /* Inline text input */
+    .inline-input {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface);
+      transition: border-color .15s, box-shadow .15s; margin-top: 8px;
+    }
+    .inline-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: var(--white); }
+    .inline-input::placeholder { color: var(--text-3); }
+
+    /* Chip row */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .chip-btn {
+      padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border); background: var(--surface); color: var(--text-2);
+      cursor: pointer; transition: all .15s; font-family: inherit;
+    }
+    .chip-btn:hover { background: var(--primary-light); color: var(--primary); border-color: rgba(124,58,237,.3); }
+
+    /* Score tier */
+    .score-tier {
+      font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+      letter-spacing: .04em; white-space: nowrap;
+    }
+    .tier-weak   { background: var(--danger-light);  color: #991B1B; }
+    .tier-fair   { background: var(--warning-light); color: #92400E; }
+    .tier-good   { background: #DCFCE7; color: #166534; }
+    .tier-strong { background: var(--success-light); color: #065F46; }
+
+    /* Mobile hamburger */
+    .hamburger {
+      display: none; position: fixed; top: 14px; left: 14px; z-index: 500;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      background: var(--white); border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      align-items: center; justify-content: center; font-size: 18px;
+    }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3);
+      z-index: 190; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.open { display: block; }
+
+    @media (max-width: 900px) {
+      .hamburger { display: flex; }
+      .sidebar { transform: translateX(-100%); transition: transform .25s; }
+      .sidebar.open { transform: translateX(0); }
+    }
+
     @media (max-width: 768px) {
       .input-grid, .ats-sections { grid-template-columns: 1fr; }
       .page { padding: 20px 16px 60px; }
@@ -232,8 +290,11 @@
 </head>
 <body>
 
+<button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
 <!-- Sidebar -->
-<aside class="sidebar">
+<aside class="sidebar" id="mainSidebar">
   <a class="sidebar-logo" href="/">
     <div class="sidebar-logo-icon">📄</div>
     ResumeTailor
@@ -305,18 +366,64 @@
       </div>
     </div>
 
-    <div style="margin-top: 16px;">
+    <div style="margin-top: 16px; display:flex; flex-direction:column; gap:10px;">
+
+      <!-- Cover letter intent -->
       <div class="accordion">
-        <button class="accordion-trigger" id="matTrigger" onclick="toggleMaterials()">
-          <span>📎 Additional Materials <span style="font-weight:400;color:var(--text-3);font-size:13px;">— optional context for cover letter</span></span>
+        <button class="accordion-trigger" id="clTrigger" onclick="toggleAccordion('clTrigger','clBody')">
+          <span>💌 Cover Letter Options <span style="font-weight:400;color:var(--text-3);font-size:13px;">— tone, length & focus</span></span>
+          <span class="chevron">▼</span>
+        </button>
+        <div class="accordion-body" id="clBody">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+            <div class="input-block">
+              <label class="input-label">Tone</label>
+              <select id="clTone" class="inline-select">
+                <option value="professional">Professional</option>
+                <option value="conversational">Conversational</option>
+                <option value="concise">Concise &amp; Direct</option>
+              </select>
+            </div>
+            <div class="input-block">
+              <label class="input-label">Length</label>
+              <select id="clLength" class="inline-select">
+                <option value="standard">Standard (200–300 words)</option>
+                <option value="brief">Brief (150–200 words)</option>
+                <option value="detailed">Detailed (350–450 words)</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-block">
+            <label class="input-label">What to Emphasize <span class="input-hint">optional</span></label>
+            <div class="chip-row" id="emphasisChips">
+              <button class="chip-btn" onclick="addEmphasis('Leadership experience')">Leadership experience</button>
+              <button class="chip-btn" onclick="addEmphasis('Cost savings & efficiency')">Cost savings</button>
+              <button class="chip-btn" onclick="addEmphasis('Remote work track record')">Remote work</button>
+              <button class="chip-btn" onclick="addEmphasis('Cross-functional collaboration')">Cross-functional</button>
+              <button class="chip-btn" onclick="addEmphasis('Technical depth & architecture')">Technical depth</button>
+            </div>
+            <input type="text" id="emphasisInput" class="inline-input" placeholder="e.g. My experience scaling systems to 10M users…" maxlength="300">
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional materials -->
+      <div class="accordion">
+        <button class="accordion-trigger" id="matTrigger" onclick="toggleAccordion('matTrigger','matBody')">
+          <span>📎 What to Highlight <span style="font-weight:400;color:var(--text-3);font-size:13px;">— achievements, bio, personal story</span></span>
           <span class="chevron">▼</span>
         </button>
         <div class="accordion-body" id="matBody">
-          <p class="materials-hint">Add anything that helps personalize your cover letter: a short bio, career highlights, previous cover letters, personal statement, or specific achievements you want to mention.</p>
-          <textarea id="materialsInput" placeholder="e.g. I'm passionate about distributed systems and led a team that reduced infrastructure costs by 40%…" oninput="countChars('materialsInput','matCount')"></textarea>
+          <div class="chip-row" style="margin-bottom:10px;">
+            <button class="chip-btn" onclick="addMaterial('I led a team that reduced infrastructure costs by 40%.')">Cost reduction</button>
+            <button class="chip-btn" onclick="addMaterial('I have 5 years of experience leading distributed teams across 3 time zones.')">Team leadership</button>
+            <button class="chip-btn" onclick="addMaterial('My work was featured in TechCrunch and scaled to 1M users in 6 months.')">Notable achievement</button>
+          </div>
+          <textarea id="materialsInput" placeholder="Add anything that helps personalize your cover letter: a short bio, career highlights, personal statement, or specific achievements…" oninput="countChars('materialsInput','matCount')"></textarea>
           <div class="char-hint" id="matCount" style="margin-top:5px;">0 chars</div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -374,6 +481,7 @@
     <div class="action-bar" style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);">
       <div class="action-bar-left">
         <button class="btn btn-primary" id="tailorBtn" onclick="tailor()">✨ Tailor Resume</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadSample()">Load Sample</button>
         <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear</button>
         <div class="status-pill"><div class="dot" id="statusDot"></div><span id="statusText">Ready</span></div>
       </div>
@@ -382,6 +490,7 @@
           <span class="score-widget-label">Score</span>
           <div class="score-track"><div class="score-fill" id="scoreBar" style="width:0;background:var(--border);"></div></div>
           <div class="score-num" id="scoreLabel" style="color:var(--text-3);">—</div>
+          <span class="score-tier" id="scoreTier"></span>
         </div>
       </div>
     </div>
@@ -545,6 +654,18 @@
 
 <script src="/static/app.js"></script>
 <script>
+  // ── Re-tailor pre-fill (from history) ──
+  (function() {
+    const saved = localStorage.getItem('retailor');
+    if (!saved) return;
+    localStorage.removeItem('retailor');
+    try {
+      const { resume, jd } = JSON.parse(saved);
+      if (resume) { document.getElementById('resumeInput').value = resume; countChars('resumeInput','resumeCount'); }
+      if (jd)     { document.getElementById('jdInput').value = jd;         countChars('jdInput','jdCount'); }
+    } catch(e) {}
+  })();
+
   // ── Pipeline state ──
   const NODES = [
     { key: 'parse_inputs',          arrow: 'arrow-1', running: 'Parsing…' },
@@ -607,15 +728,86 @@
     const lbl = document.getElementById('scoreLabel');
     lbl.textContent = score;
     lbl.style.color = scoreColor(score);
+
+    const tier = document.getElementById('scoreTier');
+    if (score >= 85)      { tier.textContent = 'Strong';      tier.className = 'score-tier tier-strong'; }
+    else if (score >= 70) { tier.textContent = 'Competitive'; tier.className = 'score-tier tier-good'; }
+    else if (score >= 50) { tier.textContent = 'Fair';        tier.className = 'score-tier tier-fair'; }
+    else                  { tier.textContent = 'Weak';        tier.className = 'score-tier tier-weak'; }
   }
 
   function countChars(tid, cid) {
     document.getElementById(cid).textContent = document.getElementById(tid).value.length.toLocaleString() + ' chars';
   }
 
-  function toggleMaterials() {
-    document.getElementById('matTrigger').classList.toggle('open');
-    document.getElementById('matBody').classList.toggle('open');
+  function toggleAccordion(triggerId, bodyId) {
+    document.getElementById(triggerId).classList.toggle('open');
+    document.getElementById(bodyId).classList.toggle('open');
+  }
+
+  function toggleMaterials() { toggleAccordion('matTrigger', 'matBody'); }
+
+  function addEmphasis(text) {
+    const el = document.getElementById('emphasisInput');
+    el.value = el.value ? el.value + '; ' + text : text;
+  }
+
+  function addMaterial(text) {
+    const el = document.getElementById('materialsInput');
+    el.value = el.value ? el.value + '\n' + text : text;
+    countChars('materialsInput', 'matCount');
+  }
+
+  function toggleSidebar() {
+    document.getElementById('mainSidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+
+  function loadSample() {
+    document.getElementById('resumeInput').value = `Jane Smith
+jane@email.com | linkedin.com/in/janesmith | San Francisco, CA
+
+SUMMARY
+Software engineer with 5 years of experience building scalable backend systems in Python and Go. Led teams of 3–6 engineers and delivered projects serving 2M+ users.
+
+EXPERIENCE
+Senior Software Engineer — Acme Corp (2021–Present)
+• Redesigned data pipeline, reducing processing time by 60%
+• Mentored 4 junior engineers; ran weekly code reviews
+• Led migration from monolith to microservices (Go, Kubernetes)
+
+Software Engineer — Startup XYZ (2019–2021)
+• Built REST APIs serving 500K daily requests (Python, FastAPI)
+• Reduced infrastructure cost by 35% via autoscaling improvements
+
+EDUCATION
+B.S. Computer Science — UC Berkeley, 2019
+
+SKILLS
+Languages: Python, Go, TypeScript
+Infrastructure: Kubernetes, Docker, AWS, Terraform
+Databases: PostgreSQL, Redis, DynamoDB`;
+
+    document.getElementById('jdInput').value = `Software Engineer — Backend Platform
+TechCorp | San Francisco, CA (Hybrid)
+
+We are looking for a Backend Platform Engineer to join our infrastructure team.
+
+Responsibilities:
+• Design and build highly available distributed systems
+• Own services in Python or Go
+• Partner with product and data teams to deliver new capabilities
+• Participate in on-call rotation
+
+Requirements:
+• 4+ years of backend engineering experience
+• Proficiency in Python or Go
+• Experience with Kubernetes and cloud platforms (AWS/GCP)
+• Strong understanding of system design and distributed systems
+• Experience mentoring junior engineers preferred`;
+
+    countChars('resumeInput', 'resumeCount');
+    countChars('jdInput', 'jdCount');
   }
 
   function switchTab(name) {
@@ -763,9 +955,12 @@
 
   // ── Main tailor ──
   async function tailor() {
-    const resume = document.getElementById('resumeInput').value.trim();
-    const jd     = document.getElementById('jdInput').value.trim();
-    const mats   = document.getElementById('materialsInput').value.trim();
+    const resume   = document.getElementById('resumeInput').value.trim();
+    const jd       = document.getElementById('jdInput').value.trim();
+    const mats     = document.getElementById('materialsInput').value.trim();
+    const clTone   = document.getElementById('clTone')?.value || 'professional';
+    const clLength = document.getElementById('clLength')?.value || 'standard';
+    const clEmph   = document.getElementById('emphasisInput')?.value.trim() || '';
 
     if (!validateInputs(resume, jd)) return;
 
@@ -780,7 +975,12 @@
       const response = await fetch('/tailor-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resume, job_description: jd, materials: mats }),
+        body: JSON.stringify({
+          resume, job_description: jd, materials: mats,
+          cover_letter_tone: clTone,
+          cover_letter_length: clLength,
+          cover_letter_emphasis: clEmph,
+        }),
       });
       if (!response.ok) {
         const e = await response.json().catch(() => ({}));
@@ -823,10 +1023,14 @@
   }
 
   function clearAll() {
-    ['resumeInput','jdInput','materialsInput'].forEach(id => {
+    ['resumeInput','jdInput','materialsInput','emphasisInput'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { el.value = ''; el.classList.remove('invalid'); }
     });
+    const clTone = document.getElementById('clTone');
+    if (clTone) clTone.value = 'professional';
+    const clLen = document.getElementById('clLength');
+    if (clLen) clLen.value = 'standard';
     ['resumeErr','jdErr'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent=''; });
     countChars('resumeInput','resumeCount');
     countChars('jdInput','jdCount');
@@ -843,6 +1047,8 @@
     document.getElementById('scoreBar').style.cssText = 'width:0;background:var(--border);';
     document.getElementById('scoreLabel').textContent = '—';
     document.getElementById('scoreLabel').style.color = 'var(--text-3)';
+    const tier = document.getElementById('scoreTier');
+    if (tier) { tier.textContent = ''; tier.className = 'score-tier'; }
     document.getElementById('dlResumeBtn').style.display = 'none';
     document.getElementById('dlCoverBtn').style.display  = 'none';
     _lastResult = null;
