@@ -46,6 +46,7 @@ async def parse_inputs(state: ResumeState) -> dict:
     # because multiple nodes try to write the same channel in one superstep.
     return {
         "materials": state.get("materials") or "",
+        "cover_letter_intent": state.get("cover_letter_intent") or "",
         "tailored_resume": "",
         "cover_letter": "",
         "ats_report": {},
@@ -97,9 +98,12 @@ async def rewrite_resume(state: ResumeState) -> ResumeState:
 async def write_cover_letter(state: ResumeState) -> ResumeState:
     """Cover Letter Writer — generate a tailored cover letter."""
     cfg = get_settings()
-    materials_block = ""
+    extras = []
     if state.get("materials", "").strip():
-        materials_block = f"\n\nAdditional Materials:\n{state['materials']}"
+        extras.append(f"Additional Materials:\n{state['materials']}")
+    if state.get("cover_letter_intent", "").strip():
+        extras.append(f"Writer Instructions: {state['cover_letter_intent']}")
+    extras_block = ("\n\n" + "\n\n".join(extras)) if extras else ""
 
     cover_letter = await _chat(
         model=cfg.openai_model_writer,
@@ -107,7 +111,7 @@ async def write_cover_letter(state: ResumeState) -> ResumeState:
         user=(
             f"Job Description:\n{state['job_description']}\n\n"
             f"Tailored Resume:\n{state['tailored_resume']}"
-            f"{materials_block}"
+            f"{extras_block}"
         ),
         temperature=0.4,
     )

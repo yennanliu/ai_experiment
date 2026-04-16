@@ -77,12 +77,50 @@
     .dpanel { display: none; flex-direction: column; gap: 14px; }
     .dpanel.active { display: flex; }
 
+    /* Search */
+    .search-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+    .search-box {
+      padding: 9px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; color: var(--text); background: var(--white);
+      width: 280px; transition: border-color .15s, box-shadow .15s;
+    }
+    .search-box:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+    .status-filter {
+      padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; font-weight: 500; color: var(--text);
+      background: var(--white); cursor: pointer;
+    }
+    .status-filter:focus { outline: none; border-color: var(--primary); }
+
+    /* Mobile sidebar */
+    .hamburger {
+      display: none; position: fixed; top: 14px; left: 14px; z-index: 500;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      background: var(--white); border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      align-items: center; justify-content: center; font-size: 18px;
+    }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3);
+      z-index: 190; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.open { display: block; }
+
+    @media (max-width: 900px) {
+      .hamburger { display: flex; }
+      .sidebar { transform: translateX(-100%); transition: transform .25s; }
+      .sidebar.open { transform: translateX(0); }
+    }
+
     @media (max-width: 680px) { .drawer { width: 100vw; } }
   </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="mainSidebar">
   <a class="sidebar-logo" href="/">
     <div class="sidebar-logo-icon">📄</div>
     ResumeTailor
@@ -120,9 +158,22 @@
 
 <div class="main">
 <div class="page">
-  <div class="page-header">
-    <div class="page-title">Application History</div>
-    <div class="page-sub">Click any row to view details, diff, and agent feedback</div>
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div>
+      <div class="page-title">Application History</div>
+      <div class="page-sub">Click any row to view details, diff, and agent feedback</div>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search-box" placeholder="🔍  Search by company, title, or JD…" oninput="onSearch()">
+      <select id="statusFilter" class="status-filter" onchange="onSearch()">
+        <option value="">All statuses</option>
+        <option value="Draft">Draft</option>
+        <option value="Applied">Applied</option>
+        <option value="Interviewing">Interviewing</option>
+        <option value="Rejected">Rejected</option>
+        <option value="Offer">Offer</option>
+      </select>
+    </div>
   </div>
 
   <div class="table-card">
@@ -131,7 +182,8 @@
         <tr>
           <th>#</th>
           <th>Date</th>
-          <th>Job Description</th>
+          <th>Company</th>
+          <th>Role</th>
           <th>ATS</th>
           <th>Score</th>
           <th>Status</th>
@@ -139,7 +191,7 @@
         </tr>
       </thead>
       <tbody id="histBody">
-        <tr class="empty-row"><td colspan="7"><div class="empty-icon">⏳</div>Loading…</td></tr>
+        <tr class="empty-row"><td colspan="8"><div class="empty-icon">⏳</div>Loading…</td></tr>
       </tbody>
     </table>
     <div class="pagination" id="pagination" style="display:none;">
@@ -161,6 +213,7 @@
         <div class="drawer-ts" id="dMeta"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-ghost btn-sm" id="retailorBtn" onclick="retailor()">✨ Re-tailor</button>
         <button class="btn btn-danger btn-sm" id="deleteBtn" onclick="deleteRecord()">🗑 Delete</button>
         <button class="close-btn" onclick="closeDrawer()">✕</button>
       </div>
@@ -172,6 +225,7 @@
       <button class="dtab" onclick="switchDTab('ats')">🤖 ATS Report</button>
       <button class="dtab" onclick="switchDTab('feedback')">💬 Agent Feedback</button>
       <button class="dtab" onclick="switchDTab('jd')">💼 Job Description</button>
+      <button class="dtab" onclick="switchDTab('notes')">📝 Notes</button>
     </div>
   </div>
 
@@ -214,6 +268,12 @@
     <div class="dpanel" id="dpanel-jd">
       <div class="content-box" id="dJD"></div>
     </div>
+
+    <div class="dpanel" id="dpanel-notes">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:10px;">Notes are saved automatically when you click outside the text area.</p>
+      <textarea id="dNotes" style="width:100%;min-height:200px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;font-family:inherit;line-height:1.65;resize:vertical;color:var(--text);background:var(--surface);" placeholder="Interview date, recruiter name, next steps, impressions…" onblur="saveNotes()"></textarea>
+      <div style="font-size:12px;color:var(--text-3);margin-top:6px;" id="notesSaved"></div>
+    </div>
   </div>
 </div>
 
@@ -223,6 +283,7 @@
   let currentPage = 0;
   let totalRecords = 0;
   let records = [];
+  let filteredRecords = [];
   let openRecordId = null;
 
   function chipClass(n) {
@@ -230,6 +291,13 @@
     if (n >= 75) return 'chip-high';
     if (n >= 50) return 'chip-mid';
     return 'chip-low';
+  }
+
+  function scoreTierLabel(s) {
+    if (s >= 85) return '<span style="font-size:11px;font-weight:700;color:#065F46;background:#D1FAE5;padding:2px 8px;border-radius:999px;">Strong</span>';
+    if (s >= 70) return '<span style="font-size:11px;font-weight:700;color:#166534;background:#DCFCE7;padding:2px 8px;border-radius:999px;">Competitive</span>';
+    if (s >= 50) return '<span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF3C7;padding:2px 8px;border-radius:999px;">Fair</span>';
+    return '<span style="font-size:11px;font-weight:700;color:#991B1B;background:#FEE2E2;padding:2px 8px;border-radius:999px;">Weak</span>';
   }
 
   const STATUSES = ['Draft','Applied','Interviewing','Rejected','Offer'];
@@ -241,21 +309,38 @@
     const data = await res.json();
     totalRecords = data.total;
     records = data.items;
+    renderTable(records, offset);
+  }
 
+  function onSearch() {
+    const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const st = document.getElementById('statusFilter')?.value || '';
+    filteredRecords = records.filter(r => {
+      const matchQ = !q || (r.company_name||'').toLowerCase().includes(q)
+        || (r.job_title||'').toLowerCase().includes(q)
+        || (r.job_description||'').toLowerCase().includes(q);
+      const matchS = !st || r.status === st;
+      return matchQ && matchS;
+    });
+    renderTable(filteredRecords, 0);
+  }
+
+  function renderTable(rows, offset) {
     const tbody = document.getElementById('histBody');
-    if (!records.length) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-icon">📭</div><a href="/" style="color:var(--primary);font-weight:600;">No history yet — go tailor a resume!</a></td></tr>`;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><div class="empty-icon">📭</div><a href="/" style="color:var(--primary);font-weight:600;">No history yet — go tailor a resume!</a></td></tr>`;
       document.getElementById('pagination').style.display = 'none';
       return;
     }
 
-    tbody.innerHTML = records.map(r => `
+    tbody.innerHTML = rows.map(r => `
       <tr onclick="openDrawer(${r.id})" data-id="${r.id}">
         <td class="row-id">#${r.id}</td>
         <td class="row-ts">${fmtDate(r.timestamp)}</td>
-        <td class="row-jd" title="${esc(r.job_description)}">${esc(r.job_description.slice(0,150))}</td>
+        <td style="font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.company_name||'—')}</td>
+        <td class="row-jd" title="${esc(r.job_title||r.job_description)}">${esc(r.job_title||r.job_description.slice(0,80))}</td>
         <td><span class="chip ${chipClass(r.ats_report?.score)}">${r.ats_report?.score ?? '—'}</span></td>
-        <td><span class="chip ${chipClass(r.final_score)}">${r.final_score}</span></td>
+        <td style="white-space:nowrap;">${scoreTierLabel(r.final_score)}&nbsp;<span style="font-weight:700;">${r.final_score}</span></td>
         <td onclick="event.stopPropagation()">
           <select class="status-sel" data-id="${r.id}" onchange="patchStatus(this)">
             ${STATUSES.map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}
@@ -267,22 +352,20 @@
       </tr>
     `).join('');
 
-    const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
     const pag = document.getElementById('pagination');
-    if (totalRecords > PAGE_SIZE) {
+    if (totalRecords > PAGE_SIZE && !document.getElementById('searchInput')?.value) {
+      const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
       pag.style.display = 'flex';
       document.getElementById('paginationInfo').textContent =
-        `Showing ${offset + 1}–${Math.min(offset + records.length, totalRecords)} of ${totalRecords}`;
-      document.getElementById('prevBtn').disabled = page === 0;
-      document.getElementById('nextBtn').disabled = page >= totalPages - 1;
+        `Showing ${offset + 1}–${Math.min(offset + rows.length, totalRecords)} of ${totalRecords}`;
+      document.getElementById('prevBtn').disabled = currentPage === 0;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
     } else {
       pag.style.display = 'none';
     }
   }
 
-  function changePage(dir) {
-    load(currentPage + dir);
-  }
+  function changePage(dir) { load(currentPage + dir); }
 
   async function patchStatus(sel) {
     await fetch(`/history/${sel.dataset.id}/status`, {
@@ -290,6 +373,34 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: sel.value }),
     });
+  }
+
+  async function saveNotes() {
+    if (!openRecordId) return;
+    const notes = document.getElementById('dNotes').value;
+    const res = await fetch(`/history/${openRecordId}/notes`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes }),
+    });
+    const saved = document.getElementById('notesSaved');
+    saved.textContent = res.ok ? 'Saved ✓' : 'Save failed';
+    setTimeout(() => { saved.textContent = ''; }, 2000);
+    if (res.ok) {
+      const r = records.find(x => x.id === openRecordId);
+      if (r) r.notes = notes;
+    }
+  }
+
+  function retailor() {
+    if (!openRecordId) return;
+    const r = records.find(x => x.id === openRecordId);
+    if (!r) return;
+    localStorage.setItem('retailor', JSON.stringify({
+      resume: r.raw_resume,
+      jd: r.job_description,
+    }));
+    window.location.href = '/';
   }
 
   async function confirmDelete(id) {
@@ -316,8 +427,10 @@
     const row = document.querySelector(`tr[data-id="${id}"]`);
     if (row) row.classList.add('selected');
 
-    document.getElementById('dTitle').textContent = `Application #${r.id}`;
-    document.getElementById('dMeta').textContent  = fmtDate(r.timestamp) + ' · ' + r.status;
+    const company = r.company_name ? ` — ${r.company_name}` : '';
+    const role    = r.job_title    ? ` · ${r.job_title}` : '';
+    document.getElementById('dTitle').textContent = `Application #${r.id}${company}`;
+    document.getElementById('dMeta').textContent  = fmtDate(r.timestamp) + role + ' · ' + r.status;
 
     const atsScore = r.ats_report?.score || 0;
     const missing  = (r.ats_report?.missing_keywords || []).length;
@@ -343,6 +456,8 @@
     renderATSPanel(r.ats_report, 'dATS');
     renderFeedbackPanel(r.recruiter_feedback, r.hiring_manager_feedback, 'dFeedback');
     document.getElementById('dJD').textContent = r.job_description;
+    document.getElementById('dNotes').value = r.notes || '';
+    document.getElementById('notesSaved').textContent = '';
 
     switchDTab('diff');
     document.getElementById('overlay').classList.add('open');
@@ -361,9 +476,14 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
   function switchDTab(name) {
-    const names = ['diff','cover','ats','feedback','jd'];
+    const names = ['diff','cover','ats','feedback','jd','notes'];
     document.querySelectorAll('.dtab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.dpanel').forEach(p => p.classList.toggle('active', p.id === 'dpanel-'+name));
+  }
+
+  function toggleSidebar() {
+    document.getElementById('mainSidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
   }
 
   load();

@@ -21,6 +21,8 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS history (
                 id                       INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp                TEXT    NOT NULL,
+                company_name             TEXT    NOT NULL DEFAULT '',
+                job_title                TEXT    NOT NULL DEFAULT '',
                 raw_resume               TEXT    NOT NULL,
                 job_description          TEXT    NOT NULL,
                 tailored_resume          TEXT    NOT NULL,
@@ -29,9 +31,19 @@ def init_db() -> None:
                 recruiter_feedback       TEXT    NOT NULL DEFAULT '{}',
                 hiring_manager_feedback  TEXT    NOT NULL DEFAULT '{}',
                 final_score              INTEGER NOT NULL DEFAULT 0,
-                status                   TEXT    NOT NULL DEFAULT 'Draft'
+                status                   TEXT    NOT NULL DEFAULT 'Draft',
+                notes                    TEXT    NOT NULL DEFAULT ''
             )
         """)
+        # Migrate existing DBs that lack the new columns
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(history)")}
+        for col, ddl in [
+            ("company_name", "TEXT NOT NULL DEFAULT ''"),
+            ("job_title",    "TEXT NOT NULL DEFAULT ''"),
+            ("notes",        "TEXT NOT NULL DEFAULT ''"),
+        ]:
+            if col not in existing:
+                conn.execute(f"ALTER TABLE history ADD COLUMN {col} {ddl}")
 
 
 def insert_record(
@@ -43,16 +55,20 @@ def insert_record(
     recruiter_feedback: dict,
     hiring_manager_feedback: dict,
     final_score: int,
+    company_name: str = "",
+    job_title: str = "",
 ) -> dict:
     ts = datetime.now(timezone.utc).isoformat()
     with _connect() as conn:
         cur = conn.execute(
             """INSERT INTO history
-               (timestamp, raw_resume, job_description, tailored_resume, cover_letter,
-                ats_report, recruiter_feedback, hiring_manager_feedback, final_score, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft')""",
+               (timestamp, company_name, job_title, raw_resume, job_description,
+                tailored_resume, cover_letter, ats_report, recruiter_feedback,
+                hiring_manager_feedback, final_score, status, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft', '')""",
             (
-                ts, raw_resume, job_description, tailored_resume, cover_letter,
+                ts, company_name, job_title, raw_resume, job_description,
+                tailored_resume, cover_letter,
                 json.dumps(ats_report),
                 json.dumps(recruiter_feedback),
                 json.dumps(hiring_manager_feedback),
@@ -82,6 +98,12 @@ def get_record(record_id: int) -> dict | None:
 def update_status(record_id: int, status: str) -> dict | None:
     with _connect() as conn:
         conn.execute("UPDATE history SET status = ? WHERE id = ?", (status, record_id))
+    return get_record(record_id)
+
+
+def update_notes(record_id: int, notes: str) -> dict | None:
+    with _connect() as conn:
+        conn.execute("UPDATE history SET notes = ? WHERE id = ?", (notes, record_id))
     return get_record(record_id)
 
 

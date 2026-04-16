@@ -17,7 +17,7 @@ from slowapi.util import get_remote_address
 from agent.config import get_settings
 from agent.designer import parse_resume_structure
 from agent.graph import resume_agent
-from db import delete_record, get_all_records, init_db, insert_record, update_status
+from db import delete_record, get_all_records, init_db, insert_record, update_notes, update_status
 
 
 # ── Structured JSON logging ───────────────────────────────────────────────────
@@ -81,6 +81,41 @@ _MAX_RESUME_TOKENS = 6000
 _MAX_JD_TOKENS = 3000
 
 
+def _build_cl_intent(body: "TailorRequest") -> str:
+    """Build a cover letter intent string to inject into the agent state."""
+    parts = []
+    if body.cover_letter_tone != "professional":
+        parts.append(f"Tone: {body.cover_letter_tone}")
+    if body.cover_letter_length != "standard":
+        length_map = {"brief": "150-200 words", "detailed": "350-450 words"}
+        parts.append(f"Length: {length_map.get(body.cover_letter_length, 'standard')}")
+    if body.cover_letter_emphasis.strip():
+        parts.append(f"Emphasize: {body.cover_letter_emphasis.strip()}")
+    return "; ".join(parts)
+
+
+async def _extract_job_meta(jd: str) -> tuple[str, str]:
+    """Extract company name and job title from a JD using a fast LLM call."""
+    from agent.nodes import _chat
+    from agent.config import get_settings
+    try:
+        raw = await _chat(
+            model=get_settings().openai_model_fast,
+            system=(
+                "Extract the company name and job title from the job description. "
+                'Respond ONLY with JSON: {"company_name": "<name or empty string>", "job_title": "<title or empty string>"}. '
+                "If not found, use empty strings."
+            ),
+            user=jd[:1500],
+            json_mode=True,
+        )
+        import json as _json
+        data = _json.loads(raw)
+        return data.get("company_name", ""), data.get("job_title", "")
+    except Exception:
+        return "", ""
+
+
 def _check_token_estimate(resume: str, jd: str) -> None:
     errors = []
     if len(resume) // 4 > _MAX_RESUME_TOKENS:
@@ -97,6 +132,10 @@ class TailorRequest(BaseModel):
     resume: str = Field(..., min_length=100, max_length=24000)
     job_description: str = Field(..., min_length=50, max_length=12000)
     materials: str = Field(default="", max_length=4000)
+    # Cover letter intent
+    cover_letter_tone: str = Field(default="professional")   # professional | conversational | concise
+    cover_letter_length: str = Field(default="standard")     # brief | standard | detailed
+    cover_letter_emphasis: str = Field(default="", max_length=300)  # what to highlight
 
 
 class TailorResponse(BaseModel):
@@ -107,10 +146,16 @@ class TailorResponse(BaseModel):
     recruiter_feedback: dict
     hiring_manager_feedback: dict
     final_score: int
+    company_name: str = ""
+    job_title: str = ""
 
 
 class StatusUpdate(BaseModel):
     status: Literal["Draft", "Applied", "Interviewing", "Rejected", "Offer"]
+
+
+class NotesUpdate(BaseModel):
+    notes: str = Field(default="", max_length=2000)
 
 
 class ExportRequest(BaseModel):
@@ -141,12 +186,17 @@ async def history_page():
 @limiter.limit("10/minute")
 async def tailor(request: Request, body: TailorRequest):
     _check_token_estimate(body.resume, body.job_description)
+    cl_intent = _build_cl_intent(body)
     initial_state = {
         "raw_resume": body.resume,
         "job_description": body.job_description,
         "materials": body.materials,
+        "cover_letter_intent": cl_intent,
     }
-    result = await resume_agent.ainvoke(initial_state)
+    result, (company_name, job_title) = await asyncio.gather(
+        resume_agent.ainvoke(initial_state),
+        _extract_job_meta(body.job_description),
+    )
     record = await asyncio.to_thread(
         insert_record,
         raw_resume=body.resume,
@@ -157,9 +207,16 @@ async def tailor(request: Request, body: TailorRequest):
         recruiter_feedback=result["recruiter_feedback"],
         hiring_manager_feedback=result["hiring_manager_feedback"],
         final_score=result["final_score"],
+        company_name=company_name,
+        job_title=job_title,
     )
     logger.info(f"Tailor complete id={record['id']} score={result['final_score']}")
-    return TailorResponse(id=record["id"], **{k: result[k] for k in TailorResponse.model_fields if k != "id"})
+    return TailorResponse(
+        id=record["id"],
+        company_name=company_name,
+        job_title=job_title,
+        **{k: result[k] for k in TailorResponse.model_fields if k not in ("id", "company_name", "job_title")},
+    )
 
 
 @app.post("/tailor-stream", dependencies=[Depends(verify_api_key)])
@@ -167,20 +224,20 @@ async def tailor(request: Request, body: TailorRequest):
 async def tailor_stream(request: Request, body: TailorRequest):
     """SSE: one node event per LangGraph node, then a final done event."""
     _check_token_estimate(body.resume, body.job_description)
+    cl_intent = _build_cl_intent(body)
     initial_state = {
         "raw_resume": body.resume,
         "job_description": body.job_description,
         "materials": body.materials,
+        "cover_letter_intent": cl_intent,
     }
+    # Extract company/title concurrently while the agent runs
+    meta_task = asyncio.create_task(_extract_job_meta(body.job_description))
 
     async def event_stream():
         try:
-            # Seed accumulated with the inputs so insert_record always has them,
-            # even though nodes now return only their changed fields (partial dicts).
             accumulated: dict = {**initial_state}
             async for chunk in resume_agent.astream(initial_state):
-                # A chunk may contain multiple keys when parallel nodes complete
-                # in the same superstep — iterate all of them.
                 for node_name, delta in chunk.items():
                     accumulated = {**accumulated, **delta}
 
@@ -205,6 +262,7 @@ async def tailor_stream(request: Request, body: TailorRequest):
                     yield f"event: node\ndata: {json.dumps(payload)}\n\n"
 
             if accumulated:
+                company_name, job_title = await meta_task
                 record = await asyncio.to_thread(
                     insert_record,
                     raw_resume=body.resume,
@@ -215,9 +273,13 @@ async def tailor_stream(request: Request, body: TailorRequest):
                     recruiter_feedback=accumulated.get("recruiter_feedback", {}),
                     hiring_manager_feedback=accumulated.get("hiring_manager_feedback", {}),
                     final_score=accumulated.get("final_score", 0),
+                    company_name=company_name,
+                    job_title=job_title,
                 )
                 result = {
                     "id": record["id"],
+                    "company_name": company_name,
+                    "job_title": job_title,
                     "tailored_resume": accumulated.get("tailored_resume", ""),
                     "cover_letter": accumulated.get("cover_letter", ""),
                     "ats_report": accumulated.get("ats_report", {}),
@@ -544,6 +606,14 @@ async def get_history(
 @app.patch("/history/{record_id}/status")
 async def update_record_status(record_id: int, body: StatusUpdate):
     record = await asyncio.to_thread(update_status, record_id, body.status)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+
+@app.patch("/history/{record_id}/notes")
+async def update_record_notes(record_id: int, body: NotesUpdate):
+    record = await asyncio.to_thread(update_notes, record_id, body.notes)
     if record is None:
         raise HTTPException(status_code=404, detail="Record not found")
     return record
