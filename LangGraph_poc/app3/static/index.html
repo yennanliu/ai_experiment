@@ -8,14 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
   <style>
-    .page { max-width: 1280px; margin: 0 auto; padding: 32px 28px 80px; display: flex; flex-direction: column; gap: 24px; }
-
-    /* Hero */
-    .hero { text-align: center; padding: 12px 0 4px; }
-    .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -.6px; }
-    .hero h1 span { color: var(--primary); }
-    .hero p { font-size: 16px; color: var(--text-2); margin-top: 10px; max-width: 540px; margin-inline: auto; }
-
     /* Section label */
     .section-label { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -144,24 +136,56 @@
 </head>
 <body>
 
-<nav>
-  <a class="nav-logo" href="/">
-    <div class="nav-logo-icon">📄</div>
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a class="sidebar-logo" href="/">
+    <div class="sidebar-logo-icon">📄</div>
     ResumeTailor
   </a>
-  <div class="nav-links">
-    <a href="/" class="nav-link active">Tailor</a>
-    <a href="/history-page" class="nav-link">History</a>
-  </div>
-</nav>
 
-<div class="page">
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Workspace</div>
+    <a href="/" class="sidebar-link active">
+      <span class="icon">✨</span> Tailor Resume
+    </a>
+    <a href="/history-page" class="sidebar-link">
+      <span class="icon">🕓</span> History
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Tools</div>
+    <div class="sidebar-link">
+      <span class="icon">🤖</span> ATS Scanner
+    </div>
+    <div class="sidebar-link">
+      <span class="icon">💌</span> Cover Letter
+    </div>
+    <div class="sidebar-link">
+      <span class="icon">🔀</span> Before / After
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-link" style="color:var(--primary);font-weight:600;">
+      <span class="icon">⭐</span> Upgrade to Pro
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
 
   <!-- Hero -->
-  <div class="hero">
-    <h1>Tailor Your Resume with <span>AI Agents</span></h1>
-    <p>Paste your resume and a job description. Our multi-agent pipeline rewrites your resume, scores ATS fit, and generates a cover letter.</p>
+  <div class="hero-section">
+    <div class="hero-badge">✦ Multi-Agent AI Pipeline</div>
+    <h1 class="hero-title">
+      <span class="gradient">AI-Powered</span> Resume Tailoring
+    </h1>
+    <p class="hero-sub">Paste your resume and a job description. Our agent pipeline rewrites, scores ATS fit, and crafts a cover letter — in seconds.</p>
   </div>
+
+  <div class="page-content">
 
   <!-- Inputs -->
   <div class="card">
@@ -324,7 +348,8 @@
     </div>
   </div>
 
-</div>
+  </div><!-- /page-content -->
+</div><!-- /main -->
 
 <script src="/static/app.js"></script>
 <script>
