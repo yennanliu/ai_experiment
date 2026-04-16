@@ -129,9 +129,105 @@
 
     @media (max-width: 768px) {
       .input-grid, .ats-sections { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 26px; }
       .page { padding: 20px 16px 60px; }
     }
+
+    /* ── PDF Modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal-box {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      width: 560px; max-width: calc(100vw - 32px);
+      overflow: hidden;
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn { from { transform: translateY(12px); opacity:0; } to { transform: none; opacity:1; } }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; color: var(--text-3);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .modal-close:hover { background: var(--surface); color: var(--text); }
+
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .opt-block { display: flex; flex-direction: column; gap: 8px; }
+    .opt-label { font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* Style cards */
+    .style-cards { display: flex; gap: 10px; }
+    .style-card {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 10px 8px; border-radius: var(--radius-sm);
+      border: 2px solid var(--border); cursor: pointer;
+      font-size: 12px; font-weight: 600; color: var(--text-2);
+      transition: all .15s;
+    }
+    .style-card:hover { border-color: var(--primary); color: var(--primary); }
+    .style-card.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .style-preview {
+      width: 48px; height: 36px; border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .classic-prev { background: linear-gradient(to bottom, #EEF2FF 30%, white 30%); }
+    .modern-prev  { background: linear-gradient(to bottom, #EDE9FE 30%, white 30%); }
+    .minimal-prev { background: linear-gradient(to bottom, #F3F4F6 30%, white 30%); }
+
+    /* Color swatches */
+    .color-swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .swatch {
+      width: 28px; height: 28px; border-radius: 50%;
+      cursor: pointer; border: 2.5px solid transparent;
+      transition: transform .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: var(--text); transform: scale(1.1); }
+    .swatch-custom {
+      background: linear-gradient(135deg, #ff0080, #ff8c00, #40e0d0);
+      position: relative; overflow: hidden;
+    }
+    .swatch-custom input[type="color"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    /* Segmented control */
+    .seg-ctrl {
+      display: flex; background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 3px; gap: 2px;
+    }
+    .seg {
+      flex: 1; padding: 5px 4px; font-size: 12px; font-weight: 600; font-family: inherit;
+      border: none; border-radius: 5px; cursor: pointer; color: var(--text-2);
+      background: none; transition: all .15s;
+    }
+    .seg:hover:not(.active) { color: var(--text); background: rgba(0,0,0,.04); }
+    .seg.active { background: var(--white); color: var(--primary); box-shadow: var(--shadow-sm); }
   </style>
 </head>
 <body>
@@ -351,6 +447,102 @@
   </div><!-- /page-content -->
 </div><!-- /main -->
 
+<!-- PDF Options Modal -->
+<div class="modal-backdrop" id="pdfModal" onclick="if(event.target===this)closePDFModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">📄 PDF Export Options</div>
+      <button class="modal-close" onclick="closePDFModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="opt-grid">
+
+        <div class="opt-block">
+          <label class="opt-label">Style</label>
+          <div class="style-cards" id="styleCards">
+            <div class="style-card active" data-val="classic" onclick="selectStyle(this)">
+              <div class="style-preview classic-prev"></div>
+              <span>Classic</span>
+            </div>
+            <div class="style-card" data-val="modern" onclick="selectStyle(this)">
+              <div class="style-preview modern-prev"></div>
+              <span>Modern</span>
+            </div>
+            <div class="style-card" data-val="minimal" onclick="selectStyle(this)">
+              <div class="style-preview minimal-prev"></div>
+              <span>Minimal</span>
+            </div>
+          </div>
+          <input type="hidden" id="pdfStyle" value="classic">
+        </div>
+
+        <div class="opt-block">
+          <label class="opt-label">Accent Color</label>
+          <div class="color-swatches">
+            <div class="swatch active" data-color="#4F46E5" style="background:#4F46E5" onclick="selectColor(this)" title="Indigo"></div>
+            <div class="swatch" data-color="#7C3AED" style="background:#7C3AED" onclick="selectColor(this)" title="Violet"></div>
+            <div class="swatch" data-color="#0F766E" style="background:#0F766E" onclick="selectColor(this)" title="Teal"></div>
+            <div class="swatch" data-color="#B45309" style="background:#B45309" onclick="selectColor(this)" title="Amber"></div>
+            <div class="swatch" data-color="#DC2626" style="background:#DC2626" onclick="selectColor(this)" title="Crimson"></div>
+            <div class="swatch" data-color="#1D4ED8" style="background:#1D4ED8" onclick="selectColor(this)" title="Blue"></div>
+            <div class="swatch swatch-custom" title="Custom">
+              <input type="color" id="pdfAccentColor" value="#4F46E5" oninput="syncCustomColor(this)">
+            </div>
+          </div>
+        </div>
+
+        <div class="opt-block">
+          <label class="opt-label">Page Size</label>
+          <div class="seg-ctrl">
+            <button class="seg active" data-val="A4" onclick="selectSeg(this,'pdfPageSize')">A4</button>
+            <button class="seg" data-val="Letter" onclick="selectSeg(this,'pdfPageSize')">Letter</button>
+          </div>
+          <input type="hidden" id="pdfPageSize" value="A4">
+        </div>
+
+        <div class="opt-block">
+          <label class="opt-label">Margins</label>
+          <div class="seg-ctrl">
+            <button class="seg" data-val="narrow" onclick="selectSeg(this,'pdfMargin')">Narrow</button>
+            <button class="seg active" data-val="normal" onclick="selectSeg(this,'pdfMargin')">Normal</button>
+            <button class="seg" data-val="wide" onclick="selectSeg(this,'pdfMargin')">Wide</button>
+          </div>
+          <input type="hidden" id="pdfMargin" value="normal">
+        </div>
+
+        <div class="opt-block">
+          <label class="opt-label">Pages</label>
+          <div class="seg-ctrl">
+            <button class="seg active" data-val="0" onclick="selectSeg(this,'pdfMaxPages')">Auto</button>
+            <button class="seg" data-val="1" onclick="selectSeg(this,'pdfMaxPages')">1 page</button>
+            <button class="seg" data-val="2" onclick="selectSeg(this,'pdfMaxPages')">2 pages</button>
+            <button class="seg" data-val="3" onclick="selectSeg(this,'pdfMaxPages')">3 pages</button>
+          </div>
+          <input type="hidden" id="pdfMaxPages" value="0">
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5;">Auto shrinks font to fit the selected limit.</div>
+        </div>
+
+        <div class="opt-block" style="grid-column:1/-1">
+          <label class="opt-label">Font Size — <span id="fontScaleLabel">100%</span></label>
+          <input type="range" id="pdfFontScale" min="0.8" max="1.3" step="0.05" value="1.0"
+                 oninput="document.getElementById('fontScaleLabel').textContent=Math.round(this.value*100)+'%'"
+                 style="width:100%;accent-color:var(--primary);">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:4px;">
+            <span>80%</span><span>100%</span><span>130%</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closePDFModal()">Cancel</button>
+      <button class="btn btn-primary" id="pdfConfirmBtn" onclick="confirmPDFDownload()">⬇ Download PDF</button>
+    </div>
+  </div>
+</div>
+
 <script src="/static/app.js"></script>
 <script>
   // ── Pipeline state ──
@@ -524,14 +716,49 @@
     dlC.disabled = false;
   }
 
+  // ── PDF options modal ──
+  let _pendingPDFContent = null;
+  let _pendingPDFTitle   = null;
+
+  function openPDFModal(content, title) {
+    _pendingPDFContent = content;
+    _pendingPDFTitle   = title;
+    document.getElementById('pdfModal').classList.add('open');
+  }
+
+  function closePDFModal() {
+    document.getElementById('pdfModal').classList.remove('open');
+  }
+
+  async function confirmPDFDownload() {
+    const btn = document.getElementById('pdfConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    const opts = {
+      style:        document.getElementById('pdfStyle').value,
+      page_size:    document.getElementById('pdfPageSize').value,
+      margin:       document.getElementById('pdfMargin').value,
+      font_scale:   parseFloat(document.getElementById('pdfFontScale').value),
+      accent_color: document.getElementById('pdfAccentColor').value,
+      max_pages:    parseInt(document.getElementById('pdfMaxPages').value, 10),
+    };
+    try {
+      await downloadPDFContent(_pendingPDFContent, _pendingPDFTitle, opts);
+      closePDFModal();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Download PDF';
+    }
+  }
+
   // ── PDF download ──
   async function dlResume() {
     if (!_lastResult) return;
-    await downloadPDFContent(_lastResult.tailored_resume, 'Tailored_Resume');
+    openPDFModal(_lastResult.tailored_resume, 'Tailored_Resume');
   }
   async function dlCover() {
     if (!_lastResult) return;
-    await downloadPDFContent(_lastResult.cover_letter, 'Cover_Letter');
+    openPDFModal(_lastResult.cover_letter, 'Cover_Letter');
   }
 
   // ── Main tailor ──
@@ -622,6 +849,31 @@
     setStatus('', 'Ready');
     pipeReset();
     switchTab('resume');
+  }
+
+  // ── PDF modal helpers ──
+  function selectStyle(el) {
+    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('pdfStyle').value = el.dataset.val;
+  }
+
+  function selectColor(el) {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('pdfAccentColor').value = el.dataset.color;
+  }
+
+  function syncCustomColor(input) {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    input.closest('.swatch-custom').classList.add('active');
+    // value is already the color input
+  }
+
+  function selectSeg(el, hiddenId) {
+    el.closest('.seg-ctrl').querySelectorAll('.seg').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(hiddenId).value = el.dataset.val;
   }
 </script>
 </body>

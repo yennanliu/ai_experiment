@@ -108,11 +108,21 @@ function renderFeedbackPanel(recruiter, hm, containerId) {
     </div>`;
 }
 
-async function downloadPDFContent(content, title) {
+async function downloadPDFContent(content, title, pdfOpts = {}) {
+  const payload = {
+    content,
+    title,
+    style:        pdfOpts.style        || 'classic',
+    page_size:    pdfOpts.page_size    || 'A4',
+    margin:       pdfOpts.margin       || 'normal',
+    font_scale:   pdfOpts.font_scale   || 1.0,
+    accent_color: pdfOpts.accent_color || '#4F46E5',
+    max_pages:    pdfOpts.max_pages    || 0,
+  };
   const res = await fetch('/export-pdf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, title }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) { alert('PDF generation failed'); return; }
   const blob = await res.blob();
