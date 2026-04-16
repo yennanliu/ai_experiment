@@ -116,6 +116,13 @@ class StatusUpdate(BaseModel):
 class ExportRequest(BaseModel):
     content: str = Field(..., min_length=1)
     title: str = Field(default="Resume")
+    # PDF options
+    style: str = Field(default="classic")          # classic | modern | minimal
+    page_size: str = Field(default="A4")           # A4 | Letter
+    margin: str = Field(default="normal")          # narrow | normal | wide
+    font_scale: float = Field(default=1.0, ge=0.7, le=1.5)
+    accent_color: str = Field(default="#4F46E5")   # hex color
+    max_pages: int = Field(default=0, ge=0, le=10)  # 0 = unlimited
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -243,7 +250,15 @@ async def export_pdf(req: ExportRequest):
         structure = await parse_resume_structure(req.content)
 
     # Step 2: render PDF
-    buf = await asyncio.to_thread(_render_pdf, req.content, req.title, structure)
+    pdf_opts = {
+        "style": req.style,
+        "page_size": req.page_size,
+        "margin": req.margin,
+        "font_scale": req.font_scale,
+        "accent_color": req.accent_color,
+        "max_pages": req.max_pages,
+    }
+    buf = await asyncio.to_thread(_render_pdf, req.content, req.title, structure, pdf_opts)
 
     safe_title = "".join(c for c in req.title if c.isalnum() or c in " _-").strip() or "document"
     filename = safe_title.replace(" ", "_") + ".pdf"
@@ -289,59 +304,103 @@ def _get_pdf_fonts() -> tuple[str, str, str]:
     return "Helvetica", "Helvetica-Bold", "Helvetica-Oblique"
 
 
-def _render_pdf(content: str, title: str, structure: dict | None) -> io.BytesIO:
+def _render_pdf(content: str, title: str, structure: dict | None, opts: dict | None = None) -> io.BytesIO:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, LETTER
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib.units import cm, mm
+    from reportlab.lib.units import cm
     from reportlab.platypus import (
         HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
     )
 
-    PAGE_W, PAGE_H = A4
-    L_MARGIN = R_MARGIN = 2.0 * cm
-    T_MARGIN = B_MARGIN = 2.0 * cm
+    opts = opts or {}
+    style      = opts.get("style", "classic")          # classic | modern | minimal
+    page_size  = opts.get("page_size", "A4")
+    margin_key = opts.get("margin", "normal")
+    font_scale = float(opts.get("font_scale", 1.0))
+    max_pages  = int(opts.get("max_pages", 0))         # 0 = unlimited
+    accent_hex = opts.get("accent_color", "#4F46E5")
+
+    # Page size
+    pagesize = LETTER if page_size == "Letter" else A4
+    PAGE_W, PAGE_H = pagesize
+
+    # Margins
+    margin_cm = {"narrow": 1.2, "normal": 2.0, "wide": 2.8}.get(margin_key, 2.0)
+    L_MARGIN = R_MARGIN = margin_cm * cm
+    T_MARGIN = B_MARGIN = margin_cm * cm
     BODY_W = PAGE_W - L_MARGIN - R_MARGIN
 
-    INDIGO   = colors.HexColor("#4F46E5")
-    DARK     = colors.HexColor("#111827")
-    MEDIUM   = colors.HexColor("#374151")
-    MUTED    = colors.HexColor("#6B7280")
-    RULE_CLR = colors.HexColor("#D1D5DB")
-    ACCENT   = colors.HexColor("#EEF2FF")
+    # Colors — vary by style
+    ACCENT_CLR = colors.HexColor(accent_hex)
+    DARK       = colors.HexColor("#111827")
+    MEDIUM     = colors.HexColor("#374151")
+    MUTED      = colors.HexColor("#6B7280")
+    RULE_CLR   = colors.HexColor("#D1D5DB")
+
+    if style == "minimal":
+        heading_color = DARK
+        section_color = MEDIUM
+        rule_color    = RULE_CLR
+    elif style == "modern":
+        heading_color = ACCENT_CLR
+        section_color = ACCENT_CLR
+        rule_color    = ACCENT_CLR
+    else:  # classic (default)
+        heading_color = ACCENT_CLR
+        section_color = ACCENT_CLR
+        rule_color    = RULE_CLR
 
     body_f, bold_f, ital_f = _get_pdf_fonts()
+
+    def fs(base: float) -> float:
+        return round(base * font_scale, 1)
 
     def S(name, **kw) -> ParagraphStyle:
         return ParagraphStyle(name, **kw)
 
-    s_name    = S("name",    fontName=bold_f, fontSize=22, leading=26, textColor=DARK,   spaceAfter=2)
-    s_job_ttl = S("jt",      fontName=body_f, fontSize=11, leading=14, textColor=INDIGO, spaceAfter=4)
-    s_contact = S("contact", fontName=body_f, fontSize=9,  leading=12, textColor=MUTED,  spaceAfter=0)
-    s_section = S("sec",     fontName=bold_f, fontSize=9,  leading=12, textColor=INDIGO,
+    s_name    = S("name",    fontName=bold_f, fontSize=fs(22), leading=fs(26), textColor=DARK,         spaceAfter=2)
+    s_job_ttl = S("jt",      fontName=body_f, fontSize=fs(11), leading=fs(14), textColor=heading_color, spaceAfter=4)
+    s_contact = S("contact", fontName=body_f, fontSize=fs(9),  leading=fs(12), textColor=MUTED,         spaceAfter=0)
+    s_section = S("sec",     fontName=bold_f, fontSize=fs(9),  leading=fs(12), textColor=section_color,
                   spaceBefore=14, spaceAfter=3, textTransform="uppercase", letterSpacing=0.8)
-    s_body    = S("body",    fontName=body_f, fontSize=10, leading=14, textColor=MEDIUM, spaceAfter=4)
-    s_bullet  = S("bullet",  fontName=body_f, fontSize=10, leading=14, textColor=MEDIUM,
+    s_body    = S("body",    fontName=body_f, fontSize=fs(10), leading=fs(14), textColor=MEDIUM, spaceAfter=4)
+    s_bullet  = S("bullet",  fontName=body_f, fontSize=fs(10), leading=fs(14), textColor=MEDIUM,
                   leftIndent=12, firstLineIndent=0, spaceAfter=3)
-    s_exp_ttl = S("etitle",  fontName=bold_f, fontSize=10, leading=13, textColor=DARK,   spaceAfter=1)
-    s_exp_co  = S("eco",     fontName=ital_f, fontSize=9,  leading=12, textColor=MUTED,  spaceAfter=3)
-    s_dates   = S("dates",   fontName=body_f, fontSize=9,  leading=12, textColor=MUTED,  alignment=TA_RIGHT)
-    s_cover   = S("cover",   fontName=body_f, fontSize=10.5, leading=16, textColor=MEDIUM, spaceAfter=8)
+    s_exp_ttl = S("etitle",  fontName=bold_f, fontSize=fs(10), leading=fs(13), textColor=DARK,   spaceAfter=1)
+    s_exp_co  = S("eco",     fontName=ital_f, fontSize=fs(9),  leading=fs(12), textColor=MUTED,  spaceAfter=3)
+    s_dates   = S("dates",   fontName=body_f, fontSize=fs(9),  leading=fs(12), textColor=MUTED,  alignment=TA_RIGHT)
+    s_cover   = S("cover",   fontName=body_f, fontSize=fs(10.5), leading=fs(16), textColor=MEDIUM, spaceAfter=8)
 
-    buf  = io.BytesIO()
-    doc  = SimpleDocTemplate(buf, pagesize=A4,
-                             leftMargin=L_MARGIN, rightMargin=R_MARGIN,
-                             topMargin=T_MARGIN,  bottomMargin=B_MARGIN)
+    buf   = io.BytesIO()
     story = []
 
-    def hr(thickness=0.5, color=RULE_CLR, space_before=6, space_after=6):
-        return HRFlowable(width="100%", thickness=thickness, color=color,
+    header_rule_thickness = 1.2 if style != "minimal" else 0.5
+    header_rule_color = heading_color if style in ("classic", "modern") else RULE_CLR
+
+    def hr(thickness=0.5, color=None, space_before=6, space_after=6):
+        return HRFlowable(width="100%", thickness=thickness, color=color or rule_color,
                           spaceBefore=space_before, spaceAfter=space_after)
 
     def section_header(text: str):
         story.append(hr(thickness=0.5, space_before=10, space_after=0))
         story.append(Paragraph(text.upper(), s_section))
+
+    def _count_pages(flowables) -> int:
+        """Build into a scratch buffer and return page count."""
+        scratch = io.BytesIO()
+        tmp = SimpleDocTemplate(scratch, pagesize=pagesize,
+                                leftMargin=L_MARGIN, rightMargin=R_MARGIN,
+                                topMargin=T_MARGIN,  bottomMargin=B_MARGIN)
+        tmp.build(flowables)
+        return tmp.page
+
+    def _build_doc(flowables, out: io.BytesIO):
+        d = SimpleDocTemplate(out, pagesize=pagesize,
+                              leftMargin=L_MARGIN, rightMargin=R_MARGIN,
+                              topMargin=T_MARGIN,  bottomMargin=B_MARGIN)
+        d.build(flowables)
 
     # ── Cover letter (no structure) ──────────────────────────────────────────
     if structure is None:
@@ -351,7 +410,7 @@ def _render_pdf(content: str, title: str, structure: dict | None) -> io.BytesIO:
                 story.append(Spacer(1, 8))
             else:
                 story.append(Paragraph(stripped, s_cover))
-        doc.build(story)
+        _build_doc(story, buf)
         buf.seek(0)
         return buf
 
@@ -371,7 +430,7 @@ def _render_pdf(content: str, title: str, structure: dict | None) -> io.BytesIO:
     if contact_parts:
         story.append(Paragraph("  ·  ".join(contact_parts), s_contact))
 
-    story.append(hr(thickness=1.2, color=INDIGO, space_before=8, space_after=4))
+    story.append(hr(thickness=header_rule_thickness, color=header_rule_color, space_before=8, space_after=4))
 
     # Summary
     if structure["summary"]:
@@ -445,7 +504,31 @@ def _render_pdf(content: str, title: str, structure: dict | None) -> io.BytesIO:
         for item in (extra.get("items") or []):
             story.append(Paragraph(f"•  {item}", s_bullet))
 
-    doc.build(story)
+    # ── Page-count enforcement (shrink font until content fits) ──────────────
+    if max_pages > 0:
+        current_scale = font_scale
+        while current_scale >= 0.6:
+            pages = _count_pages(story)
+            if pages <= max_pages:
+                break
+            # Reduce by 3% and rebuild styles
+            current_scale = round(current_scale - 0.03, 4)
+
+            def _fs(base: float) -> float:
+                return round(base * current_scale, 1)
+
+            s_name.fontSize    = _fs(22); s_name.leading    = _fs(26)
+            s_job_ttl.fontSize = _fs(11); s_job_ttl.leading = _fs(14)
+            s_contact.fontSize = _fs(9);  s_contact.leading = _fs(12)
+            s_section.fontSize = _fs(9);  s_section.leading = _fs(12)
+            s_body.fontSize    = _fs(10); s_body.leading    = _fs(14)
+            s_bullet.fontSize  = _fs(10); s_bullet.leading  = _fs(14)
+            s_exp_ttl.fontSize = _fs(10); s_exp_ttl.leading = _fs(13)
+            s_exp_co.fontSize  = _fs(9);  s_exp_co.leading  = _fs(12)
+            s_dates.fontSize   = _fs(9);  s_dates.leading   = _fs(12)
+            s_cover.fontSize   = _fs(10.5); s_cover.leading = _fs(16)
+
+    _build_doc(story, buf)
     buf.seek(0)
     return buf
 
