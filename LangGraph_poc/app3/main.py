@@ -3,7 +3,10 @@ import io
 import json
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -116,6 +119,108 @@ async def _extract_job_meta(jd: str) -> tuple[str, str]:
         return "", ""
 
 
+def _build_refinement_context(accumulated: dict) -> str:
+    """Summarise previous-iteration feedback for the resume rewriter."""
+    parts = []
+    rec = accumulated.get("recruiter_feedback", {})
+    hm  = accumulated.get("hiring_manager_feedback", {})
+    ats = accumulated.get("ats_report", {})
+    missing = ats.get("missing_keywords", [])[:6]
+    if rec.get("feedback"):
+        parts.append(f"Recruiter said: {rec['feedback']}")
+    if hm.get("rationale"):
+        parts.append(f"Hiring manager said: {hm['rationale']}")
+    if missing:
+        parts.append(f"Still missing keywords: {', '.join(missing)}")
+    return " | ".join(parts)
+
+
+async def _run_iterations(body: "TailorRequest", emit) -> dict:
+    """
+    Core pipeline: run body.iterations rounds of the agent.
+    emit(event_type, data_dict) is called for every SSE event.
+    Returns the final result dict (including DB record id).
+    """
+    _check_token_estimate(body.resume, body.job_description)
+    cl_intent = _build_cl_intent(body)
+    meta_task = asyncio.create_task(_extract_job_meta(body.job_description))
+
+    current_resume = body.resume
+    accumulated: dict = {}
+
+    for iteration in range(1, body.iterations + 1):
+        if body.iterations > 1:
+            await emit("iteration_start", {"iteration": iteration, "total": body.iterations})
+
+        iter_ctx = _build_refinement_context(accumulated) if iteration > 1 else ""
+
+        initial_state = {
+            "raw_resume": current_resume,
+            "job_description": body.job_description,
+            "materials": body.materials,
+            "cover_letter_intent": cl_intent,
+            "iteration_context": iter_ctx,
+        }
+        iter_acc: dict = {**initial_state}
+
+        async for chunk in resume_agent.astream(initial_state):
+            for node_name, delta in chunk.items():
+                iter_acc = {**iter_acc, **delta}
+                accumulated = {**accumulated, **iter_acc}
+
+                payload: dict = {"node": node_name, "iteration": iteration, "total_iterations": body.iterations}
+                if node_name == "ats_simulate":
+                    ats = delta.get("ats_report", {})
+                    payload.update(ats_score=ats.get("score", 0),
+                                   missing=len(ats.get("missing_keywords", [])),
+                                   ats_report=ats)
+                elif node_name == "rewrite_resume":
+                    payload["tailored_resume"] = delta.get("tailored_resume", "")
+                elif node_name == "write_cover_letter":
+                    payload["cover_letter"] = delta.get("cover_letter", "")
+                elif node_name == "recruiter_review":
+                    payload["recruiter_feedback"] = delta.get("recruiter_feedback", {})
+                elif node_name == "hiring_manager_review":
+                    payload["hiring_manager_feedback"] = delta.get("hiring_manager_feedback", {})
+                elif node_name == "score_output":
+                    payload["final_score"] = delta.get("final_score", 0)
+
+                await emit("node", payload)
+
+        score = iter_acc.get("final_score", 0)
+        if body.iterations > 1:
+            await emit("iteration_done", {"iteration": iteration, "total": body.iterations, "score": score})
+
+        current_resume = iter_acc.get("tailored_resume", current_resume)
+
+    company_name, job_title = await meta_task
+    record = await asyncio.to_thread(
+        insert_record,
+        raw_resume=body.resume,
+        job_description=body.job_description,
+        tailored_resume=accumulated.get("tailored_resume", ""),
+        cover_letter=accumulated.get("cover_letter", ""),
+        ats_report=accumulated.get("ats_report", {}),
+        recruiter_feedback=accumulated.get("recruiter_feedback", {}),
+        hiring_manager_feedback=accumulated.get("hiring_manager_feedback", {}),
+        final_score=accumulated.get("final_score", 0),
+        company_name=company_name,
+        job_title=job_title,
+    )
+    return {
+        "id": record["id"],
+        "company_name": company_name,
+        "job_title": job_title,
+        "tailored_resume": accumulated.get("tailored_resume", ""),
+        "cover_letter": accumulated.get("cover_letter", ""),
+        "ats_report": accumulated.get("ats_report", {}),
+        "recruiter_feedback": accumulated.get("recruiter_feedback", {}),
+        "hiring_manager_feedback": accumulated.get("hiring_manager_feedback", {}),
+        "final_score": accumulated.get("final_score", 0),
+        "iterations_completed": body.iterations,
+    }
+
+
 def _check_token_estimate(resume: str, jd: str) -> None:
     errors = []
     if len(resume) // 4 > _MAX_RESUME_TOKENS:
@@ -135,7 +240,9 @@ class TailorRequest(BaseModel):
     # Cover letter intent
     cover_letter_tone: str = Field(default="professional")   # professional | conversational | concise
     cover_letter_length: str = Field(default="standard")     # brief | standard | detailed
-    cover_letter_emphasis: str = Field(default="", max_length=300)  # what to highlight
+    cover_letter_emphasis: str = Field(default="", max_length=300)
+    # Iterative tailoring
+    iterations: int = Field(default=1, ge=1, le=5)
 
 
 class TailorResponse(BaseModel):
@@ -168,6 +275,69 @@ class ExportRequest(BaseModel):
     font_scale: float = Field(default=1.0, ge=0.7, le=1.5)
     accent_color: str = Field(default="#4F46E5")   # hex color
     max_pages: int = Field(default=0, ge=0, le=10)  # 0 = unlimited
+
+
+# ── Job store ─────────────────────────────────────────────────────────────────
+
+@dataclass
+class _Job:
+    id: str
+    label: str
+    iterations: int
+    status: str = "queued"   # queued | running | done | failed | cancelled
+    current_iter: int = 0
+    final_score: int = 0
+    error: str = ""
+    created_at: str = ""
+    result: dict | None = None
+    events: list = field(default_factory=list)   # SSE strings buffered for replay
+    _done: asyncio.Event = field(default_factory=asyncio.Event)
+
+
+class JobStore:
+    _MAX = 30
+
+    def __init__(self):
+        self._jobs: dict[str, _Job] = {}
+        self._order: list[str] = []
+
+    def create(self, label: str, iterations: int) -> _Job:
+        job_id = uuid.uuid4().hex[:8]
+        job = _Job(
+            id=job_id, label=label, iterations=iterations,
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+        self._jobs[job_id] = job
+        self._order.append(job_id)
+        if len(self._order) > self._MAX:
+            old = self._order.pop(0)
+            self._jobs.pop(old, None)
+        return job
+
+    def get(self, job_id: str) -> _Job | None:
+        return self._jobs.get(job_id)
+
+    def push(self, job: _Job, event_type: str, data: dict) -> None:
+        job.events.append(f"event: {event_type}\ndata: {json.dumps(data)}\n\n")
+
+    def finish(self, job: _Job) -> None:
+        job._done.set()
+
+    def summary(self) -> list[dict]:
+        out = []
+        for jid in reversed(self._order):
+            j = self._jobs.get(jid)
+            if j:
+                out.append({
+                    "id": j.id, "label": j.label, "status": j.status,
+                    "iterations": j.iterations, "current_iter": j.current_iter,
+                    "final_score": j.final_score, "error": j.error,
+                    "created_at": j.created_at,
+                })
+        return out
+
+
+job_store = JobStore()
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -222,83 +392,123 @@ async def tailor(request: Request, body: TailorRequest):
 @app.post("/tailor-stream", dependencies=[Depends(verify_api_key)])
 @limiter.limit("10/minute")
 async def tailor_stream(request: Request, body: TailorRequest):
-    """SSE: one node event per LangGraph node, then a final done event."""
-    _check_token_estimate(body.resume, body.job_description)
-    cl_intent = _build_cl_intent(body)
-    initial_state = {
-        "raw_resume": body.resume,
-        "job_description": body.job_description,
-        "materials": body.materials,
-        "cover_letter_intent": cl_intent,
-    }
-    # Extract company/title concurrently while the agent runs
-    meta_task = asyncio.create_task(_extract_job_meta(body.job_description))
-
+    """SSE stream: runs body.iterations rounds, emitting node + iteration events."""
     async def event_stream():
-        try:
-            accumulated: dict = {**initial_state}
-            async for chunk in resume_agent.astream(initial_state):
-                for node_name, delta in chunk.items():
-                    accumulated = {**accumulated, **delta}
+        q: asyncio.Queue = asyncio.Queue()
 
-                    payload: dict = {"node": node_name}
+        async def emit(event_type: str, data: dict):
+            await q.put(f"event: {event_type}\ndata: {json.dumps(data)}\n\n")
 
-                    if node_name == "ats_simulate":
-                        ats = delta.get("ats_report", {})
-                        payload["ats_score"] = ats.get("score", 0)
-                        payload["missing"] = len(ats.get("missing_keywords", []))
-                        payload["ats_report"] = ats
-                    elif node_name == "rewrite_resume":
-                        payload["tailored_resume"] = delta.get("tailored_resume", "")
-                    elif node_name == "write_cover_letter":
-                        payload["cover_letter"] = delta.get("cover_letter", "")
-                    elif node_name == "recruiter_review":
-                        payload["recruiter_feedback"] = delta.get("recruiter_feedback", {})
-                    elif node_name == "hiring_manager_review":
-                        payload["hiring_manager_feedback"] = delta.get("hiring_manager_feedback", {})
-                    elif node_name == "score_output":
-                        payload["final_score"] = delta.get("final_score", 0)
+        async def run():
+            try:
+                result = await _run_iterations(body, emit)
+                logger.info(f"Stream complete id={result['id']} score={result['final_score']}")
+                await q.put(f"event: done\ndata: {json.dumps(result)}\n\n")
+            except Exception as exc:
+                logger.exception("Stream error")
+                await q.put(f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n")
+            finally:
+                await q.put(None)
 
-                    yield f"event: node\ndata: {json.dumps(payload)}\n\n"
-
-            if accumulated:
-                company_name, job_title = await meta_task
-                record = await asyncio.to_thread(
-                    insert_record,
-                    raw_resume=body.resume,
-                    job_description=body.job_description,
-                    tailored_resume=accumulated.get("tailored_resume", ""),
-                    cover_letter=accumulated.get("cover_letter", ""),
-                    ats_report=accumulated.get("ats_report", {}),
-                    recruiter_feedback=accumulated.get("recruiter_feedback", {}),
-                    hiring_manager_feedback=accumulated.get("hiring_manager_feedback", {}),
-                    final_score=accumulated.get("final_score", 0),
-                    company_name=company_name,
-                    job_title=job_title,
-                )
-                result = {
-                    "id": record["id"],
-                    "company_name": company_name,
-                    "job_title": job_title,
-                    "tailored_resume": accumulated.get("tailored_resume", ""),
-                    "cover_letter": accumulated.get("cover_letter", ""),
-                    "ats_report": accumulated.get("ats_report", {}),
-                    "recruiter_feedback": accumulated.get("recruiter_feedback", {}),
-                    "hiring_manager_feedback": accumulated.get("hiring_manager_feedback", {}),
-                    "final_score": accumulated.get("final_score", 0),
-                }
-                logger.info(f"Stream complete id={record['id']}")
-                yield f"event: done\ndata: {json.dumps(result)}\n\n"
-
-        except Exception as exc:
-            logger.exception("Stream error")
-            yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
+        asyncio.create_task(run())
+        while True:
+            item = await q.get()
+            if item is None:
+                break
+            yield item
 
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── Background job endpoints ──────────────────────────────────────────────────
+
+async def _run_job_background(job: _Job, body: TailorRequest) -> None:
+    job.status = "running"
+
+    async def emit(event_type: str, data: dict):
+        if event_type == "iteration_start":
+            job.current_iter = data["iteration"]
+        elif event_type == "node" and data.get("node") == "score_output":
+            job.final_score = data.get("final_score", 0)
+        job_store.push(job, event_type, data)
+
+    try:
+        result = await _run_iterations(body, emit)
+        job.result = result
+        job.final_score = result.get("final_score", 0)
+        job.current_iter = body.iterations
+        job.status = "done"
+        job_store.push(job, "done", result)
+        logger.info(f"Job {job.id} done score={job.final_score}")
+    except Exception as exc:
+        logger.exception(f"Job {job.id} failed")
+        job.error = str(exc)
+        job.status = "failed"
+        job_store.push(job, "error", {"message": str(exc)})
+    finally:
+        job_store.finish(job)
+
+
+@app.post("/tailor-job", dependencies=[Depends(verify_api_key)])
+@limiter.limit("10/minute")
+async def create_tailor_job(request: Request, body: TailorRequest):
+    """Create a background tailor job. Returns immediately with job_id."""
+    _check_token_estimate(body.resume, body.job_description)
+    label = f"{body.job_description[:60].strip()}…" if len(body.job_description) > 60 else body.job_description
+    job = job_store.create(label=label, iterations=body.iterations)
+    asyncio.create_task(_run_job_background(job, body))
+    return {"job_id": job.id, "status": job.status, "label": job.label}
+
+
+@app.get("/jobs")
+async def list_jobs():
+    return job_store.summary()
+
+
+@app.get("/jobs/{job_id}/stream")
+async def stream_job(job_id: str):
+    """SSE: replay buffered events then tail live events for a background job."""
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def gen():
+        idx = 0
+        while True:
+            while idx < len(job.events):
+                yield job.events[idx]
+                idx += 1
+            if job._done.is_set() and idx >= len(job.events):
+                break
+            try:
+                await asyncio.wait_for(asyncio.shield(job._done.wait()), timeout=5)
+            except asyncio.TimeoutError:
+                yield "event: ping\ndata: {}\n\n"
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.delete("/jobs/{job_id}", status_code=204)
+async def dismiss_job(job_id: str):
+    """Remove a job from the dashboard (cancel if still running)."""
+    job = job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in ("queued", "running"):
+        job.status = "cancelled"
+        job_store.finish(job)
+    # Remove from store
+    job_store._jobs.pop(job_id, None)
+    if job_id in job_store._order:
+        job_store._order.remove(job_id)
 
 
 @app.post("/export-pdf")

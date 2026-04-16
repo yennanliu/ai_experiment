@@ -6,6 +6,7 @@ class ResumeState(TypedDict):
     job_description: str          # Full JD text
     materials: str                # Optional extra context: bio, past cover letters, achievements
     cover_letter_intent: str      # Optional tone/length/emphasis directives
+    iteration_context: str        # Feedback from previous iteration for refinement
     tailored_resume: str          # Rewritten resume from Resume Writer
     cover_letter: str             # Generated cover letter
     ats_report: dict              # {score: int, missing_keywords: list, suggestions: list}

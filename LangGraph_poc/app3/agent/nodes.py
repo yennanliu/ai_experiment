@@ -47,6 +47,7 @@ async def parse_inputs(state: ResumeState) -> dict:
     return {
         "materials": state.get("materials") or "",
         "cover_letter_intent": state.get("cover_letter_intent") or "",
+        "iteration_context": state.get("iteration_context") or "",
         "tailored_resume": "",
         "cover_letter": "",
         "ats_report": {},
@@ -81,6 +82,10 @@ async def rewrite_resume(state: ResumeState) -> ResumeState:
     missing = ", ".join(ats.get("missing_keywords", [])) or "None"
     suggestions = ", ".join(ats.get("suggestions", [])) or "None"
 
+    iter_block = ""
+    if state.get("iteration_context", "").strip():
+        iter_block = f"\n\nRefinement Notes from Previous Round:\n{state['iteration_context']}"
+
     tailored = await _chat(
         model=cfg.openai_model_writer,
         system=RESUME_WRITER,
@@ -89,6 +94,7 @@ async def rewrite_resume(state: ResumeState) -> ResumeState:
             f"ATS Missing Keywords: {missing}\n"
             f"ATS Suggestions: {suggestions}\n\n"
             f"Original Resume:\n{state['raw_resume']}"
+            f"{iter_block}"
         ),
         temperature=0.3,
     )
