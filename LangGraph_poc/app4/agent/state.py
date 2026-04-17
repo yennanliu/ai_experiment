@@ -1,13 +1,9 @@
-from typing import TypedDict, List, Optional
-from langchain_core.documents import Document
+from typing import TypedDict, List
 
 
 class AgentState(TypedDict):
     question: str
     collection: str
-    documents: List[Document]
-    context: str
+    chunks: List[tuple]   # (text, source)
     answer: str
     sources: List[str]
-    step: str
-    grounded: Optional[bool]

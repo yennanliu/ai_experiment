@@ -1,79 +1,59 @@
 import os
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 from pathlib import Path
 from typing import List
-from langchain_core.documents import Document
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 import chromadb
+from pypdf import PdfReader
 from dotenv import load_dotenv
-from rag.embeddings import OllamaEmbeddings
+from models.ollama_client import embed
 
 load_dotenv()
 
-CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
-CHUNK_SIZE = 512
+CHROMA_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 
 
-def get_chroma_client():
-    return chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+def _get_db():
+    return chromadb.PersistentClient(path=CHROMA_DIR)
 
 
-def load_document(file_path: str) -> List[Document]:
+def _parse(file_path: str) -> str:
     ext = Path(file_path).suffix.lower()
     if ext == ".pdf":
-        loader = PyPDFLoader(file_path)
+        reader = PdfReader(file_path)
+        return "\n".join(page.extract_text() or "" for page in reader.pages)
     else:
-        loader = TextLoader(file_path, encoding="utf-8")
-    return loader.load()
+        return Path(file_path).read_text(encoding="utf-8")
 
 
-def chunk_documents(docs: List[Document]) -> List[Document]:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-    )
-    return splitter.split_documents(docs)
+def _chunk(text: str) -> List[str]:
+    words = text.split()
+    chunks, i = [], 0
+    while i < len(words):
+        chunk = " ".join(words[i : i + CHUNK_SIZE])
+        chunks.append(chunk)
+        i += CHUNK_SIZE - CHUNK_OVERLAP
+    return [c for c in chunks if c.strip()]
 
 
-async def ingest_file(file_path: str, collection_name: str, filename: str) -> int:
-    docs = load_document(file_path)
-    chunks = chunk_documents(docs)
+async def ingest_file(file_path: str, collection: str, filename: str) -> int:
+    text = _parse(file_path)
+    chunks = _chunk(text)
 
-    embeddings = OllamaEmbeddings()
-    client = get_chroma_client()
-    collection = client.get_or_create_collection(collection_name)
+    db = _get_db()
+    col = db.get_or_create_collection(collection)
 
-    texts = [c.page_content for c in chunks]
-    metadatas = [{**c.metadata, "source": filename, "chunk": i} for i, c in enumerate(chunks)]
-    ids = [f"{filename}_{i}" for i in range(len(chunks))]
+    ids = [f"{filename}__{i}" for i in range(len(chunks))]
+    vectors = [await embed(c) for c in chunks]
+    metadatas = [{"source": filename, "chunk": i} for i in range(len(chunks))]
 
-    # Embed in batches
-    import asyncio
-    from models.ollama_client import embed
-
-    vectors = []
-    for text in texts:
-        vec = await embed(text)
-        vectors.append(vec)
-
-    collection.upsert(
-        ids=ids,
-        documents=texts,
-        embeddings=vectors,
-        metadatas=metadatas,
-    )
+    col.upsert(ids=ids, documents=chunks, embeddings=vectors, metadatas=metadatas)
     return len(chunks)
 
 
 def list_collections() -> List[str]:
-    client = get_chroma_client()
-    return [c.name for c in client.list_collections()]
+    return [c.name for c in _get_db().list_collections()]
 
 
 def delete_collection(name: str):
-    client = get_chroma_client()
-    client.delete_collection(name)
+    _get_db().delete_collection(name)
