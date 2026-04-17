@@ -1,0 +1,22 @@
+[project]
+name = "app4-private-agent"
+version = "0.1.0"
+description = "Local-First Private Document Q&A Agent"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langgraph>=0.2.0",
+    "chromadb>=0.5.0",
+    "pypdf>=4.0.0",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
