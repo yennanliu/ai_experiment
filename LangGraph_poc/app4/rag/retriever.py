@@ -6,34 +6,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+CHROMA_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 
 
-def get_chroma_client():
-    return chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-
-
-async def retrieve(
-    question: str,
-    collection_name: str,
-    top_k: int = 5,
-) -> List[Tuple[str, dict]]:
-    """Returns list of (text, metadata) tuples."""
-    query_vec = await embed(question)
-    client = get_chroma_client()
+async def retrieve(question: str, collection: str, top_k: int = 4) -> List[Tuple[str, str]]:
+    """Returns list of (text, source_filename) tuples."""
+    vec = await embed(question)
+    db = chromadb.PersistentClient(path=CHROMA_DIR)
 
     try:
-        collection = client.get_collection(collection_name)
+        col = db.get_collection(collection)
     except Exception:
         return []
 
-    results = collection.query(
-        query_embeddings=[query_vec],
-        n_results=min(top_k, collection.count()),
-        include=["documents", "metadatas", "distances"],
-    )
+    n = min(top_k, col.count())
+    if n == 0:
+        return []
 
-    chunks = []
-    for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
-        chunks.append((doc, meta))
-    return chunks
+    results = col.query(query_embeddings=[vec], n_results=n, include=["documents", "metadatas"])
+    return [
+        (doc, meta.get("source", "unknown"))
+        for doc, meta in zip(results["documents"][0], results["metadatas"][0])
+    ]
