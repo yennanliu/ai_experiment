@@ -55,3 +55,8 @@ LangGraph_poc/app2/history.db
 
 LangGraph_poc/**/**/__pycache__/
 LangGraph_poc/app3/history.db
+
+LangGraph_poc/app2/chroma_db/chroma.sqlite3
+LangGraph_poc/app2/history.db
+LangGraph_poc/app3/history.db-shm
+LangGraph_poc/app3/history.db-wal
