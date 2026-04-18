@@ -25,7 +25,7 @@ const COOKIES = [
 
 const COURSES = [
   { name: 'How_to_Write_a_Good_Resume', startUrl: 'https://bytebytego.com/courses/tech-resume/p0-c2-introduction' },
-  { name: 'Coding_Interview_Patterns', startUrl: 'https://bytebytego.com/courses/coding-interview-patterns/introduction' },
+  { name: 'Coding_Interview_Patterns', startUrl: 'https://bytebytego.com/courses/coding-patterns/two-pointers/introduction-to-two-pointers' },
   { name: 'System_Design_Interview', startUrl: 'https://bytebytego.com/courses/system-design-interview/foreword' },
   { name: 'Object_Oriented_Design_Interview', startUrl: 'https://bytebytego.com/courses/ood-interview/introduction' },
   { name: 'Machine_Learning_System_Design', startUrl: 'https://bytebytego.com/courses/machine-learning-system-design-interview/introduction' },
@@ -34,6 +34,23 @@ const COURSES = [
 ];
 
 async function getChapterUrls(page) {
+  // Some courses (e.g. Coding Interview Patterns) group lessons under
+  // collapsible topic submenus. The lesson links are NOT rendered in the DOM
+  // until each submenu is expanded. Expand all collapsed submenus first.
+  // Loop until no more collapsed submenus remain (expanding one can reveal
+  // nested ones).
+  for (let pass = 0; pass < 5; pass++) {
+    const expanded = await page.evaluate(() => {
+      const collapsed = Array.from(
+        document.querySelectorAll('.ant-menu-submenu-title[aria-expanded="false"]')
+      );
+      collapsed.forEach(el => el.click());
+      return collapsed.length;
+    });
+    if (expanded === 0) break;
+    await page.waitForTimeout(400);
+  }
+
   return await page.evaluate(() => {
     const results = [];
     const seen = new Set();
@@ -156,6 +173,16 @@ async function downloadCourse(page, course, outputDir) {
 async function main() {
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
+  // Optional CLI filter: comma-separated course indices, e.g.
+  //   node download_courses.js 0     -> first course only
+  //   node download_courses.js 0,2   -> first and third
+  // No arg -> all courses.
+  const argFilter = process.argv[2];
+  const coursesToRun = argFilter
+    ? argFilter.split(',').map(n => COURSES[parseInt(n, 10)]).filter(Boolean)
+    : COURSES;
+  console.log(`Will download ${coursesToRun.length} course(s): ${coursesToRun.map(c => c.name).join(', ')}`);
+
   const browser = await chromium.launch({ headless: true, executablePath: CHROMIUM_EXEC });
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -173,7 +200,7 @@ async function main() {
     }
     console.log('Logged in. Starting downloads...\n');
 
-    for (const course of COURSES) {
+    for (const course of coursesToRun) {
       await downloadCourse(page, course, OUTPUT_DIR);
     }
 
