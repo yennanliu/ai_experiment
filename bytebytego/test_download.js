@@ -118,6 +118,28 @@ async function main() {
           document.querySelectorAll('body > header, #__next > header').forEach(el => {
             el.style.display = 'none';
           });
+
+          // Reclaim the sidebar's horizontal space and recenter the article so
+          // text doesn't overflow the right edge of the PDF page.
+          const article = document.querySelector('article');
+          if (article) {
+            // Walk up and clear any left margin/padding/width constraints that
+            // were sized to fit "next to a sidebar".
+            let el = article;
+            while (el && el !== document.body) {
+              const cs = window.getComputedStyle(el);
+              if (parseFloat(cs.marginLeft) > 0) el.style.marginLeft = '0';
+              if (parseFloat(cs.paddingLeft) > 50) el.style.paddingLeft = '0';
+              el.style.maxWidth = 'none';
+              el.style.width = 'auto';
+              el = el.parentElement;
+            }
+            // Center the article itself in the now-full-width container.
+            article.style.maxWidth = '780px';
+            article.style.margin = '0 auto';
+            article.style.padding = '0 20px';
+            article.style.boxSizing = 'border-box';
+          }
         });
 
         await page.pdf({
