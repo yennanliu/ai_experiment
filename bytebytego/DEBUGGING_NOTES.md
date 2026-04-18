@@ -110,6 +110,37 @@ Using `document.querySelector('header').style.display = 'none'` (the original
 script's behavior) would hide the article title. Scope it to page-level headers
 only: `body > header, #__next > header`.
 
+### 6. Hiding the sidebar doesn't reclaim its horizontal space
+
+After `display: none` on the sidebar, the article appeared shifted right and
+its right edge was clipped off the PDF page. The Ant Design layout sets
+margin/padding/max-width on ancestor elements assuming a fixed-width sidebar
+exists alongside the article — those constraints persist even after the
+sidebar is hidden.
+
+Fix: walk up from `<article>` and reset layout constraints, then center the
+article:
+
+```js
+const article = document.querySelector('article');
+let el = article;
+while (el && el !== document.body) {
+  const cs = window.getComputedStyle(el);
+  if (parseFloat(cs.marginLeft) > 0) el.style.marginLeft = '0';
+  if (parseFloat(cs.paddingLeft) > 50) el.style.paddingLeft = '0';
+  el.style.maxWidth = 'none';
+  el.style.width = 'auto';
+  el = el.parentElement;
+}
+article.style.maxWidth = '780px';
+article.style.margin = '0 auto';
+article.style.padding = '0 20px';
+article.style.boxSizing = 'border-box';
+```
+
+Result: text wraps within the printable area, no right-edge clipping, and the
+article is centered on the page with comfortable margins.
+
 ---
 
 ## Verification
