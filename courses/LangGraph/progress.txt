@@ -45,3 +45,7 @@
 	- progress: 2:13:50
 		- nb:
 			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/ReAct.py
+- 20240419
+	- progress: 2:28:54
+		- nb:
+			- https://github.com/yennanliu/ai_experiment/blob/main/courses/LangGraph/LangGraph-Course-freeCodeCamp-main/Agents/
