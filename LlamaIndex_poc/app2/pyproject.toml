@@ -1,0 +1,12 @@
+[project]
+name = "app2"
+version = "0.1.0"
+description = "Advanced LlamaIndex demos"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "llama-index>=0.14.21",
+    "llama-index-postprocessor-cohere-rerank>=0.3.0",
+    "openai>=2.32.0",
+    "python-dotenv>=1.2.2",
+]
