@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core import Settings
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 
@@ -8,25 +8,34 @@ load_dotenv()
 Settings.llm = OpenAI(model="gpt-4o-mini")
 Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
 
+DEMOS = {
+    "1": ("RAG Query          — Q&A over your documents", "demos.rag_query"),
+    "2": ("Summarize          — summarize all documents", "demos.summarize"),
+    "3": ("Chat Engine        — conversational Q&A with memory", "demos.chat_engine"),
+    "4": ("Keyword Search     — retrieval without embeddings", "demos.keyword_search"),
+}
+
 
 def main():
-    print("Loading documents from ./data ...")
-    documents = SimpleDirectoryReader("data").load_data()
+    print("\nLlamaIndex Demo Playground")
+    print("=" * 40)
+    for key, (label, _) in DEMOS.items():
+        print(f"  {key}. {label}")
+    print("  q. Quit")
+    print()
 
-    print(f"Indexing {len(documents)} document(s)...")
-    index = VectorStoreIndex.from_documents(documents)
+    choice = input("Select a demo: ").strip().lower()
+    if choice == "q":
+        return
 
-    query_engine = index.as_query_engine()
+    if choice not in DEMOS:
+        print("Invalid choice.")
+        return
 
-    print("\nReady! Type your question (or 'quit' to exit).\n")
-    while True:
-        question = input("You: ").strip()
-        if question.lower() in ("quit", "exit", "q"):
-            break
-        if not question:
-            continue
-        response = query_engine.query(question)
-        print(f"AI: {response}\n")
+    _, module_path = DEMOS[choice]
+    import importlib
+    demo = importlib.import_module(module_path)
+    demo.run()
 
 
 if __name__ == "__main__":

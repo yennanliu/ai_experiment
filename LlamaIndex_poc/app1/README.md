@@ -1,6 +1,6 @@
-# LlamaIndex + OpenAI App
+# LlamaIndex + OpenAI Demo Playground
 
-A minimal RAG (Retrieval-Augmented Generation) app using [LlamaIndex](https://www.llamaindex.ai/) and OpenAI. Drop your documents into `./data`, then ask questions about them in an interactive CLI.
+A collection of LlamaIndex demos using OpenAI. Drop your documents into `./data` and explore different indexing/query strategies via an interactive CLI menu.
 
 ## Setup
 
@@ -17,7 +17,7 @@ cp .env.example .env
 
 **3. Add your documents**
 
-Place `.txt`, `.pdf`, or other supported files into the `./data` folder. A sample file is already included.
+Place `.txt`, `.pdf`, or other supported files into `./data`. A sample file is included.
 
 ## Run
 
@@ -25,11 +25,26 @@ Place `.txt`, `.pdf`, or other supported files into the `./data` folder. A sampl
 uv run main.py
 ```
 
-Then type your questions at the prompt. Enter `quit` to exit.
+## Demos
 
-## How it works
+| # | Name | Description |
+|---|------|-------------|
+| 1 | RAG Query | Ask questions over your docs using vector similarity search |
+| 2 | Summarize | Generate a concise summary of all loaded documents |
+| 3 | Chat Engine | Conversational Q&A with message history |
+| 4 | Keyword Search | BM25-style retrieval — no embeddings required |
 
-1. Documents in `./data` are loaded and chunked
-2. Chunks are embedded with `text-embedding-3-small` and stored in an in-memory vector index
-3. Your question is embedded and the most relevant chunks are retrieved
-4. `gpt-4o-mini` generates an answer grounded in those chunks
+## Project Structure
+
+```
+app1/
+├── main.py           # menu entry point
+├── demos/
+│   ├── rag_query.py      # demo 1
+│   ├── summarize.py      # demo 2
+│   ├── chat_engine.py    # demo 3
+│   └── keyword_search.py # demo 4
+├── data/             # put your documents here
+├── .env              # OPENAI_API_KEY (not committed)
+└── pyproject.toml
+```
