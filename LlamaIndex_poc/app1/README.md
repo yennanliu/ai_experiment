@@ -21,18 +21,27 @@ Place `.txt`, `.pdf`, or other supported files into `./data`. A sample file is i
 
 ## Run
 
+**Interactive menu** (pick a demo at runtime):
 ```bash
 uv run main.py
 ```
 
+**Run a specific demo directly:**
+```bash
+uv run demos/rag_query.py       # RAG Q&A
+uv run demos/summarize.py       # Summarization
+uv run demos/chat_engine.py     # Chat with memory
+uv run demos/keyword_search.py  # Keyword search
+```
+
 ## Demos
 
-| # | Name | Description |
-|---|------|-------------|
-| 1 | RAG Query | Ask questions over your docs using vector similarity search |
-| 2 | Summarize | Generate a concise summary of all loaded documents |
-| 3 | Chat Engine | Conversational Q&A with message history |
-| 4 | Keyword Search | BM25-style retrieval — no embeddings required |
+| # | Name | Command | Description |
+|---|------|---------|-------------|
+| 1 | RAG Query | `uv run demos/rag_query.py` | Ask questions over your docs using vector similarity search |
+| 2 | Summarize | `uv run demos/summarize.py` | Generate a concise summary of all loaded documents |
+| 3 | Chat Engine | `uv run demos/chat_engine.py` | Conversational Q&A with message history |
+| 4 | Keyword Search | `uv run demos/keyword_search.py` | BM25-style retrieval — no embeddings required |
 
 ## Project Structure
 
