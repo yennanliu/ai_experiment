@@ -1,0 +1,3 @@
+LlamaIndex is a data framework for LLM-based applications.
+It helps you build context-augmented AI apps using your own data.
+Key features include document loading, indexing, and query engines.
