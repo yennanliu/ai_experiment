@@ -34,8 +34,11 @@ Select a demo by number from the menu.
 | 4 | Reranking | Two-stage retrieval: vector similarity fetches 10 candidates, then `LLMRerank` reranks to top 3 |
 | 5 | Index Persistence | Builds a vector index once, persists it to `./storage/`, and reloads it on subsequent runs without re-embedding |
 | 6 | Router Query Engine | Maintains a vector index and a summary index; the LLM router picks the best one per query |
+| 7 | OCR / Document Parse | Sends scanned PDFs and images to GPT-4o vision for OCR; falls back to `SimpleDirectoryReader` for text-layer files. Requires `pymupdf` for PDF page rendering |
+| 8 | Multi-Agent Workflow | Three-agent research pipeline (Researcher → Analyst → Writer) that streams tool calls and agent handoffs in real time |
+| 9 | Doc Workflow | Processes any document through an Extractor → Summarizer → Q&A pipeline; state is shared between agents via `ctx.store` |
 
-All demos use `gpt-4o-mini` (LLM) and `text-embedding-3-small` (embeddings), configured globally in `main.py`.
+Demos 1–6 use `gpt-4o-mini` (LLM) and `text-embedding-3-small` (embeddings), configured globally in `main.py`. Demo 7 additionally uses `gpt-4o` for vision OCR. Demos 8–9 use `gpt-4o-mini` throughout.
 
 ## Data
 
