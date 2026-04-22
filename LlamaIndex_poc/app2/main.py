@@ -17,6 +17,7 @@ DEMOS = {
     "6": ("Router Query Engine — auto-route to best index strategy",        "demos.router"),
     "7": ("OCR / Document Parse — parse PDF/DOCX/images via GPT-4o vision", "demos.ocr_parse"),
     "8": ("Multi-Agent Workflow — Researcher → Analyst → Writer pipeline",  "demos.agent_workflow"),
+    "9": ("Doc Workflow       — Extractor → Summarizer → Q&A on any file",  "demos.doc_workflow"),
 }
 
 
