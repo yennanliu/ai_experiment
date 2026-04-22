@@ -15,7 +15,8 @@ DEMOS = {
     "4": ("Reranking           — two-stage retrieval with reranker",        "demos.reranking"),
     "5": ("Index Persistence   — save & reload index from disk",            "demos.persistence"),
     "6": ("Router Query Engine — auto-route to best index strategy",        "demos.router"),
-    "7": ("OCR / Document Parse — parse PDF/DOCX/images via LlamaParse",    "demos.ocr_parse"),
+    "7": ("OCR / Document Parse — parse PDF/DOCX/images via GPT-4o vision", "demos.ocr_parse"),
+    "8": ("Multi-Agent Workflow — Researcher → Analyst → Writer pipeline",  "demos.agent_workflow"),
 }
 
 
