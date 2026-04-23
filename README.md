@@ -4,8 +4,8 @@
 
 ## Todo
 
-- Claude code - official financial plugins.
-  - https://github.com/anthropics/financial-services-plugins
+- `resume mock interview`
+  - NoteBook LLM, agent flow, prompt ....
 - Claude code `git worktree` default plugin / cmd / skills
 - Claude code `agent teams` POC
   - https://github.com/yennanliu/til/blob/master/README.md#20260215
