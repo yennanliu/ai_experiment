@@ -4,6 +4,8 @@
 
 ## Todo
 
+- install, run `gstack`  with claude, gemini CLI
+  - https://github.com/garrytan/gstack
 - copilot agent
   - https://github.com/yennanliu/CS_basics/agents?author=yennanliu
   - https://wellstsai.com/post/using-github-copilot-vscode/
