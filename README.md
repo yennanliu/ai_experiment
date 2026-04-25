@@ -4,6 +4,10 @@
 
 ## Todo
 
+- copilot agent
+  - https://github.com/yennanliu/CS_basics/agents?author=yennanliu
+  - https://wellstsai.com/post/using-github-copilot-vscode/
+  - https://learn.microsoft.com/zh-tw/visualstudio/ide/copilot-agent-mode?view=visualstudio
 - `resume mock interview`
   - NoteBook LLM, agent flow, prompt ....
 - Claude code `git worktree` default plugin / cmd / skills
