@@ -36,6 +36,8 @@ agent_sysem/agent_team_openai/log/
 agent_sysem/agent_team_openai/output/
 
 
+LangGraph_poc/app5/chroma_db/chroma.sqlite3
+
 linkedin/claude/.playwright-mcp/
 
 tasker/cursor/artifacts
