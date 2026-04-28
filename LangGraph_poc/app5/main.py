@@ -4,9 +4,27 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
+import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 from rag.ingest import ingest_file, list_collections, delete_collection
+from rag.query_transform import hyde_embedding
+from rag.ingest import _client as chroma_client
+from langchain_openai import OpenAIEmbeddings
 from agent.graph import run
+
+_embedder = None
+def _get_embedder():
+    global _embedder
+    if _embedder is None:
+        _embedder = OpenAIEmbeddings(model=os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small"))
+    return _embedder
+
+
+def pca2d(matrix: np.ndarray) -> np.ndarray:
+    """Project N×D matrix to N×2 via PCA."""
+    m = matrix - matrix.mean(axis=0)
+    _, _, Vt = np.linalg.svd(m, full_matrices=False)
+    return (m @ Vt[:2].T).tolist()
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
@@ -74,6 +92,87 @@ def chat():
         return jsonify({"error": "question is required"}), 400
     result = run(question, collection, k=k, query_transform=query_transform, rerank=rerank)
     return jsonify(result)
+
+
+@app.get("/viz")
+def viz_page():
+    return send_from_directory("static", "viz.html")
+
+
+@app.get("/api/viz/<collection>")
+def viz_data(collection):
+    col = chroma_client.get_or_create_collection(collection)
+    if col.count() == 0:
+        return jsonify({"points": [], "stats": {"total": 0, "sources": {}}})
+
+    result = col.get(include=["embeddings", "documents", "metadatas"])
+    embs = np.array(result["embeddings"], dtype=float)
+    docs = result["documents"]
+    metas = result["metadatas"]
+
+    coords = pca2d(embs)
+    sources = list(dict.fromkeys(m.get("source", "?") for m in metas))
+    source_idx = {s: i for i, s in enumerate(sources)}
+
+    points = [
+        {
+            "id": i,
+            "x": coords[i][0],
+            "y": coords[i][1],
+            "text": docs[i],
+            "source": metas[i].get("source", "?"),
+            "chunk": metas[i].get("chunk", i),
+            "strategy": metas[i].get("strategy", "char"),
+            "color_idx": source_idx[metas[i].get("source", "?")],
+        }
+        for i in range(len(docs))
+    ]
+
+    source_counts = {}
+    for m in metas:
+        s = m.get("source", "?")
+        source_counts[s] = source_counts.get(s, 0) + 1
+
+    return jsonify({
+        "points": points,
+        "sources": sources,
+        "stats": {"total": len(docs), "sources": source_counts},
+    })
+
+
+@app.post("/api/viz/query")
+def viz_query():
+    body = request.get_json(force=True)
+    question = body.get("question", "").strip()
+    collection = body.get("collection", "default")
+    mode = body.get("mode", "none")  # none | hyde
+    if not question:
+        return jsonify({"error": "question required"}), 400
+
+    col = chroma_client.get_or_create_collection(collection)
+    if col.count() == 0:
+        return jsonify({"error": "collection is empty"}), 400
+
+    result = col.get(include=["embeddings"])
+    all_embs = np.array(result["embeddings"], dtype=float)
+
+    if mode == "hyde":
+        q_emb, hypo_doc = hyde_embedding(question)
+    else:
+        q_emb = _get_embedder().embed_query(question)
+        hypo_doc = ""
+
+    q_arr = np.array(q_emb, dtype=float)
+    combined = np.vstack([all_embs, q_arr])
+    coords = pca2d(combined)
+    query_coord = coords[-1]
+
+    return jsonify({
+        "x": query_coord[0],
+        "y": query_coord[1],
+        "hypo_doc": hypo_doc,
+        "mode": mode,
+    })
 
 
 if __name__ == "__main__":

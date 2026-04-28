@@ -12,6 +12,7 @@ dependencies = [
     "pypdf>=4.0.0",
     "python-dotenv>=1.0.0",
     "python-multipart>=0.0.9",
+    "numpy>=1.26.0",
 ]
 
 [tool.hatch.build.targets.wheel]

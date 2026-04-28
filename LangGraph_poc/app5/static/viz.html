@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAG Embedding Visualizer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
+
+  header {
+    background: #1e293b; border-bottom: 1px solid #334155;
+    height: 52px; padding: 0 2rem; display: flex; align-items: center; gap: 1rem; flex-shrink: 0;
+  }
+  header h1 { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+  header .badge { font-size: .7rem; background: #4f46e5; padding: .2rem .55rem; border-radius: 99px; }
+  header .spacer { flex: 1; }
+  header a { font-size: .8rem; color: #94a3b8; text-decoration: none; border: 1px solid #334155; padding: .25rem .7rem; border-radius: 6px; }
+  header a:hover { color: #f1f5f9; border-color: #475569; }
+
+  .toolbar {
+    background: #1e293b; border-bottom: 1px solid #334155;
+    padding: .6rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; flex-shrink: 0;
+  }
+  select.ctrl, input.ctrl { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: .35rem .65rem; border-radius: 6px; font-size: .82rem; }
+  select.ctrl:focus, input.ctrl:focus { outline: none; border-color: #4f46e5; }
+  .btn { cursor: pointer; padding: .35rem .8rem; border: none; border-radius: 6px; font-size: .82rem; font-weight: 500; }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-ghost { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .btn-ghost:hover { color: #f1f5f9; border-color: #475569; }
+
+  .pill-group { display: flex; gap: .3rem; }
+  .pill { padding: .28rem .6rem; border: 1px solid #334155; border-radius: 99px; font-size: .75rem; cursor: pointer; color: #94a3b8; }
+  .pill.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+
+  .sep { width: 1px; height: 20px; background: #334155; }
+  .toolbar label { font-size: .78rem; color: #64748b; }
+
+  /* ── Main ── */
+  .main { flex: 1; display: grid; grid-template-columns: 1fr 320px; overflow: hidden; }
+
+  /* ── Canvas area ── */
+  .canvas-wrap { position: relative; overflow: hidden; background: #0f172a; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+  .tooltip {
+    position: absolute; background: #1e293b; border: 1px solid #334155;
+    border-radius: 8px; padding: .5rem .75rem; font-size: .75rem; color: #cbd5e0;
+    pointer-events: none; max-width: 220px; white-space: pre-wrap; word-break: break-word;
+    display: none; z-index: 10; line-height: 1.5;
+  }
+
+  /* ── Side panel ── */
+  .panel { background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; }
+  .panel-tabs { display: flex; border-bottom: 1px solid #334155; flex-shrink: 0; }
+  .tab { flex: 1; padding: .55rem; text-align: center; font-size: .78rem; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab.active { color: #a5b4fc; border-bottom-color: #4f46e5; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 1rem; }
+
+  /* Stats tab */
+  .stat-row { display: flex; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid #0f172a; font-size: .82rem; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: #64748b; }
+  .stat-val { color: #38bdf8; font-family: monospace; }
+
+  .source-row { display: flex; align-items: center; gap: .5rem; padding: .35rem 0; font-size: .8rem; }
+  .source-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .source-name { flex: 1; color: #cbd5e0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .source-count { color: #64748b; font-size: .72rem; }
+
+  /* Chunk tab */
+  .chunk-card { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: .65rem .75rem; margin-bottom: .6rem; cursor: pointer; transition: border-color .15s; }
+  .chunk-card:hover, .chunk-card.selected { border-color: #4f46e5; }
+  .chunk-card .cm { font-size: .7rem; color: #64748b; margin-bottom: .3rem; display: flex; justify-content: space-between; }
+  .chunk-card .ct { font-size: .78rem; color: #94a3b8; line-height: 1.5; max-height: 80px; overflow: hidden; }
+  .chunk-card.selected .ct { max-height: none; color: #cbd5e0; }
+
+  /* Query tab */
+  .query-form { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+  .query-form textarea { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: .5rem .7rem; border-radius: 6px; font-size: .82rem; font-family: inherit; resize: none; }
+  .query-form textarea:focus { outline: none; border-color: #4f46e5; }
+  .hypo-box { background: #0f172a; border: 1px solid #4f46e5; border-radius: 6px; padding: .6rem .75rem; font-size: .78rem; color: #a5b4fc; font-style: italic; line-height: 1.6; white-space: pre-wrap; }
+  .section-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: #475569; margin-bottom: .4rem; }
+
+  .legend-wrap { padding: .75rem 1rem; border-top: 1px solid #334155; flex-shrink: 0; }
+
+  .empty-panel { text-align: center; color: #334155; padding: 2rem 0; font-style: italic; font-size: .82rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RAG Embedding Visualizer</h1>
+  <span class="badge">PCA · 2D</span>
+  <div class="spacer"></div>
+  <a href="/">← Knowledge Base</a>
+</header>
+
+<div class="toolbar">
+  <label>Collection</label>
+  <select id="col-sel" class="ctrl" onchange="loadCollection()"></select>
+  <button class="btn btn-primary" onclick="loadCollection()">Refresh</button>
+  <div class="sep"></div>
+  <label>Color by</label>
+  <div class="pill-group" id="color-pills">
+    <div class="pill active" data-val="source">Source</div>
+    <div class="pill" data-val="strategy">Strategy</div>
+  </div>
+  <div class="sep"></div>
+  <label style="font-size:.75rem;color:#475569" id="status-lbl">—</label>
+</div>
+
+<div class="main">
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-tabs">
+      <div class="tab active" onclick="switchTab('stats')">Stats</div>
+      <div class="tab" onclick="switchTab('chunks')">Chunks</div>
+      <div class="tab" onclick="switchTab('query')">Query Probe</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="panel-body" id="tab-stats">
+      <div class="empty-panel" id="stats-empty">Load a collection to see stats.</div>
+      <div id="stats-content" style="display:none">
+        <div class="section-label" style="margin-bottom:.5rem">Overview</div>
+        <div id="stat-rows"></div>
+        <div class="section-label" style="margin:.9rem 0 .4rem">Sources</div>
+        <div id="source-rows"></div>
+      </div>
+    </div>
+
+    <!-- Chunks -->
+    <div class="panel-body" id="tab-chunks" style="display:none">
+      <div class="empty-panel" id="chunks-empty">Click a dot on the chart to inspect a chunk.</div>
+      <div id="chunk-detail" style="display:none"></div>
+    </div>
+
+    <!-- Query Probe -->
+    <div class="panel-body" id="tab-query" style="display:none">
+      <div class="query-form">
+        <div class="section-label">Question</div>
+        <textarea id="probe-q" rows="3" placeholder="Ask a question to see where it lands in embedding space…"></textarea>
+        <div class="pill-group" id="probe-mode-pills" style="flex-wrap:wrap">
+          <div class="pill active" data-val="none">Raw query</div>
+          <div class="pill" data-val="hyde">HyDE</div>
+        </div>
+        <button class="btn btn-primary" onclick="probeQuery()">Plot query</button>
+      </div>
+      <div id="probe-result" style="display:none">
+        <div class="section-label">Hypothetical Document (HyDE)</div>
+        <div class="hypo-box" id="hypo-text" style="margin-top:.4rem"></div>
+      </div>
+    </div>
+
+    <div class="legend-wrap" id="legend"></div>
+  </div>
+</div>
+
+<script>
+// ── Palette ──────────────────────────────────────────────────────────────────
+const COLORS = [
+  '#818cf8','#34d399','#fb923c','#f472b6','#38bdf8',
+  '#a3e635','#fbbf24','#e879f9','#2dd4bf','#f87171',
+];
+const STRATEGY_COLORS = { char:'#818cf8', paragraph:'#34d399', sentence:'#fb923c' };
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let data = null;         // { points, sources, stats }
+let queryPoint = null;   // { x, y, mode, hypo_doc }
+let selectedId = null;
+let transform = { ox: 0, oy: 0, scale: 1 };
+let dragging = false, dragStart = null, dragOrigin = null;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const res = await fetch('/collections');
+  const cols = await res.json();
+  const sel = document.getElementById('col-sel');
+  sel.innerHTML = '';
+  (cols.length ? cols : ['default']).forEach(c => sel.add(new Option(c, c)));
+  initPills('color-pills');
+  initPills('probe-mode-pills');
+  setupCanvas();
+  if (cols.length) loadCollection();
+}
+
+function initPills(groupId) {
+  document.getElementById(groupId).querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.getElementById(groupId).querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      if (groupId === 'color-pills') drawChart();
+    });
+  });
+}
+function pillVal(groupId) {
+  return document.getElementById(groupId).querySelector('.pill.active')?.dataset.val || '';
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadCollection() {
+  const col = document.getElementById('col-sel').value;
+  document.getElementById('status-lbl').textContent = 'Loading…';
+  queryPoint = null; selectedId = null;
+  const res = await fetch(`/api/viz/${col}`);
+  data = await res.json();
+  document.getElementById('status-lbl').textContent = `${data.stats.total} chunks · ${data.sources?.length || 0} sources`;
+  fitToData();
+  drawChart();
+  renderStats();
+  renderChunkList();
+}
+
+// ── Canvas setup ──────────────────────────────────────────────────────────────
+function setupCanvas() {
+  const canvas = document.getElementById('canvas');
+  const wrap = document.getElementById('canvas-wrap');
+
+  function resize() {
+    canvas.width = wrap.clientWidth * devicePixelRatio;
+    canvas.height = wrap.clientHeight * devicePixelRatio;
+    canvas.style.width = wrap.clientWidth + 'px';
+    canvas.style.height = wrap.clientHeight + 'px';
+    if (data) drawChart();
+  }
+  new ResizeObserver(resize).observe(wrap);
+  resize();
+
+  // Pan
+  canvas.addEventListener('mousedown', e => { dragging = true; dragStart = {x: e.clientX, y: e.clientY}; dragOrigin = {...transform}; });
+  window.addEventListener('mouseup', () => dragging = false);
+  window.addEventListener('mousemove', e => {
+    if (dragging) {
+      transform.ox = dragOrigin.ox + (e.clientX - dragStart.x) * devicePixelRatio;
+      transform.oy = dragOrigin.oy + (e.clientY - dragStart.y) * devicePixelRatio;
+      drawChart();
+    } else {
+      handleHover(e);
+    }
+  });
+
+  // Zoom
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * devicePixelRatio;
+    const my = (e.clientY - rect.top) * devicePixelRatio;
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    transform.ox = mx + (transform.ox - mx) * factor;
+    transform.oy = my + (transform.oy - my) * factor;
+    transform.scale *= factor;
+    drawChart();
+  }, { passive: false });
+
+  // Click to select
+  canvas.addEventListener('click', e => {
+    if (!data?.points.length) return;
+    const pt = nearestPoint(e);
+    if (pt) {
+      selectedId = pt.id;
+      drawChart();
+      showChunkDetail(pt);
+      switchTab('chunks');
+    }
+  });
+}
+
+function fitToData() {
+  if (!data?.points.length) return;
+  const canvas = document.getElementById('canvas');
+  const xs = data.points.map(p => p.x), ys = data.points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pad = 60 * devicePixelRatio;
+  const W = canvas.width - pad * 2, H = canvas.height - pad * 2;
+  const sx = W / (maxX - minX || 1), sy = H / (maxY - minY || 1);
+  transform.scale = Math.min(sx, sy) * 0.85;
+  transform.ox = pad + (W - (maxX - minX) * transform.scale) / 2 - minX * transform.scale;
+  transform.oy = pad + (H - (maxY - minY) * transform.scale) / 2 - minY * transform.scale;
+}
+
+function toScreen(x, y) {
+  return [x * transform.scale + transform.ox, y * transform.scale + transform.oy];
+}
+
+// ── Draw ──────────────────────────────────────────────────────────────────────
+function getColor(pt) {
+  const mode = pillVal('color-pills');
+  if (mode === 'strategy') return STRATEGY_COLORS[pt.strategy] || '#94a3b8';
+  return COLORS[pt.color_idx % COLORS.length];
+}
+
+function drawChart() {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!data?.points.length) {
+    ctx.fillStyle = '#334155';
+    ctx.font = `${14 * devicePixelRatio}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.fillText('No data — select a collection', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  // Grid lines (faint)
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  const xs = data.points.map(p => p.x), ys = data.points.map(p => p.y);
+  const [cx, cy] = toScreen(0, 0);
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.stroke();
+
+  const r = Math.max(4, Math.min(9, transform.scale * 0.08)) * devicePixelRatio;
+
+  // Draw points
+  for (const pt of data.points) {
+    const [sx, sy] = toScreen(pt.x, pt.y);
+    const isSelected = pt.id === selectedId;
+    ctx.beginPath();
+    ctx.arc(sx, sy, isSelected ? r * 1.8 : r, 0, Math.PI * 2);
+    ctx.fillStyle = getColor(pt);
+    ctx.globalAlpha = isSelected ? 1 : 0.75;
+    ctx.fill();
+    if (isSelected) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2 * devicePixelRatio;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Query point
+  if (queryPoint) {
+    const [sx, sy] = toScreen(queryPoint.x, queryPoint.y);
+    const qr = r * 2;
+    // Pulsing ring
+    ctx.beginPath(); ctx.arc(sx, sy, qr * 1.6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2 * devicePixelRatio; ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+    // Star shape via large point
+    ctx.beginPath(); ctx.arc(sx, sy, qr, 0, Math.PI * 2);
+    ctx.fillStyle = '#fbbf24'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * devicePixelRatio; ctx.stroke();
+    // Label
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = `bold ${11 * devicePixelRatio}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.fillText(queryPoint.mode === 'hyde' ? 'HyDE' : 'Query', sx, sy - qr - 6 * devicePixelRatio);
+  }
+
+  renderLegend();
+}
+
+// ── Hover tooltip ─────────────────────────────────────────────────────────────
+function nearestPoint(e) {
+  if (!data?.points.length) return null;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * devicePixelRatio;
+  const my = (e.clientY - rect.top) * devicePixelRatio;
+  const r = Math.max(4, Math.min(9, transform.scale * 0.08)) * devicePixelRatio * 2.5;
+  let best = null, bestD = Infinity;
+  for (const pt of data.points) {
+    const [sx, sy] = toScreen(pt.x, pt.y);
+    const d = Math.hypot(sx - mx, sy - my);
+    if (d < r && d < bestD) { bestD = d; best = pt; }
+  }
+  return best;
+}
+
+function handleHover(e) {
+  const tt = document.getElementById('tooltip');
+  const pt = nearestPoint(e);
+  if (!pt) { tt.style.display = 'none'; return; }
+  const rect = document.getElementById('canvas-wrap').getBoundingClientRect();
+  tt.style.display = 'block';
+  tt.style.left = (e.clientX - rect.left + 12) + 'px';
+  tt.style.top  = (e.clientY - rect.top  + 12) + 'px';
+  const preview = pt.text.length > 120 ? pt.text.slice(0, 120) + '…' : pt.text;
+  tt.innerHTML = `<strong style="color:#a5b4fc">${escHtml(pt.source)}</strong> · chunk #${pt.chunk}<br><span style="color:#64748b;font-size:.7rem">${pt.strategy} · ${pt.text.length} chars</span><br><br>${escHtml(preview)}`;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  if (!data) return;
+  document.getElementById('stats-empty').style.display = 'none';
+  document.getElementById('stats-content').style.display = '';
+
+  const sr = document.getElementById('stat-rows');
+  sr.innerHTML = [
+    ['Total chunks', data.stats.total],
+    ['Sources', data.sources?.length || 0],
+  ].map(([l, v]) => `<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-val">${v}</span></div>`).join('');
+
+  const sourceEl = document.getElementById('source-rows');
+  sourceEl.innerHTML = (data.sources || []).map((s, i) => `
+    <div class="source-row">
+      <div class="source-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+      <span class="source-name" title="${escHtml(s)}">${escHtml(s)}</span>
+      <span class="source-count">${data.stats.sources[s] || 0} chunks</span>
+    </div>`).join('');
+}
+
+// ── Chunk list / detail ───────────────────────────────────────────────────────
+function renderChunkList() {
+  // list is shown on click; nothing to render upfront
+}
+
+function showChunkDetail(pt) {
+  document.getElementById('chunks-empty').style.display = 'none';
+  const el = document.getElementById('chunk-detail');
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="section-label" style="margin-bottom:.5rem">Selected Chunk</div>
+    <div class="chunk-card selected">
+      <div class="cm">
+        <span style="color:${COLORS[pt.color_idx % COLORS.length]}">${escHtml(pt.source)}</span>
+        <span>#${pt.chunk} · ${pt.text.length} chars · ${pt.strategy}</span>
+      </div>
+      <div class="ct">${escHtml(pt.text)}</div>
+    </div>
+    <div class="section-label" style="margin:.75rem 0 .4rem">Nearby Chunks</div>
+    ${nearbyChunks(pt).map(n => `
+      <div class="chunk-card" onclick="selectPoint(${n.id})">
+        <div class="cm">
+          <span>${escHtml(n.source)}</span>
+          <span>#${n.chunk}</span>
+        </div>
+        <div class="ct">${escHtml(n.text.slice(0, 100))}…</div>
+      </div>`).join('')}`;
+}
+
+function nearbyChunks(pt) {
+  if (!data?.points) return [];
+  return data.points
+    .filter(p => p.id !== pt.id)
+    .map(p => ({ ...p, d: Math.hypot(p.x - pt.x, p.y - pt.y) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 4);
+}
+
+function selectPoint(id) {
+  const pt = data.points.find(p => p.id === id);
+  if (!pt) return;
+  selectedId = id;
+  drawChart();
+  showChunkDetail(pt);
+}
+
+// ── Query Probe ───────────────────────────────────────────────────────────────
+async function probeQuery() {
+  const q = document.getElementById('probe-q').value.trim();
+  if (!q) return;
+  const mode = pillVal('probe-mode-pills');
+  const col = document.getElementById('col-sel').value;
+  document.getElementById('status-lbl').textContent = 'Probing…';
+
+  const res = await fetch('/api/viz/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: q, collection: col, mode }),
+  });
+  const result = await res.json();
+  if (result.error) { document.getElementById('status-lbl').textContent = result.error; return; }
+
+  queryPoint = result;
+  document.getElementById('status-lbl').textContent = `Query plotted (${mode})`;
+
+  const probeResult = document.getElementById('probe-result');
+  if (result.hypo_doc) {
+    probeResult.style.display = '';
+    document.getElementById('hypo-text').textContent = result.hypo_doc;
+  } else {
+    probeResult.style.display = 'none';
+  }
+
+  // Re-fit so query is in view
+  fitToData();
+  drawChart();
+}
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+function renderLegend() {
+  if (!data?.sources) return;
+  const mode = pillVal('color-pills');
+  const el = document.getElementById('legend');
+  if (mode === 'source') {
+    el.innerHTML = data.sources.map((s, i) => `
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.25rem;font-size:.72rem">
+        <span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i % COLORS.length]};flex-shrink:0;display:inline-block"></span>
+        <span style="color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s)}">${escHtml(s)}</span>
+      </div>`).join('');
+  } else {
+    el.innerHTML = Object.entries(STRATEGY_COLORS).map(([k, c]) => `
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.25rem;font-size:.72rem">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0;display:inline-block"></span>
+        <span style="color:#94a3b8">${k}</span>
+      </div>`).join('');
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['stats','chunks','query'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.toggle('active', ['stats','chunks','query'][i] === name);
+    });
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
