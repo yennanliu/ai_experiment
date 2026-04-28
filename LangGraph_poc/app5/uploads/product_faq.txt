@@ -1,0 +1,28 @@
+Product FAQ — Acme Platform (2024)
+
+Q: How do I reset my password?
+A: Go to the login page and click "Forgot password". Enter your registered email address. You will receive a reset link within 5 minutes. The link expires after 1 hour. If you don't receive the email, check your spam folder or contact support@acme.com.
+
+Q: What payment methods are accepted?
+A: We accept Visa, Mastercard, American Express, PayPal, and bank transfers (ACH/SEPA). All payments are processed securely via Stripe. Invoices are issued on the 1st of each month for subscription plans.
+
+Q: How do I upgrade or downgrade my plan?
+A: Navigate to Settings → Billing → Change Plan. Upgrades take effect immediately and are prorated. Downgrades take effect at the start of your next billing cycle. You will not be charged a penalty for downgrading.
+
+Q: What is the data retention policy?
+A: Active account data is retained indefinitely. When an account is cancelled, data is retained for 90 days during which it can be exported. After 90 days, all data is permanently deleted in compliance with GDPR and CCPA.
+
+Q: Does Acme Platform support SSO?
+A: Yes. We support SAML 2.0 and OIDC-based SSO. SSO is available on the Business and Enterprise plans. Setup requires an IT administrator and typically takes 30–60 minutes. Contact your account manager to enable SSO.
+
+Q: What is the SLA for uptime?
+A: We guarantee 99.9% monthly uptime for all paid plans (approximately 44 minutes downtime per month). Enterprise plans include a 99.95% SLA. Scheduled maintenance windows are announced 72 hours in advance and do not count toward downtime. Credits are issued automatically if SLA is missed.
+
+Q: How does the API rate limit work?
+A: Free plan: 100 requests/minute. Starter: 500 requests/minute. Business: 2,000 requests/minute. Enterprise: custom limits. Rate limit headers are included in every response (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset). Exceeding the limit returns HTTP 429.
+
+Q: Can I export my data?
+A: Yes. Go to Settings → Data → Export. Supported formats: CSV, JSON. Exports are generated asynchronously and emailed as a download link within 1 hour. Large exports (>1GB) may take up to 4 hours.
+
+Q: Is there a free trial?
+A: Yes. All new accounts start with a 14-day free trial of the Business plan. No credit card is required. At the end of the trial, the account automatically converts to the Free plan unless upgraded.

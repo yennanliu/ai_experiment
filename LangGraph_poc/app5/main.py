@@ -33,18 +33,21 @@ def remove_collection(name):
 
 @app.post("/load-samples")
 def load_samples():
+    strategy = request.get_json(force=True, silent=True) or {}
+    chunk_strategy = strategy.get("chunk_strategy", "paragraph")
     data_dir = Path(__file__).parent / "data"
     results = []
     for f in sorted(data_dir.glob("*.txt")):
-        chunks = ingest_file(str(f), "samples", f.name)
-        results.append({"file": f.name, "chunks": chunks})
-    return jsonify({"collection": "samples", "files": results})
+        n = ingest_file(str(f), "samples", f.name, strategy=chunk_strategy)
+        results.append({"file": f.name, "chunks": n})
+    return jsonify({"collection": "samples", "chunk_strategy": chunk_strategy, "files": results})
 
 
 @app.post("/upload")
 def upload():
     file = request.files.get("file")
     collection = request.form.get("collection", "default")
+    chunk_strategy = request.form.get("chunk_strategy", "char")
     if not file:
         return jsonify({"error": "no file"}), 400
 
@@ -55,8 +58,8 @@ def upload():
 
     dest = Path(UPLOAD_DIR) / file.filename
     file.save(dest)
-    chunks = ingest_file(str(dest), collection, file.filename)
-    return jsonify({"file": file.filename, "collection": collection, "chunks": chunks})
+    n = ingest_file(str(dest), collection, file.filename, strategy=chunk_strategy)
+    return jsonify({"file": file.filename, "collection": collection, "chunks": n, "chunk_strategy": chunk_strategy})
 
 
 @app.post("/chat")
@@ -65,11 +68,13 @@ def chat():
     question = body.get("question", "").strip()
     collection = body.get("collection", "default")
     k = int(body.get("k", 5))
+    query_transform = body.get("query_transform", "none")
+    rerank = bool(body.get("rerank", False))
     if not question:
         return jsonify({"error": "question is required"}), 400
-    result = run(question, collection, k=k)
+    result = run(question, collection, k=k, query_transform=query_transform, rerank=rerank)
     return jsonify(result)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
