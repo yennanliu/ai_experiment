@@ -31,6 +31,16 @@ def remove_collection(name):
     return jsonify({"deleted": name})
 
 
+@app.post("/load-samples")
+def load_samples():
+    data_dir = Path(__file__).parent / "data"
+    results = []
+    for f in sorted(data_dir.glob("*.txt")):
+        chunks = ingest_file(str(f), "samples", f.name)
+        results.append({"file": f.name, "chunks": chunks})
+    return jsonify({"collection": "samples", "files": results})
+
+
 @app.post("/upload")
 def upload():
     file = request.files.get("file")
