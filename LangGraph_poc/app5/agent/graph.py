@@ -20,7 +20,7 @@ def _get_llm():
 
 
 def retrieve_node(state: RAGState) -> RAGState:
-    chunks = retrieve(state["question"], state["collection"])
+    chunks = retrieve(state["question"], state["collection"], k=state.get("k", 5))
     return {**state, "context": chunks}
 
 
@@ -56,13 +56,14 @@ def build_graph():
 _graph = None
 
 
-def run(question: str, collection: str) -> dict:
+def run(question: str, collection: str, k: int = 5) -> dict:
     global _graph
     if _graph is None:
         _graph = build_graph()
-    result = _graph.invoke({"question": question, "collection": collection, "context": [], "answer": ""})
+    result = _graph.invoke({"question": question, "collection": collection, "k": k, "context": [], "answer": ""})
     return {
         "answer": result["answer"],
         "sources": list(dict.fromkeys(src for _, src in result["context"])),
         "chunks_used": len(result["context"]),
+        "chunks": [{"text": text, "source": src} for text, src in result["context"]],
     }

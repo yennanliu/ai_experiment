@@ -54,9 +54,10 @@ def chat():
     body = request.get_json(force=True)
     question = body.get("question", "").strip()
     collection = body.get("collection", "default")
+    k = int(body.get("k", 5))
     if not question:
         return jsonify({"error": "question is required"}), 400
-    result = run(question, collection)
+    result = run(question, collection, k=k)
     return jsonify(result)
 
 
