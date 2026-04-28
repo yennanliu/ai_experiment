@@ -1,0 +1,22 @@
+[project]
+name = "app5-enterprise-kb"
+version = "0.1.0"
+description = "Enterprise Knowledge Base with RAG (Flask + LangGraph + OpenAI)"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "chromadb>=0.5.0",
+    "pypdf>=4.0.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.9",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["rag", "agent"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
