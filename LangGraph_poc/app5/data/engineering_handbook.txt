@@ -1,0 +1,35 @@
+Engineering Handbook — Acme Corp (2024)
+
+## Git Workflow
+
+We use trunk-based development. All feature work is done in short-lived branches (1–3 days max). Branch naming convention: {type}/{ticket-id}-{short-description}, e.g. feat/ENG-123-user-auth. Pull requests require at least 1 approval before merging. The main branch is always deployable.
+
+Commit Message Format
+Use conventional commits: <type>(<scope>): <summary>
+Types: feat, fix, chore, docs, refactor, test
+Example: feat(auth): add OAuth2 login flow
+
+## Code Review Guidelines
+
+PRs should be small and focused — aim for under 400 lines changed. Reviewers should respond within 1 business day. Comments marked [blocking] must be resolved before merge. Nitpicks and style suggestions should be marked [nit] and are optional to resolve. Security-sensitive changes require review from the security guild.
+
+## Deployment Process
+
+Deployments to staging happen automatically on merge to main via CI/CD (GitHub Actions). Production deployments require a manual approval step in the pipeline. Deployments are rolled out progressively: 5% → 25% → 100% with a 15-minute bake time at each stage. All services must pass health checks before traffic shifts. Rollback is triggered automatically if error rate exceeds 1% during rollout.
+
+## On-Call Rotation
+
+On-call rotations last one week, Monday to Monday. The primary on-call engineer must respond to P1 alerts within 5 minutes and P2 alerts within 30 minutes. An escalation path is: Primary → Secondary → Engineering Manager. Post-mortems are required for all P1 incidents within 48 hours.
+
+## Tech Stack
+
+Backend: Python (FastAPI), Go
+Frontend: React, TypeScript
+Data: PostgreSQL, Redis, ClickHouse
+Infrastructure: AWS (EKS, RDS, S3), Terraform
+CI/CD: GitHub Actions
+Observability: Datadog, PagerDuty
+
+## API Design Standards
+
+All public APIs must be versioned: /api/v1/. Use RESTful conventions for resource naming (plural nouns). Responses must include a request_id field for traceability. Pagination uses cursor-based approach, not offset. All endpoints must return errors in the format: {"error": {"code": "...", "message": "..."}}.

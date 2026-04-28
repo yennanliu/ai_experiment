@@ -155,12 +155,13 @@
 
     <section>
       <h2>Upload Document</h2>
-      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-zone" id="drop-zone">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.5" width="28" height="28"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12V4m0 0L8 8m4-4 4 4"/></svg>
         <p>PDF, TXT or MD · click or drop</p>
       </div>
-      <input type="file" id="file-input" accept=".pdf,.txt,.md" onchange="uploadFile(this.files[0])" />
+      <input type="file" id="file-input" accept=".pdf,.txt,.md" />
       <div id="upload-status" class="status-msg"></div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:.5rem" onclick="loadSamples()">⚡ Load sample docs</button>
     </section>
 
     <section>
@@ -301,9 +302,32 @@ async function uploadFile(file) {
 }
 
 const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); uploadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { uploadFile(fileInput.files[0]); fileInput.value = ''; });
+
+async function loadSamples() {
+  uploadStatus.textContent = 'Loading sample docs…';
+  uploadStatus.className = 'status-msg';
+  try {
+    const res = await fetch('/load-samples', { method: 'POST' });
+    const data = await res.json();
+    const summary = data.files.map(f => `${f.file} (${f.chunks})`).join(', ');
+    uploadStatus.textContent = `✓ ${summary}`;
+    uploadStatus.className = 'status-msg ok';
+    if (![...colSel.options].find(o => o.value === 'samples')) {
+      colSel.add(new Option('samples', 'samples'));
+    }
+    colSel.value = 'samples';
+  } catch (e) {
+    uploadStatus.textContent = `✗ ${e.message}`;
+    uploadStatus.className = 'status-msg err';
+  }
+}
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
 
