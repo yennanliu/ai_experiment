@@ -10,6 +10,7 @@ from agent.state import RAGState
 from rag.ingest import retrieve, retrieve_by_embedding
 from rag.query_transform import hyde_embedding, multi_query_expand
 from rag.rerank import rerank as do_rerank
+from rag.evaluator import evaluate as do_evaluate
 
 _llm = None
 
@@ -113,6 +114,23 @@ def generate_node(state: RAGState) -> RAGState:
     return {**state, "answer": response.content, "timings": timings}
 
 
+# ── Node: Evaluate ───────────────────────────────────────────────────────────
+
+def evaluate_node(state: RAGState) -> RAGState:
+    if not state.get("evaluate") or not state.get("answer"):
+        return {**state, "evaluation": {}}
+    t0 = time.perf_counter()
+    reference = state.get("reference_answer") or None
+    ev = do_evaluate(
+        question=state["question"],
+        context=state["context"],
+        answer=state["answer"],
+        reference=reference,
+    )
+    timings = {**state.get("timings", {}), "evaluate": round(time.perf_counter() - t0, 3)}
+    return {**state, "evaluation": ev, "timings": timings}
+
+
 # ── Graph ────────────────────────────────────────────────────────────────────
 
 def build_graph():
@@ -121,11 +139,13 @@ def build_graph():
     g.add_node("retrieve", retrieve_node)
     g.add_node("rerank", rerank_node)
     g.add_node("generate", generate_node)
+    g.add_node("evaluate", evaluate_node)
     g.set_entry_point("transform")
     g.add_edge("transform", "retrieve")
     g.add_edge("retrieve", "rerank")
     g.add_edge("rerank", "generate")
-    g.add_edge("generate", END)
+    g.add_edge("generate", "evaluate")
+    g.add_edge("evaluate", END)
     return g.compile()
 
 
@@ -133,7 +153,8 @@ _graph = None
 
 
 def run(question: str, collection: str, k: int = 5,
-        query_transform: str = "none", rerank: bool = False) -> dict:
+        query_transform: str = "none", rerank: bool = False,
+        evaluate: bool = False, reference_answer: str = "") -> dict:
     global _graph
     if _graph is None:
         _graph = build_graph()
@@ -151,6 +172,9 @@ def run(question: str, collection: str, k: int = 5,
         "retrieval_scores": [],
         "rerank_scores": [],
         "timings": {},
+        "evaluate": evaluate,
+        "reference_answer": reference_answer,
+        "evaluation": {},
     })
 
     retrieval_scores = result.get("retrieval_scores", [])
@@ -177,6 +201,8 @@ def run(question: str, collection: str, k: int = 5,
             "query_transform": query_transform,
             "rerank": rerank,
             "k": k,
+            "evaluate": evaluate,
         },
         "timings": result.get("timings", {}),
+        "evaluation": result.get("evaluation", {}),
     }

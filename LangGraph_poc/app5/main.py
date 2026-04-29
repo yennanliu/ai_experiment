@@ -89,9 +89,15 @@ def chat():
     k = int(body.get("k", 5))
     query_transform = body.get("query_transform", "none")
     rerank = bool(body.get("rerank", False))
+    evaluate = bool(body.get("evaluate", False))
+    reference_answer = body.get("reference_answer", "").strip()
     if not question:
         return jsonify({"error": "question is required"}), 400
-    result = run(question, collection, k=k, query_transform=query_transform, rerank=rerank)
+    result = run(
+        question, collection, k=k,
+        query_transform=query_transform, rerank=rerank,
+        evaluate=evaluate, reference_answer=reference_answer,
+    )
     return jsonify(result)
 
 

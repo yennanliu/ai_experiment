@@ -17,3 +17,7 @@ class RAGState(TypedDict):
     retrieval_scores: list[float]    # cosine similarity per chunk (before rerank)
     rerank_scores: list[int]         # LLM relevance score per chunk (0-10, after rerank)
     timings: dict                    # node_name -> elapsed seconds
+    # evaluation
+    evaluate: bool                   # whether to run the evaluator node
+    reference_answer: str            # optional ground-truth answer for correctness scoring
+    evaluation: dict                 # output of rag.evaluator.evaluate()

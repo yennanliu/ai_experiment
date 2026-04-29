@@ -145,6 +145,26 @@
   .tg-val { color: #38bdf8; font-family: monospace; font-size: .75rem; text-align: right; }
 
   .debug-empty { color: #334155; font-style: italic; text-align: center; padding: 2rem 0; }
+
+  /* ── Evaluation scores ── */
+  .eval-grid { display: grid; grid-template-columns: auto 1fr auto; gap: .3rem .6rem; align-items: center; }
+  .eval-label { color: #94a3b8; font-size: .75rem; }
+  .eval-bar-track { height: 6px; background: #0f172a; border-radius: 99px; overflow: hidden; }
+  .eval-bar-fill  { height: 100%; border-radius: 99px; transition: width .4s; }
+  .eval-val { font-family: monospace; font-size: .75rem; text-align: right; white-space: nowrap; }
+  .eval-reasoning { font-size: .7rem; color: #64748b; font-style: italic; line-height: 1.45; padding: .15rem 0 .15rem .9rem; }
+  .eval-overall { display: flex; align-items: center; justify-content: space-between; padding: .45rem .6rem; border-radius: 7px; margin-top: .5rem; }
+  .eval-overall-label { font-size: .78rem; font-weight: 600; }
+  .eval-overall-score { font-family: monospace; font-size: 1rem; font-weight: 700; }
+  .eval-pass  { background: #052e16; border: 1px solid #166534; }
+  .eval-pass  .eval-overall-label { color: #86efac; }
+  .eval-pass  .eval-overall-score { color: #4ade80; }
+  .eval-fail  { background: #2d0a0a; border: 1px solid #7f1d1d; }
+  .eval-fail  .eval-overall-label { color: #fca5a5; }
+  .eval-fail  .eval-overall-score { color: #f87171; }
+
+  .tag-eval-pass { background: #dcfce7; color: #166534; }
+  .tag-eval-fail { background: #fee2e2; color: #991b1b; }
 </style>
 </head>
 <body>
@@ -220,6 +240,21 @@
           <input type="checkbox" id="rerank-toggle" />
           <span class="slider"></span>
         </label>
+      </div>
+
+      <div class="toggle-row" style="margin-top:.6rem">
+        <span>Evaluate answer <span style="font-size:.68rem;color:#94a3b8">(+1 LLM call)</span></span>
+        <label class="switch">
+          <input type="checkbox" id="evaluate-toggle" onchange="toggleReferenceBox()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div id="reference-box" style="display:none;margin-top:.5rem">
+        <label class="cfg" style="margin-bottom:.25rem">Reference answer <span style="color:#94a3b8">(optional)</span></label>
+        <textarea id="reference-answer"
+          style="width:100%;height:54px;font-size:.75rem;border:1px solid #cbd5e0;border-radius:6px;padding:.4rem .6rem;font-family:inherit;resize:none;line-height:1.45"
+          placeholder="Paste the correct answer to score correctness too…"></textarea>
       </div>
     </section>
   </aside>
@@ -371,6 +406,10 @@ function renderDebug(data) {
     </div>`;
   }).join('');
 
+  // Evaluation section
+  const ev = data.evaluation || {};
+  const evalHtml = ev.scores ? renderEvaluation(ev) : '';
+
   body.innerHTML = `
     <div class="debug-section">
       <h3>Pipeline Nodes</h3>
@@ -381,6 +420,7 @@ function renderDebug(data) {
       <h3>Latency Breakdown</h3>
       <div class="timing-grid">${timingBarsHtml}</div>
     </div>` : ''}
+    ${evalHtml ? `<div class="debug-section"><h3>Answer Evaluation</h3>${evalHtml}</div>` : ''}
     ${(data.transformed_queries || []).length > 1 ? `
     <div class="debug-section">
       <h3>Query Variants (${data.transformed_queries.length})</h3>
@@ -391,6 +431,49 @@ function renderDebug(data) {
       <h3>Retrieved Chunks (${data.chunks_used})${hasRerank ? ' — sorted by rerank score' : ' — sorted by similarity'}</h3>
       ${chunksHtml || '<div class="debug-empty">No chunks retrieved.</div>'}
     </div>`;
+}
+
+// ── Evaluation rendering ──────────────────────────────────────────────────────
+function evalColor(v) {
+  if (v >= 0.8) return '#22c55e';
+  if (v >= 0.6) return '#f59e0b';
+  return '#ef4444';
+}
+
+function renderEvaluation(ev) {
+  const scores = ev.scores || {};
+  const reasoning = ev.reasoning || {};
+  const LABELS = {
+    faithfulness:        'Faithfulness',
+    answer_relevance:    'Answer Relevance',
+    context_utilization: 'Context Utilization',
+    correctness:         'Correctness',
+  };
+  const rows = Object.entries(scores).map(([key, val]) => {
+    const color = evalColor(val);
+    const pct = Math.round(val * 100);
+    const reason = reasoning[key] ? `<div class="eval-reasoning">${escapeHtml(reasoning[key])}</div>` : '';
+    return `
+      <div class="eval-label">${LABELS[key] || key}</div>
+      <div class="eval-bar-track"><div class="eval-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="eval-val" style="color:${color}">${val.toFixed(2)}</div>
+      ${reason ? `<div></div><div colspan="2" style="grid-column:2/4">${reason}</div>` : ''}`;
+  }).join('');
+
+  const overallPct = Math.round((ev.overall || 0) * 100);
+  const passClass = ev.passed ? 'eval-pass' : 'eval-fail';
+  const passLabel = ev.passed ? '✓ PASSED' : '✗ FAILED';
+  return `
+    <div class="eval-grid">${rows}</div>
+    <div class="eval-overall ${passClass}">
+      <span class="eval-overall-label">${passLabel} &nbsp;(threshold ${ev.threshold})</span>
+      <span class="eval-overall-score">${overallPct}%</span>
+    </div>`;
+}
+
+function toggleReferenceBox() {
+  const show = document.getElementById('evaluate-toggle').checked;
+  document.getElementById('reference-box').style.display = show ? '' : 'none';
 }
 
 // ── Collections ──────────────────────────────────────────────────────────────
@@ -548,6 +631,18 @@ function appendMsg(role, html, meta) {
       t.title = Object.entries(meta.timings).map(([k, v]) => `${k}: ${v.toFixed(2)}s`).join(' · ');
       row.appendChild(t);
     }
+    // Evaluation badge
+    if (meta.evaluation && meta.evaluation.scores) {
+      const ev = meta.evaluation;
+      const pct = Math.round((ev.overall || 0) * 100);
+      const t = document.createElement('span');
+      t.className = `tag ${ev.passed ? 'tag-eval-pass' : 'tag-eval-fail'}`;
+      t.textContent = `${ev.passed ? '✓' : '✗'} eval ${pct}%`;
+      t.title = Object.entries(ev.scores).map(([k, v]) => `${k}: ${(v*100).toFixed(0)}%`).join(' · ');
+      t.style.cursor = 'pointer';
+      t.onclick = () => { if (!debugOpen) toggleDebug(); renderDebug(meta.data); };
+      row.appendChild(t);
+    }
     if (meta.data) {
       const t = document.createElement('span');
       t.className = 'tag tag-inspect'; t.textContent = 'Inspect ↗';
@@ -574,6 +669,8 @@ async function sendMessage() {
   const k = parseInt(document.getElementById('k-range').value);
   const query_transform = pillVal('qt-pills');
   const rerank = document.getElementById('rerank-toggle').checked;
+  const evaluate = document.getElementById('evaluate-toggle').checked;
+  const reference_answer = document.getElementById('reference-answer').value.trim();
   document.getElementById('question').value = '';
   document.getElementById('send-btn').disabled = true;
   appendMsg('user', escapeHtml(q));
@@ -583,7 +680,7 @@ async function sendMessage() {
     const res = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q, collection: colSel.value, k, query_transform, rerank }),
+      body: JSON.stringify({ question: q, collection: colSel.value, k, query_transform, rerank, evaluate, reference_answer }),
     });
     const data = await res.json();
     document.getElementById('thinking')?.remove();
@@ -593,6 +690,7 @@ async function sendMessage() {
         chunks_used: data.chunks_used,
         pipeline: data.pipeline,
         timings: data.timings,
+        evaluation: data.evaluation,
         data,
       });
       if (debugOpen) renderDebug(data);
