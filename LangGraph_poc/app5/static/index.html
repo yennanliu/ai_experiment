@@ -20,7 +20,7 @@
 
   /* ── Layout ── */
   .layout { display: grid; grid-template-columns: 270px 1fr 0px; grid-template-rows: calc(100vh - 52px); transition: grid-template-columns .25s ease; }
-  .layout.debug-open { grid-template-columns: 270px 1fr 380px; }
+  .layout.debug-open { grid-template-columns: 270px 1fr 420px; }
 
   /* ── Sidebar ── */
   .sidebar { background: #fff; border-right: 1px solid #e2e8f0; padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 1.4rem; overflow-y: auto; }
@@ -61,6 +61,20 @@
   .pill { padding: .3rem .65rem; border: 1px solid #cbd5e0; border-radius: 99px; font-size: .78rem; cursor: pointer; background: #f8fafc; color: #475569; transition: all .15s; }
   .pill.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
 
+  /* ── Chunk Preview ── */
+  .preview-toggle { font-size: .78rem; color: #4f46e5; cursor: pointer; background: none; border: 1px solid #e0e7ff; border-radius: 6px; padding: .28rem .6rem; width: 100%; margin-top: .4rem; }
+  .preview-toggle:hover { background: #eef2ff; }
+  .preview-panel { display: none; margin-top: .6rem; }
+  .preview-panel.open { display: block; }
+  .preview-panel textarea { width: 100%; height: 70px; font-size: .75rem; border: 1px solid #cbd5e0; border-radius: 6px; padding: .4rem .6rem; font-family: inherit; resize: none; line-height: 1.45; }
+  .preview-panel textarea:focus { outline: none; border-color: #4f46e5; }
+  .preview-results { margin-top: .5rem; display: flex; flex-direction: column; gap: .4rem; }
+  .preview-strategy { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: .45rem .6rem; }
+  .preview-strategy .ps-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .25rem; }
+  .preview-strategy .ps-name { font-size: .72rem; font-weight: 600; color: #4f46e5; text-transform: uppercase; letter-spacing: .05em; }
+  .preview-strategy .ps-stats { font-size: .68rem; color: #94a3b8; }
+  .preview-strategy .ps-sample { font-size: .71rem; color: #64748b; line-height: 1.45; white-space: pre-wrap; word-break: break-word; border-top: 1px solid #e2e8f0; padding-top: .25rem; margin-top: .25rem; }
+
   /* ── Chat ── */
   .chat-panel { display: flex; flex-direction: column; overflow: hidden; }
   .messages { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: .9rem; }
@@ -74,6 +88,7 @@
   .tag-source  { background: #ede9fe; color: #5b21b6; }
   .tag-chunks  { background: #e0f2fe; color: #0369a1; }
   .tag-mode    { background: #fef3c7; color: #92400e; }
+  .tag-timing  { background: #f0fdf4; color: #166534; }
   .tag-inspect { background: #f1f5f9; color: #475569; cursor: pointer; }
   .tag-inspect:hover { background: #e2e8f0; }
 
@@ -99,19 +114,35 @@
 
   .debug-section h3 { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: #475569; margin-bottom: .4rem; }
 
-  .pipeline-step { display: flex; align-items: flex-start; gap: .5rem; padding: .35rem 0; border-bottom: 1px solid #1e293b; }
+  .pipeline-step { display: flex; align-items: flex-start; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid #1e293b; }
   .pipeline-step:last-child { border-bottom: none; }
   .step-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
   .step-dot.done { background: #22c55e; }
-  .step-label { color: #94a3b8; flex-shrink: 0; }
-  .step-val { margin-left: auto; color: #38bdf8; font-family: monospace; text-align: right; max-width: 160px; word-break: break-word; }
+  .step-label { color: #94a3b8; flex-shrink: 0; min-width: 68px; }
+  .step-val { color: #38bdf8; font-family: monospace; }
+  .step-timing { margin-left: auto; font-family: monospace; color: #64748b; font-size: .7rem; white-space: nowrap; padding-left: .4rem; }
 
+  /* chunk card with score bar */
   .chunk-card { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: .55rem .7rem; margin-bottom: .4rem; }
-  .chunk-card .chunk-meta { color: #64748b; font-size: .7rem; margin-bottom: .3rem; display: flex; justify-content: space-between; }
+  .chunk-card .chunk-meta { color: #64748b; font-size: .7rem; margin-bottom: .25rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .2rem; }
+  .chunk-scores { display: flex; gap: .4rem; align-items: center; margin-bottom: .35rem; flex-wrap: wrap; }
+  .score-bar-wrap { flex: 1; min-width: 60px; }
+  .score-bar-label { font-size: .65rem; color: #475569; margin-bottom: 2px; }
+  .score-bar-track { height: 5px; background: #0f172a; border-radius: 99px; overflow: hidden; }
+  .score-bar-fill  { height: 100%; border-radius: 99px; transition: width .3s; }
+  .score-badge { font-size: .68rem; font-weight: 600; padding: .1rem .4rem; border-radius: 4px; white-space: nowrap; }
+  .score-badge.sim    { background: #064e3b; color: #6ee7b7; }
+  .score-badge.rerank { background: #3b0764; color: #d8b4fe; }
   .chunk-card .chunk-text { color: #cbd5e0; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow-y: auto; }
 
   .hypo-doc { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: .55rem .7rem; color: #a5b4fc; font-style: italic; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
   .query-variant { background: #1e293b; border-left: 2px solid #4f46e5; padding: .3rem .6rem; margin-bottom: .3rem; color: #cbd5e0; border-radius: 0 4px 4px 0; }
+
+  .timing-grid { display: grid; grid-template-columns: auto 1fr auto; gap: .25rem .6rem; align-items: center; }
+  .tg-name { color: #94a3b8; }
+  .tg-bar-track { height: 4px; background: #0f172a; border-radius: 99px; overflow: hidden; }
+  .tg-bar-fill { height: 100%; background: #4f46e5; border-radius: 99px; }
+  .tg-val { color: #38bdf8; font-family: monospace; font-size: .75rem; text-align: right; }
 
   .debug-empty { color: #334155; font-style: italic; text-align: center; padding: 2rem 0; }
 </style>
@@ -158,6 +189,14 @@
         <div class="pill" data-val="sentence">Sentence</div>
       </div>
       <p style="font-size:.72rem;color:#94a3b8;margin-top:.4rem">Applied on next upload / Load samples</p>
+
+      <!-- Chunk Preview Tool -->
+      <button class="preview-toggle" onclick="togglePreview()">🔬 Compare chunking strategies</button>
+      <div class="preview-panel" id="preview-panel">
+        <textarea id="preview-text" placeholder="Paste any text here to preview how each strategy chunks it…"></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:.3rem;font-size:.78rem" onclick="runChunkPreview()">Preview</button>
+        <div class="preview-results" id="preview-results"></div>
+      </div>
     </section>
 
     <section>
@@ -242,58 +281,114 @@ function toggleDebug() {
   document.getElementById('debug-btn').classList.toggle('active', debugOpen);
 }
 
+function simColor(v) {
+  // v in [0,1]; green for high, amber for mid, red for low
+  if (v >= 0.75) return '#22c55e';
+  if (v >= 0.5)  return '#f59e0b';
+  return '#ef4444';
+}
+
 function renderDebug(data) {
   const title = document.getElementById('debug-title');
   const body = document.getElementById('debug-body');
   const p = data.pipeline || {};
+  const timings = data.timings || {};
 
-  title.textContent = `${data.chunks_used} chunks · ${(data.sources||[]).length} sources`;
+  // Total latency
+  const totalMs = Object.values(timings).reduce((a, b) => a + b, 0);
+  title.textContent = `${data.chunks_used} chunks · ${(data.sources||[]).length} sources · ${totalMs.toFixed(2)}s`;
 
-  const pipelineSteps = [
-    { label: 'transform', val: p.query_transform || 'none' },
-    { label: 'retrieve',  val: `k=${p.k}, ${data.chunks_used} retrieved` },
-    { label: 'rerank',    val: p.rerank ? '✓ enabled' : 'skipped' },
-    { label: 'generate',  val: 'gpt-4o-mini' },
-  ];
-
-  const stepsHtml = pipelineSteps.map(s => `
+  // Pipeline steps with timing bars
+  const nodeOrder = ['transform', 'retrieve', 'rerank', 'generate'];
+  const nodeLabels = {
+    transform: p.query_transform !== 'none' ? p.query_transform : 'none',
+    retrieve:  `k=${p.k}, ${data.chunks_used} chunks`,
+    rerank:    p.rerank ? '✓ enabled' : 'skipped',
+    generate:  'gpt-4o-mini',
+  };
+  const maxT = Math.max(...Object.values(timings), 0.001);
+  const stepsHtml = nodeOrder.map(name => {
+    const val = nodeLabels[name] || '';
+    const t = timings[name];
+    const timingStr = t != null ? `${t.toFixed(2)}s` : '—';
+    const barPct = t != null ? Math.round((t / maxT) * 100) : 0;
+    return `
     <div class="pipeline-step">
       <div class="step-dot done"></div>
-      <span class="step-label">${s.label}</span>
-      <span class="step-val">${escapeHtml(s.val)}</span>
-    </div>`).join('');
+      <span class="step-label">${name}</span>
+      <span class="step-val">${escapeHtml(val)}</span>
+      <span class="step-timing" title="${timingStr}">${timingStr}</span>
+    </div>`;
+  }).join('');
 
+  // Timing breakdown bar chart
+  const timingBarsHtml = nodeOrder.filter(n => timings[n] != null).map(n => {
+    const pct = Math.round((timings[n] / maxT) * 100);
+    return `
+      <div class="tg-name">${n}</div>
+      <div class="tg-bar-track"><div class="tg-bar-fill" style="width:${pct}%"></div></div>
+      <div class="tg-val">${timings[n].toFixed(2)}s</div>`;
+  }).join('');
+
+  // Query variants
   const queriesHtml = (data.transformed_queries || []).map(q =>
     `<div class="query-variant">${escapeHtml(q)}</div>`).join('');
 
+  // HyDE doc
   const hydeHtml = data.hyde_doc ? `
     <div class="debug-section">
       <h3>Hypothetical Document (HyDE)</h3>
       <div class="hypo-doc">${escapeHtml(data.hyde_doc)}</div>
     </div>` : '';
 
-  const chunksHtml = (data.chunks || []).map((c, i) => `
+  // Chunk cards with scores
+  const hasRerank = p.rerank && (data.chunks || []).some(c => c.rerank_score != null);
+  const chunksHtml = (data.chunks || []).map((c, i) => {
+    const sim = c.similarity;
+    const rs  = c.rerank_score;
+    let scoresHtml = '';
+    if (sim != null || rs != null) {
+      const simBar = sim != null ? `
+        <div class="score-bar-wrap">
+          <div class="score-bar-label">Similarity</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:${Math.round(sim*100)}%;background:${simColor(sim)}"></div>
+          </div>
+        </div>
+        <span class="score-badge sim" title="Cosine similarity to query">${sim.toFixed(3)}</span>` : '';
+      const rkBadge = rs != null ? `
+        <span class="score-badge rerank" title="LLM relevance score (0–10)">${rs}/10</span>` : '';
+      scoresHtml = `<div class="chunk-scores">${simBar}${rkBadge}</div>`;
+    }
+    return `
     <div class="chunk-card">
       <div class="chunk-meta">
         <span>#${i + 1} · ${escapeHtml(c.source)}</span>
         <span>${c.text.length} chars</span>
       </div>
+      ${scoresHtml}
       <div class="chunk-text">${escapeHtml(c.text)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   body.innerHTML = `
     <div class="debug-section">
       <h3>Pipeline Nodes</h3>
       ${stepsHtml}
     </div>
-    ${data.transformed_queries?.length > 1 ? `
+    ${Object.keys(timings).length > 1 ? `
+    <div class="debug-section">
+      <h3>Latency Breakdown</h3>
+      <div class="timing-grid">${timingBarsHtml}</div>
+    </div>` : ''}
+    ${(data.transformed_queries || []).length > 1 ? `
     <div class="debug-section">
       <h3>Query Variants (${data.transformed_queries.length})</h3>
       ${queriesHtml}
     </div>` : ''}
     ${hydeHtml}
     <div class="debug-section">
-      <h3>Retrieved Chunks (${data.chunks_used})</h3>
+      <h3>Retrieved Chunks (${data.chunks_used})${hasRerank ? ' — sorted by rerank score' : ' — sorted by similarity'}</h3>
       ${chunksHtml || '<div class="debug-empty">No chunks retrieved.</div>'}
     </div>`;
 }
@@ -379,6 +474,42 @@ async function loadSamples() {
   }
 }
 
+// ── Chunk Preview ─────────────────────────────────────────────────────────────
+function togglePreview() {
+  document.getElementById('preview-panel').classList.toggle('open');
+}
+
+const STRATEGY_COLORS = { char: '#818cf8', paragraph: '#34d399', sentence: '#fb923c' };
+
+async function runChunkPreview() {
+  const text = document.getElementById('preview-text').value.trim();
+  if (!text) return;
+  const el = document.getElementById('preview-results');
+  el.innerHTML = '<div style="font-size:.75rem;color:#94a3b8;padding:.3rem 0">Chunking…</div>';
+  try {
+    const res = await fetch('/api/chunk-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    el.innerHTML = Object.entries(data).map(([name, info]) => {
+      const color = STRATEGY_COLORS[name] || '#94a3b8';
+      const sample = info.chunks[0] ? (info.chunks[0].length > 180 ? info.chunks[0].slice(0, 180) + '…' : info.chunks[0]) : '—';
+      return `
+        <div class="preview-strategy">
+          <div class="ps-header">
+            <span class="ps-name" style="color:${color}">${name}</span>
+            <span class="ps-stats">${info.count} chunks · ~${info.avg_chars} chars avg</span>
+          </div>
+          <div class="ps-sample">${escapeHtml(sample)}</div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="font-size:.75rem;color:#dc2626">${escapeHtml(e.message)}</div>`;
+  }
+}
+
 // ── Chat ─────────────────────────────────────────────────────────────────────
 function escapeHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
@@ -407,6 +538,15 @@ function appendMsg(role, html, meta) {
     if (meta.pipeline?.rerank) {
       const t = document.createElement('span');
       t.className = 'tag tag-mode'; t.textContent = 'reranked'; row.appendChild(t);
+    }
+    // Total latency tag
+    if (meta.timings && Object.keys(meta.timings).length) {
+      const total = Object.values(meta.timings).reduce((a, b) => a + b, 0);
+      const t = document.createElement('span');
+      t.className = 'tag tag-timing';
+      t.textContent = `⏱ ${total.toFixed(2)}s`;
+      t.title = Object.entries(meta.timings).map(([k, v]) => `${k}: ${v.toFixed(2)}s`).join(' · ');
+      row.appendChild(t);
     }
     if (meta.data) {
       const t = document.createElement('span');
@@ -448,7 +588,13 @@ async function sendMessage() {
     const data = await res.json();
     document.getElementById('thinking')?.remove();
     if (res.ok) {
-      appendMsg('bot', escapeHtml(data.answer), { sources: data.sources, chunks_used: data.chunks_used, pipeline: data.pipeline, data });
+      appendMsg('bot', escapeHtml(data.answer), {
+        sources: data.sources,
+        chunks_used: data.chunks_used,
+        pipeline: data.pipeline,
+        timings: data.timings,
+        data,
+      });
       if (debugOpen) renderDebug(data);
     } else {
       appendMsg('bot', `<em>Error: ${escapeHtml(data.error || 'unknown')}</em>`);
