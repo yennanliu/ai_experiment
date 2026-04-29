@@ -286,7 +286,95 @@ def test_pipeline_multi_query():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Stage 6 — Performance benchmarks (non-failing, just measured)
+# Stage 6 — Evaluation (rag.evaluator)
+# ══════════════════════════════════════════════════════════════════════════════
+
+from rag.evaluator import evaluate as do_evaluate
+
+
+def test_evaluator_structure():
+    """evaluator returns the expected dict shape with valid score ranges."""
+    question = "How many days of annual leave do employees get?"
+    chunks_raw = retrieve(question, TEST_COLLECTION, k=3)
+    context = [(t, s) for t, s, _ in chunks_raw]
+    answer = "Employees are entitled to 15 days of annual leave per calendar year."
+    ev = do_evaluate(question, context, answer)
+
+    assert "scores" in ev and "reasoning" in ev and "overall" in ev and "passed" in ev
+    for dim in ("faithfulness", "answer_relevance", "context_utilization"):
+        assert dim in ev["scores"], f"Missing score dimension: {dim}"
+        assert 0.0 <= ev["scores"][dim] <= 1.0, f"Score out of range: {dim}={ev['scores'][dim]}"
+        assert dim in ev["reasoning"] and ev["reasoning"][dim], f"Missing reasoning for: {dim}"
+    assert 0.0 <= ev["overall"] <= 1.0
+    assert isinstance(ev["passed"], bool)
+    return {
+        "overall": ev["overall"],
+        "passed": ev["passed"],
+        "scores": {k: round(v, 2) for k, v in ev["scores"].items()},
+    }
+
+
+def test_evaluator_good_answer_passes():
+    """A correct, grounded answer should score >= 0.7 overall."""
+    question = "How many days of annual leave do employees get?"
+    chunks_raw = retrieve(question, TEST_COLLECTION, k=5)
+    context = [(t, s) for t, s, _ in chunks_raw]
+    answer = "Employees are entitled to 15 days of annual leave per calendar year."
+    ev = do_evaluate(question, context, answer, threshold=0.7)
+    assert ev["passed"], (
+        f"Good answer should pass. overall={ev['overall']}, scores={ev['scores']}"
+    )
+    return {"overall": ev["overall"], "scores": {k: round(v, 2) for k, v in ev["scores"].items()}}
+
+
+def test_evaluator_hallucination_fails():
+    """An answer with a clear hallucination should score low on faithfulness."""
+    question = "How many days of annual leave do employees get?"
+    chunks_raw = retrieve(question, TEST_COLLECTION, k=5)
+    context = [(t, s) for t, s, _ in chunks_raw]
+    # Deliberately wrong: the context says 15 days
+    answer = "Employees receive 30 days of annual leave plus an additional 10 days of bonus leave."
+    ev = do_evaluate(question, context, answer, threshold=0.7)
+    assert ev["scores"]["faithfulness"] < 0.7, (
+        f"Hallucinated answer should have low faithfulness, got {ev['scores']['faithfulness']}"
+    )
+    return {"faithfulness": ev["scores"]["faithfulness"], "overall": ev["overall"]}
+
+
+def test_evaluator_with_reference():
+    """When a reference answer is provided, correctness dimension is scored."""
+    question = "How many days of annual leave do employees get?"
+    chunks_raw = retrieve(question, TEST_COLLECTION, k=5)
+    context = [(t, s) for t, s, _ in chunks_raw]
+    answer = "Employees are entitled to 15 days of annual leave per calendar year."
+    reference = "15 days of annual leave per year."
+    ev = do_evaluate(question, context, answer, reference=reference)
+    assert "correctness" in ev["scores"], "correctness should be present when reference given"
+    assert 0.0 <= ev["scores"]["correctness"] <= 1.0
+    return {
+        "correctness": ev["scores"]["correctness"],
+        "overall": ev["overall"],
+        "passed": ev["passed"],
+    }
+
+
+def test_pipeline_with_evaluate():
+    """Full pipeline with evaluate=True attaches evaluation dict to response."""
+    question, must_contain, _ = QA_PAIRS[0]
+    result = run(question, TEST_COLLECTION, k=5, evaluate=True)
+    ev = result.get("evaluation", {})
+    assert ev, "evaluation dict should not be empty when evaluate=True"
+    assert "scores" in ev and "overall" in ev
+    assert "evaluate" in result["timings"], "Missing evaluate timing"
+    return {
+        "overall": ev["overall"],
+        "passed": ev["passed"],
+        "timings": {k: round(v, 3) for k, v in result["timings"].items()},
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 7 — Performance benchmarks (non-failing, just measured)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def benchmark_pipeline_modes():
@@ -336,6 +424,11 @@ SLOW_TESTS = [
     ("pipeline: with rerank",           test_pipeline_with_rerank),
     ("pipeline: HyDE",                  test_pipeline_hyde),
     ("pipeline: multi-query",           test_pipeline_multi_query),
+    ("eval: response structure",        test_evaluator_structure),
+    ("eval: good answer passes",        test_evaluator_good_answer_passes),
+    ("eval: hallucination fails",       test_evaluator_hallucination_fails),
+    ("eval: with reference answer",     test_evaluator_with_reference),
+    ("eval: pipeline integration",      test_pipeline_with_evaluate),
     ("benchmark: all modes",            benchmark_pipeline_modes),
 ]
 
