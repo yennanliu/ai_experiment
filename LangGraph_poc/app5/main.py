@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from rag.ingest import ingest_file, list_collections, delete_collection
 from rag.query_transform import hyde_embedding
 from rag.ingest import _client as chroma_client
+from rag.chunkers import STRATEGIES
 from langchain_openai import OpenAIEmbeddings
 from agent.graph import run
 
@@ -91,6 +92,36 @@ def chat():
     if not question:
         return jsonify({"error": "question is required"}), 400
     result = run(question, collection, k=k, query_transform=query_transform, rerank=rerank)
+    return jsonify(result)
+
+
+@app.post("/api/chunk-preview")
+def chunk_preview():
+    """
+    Given raw text, return what each chunking strategy produces.
+    Useful for understanding chunk boundaries before ingestion.
+
+    Request body: { "text": "...", "strategies": ["char", "sentence", "paragraph"] }
+    Response: { "char": [...], "sentence": [...], "paragraph": [...] }
+    """
+    body = request.get_json(force=True)
+    text = body.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "text is required"}), 400
+
+    requested = body.get("strategies", list(STRATEGIES.keys()))
+    unknown = [s for s in requested if s not in STRATEGIES]
+    if unknown:
+        return jsonify({"error": f"unknown strategies: {unknown}", "valid": list(STRATEGIES.keys())}), 400
+
+    result = {}
+    for name in requested:
+        chunks = STRATEGIES[name](text)
+        result[name] = {
+            "chunks": chunks,
+            "count": len(chunks),
+            "avg_chars": round(sum(len(c) for c in chunks) / len(chunks)) if chunks else 0,
+        }
     return jsonify(result)
 
 
