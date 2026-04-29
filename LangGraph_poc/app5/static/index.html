@@ -83,6 +83,12 @@
   .msg.user { align-self: flex-end; background: #4f46e5; color: #fff; padding: .65rem 1rem; border-radius: 14px 14px 3px 14px; }
   .msg.bot  { align-self: flex-start; background: #fff; border: 1px solid #e2e8f0; padding: .7rem 1rem; border-radius: 14px 14px 14px 3px; }
 
+  .msg-ts { font-size: .65rem; color: #94a3b8; margin-top: .3rem; text-align: right; }
+  .msg.user .msg-ts { color: #a5b4fc; }
+
+  .date-sep { display: flex; align-items: center; gap: .6rem; color: #cbd5e0; font-size: .7rem; margin: .3rem 0; }
+  .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
   .msg-meta { display: flex; gap: .4rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
   .tag { font-size: .7rem; padding: .15rem .5rem; border-radius: 99px; font-weight: 500; }
   .tag-source  { background: #ede9fe; color: #5b21b6; }
@@ -172,7 +178,8 @@
   <h1>Enterprise Knowledge Base</h1>
   <span class="badge">RAG · LangGraph · OpenAI</span>
   <div class="spacer"></div>
-  <a href="/viz" style="font-size:.8rem;color:#a5b4fc;text-decoration:none;border:1px solid #4f46e5;padding:.25rem .7rem;border-radius:6px;margin-right:.5rem">📊 Visualize</a>
+  <a href="/viz" style="font-size:.8rem;color:#a5b4fc;text-decoration:none;border:1px solid #4f46e5;padding:.25rem .7rem;border-radius:6px">📊 Visualize</a>
+  <button class="toggle-debug" onclick="clearHistory()" style="color:#94a3b8;border-color:#334155" title="Clear chat history">🗑 Clear</button>
   <button class="toggle-debug" id="debug-btn" onclick="toggleDebug()">🔍 Debug</button>
 </header>
 
@@ -293,6 +300,70 @@ const emptyState = document.getElementById('empty-state');
 const uploadStatus = document.getElementById('upload-status');
 const layout = document.getElementById('layout');
 let debugOpen = false;
+
+// ── History persistence ───────────────────────────────────────────────────────
+const HISTORY_KEY = 'rag_chat_history';
+const MAX_HISTORY = 200;  // max messages kept
+
+function saveHistory(record) {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const history = raw ? JSON.parse(raw) : [];
+    history.push(record);
+    // trim oldest if over limit
+    if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (_) { /* localStorage full — silently ignore */ }
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return;
+    const history = JSON.parse(raw);
+    if (!history.length) return;
+    emptyState.style.display = 'none';
+    let lastDay = null;
+    for (const rec of history) {
+      const day = new Date(rec.ts).toDateString();
+      if (day !== lastDay) {
+        insertDateSep(rec.ts);
+        lastDay = day;
+      }
+      renderMsg(rec);
+    }
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  } catch (_) { /* corrupt storage — ignore */ }
+}
+
+function clearHistory() {
+  if (!confirm('Clear all chat history?')) return;
+  localStorage.removeItem(HISTORY_KEY);
+  // Remove all messages and date separators, restore empty state
+  [...messagesEl.children].forEach(el => {
+    if (!el.id || el.id !== 'empty-state') el.remove();
+  });
+  emptyState.style.display = '';
+}
+
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function insertDateSep(ts) {
+  const today = new Date().toDateString();
+  const day   = new Date(ts).toDateString();
+  const label = day === today ? 'Today' : new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const sep = document.createElement('div');
+  sep.className = 'date-sep';
+  sep.textContent = label;
+  messagesEl.appendChild(sep);
+}
+
+// Render a stored record back into the DOM (used by loadHistory)
+function renderMsg(rec) {
+  _appendMsgDOM(rec.role, rec.html, rec.meta, rec.ts);
+}
 
 // ── Pill groups ──────────────────────────────────────────────────────────────
 function initPills(groupId) {
@@ -598,7 +669,8 @@ function escapeHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
 
-function appendMsg(role, html, meta) {
+// Core DOM builder — used by both new messages and history replay
+function _appendMsgDOM(role, html, meta, ts) {
   emptyState.style.display = 'none';
   const div = document.createElement('div');
   div.className = `msg ${role}`;
@@ -622,7 +694,6 @@ function appendMsg(role, html, meta) {
       const t = document.createElement('span');
       t.className = 'tag tag-mode'; t.textContent = 'reranked'; row.appendChild(t);
     }
-    // Total latency tag
     if (meta.timings && Object.keys(meta.timings).length) {
       const total = Object.values(meta.timings).reduce((a, b) => a + b, 0);
       const t = document.createElement('span');
@@ -631,7 +702,6 @@ function appendMsg(role, html, meta) {
       t.title = Object.entries(meta.timings).map(([k, v]) => `${k}: ${v.toFixed(2)}s`).join(' · ');
       row.appendChild(t);
     }
-    // Evaluation badge
     if (meta.evaluation && meta.evaluation.scores) {
       const ev = meta.evaluation;
       const pct = Math.round((ev.overall || 0) * 100);
@@ -651,8 +721,30 @@ function appendMsg(role, html, meta) {
     }
     div.appendChild(row);
   }
+  if (ts) {
+    const tsEl = document.createElement('div');
+    tsEl.className = 'msg-ts';
+    tsEl.textContent = fmtTime(ts);
+    div.appendChild(tsEl);
+  }
   messagesEl.appendChild(div);
+}
+
+// Public — renders and persists
+function appendMsg(role, html, meta) {
+  const ts = Date.now();
+  // Insert date separator when the day changes
+  const lastSep = [...messagesEl.querySelectorAll('.date-sep')].at(-1);
+  const lastDay = lastSep ? lastSep.dataset.day : null;
+  const today = new Date(ts).toDateString();
+  if (lastDay !== today) {
+    insertDateSep(ts);
+    messagesEl.querySelector('.date-sep:last-of-type').dataset.day = today;
+  }
+  _appendMsgDOM(role, html, meta, ts);
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  // Persist — strip non-serialisable onclick handlers; data is kept for Inspect
+  saveHistory({ role, html, meta, ts });
 }
 
 function showThinking() {
@@ -705,6 +797,7 @@ async function sendMessage() {
 }
 
 loadCollections();
+loadHistory();
 </script>
 </body>
 </html>
