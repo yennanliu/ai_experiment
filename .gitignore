@@ -68,3 +68,4 @@ bytebytego/pdfs_test/
 bytebytego/pdfs/
 
 LangGraph_poc/app5/uploads
+LangGraph_poc/app5/chroma_db/chroma.sqlite3
