@@ -13,10 +13,11 @@ def _get_llm():
     return _llm
 
 
-def rerank(question: str, chunks: list[tuple[str, str]], top_k: int = 5) -> list[tuple[str, str]]:
+def rerank(question: str, chunks: list[tuple[str, str]], top_k: int = 5) -> list[tuple[str, str, int]]:
     """
     Score each (text, source) chunk for relevance to the question.
-    Returns top_k chunks sorted by descending relevance score.
+    Returns top_k (text, source, score) triples sorted by descending relevance score.
+    Score is 0-10 as judged by the LLM.
     """
     if not chunks:
         return chunks
@@ -39,4 +40,4 @@ def rerank(question: str, chunks: list[tuple[str, str]], top_k: int = 5) -> list
         scored.append((score, text, source))
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [(text, source) for _, text, source in scored[:top_k]]
+    return [(text, source, score) for score, text, source in scored[:top_k]]
