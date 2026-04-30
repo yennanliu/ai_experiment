@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List - Gemini CLI</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 50px;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button#add-btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button#add-btn:hover {
+            background-color: #357abd;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        .todo-text {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .complete-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Todo List</h1>
+    <div class="input-group">
+        <label for="todo-input" style="display:none">New Task</label>
+        <input type="text" id="todo-input" placeholder="Add a new task...">
+        <button id="add-btn">Add</button>
+    </div>
+    <ul id="todo-list"></ul>
+</div>
+
+<script>
+    // State Management
+    let todos = [];
+
+    const todoInput = document.getElementById('todo-input');
+    const addBtn = document.getElementById('add-btn');
+    const todoList = document.getElementById('todo-list');
+
+    // Persistence: Load from localStorage
+    function init() {
+        const savedTodos = localStorage.getItem('todos');
+        if (savedTodos) {
+            try {
+                todos = JSON.parse(savedTodos);
+                if (!Array.isArray(todos)) todos = [];
+            } catch (e) {
+                console.error('Failed to parse todos from localStorage', e);
+                todos = [];
+            }
+        }
+        render();
+    }
+
+    // Persistence: Save to localStorage
+    function save() {
+        localStorage.setItem('todos', JSON.stringify(todos));
+    }
+
+    // Add Functionality
+    function addTodo() {
+        const text = todoInput.value.trim();
+        if (text === '') return;
+
+        const newTodo = {
+            id: Date.now(),
+            text: text,
+            completed: false
+        };
+
+        todos.push(newTodo);
+        todoInput.value = '';
+        save();
+        render();
+    }
+
+    // Toggle Functionality
+    function toggleTodo(id) {
+        todos = todos.map(todo => {
+            if (todo.id === id) {
+                return { ...todo, completed: !todo.completed };
+            }
+            return todo;
+        });
+        save();
+        render();
+    }
+
+    // Delete Functionality
+    function deleteTodo(id) {
+        todos = todos.filter(todo => todo.id !== id);
+        save();
+        render();
+    }
+
+    // Render Function
+    function render() {
+        todoList.innerHTML = '';
+
+        todos.forEach(todo => {
+            const li = document.createElement('li');
+            
+            const span = document.createElement('span');
+            span.className = `todo-text ${todo.completed ? 'completed' : ''}`;
+            span.textContent = todo.text;
+            span.onclick = () => toggleTodo(todo.id);
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'btn-group';
+
+            const completeBtn = document.createElement('button');
+            completeBtn.className = 'action-btn complete-btn';
+            completeBtn.textContent = todo.completed ? 'Undo' : 'Done';
+            completeBtn.onclick = () => toggleTodo(todo.id);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'action-btn delete-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.onclick = () => deleteTodo(todo.id);
+
+            btnGroup.appendChild(completeBtn);
+            btnGroup.appendChild(deleteBtn);
+            
+            li.appendChild(span);
+            li.appendChild(btnGroup);
+            todoList.appendChild(li);
+        });
+    }
+
+    // Event Listeners
+    addBtn.onclick = addTodo;
+    todoInput.onkeypress = (e) => {
+        if (e.key === 'Enter') addTodo();
+    };
+
+    // Initialize the app
+    init();
+</script>
+
+</body>
+</html>
