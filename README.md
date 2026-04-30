@@ -4,6 +4,10 @@
 
 ## Todo
 
+- LLM app
+  - `auto` create ticket (jira, trello..) system: auto enrich req, accept conditons, ref .. with RAG
+  - knowledge base system for US stock (enterprise knowledge base): load multiple 10-K reports,  gen trends, reports, custom query with RAG
+  - enterprise EMAIL reply gen system
 - install, run `gstack`  with claude, gemini CLI
   - https://github.com/garrytan/gstack
 - copilot agent
