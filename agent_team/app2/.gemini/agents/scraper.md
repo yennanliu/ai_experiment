@@ -4,7 +4,7 @@ description: Executes a news scraping plan — fetches pages, extracts structure
 tools:
   - read_file
   - write_file
-  - edit_file
+  - replace
   - list_directory
   - grep_search
   - run_shell_command

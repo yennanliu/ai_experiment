@@ -1,0 +1,15 @@
+{
+  "agents": {
+    "overrides": {
+      "project-leader": {
+        "enabled": true
+      },
+      "scraper": {
+        "enabled": true
+      },
+      "reviewer": {
+        "enabled": true
+      }
+    }
+  }
+}
