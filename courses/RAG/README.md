@@ -12,4 +12,7 @@
 
 - FreeCodeCamp
 	- Development with Large Language Models Tutorial – OpenAI, Langchain, Agents, Chroma
-	- https://youtu.be/xZDB1naRUlk?si=OoOceGuLZv8BqHvc
+	- video
+		- https://youtu.be/xZDB1naRUlk?si=OoOceGuLZv8BqHvc
+	- code
+		- https://github.com/pythonontheplane123/LLM_course_part_1
