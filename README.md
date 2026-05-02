@@ -4,6 +4,8 @@
 
 ## Todo
 
+- LLM Infra
+  - Harness engineering
 - LLM app
   - Line relative apps
     - `check in` app (for company)
