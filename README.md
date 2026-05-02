@@ -5,6 +5,9 @@
 ## Todo
 
 - LLM app
+  - Line relative apps
+    - `check in` app (for company)
+    - `Dating and Matching` app 
   - Spotify chat bot -> song / list recommendations
   - use Google NoteLLM as DB, load, interact in Gemini
   - `auto` create ticket (jira, trello..) system: auto enrich req, accept conditons, ref .. with RAG
