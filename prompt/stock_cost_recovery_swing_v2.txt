@@ -1,0 +1,184 @@
+
+# 🧠 📌 FCH Framework v2
+
+## **Free Carry & Volatility Harvesting System (v2.0)**
+
+##（自由持倉與波動收割系統）
+
+---
+
+# ⚙️ 一、系統目標（升級重點）
+
+這個版本不只是：
+
+* 回本
+* free carry
+* 波段交易
+
+而是多了一層：
+
+> 🧩 **整體 portfolio 結構優化 + 風險上限控制**
+
+---
+
+# 📊 二、輸入要求（Input）
+
+請提供：
+
+### 1️⃣ 個股 transaction / lot data（必要）
+
+* 每筆買入日期
+* 數量
+* 成本
+* 現價
+
+### 2️⃣ 或整體 portfolio（可選）
+
+* 股票 + ETF
+* 權重
+
+---
+
+# 🎯 三、核心分析模組（v2）
+
+---
+
+## 🧱 1. Portfolio Structure Diagnosis
+
+分析：
+
+* 集中度（Top 1 / Top 5）
+* 成長 vs 防禦比例
+* 題材曝險（high beta exposure）
+* 現金比例
+
+👉 輸出：
+
+> “你現在是偏進攻 / 平衡 / 防禦型”
+
+---
+
+## 💰 2. Free Carry Optimization Engine
+
+對每一檔股票：
+
+### 計算：
+
+* Break-even shares needed
+* 最佳「賣出 lot 組合」
+* 哪些 lot 應該優先出清（高成本 / 低效率資本）
+
+👉 輸出：
+
+> 🔥 SELL THIS LOT FIRST（精準批次）
+
+---
+
+## 📈 3. Volatility Harvesting Engine
+
+針對每一檔股票建立：
+
+* 支撐區
+* 壓力區
+* 中樞區
+
+並給出：
+
+### ✔ 操作規則：
+
+* 低區（accumulate）
+* 中區（hold）
+* 高區（trim）
+
+👉 只用「已實現獲利」再投入（避免越做越大風險）
+
+---
+
+## 🧠 4. Capital Recycling System
+
+新增核心功能：
+
+> 💡 把「已實現獲利」視為獨立資本池
+
+分析：
+
+* 哪些股票適合資金再投入
+* 哪些應該永久退出
+* 哪些應該變 free carry long-term option
+
+---
+
+## ⚠️ 5. Risk Compression Layer（v2 新增）
+
+分析：
+
+* 單一股票最大風險暴露
+* sector risk（AI / EV / fintech / space）
+* beta exposure
+
+👉 並給出：
+
+> 📉 “你現在最危險的 1–3 個風險來源”
+
+---
+
+## 🔁 6. Rebalancing Plan Engine
+
+輸出：
+
+### ✔ 具體動作：
+
+* SELL（減碼清單）
+* HOLD（核心倉）
+* TRIM（部分獲利）
+* ROTATE（轉換成 ETF / 高品質資產）
+
+---
+
+# 📌 四、輸出格式（強制）
+
+每次分析必須包含：
+
+### 1️⃣ Summary（1段話）
+
+### 2️⃣ SELL LIST（精準 lot / 股數）
+
+### 3️⃣ FREE CARRY PLAN
+
+### 4️⃣ SWING STRATEGY MAP
+
+### 5️⃣ RISK WARNING（最重要風險）
+
+---
+
+# 🚀 五、v2 的核心升級差異
+
+| 功能           | v1 | v2 |
+| ------------ | -- | -- |
+| free carry   | ✔  | ✔  |
+| 波段交易         | ✔  | ✔  |
+| portfolio 分析 | ❌  | ✔  |
+| 風險壓縮         | ❌  | ✔  |
+| 資本再循環        | ❌  | ✔  |
+| 結構再平衡        | ❌  | ✔  |
+
+---
+
+# 🧠 六、一句話定義 v2
+
+👉 **FCH v2 是一個把「股票持有」升級成「資本系統管理 + 波動套利 + 風險壓縮」的框架。**
+
+---
+
+# 📦 七、你現在可以怎麼用它
+
+你之後只要貼：
+
+* 任一股票 lot（像 PL）
+* 或整個 portfolio
+
+然後加一句：
+
+> “Run FCH v2 analysis”
+
+就可以直接進入完整系統分析。
