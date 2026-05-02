@@ -1,4 +1,5 @@
 # “Free Carry & Volatility Harvesting Framework (FCH Framework)”
+# AKA `Cost Recovery Swing System`
 
 > Please analyze my stock holdings using tax-lot level precision.
 >
