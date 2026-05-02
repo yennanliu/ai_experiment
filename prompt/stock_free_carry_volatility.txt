@@ -1,0 +1,75 @@
+# “Free Carry & Volatility Harvesting Framework (FCH Framework)”
+
+> Please analyze my stock holdings using tax-lot level precision.
+>
+> I want a **professional portfolio optimization strategy focused on:
+> (1) Free carry conversion
+> (2) Break-even capital recovery
+> (3) Volatility-based swing trading strategy after cost recovery**
+>
+> ---
+>
+> ### 📊 Inputs:
+>
+> I will provide my transaction-level cost basis / lots and current market value.
+>
+> ---
+>
+> ### 🎯 Required analysis:
+>
+> 1. **Summarize total position**
+>
+>    * total shares
+>    * total cost basis
+>    * unrealized gain/loss
+>    * weighted average cost
+> 2. **Lot decomposition analysis**
+>
+>    * group lots into:
+>
+>      * low-cost core (winning positions)
+>      * mid-cost
+>      * high-cost recent additions
+> 3. **Free carry calculation**
+>
+>    * calculate exact number of shares needed to sell to fully recover total cost basis
+>    * identify which specific lots should be sold first
+>    * prioritize selling high-cost / low-conviction lots
+> 4. **Optimal execution plan**
+>
+>    * step-by-step sell plan (not just theory)
+>    * exact lots and quantities to sell
+>    * whether to split orders or execute in batches
+> 5. **Post free-carry structure**
+>
+>    * remaining shares after cost recovery
+>    * effective “risk-free position size”
+>    * psychological exposure after adjustment
+> 6. **Volatility trading strategy after free carry**
+>
+>    * define support / resistance zones
+>    * when to add back shares
+>    * when to trim positions
+>    * swing trading logic using realized gains only
+> 7. **Risk assessment**
+>
+>    * concentration risk
+>    * downside exposure
+>    * whether position is suitable for long-term hold vs trading asset
+>
+> ---
+>
+> ### ⚠️ Constraints:
+>
+> * Assume tax-aware “specific lot selection” is available (e.g. Schwab / brokerage tax lot control)
+> * Do NOT assume FIFO-only liquidation
+> * Focus on actionable execution, not theory
+>
+> ---
+>
+> ### 📌 Output format:
+>
+> * Structured
+> * With clear numbers
+> * Include “SELL THIS LOT FIRST” style instructions
+> * Keep it execution-focused
