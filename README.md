@@ -7,6 +7,13 @@
 - Others
   - 2nd brain (personal knowledge base)
   - https://youtu.be/fWhbTE1fjsI?si=6UEEkceXsO8x5Z2T
+  - Andrej Karpathy personal PKM  (personal knowledge management)
+  - https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+  ```
+  - source
+  - wiki
+  - claude.md
+  ```
 - LLM Infra
   - Harness engineering
 - LLM app
