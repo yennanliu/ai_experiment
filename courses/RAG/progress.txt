@@ -1,3 +1,10 @@
+# 20260503
+
+- RAG from scratch
+	- https://www.youtube.com/watch?v=xn1jEjRyJ2U&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=8
+	- https://www.youtube.com/watch?v=SaDzIVkYqyY&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=9
+
+
 # 20260501
 
 - https://youtu.be/xZDB1naRUlk?si=OoOceGuLZv8BqHvc
