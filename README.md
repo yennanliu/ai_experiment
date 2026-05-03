@@ -4,6 +4,9 @@
 
 ## Todo
 
+- Others
+  - 2nd brain (personal knowledge base)
+  - https://youtu.be/fWhbTE1fjsI?si=6UEEkceXsO8x5Z2T
 - LLM Infra
   - Harness engineering
 - LLM app
