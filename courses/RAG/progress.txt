@@ -3,6 +3,7 @@
 - RAG from scratch
 	- https://www.youtube.com/watch?v=xn1jEjRyJ2U&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=8
 	- https://www.youtube.com/watch?v=SaDzIVkYqyY&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=9
+	- https://www.youtube.com/watch?v=pfpIndq7Fi8&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=10
 
 
 # 20260501
