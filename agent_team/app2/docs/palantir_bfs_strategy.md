@@ -5,6 +5,10 @@ This document outlines a strategy for crawling and mapping the network of refere
 
 ## 2. Crawl Architecture: BFS (Depth 2)
 
+### Constraints
+- **Maximum Sites:** Total URLs scraped will not exceed 100.
+- **Depth:** Maximum depth of 2.
+
 ### Level 0: Seed
 - **Starting Point:** `https://en.wikipedia.org/wiki/Palantir_Technologies`
 
@@ -16,7 +20,7 @@ This document outlines a strategy for crawling and mapping the network of refere
 - **Queue:** All extracted URLs are added to the Level 1 queue.
 
 ### Level 2: Second Degree Connections
-- **Action:** Visit every URL gathered in Level 1.
+- **Action:** Visit URLs gathered in Level 1 until the 100-site limit is reached.
 - **Goal:** Extract URLs from these pages to understand the broader context or citation network.
 - **Filter:** To prevent infinite growth, we apply strict filtering (e.g., only English Wikipedia or specific domains).
 
@@ -26,8 +30,9 @@ This document outlines a strategy for crawling and mapping the network of refere
 queue = [(seed_url, 0)]  # (url, depth)
 visited = set()
 results = []
+MAX_SITES = 100
 
-while queue:
+while queue and len(visited) < MAX_SITES:
     current_url, depth = queue.pop(0)
     
     if depth > 2 or current_url in visited:
@@ -56,15 +61,16 @@ while queue:
 - **Link Text:** The anchor text or citation title.
 - **Crawl Depth:** 0, 1, or 2.
 
-### Politeness & Compliance
-- **User-Agent:** Descriptive header (e.g., `PalantirNetworkBot/1.0 (contact: user@example.com)`).
+### Constraints & Politeness
+- **Max Total Sites:** 100
+- **User-Agent:** Descriptive header (e.g., `PalantirNetworkBot/1.0 (contact: user@example.com)`)
 - **Rate Limiting:** 2-3 second delay between requests.
 - **Robots.txt:** Strict adherence to Wikipedia's crawl-delay and disallowed paths.
 - **Concurrent Requests:** Limited to 1 thread to avoid overwhelming the target server.
 
 ## 5. Risk Assessment
 - **Explosion of Nodes:** A single Wikipedia page can have 500+ links. A Depth 2 crawl could easily result in 250,000+ requests.
-- **Filter Suggestion:** Limit Level 1 to only the first 100 most relevant links (e.g., Infobox and first 3 sections) to keep the Level 2 crawl manageable.
+- **Mitigation:** The 100-site limit ensures the crawl remains manageable and respects target resources.
 - **Anti-Bot:** Even Wikipedia will throttle or block high-volume BFS crawls without an API key or extremely conservative timing.
 
 ## 6. Output Format
