@@ -5,3 +5,8 @@
 
 2. Cooragent
 	- https://github.com/LeapLabTHU/cooragent
+
+3. asgard-ai
+	- https://www.asgard-ai.com/solutions/manufacturing
+
+4. https://vault.asgard-ai.com/
