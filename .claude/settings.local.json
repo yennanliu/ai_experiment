@@ -1,0 +1,12 @@
+{
+  "enabledMcpjsonServers": [
+    "playwright",
+    "context7",
+    "chrome-devtools"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(sudo ln *)"
+    ]
+  }
+}
