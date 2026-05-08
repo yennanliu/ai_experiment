@@ -26,41 +26,52 @@ from harness import (
 # ── Task definitions ───────────────────────────────────────────────────────────
 
 TASKS = [
-    {
-        "label": "A. Three-Agent Pipeline (Planner → Generator → Evaluator loop)",
+    # {
+    #     "label": "A. Three-Agent Pipeline (Planner → Generator → Evaluator loop)",
+    #     "task": (
+    #         "Design a token-bucket rate-limiting system for a public REST API. "
+    #         "Cover the algorithm, the storage backend, and failure handling."
+    #     ),
+    #     "mode": "pipeline",
+    #     "max_retries": 1,       # retry once if score < threshold
+    #     "pass_threshold": 3.5,  # overall score required to skip retry
+    # },
+    # {
+    #     "label": "B. Multi-Session Handoff (resume from saved progress)",
+    #     "task": (
+    #         "Build a design spec for a session-resumable ETL pipeline "
+    #         "that ingests CSV files and loads them into a PostgreSQL database."
+    #     ),
+    #     "mode": "handoff",
+    #     "session_id": "etl_pipeline_v1",
+    # },
+    # {
+    #     "label": "C. Constraint Enforcement Loop (check → correct → re-check)",
+    #     "task": (
+    #         "Define the authentication module for a multi-tenant SaaS application "
+    #         "using JWT access tokens with refresh-token rotation."
+    #     ),
+    #     "mode": "constraint_loop",
+    #     "max_corrections": 1,
+    # },
+    # {
+    #     "label": "D. Code Project (Software Eng agent writes real Python)",
+    #     "task": (
+    #         "Build a Python token-bucket rate limiter. "
+    #         "Write: (1) rate_limiter.py with a RateLimiter class and token-bucket logic, "
+    #         "(2) storage.py with an InMemoryStore and a RedisStore stub, "
+    #         "(3) test_rate_limiter.py with pytest tests covering allow/deny/refill, "
+    #         "(4) demo.py that shows the limiter in action with printed output."
+    #     ),
+    #     "mode": "code_project",
+    # },
+        {
+        "label": "E. Code Project (Software Eng agent writes real Javascript)",
         "task": (
-            "Design a token-bucket rate-limiting system for a public REST API. "
-            "Cover the algorithm, the storage backend, and failure handling."
-        ),
-        "mode": "pipeline",
-        "max_retries": 1,       # retry once if score < threshold
-        "pass_threshold": 3.5,  # overall score required to skip retry
-    },
-    {
-        "label": "B. Multi-Session Handoff (resume from saved progress)",
-        "task": (
-            "Build a design spec for a session-resumable ETL pipeline "
-            "that ingests CSV files and loads them into a PostgreSQL database."
-        ),
-        "mode": "handoff",
-        "session_id": "etl_pipeline_v1",
-    },
-    {
-        "label": "C. Constraint Enforcement Loop (check → correct → re-check)",
-        "task": (
-            "Define the authentication module for a multi-tenant SaaS application "
-            "using JWT access tokens with refresh-token rotation."
-        ),
-        "mode": "constraint_loop",
-        "max_corrections": 1,
-    },
-    {
-        "label": "D. Code Project (Software Eng agent writes real Python)",
-        "task": (
-            "Build a Python token-bucket rate limiter. "
-            "Write: (1) rate_limiter.py with a RateLimiter class and token-bucket logic, "
-            "(2) storage.py with an InMemoryStore and a RedisStore stub, "
-            "(3) test_rate_limiter.py with pytest tests covering allow/deny/refill, "
+            "Build a Javascript load balancer. "
+            "Write: (1) load_balancer.js with a core logic, "
+            "(2) write other needed code "
+            "(3) test_load_balancer.js with pytest tests covering allow/deny/refill, "
             "(4) demo.py that shows the limiter in action with printed output."
         ),
         "mode": "code_project",
