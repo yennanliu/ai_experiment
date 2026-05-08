@@ -1,0 +1,7 @@
+.env
+.venv/
+memory/store.json
+artifacts/*.md
+artifacts/handoffs/
+__pycache__/
+*.pyc
