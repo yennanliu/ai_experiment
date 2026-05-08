@@ -3,6 +3,12 @@ Unified LLM interface — swap providers by changing PROVIDER in .env.
 
 Both Anthropic and OpenAI are wrapped behind a Conversation abstraction so
 agent modules stay provider-agnostic.
+
+Robustness notes for weaker models (gpt-3.5, o3-mini, etc.):
+  • temperature=0  — set via TEMPERATURE env var, maximises JSON determinism
+  • max_tokens     — callers pass CODE_MAX_TOKENS for large file generation
+  • tool arguments — malformed JSON from the model is caught and reported
+  • empty content  — None / empty strings are normalised to ""
 """
 
 import json
@@ -32,11 +38,12 @@ class LLMResponse:
 # ── Anthropic ──────────────────────────────────────────────────────────────────
 
 class AnthropicConversation:
-    def __init__(self, system: str, tools: list[dict]):
+    def __init__(self, system: str, tools: list[dict], max_tokens: int = config.MAX_TOKENS):
         import anthropic
         self._client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
         self._system = system
         self._tools = tools
+        self._max_tokens = max_tokens
         self._messages: list[dict] = []
 
     def send(self, content: str) -> LLMResponse:
@@ -56,7 +63,8 @@ class AnthropicConversation:
     def _call(self) -> LLMResponse:
         resp = self._client.messages.create(
             model=config.ANTHROPIC_MODEL,
-            max_tokens=2048,
+            max_tokens=self._max_tokens,
+            temperature=config.TEMPERATURE,
             system=self._system,
             tools=self._tools,
             messages=self._messages,
@@ -64,7 +72,7 @@ class AnthropicConversation:
         self._messages.append({"role": "assistant", "content": resp.content})
 
         if resp.stop_reason == "end_turn":
-            text = next(b.text for b in resp.content if hasattr(b, "text"))
+            text = next((b.text for b in resp.content if hasattr(b, "text")), "")
             return LLMResponse(text=text)
 
         return LLMResponse(
@@ -94,10 +102,11 @@ def _to_openai_tools(schemas: list[dict]) -> list[dict]:
 
 
 class OpenAIConversation:
-    def __init__(self, system: str, tools: list[dict]):
+    def __init__(self, system: str, tools: list[dict], max_tokens: int = config.MAX_TOKENS):
         import openai
         self._client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         self._tools = _to_openai_tools(tools)
+        self._max_tokens = max_tokens
         self._messages: list[Any] = [{"role": "system", "content": system}]
 
     def send(self, content: str) -> LLMResponse:
@@ -112,6 +121,8 @@ class OpenAIConversation:
     def _call(self) -> LLMResponse:
         resp = self._client.chat.completions.create(
             model=config.OPENAI_MODEL,
+            max_tokens=self._max_tokens,
+            temperature=config.TEMPERATURE,
             tools=self._tools,
             messages=self._messages,
         )
@@ -119,36 +130,41 @@ class OpenAIConversation:
         self._messages.append(msg)
 
         if not msg.tool_calls:
-            return LLMResponse(text=msg.content)
+            return LLMResponse(text=msg.content or "")
 
-        return LLMResponse(
-            text=None,
-            tool_calls=[
-                ToolCall(
-                    id=tc.id,
-                    name=tc.function.name,
-                    input=json.loads(tc.function.arguments),
-                )
-                for tc in msg.tool_calls
-            ],
-        )
+        tool_calls = []
+        for tc in msg.tool_calls:
+            try:
+                args = json.loads(tc.function.arguments)
+            except (json.JSONDecodeError, AttributeError):
+                # Weaker models occasionally emit malformed JSON arguments
+                args = {}
+            tool_calls.append(ToolCall(id=tc.id, name=tc.function.name, input=args))
+
+        return LLMResponse(text=None, tool_calls=tool_calls)
 
 
 # ── Factory ────────────────────────────────────────────────────────────────────
 
-def make_conversation(system: str, tools: list[dict]) -> AnthropicConversation | OpenAIConversation:
+def make_conversation(
+    system: str,
+    tools: list[dict],
+    max_tokens: int = config.MAX_TOKENS,
+) -> AnthropicConversation | OpenAIConversation:
     if config.PROVIDER == "openai":
-        return OpenAIConversation(system, tools)
-    return AnthropicConversation(system, tools)
+        return OpenAIConversation(system, tools, max_tokens=max_tokens)
+    return AnthropicConversation(system, tools, max_tokens=max_tokens)
 
 
-def simple_complete(system: str, user: str) -> str:
+def simple_complete(system: str, user: str, max_tokens: int = config.MAX_TOKENS) -> str:
     """One-shot completion without tools."""
     if config.PROVIDER == "openai":
         import openai
         client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
         resp = client.chat.completions.create(
             model=config.OPENAI_MODEL,
+            max_tokens=max_tokens,
+            temperature=config.TEMPERATURE,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
         return resp.choices[0].message.content or ""
@@ -157,7 +173,8 @@ def simple_complete(system: str, user: str) -> str:
         client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
         resp = client.messages.create(
             model=config.ANTHROPIC_MODEL,
-            max_tokens=512,
+            max_tokens=max_tokens,
+            temperature=config.TEMPERATURE,
             system=system,
             messages=[{"role": "user", "content": user}],
         )

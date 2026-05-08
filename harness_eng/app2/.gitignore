@@ -3,5 +3,6 @@
 memory/store.json
 artifacts/*.md
 artifacts/handoffs/
+workspace/*.py
 __pycache__/
 *.pyc
