@@ -1,0 +1,84 @@
+# source:  https://vocus.cc/article/69e72cbafd89780001452567
+
+This article, published in April 2026, provides a deep dive into **Harness Engineering**, a rapidly emerging discipline in the field of AI agents. It argues that as AI models become more powerful, the primary bottleneck for productivity has shifted from the models themselves to the **environment** in which they operate.
+
+Here is a summary of the post's key points:
+
+### 1. What is "Harness Engineering"?
+
+The term refers to the engineering of the **external system (the harness)** that guides, constrains, and supports an AI agent.
+
+* **The Problem:** Powerful AI agents often "get lost" during long-running tasks—they forget context, hallucinate completion, or cause systemic errors when making complex code changes.
+* **The Solution:** Instead of trying to fix behavior through better prompts (Prompt Engineering) or better data (Context Engineering), engineers build **environmental mechanisms** (linters, automated tests, clear documentation, and state management) that force the AI to remain on track.
+
+### 2. Historical Context & Evolution
+
+The post traces the shift in AI engineering focus over time:
+
+* **2024: Prompt Engineering** (Focus on the right words).
+* **2025: Context Engineering** (Focus on what the model "sees" at any given moment).
+* **2026: Harness Engineering** (Focus on how the model "acts" and stays correct over long periods).
+
+### 3. Key Influencers and Frameworks
+
+* **Mitchell Hashimoto:** Credited with naming the concept, emphasizing that engineers should build environment-level fixes rather than just repeating instructions to the AI.
+* **OpenAI:** Validated the approach by revealing they built a 1-million-line codebase in five months with a small team where humans wrote **no code**. They shifted their roles to "Environment Authors."
+* **Martin Fowler / Thoughtworks (Birgitta Böckeler):** Provided a functional framework for the "harness" consisting of:
+* **Guides (Feed-forward):** Instructions, architecture docs, and AGENTS.md files that guide the AI before it acts.
+* **Sensors (Feedback):** Linters, type checks, and AI-driven code reviews that catch errors after the AI acts.
+
+
+* **LangChain & Datadog:** Translated the concept into platforms and observability tools, proving that the same model performs significantly better when wrapped in a robust harness.
+
+### 4. The Changing Role of the Engineer
+
+The post highlights a fundamental shift in the software engineering profession. In a "Harness-first" world, an engineer’s value is no longer in writing lines of code, but in:
+
+* Defining "completion" and architectural boundaries.
+* Designing feedback loops and verification signals.
+* Translating failures into new automated guardrails.
+* Acting more like an **Architect** or **Platform Engineer** than a traditional coder.
+
+### 5. Competitive Landscape (Horizontal Analysis)
+
+The article notes that Harness Engineering doesn't have a single "competitor" but rather overlaps with several schools of thought:
+
+* **Model-Firsters:** Believe stronger models (like a hypothetical GPT-6) will eventually solve these issues internally.
+* **Workflow/Frameworkers:** Believe the solution lies in rigid agentic frameworks (like LangGraph).
+* **Verification-Firsters:** Focus purely on automated testing and observability (Datadog style).
+
+### Conclusion
+
+As of April 2026, Harness Engineering is not yet a rigid theory but a "solidifying consensus." The core takeaway is that **the winner in the AI era won't be the one with the best model, but the one who builds the best system to harness it.**
+
+
+----
+
+(zh-tw version)
+
+
+以下是幾種不同風格的標題選項：
+
+### 技術／專業風
+
+1. **Harness Engineering：AI Agent 時代的新工程學**
+2. **從 Prompt 到 Harness：AI 工程的下一個演化**
+3. **當 AI 開始自主工作，工程師該設計的是「環境」**
+4. **AI Reliability 的新核心：Harness Engineering 是什麼？**
+5. **比 Prompt 更重要的事：打造 AI 的工作 Harness**
+
+### 洞察／趨勢風
+
+6. **未來工程師不只寫 Code，而是訓練 AI 工作系統**
+7. **AI Agent 崛起後，真正的瓶頸不再是模型**
+8. **Prompt Engineering 已過時？Harness Engineering 正在崛起**
+9. **AI 時代的新職責：設計讓 Agent 不失控的系統**
+10. **當 AI 能寫程式後，人類工程師還剩下什麼？**
+
+### 媒體／吸睛風
+
+11. **AI 不缺智慧，缺的是「韁繩」**
+12. **OpenAI 正在改變工程師的工作定義**
+13. **AI Agent 最大問題不是笨，而是不可靠**
+14. **為什麼未來最重要的工程，不是寫程式？**
+15. **Harness Engineering：下一波 AI Infra 革命**
