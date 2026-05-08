@@ -1,0 +1,6 @@
+.env
+.venv/
+memory/store.json
+artifacts/*.md
+__pycache__/
+*.pyc
