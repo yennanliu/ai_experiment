@@ -56,7 +56,7 @@ app2/
 cd app2
 cp .env.example .env      # add your API key
 uv sync                   # or: pip install -e .
-python main.py
+uv run python main.py
 ```
 
 Configure provider in `.env`:
