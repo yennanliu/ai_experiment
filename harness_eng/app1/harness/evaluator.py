@@ -2,9 +2,8 @@
 
 import json
 
-import anthropic
+from . import provider
 
-_MODEL = "claude-haiku-4-5-20251001"
 _SYSTEM = (
     "You are a strict quality evaluator. "
     "Given a question and an answer, rate quality 1–5 and explain briefly. "
@@ -13,14 +12,11 @@ _SYSTEM = (
 
 
 def evaluate(question: str, answer: str) -> dict:
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=_MODEL,
-        max_tokens=256,
+    text = provider.simple_complete(
         system=_SYSTEM,
-        messages=[{"role": "user", "content": f"Question: {question}\n\nAnswer: {answer}"}],
+        user=f"Question: {question}\n\nAnswer: {answer}",
     )
     try:
-        return json.loads(response.content[0].text)
-    except (json.JSONDecodeError, IndexError):
+        return json.loads(text)
+    except json.JSONDecodeError:
         return {"score": 0, "reason": "parse error"}

@@ -1,43 +1,20 @@
-"""Core agent loop — the engine inside the harness."""
+"""Core agent loop — provider-agnostic."""
 
 from pathlib import Path
 
-import anthropic
-
-from . import memory, tools
+from . import memory, provider, tools
 
 _AGENTS_MD = Path(__file__).parent.parent / "AGENTS.md"
-_MODEL = "claude-haiku-4-5-20251001"
 
 
 def run(question: str) -> str:
-    client = anthropic.Anthropic()
     mem = memory.load()
-    system = _AGENTS_MD.read_text()
-    messages = [{"role": "user", "content": question}]
+    conv = provider.make_conversation(system=_AGENTS_MD.read_text(), tools=tools.SCHEMAS)
+    response = conv.send(question)
 
-    while True:
-        response = client.messages.create(
-            model=_MODEL,
-            max_tokens=1024,
-            system=system,
-            tools=tools.SCHEMAS,
-            messages=messages,
-        )
+    while not response.done:
+        results = [tools.run(tc.name, tc.input, mem) for tc in response.tool_calls]
+        response = conv.add_tool_results(response.tool_calls, results)
 
-        if response.stop_reason == "end_turn":
-            memory.save(mem)
-            return next(b.text for b in response.content if hasattr(b, "text"))
-
-        # Agentic tool-call loop
-        messages.append({"role": "assistant", "content": response.content})
-        results = [
-            {
-                "type": "tool_result",
-                "tool_use_id": block.id,
-                "content": tools.run(block.name, block.input, mem),
-            }
-            for block in response.content
-            if block.type == "tool_use"
-        ]
-        messages.append({"role": "user", "content": results})
+    memory.save(mem)
+    return response.text
