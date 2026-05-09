@@ -1,3 +1,10 @@
+#### 4) Long-Term Agentic Memory With LangGraph
+
+
+- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/ovv0p/introduction?startTime=0
+
+
+
 #### 2) FreeCodeComp `LangGraph`
 - https://www.youtube.com/watch?v=jGg_1h0qzaM
 

@@ -53,3 +53,10 @@
 #### 3)  01.LangGraph 中文入门使用教学 - 流程化构建复杂的 AI 应用程序 之 课程介绍
 
 - https://www.youtube.com/watch?v=QVDDxgSVo5g&list=PLliocbKHJNwvDpX6UMPpY_RBWhkxUh_Uu
+
+
+
+#### 4) Long-Term Agentic Memory With LangGraph
+
+
+https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/ovv0p/introduction?startTime=0
