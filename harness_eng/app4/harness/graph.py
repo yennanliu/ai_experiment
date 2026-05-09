@@ -20,6 +20,7 @@ from .nodes import decompose, process_project, aggregate
 
 class OrchestratorState(TypedDict):
     goal: str
+    gen_id: str                                        # timestamp run ID, e.g. "20260509_175030"
     projects: list[dict]                              # set by decompose
     results: Annotated[list[dict], operator.add]      # accumulated by fan-out
     final_report: str                                 # set by aggregate
@@ -28,7 +29,7 @@ class OrchestratorState(TypedDict):
 def _fan_out(state: OrchestratorState) -> list[Send]:
     """Route each sub-project to its own process_project invocation."""
     return [
-        Send("process_project", {"goal": state["goal"], "project": p})
+        Send("process_project", {"goal": state["goal"], "gen_id": state["gen_id"], "project": p})
         for p in state["projects"]
     ]
 

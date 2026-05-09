@@ -11,6 +11,7 @@ Run:
 """
 
 import asyncio
+from datetime import datetime
 from langchain_core.messages import AIMessageChunk
 
 from harness import config, vector_memory
@@ -25,9 +26,10 @@ GOAL = (
 )
 
 
-async def run(dash: Dashboard) -> dict:
+async def run(dash: Dashboard, gen_id: str) -> dict:
     inputs = {
         "goal": GOAL,
+        "gen_id": gen_id,
         "projects": [],
         "results": [],
         "final_report": "",
@@ -89,18 +91,14 @@ async def run(dash: Dashboard) -> dict:
     return final_state
 
 
-def _print_summary(state: dict, dash: Dashboard) -> None:
+def _print_summary(state: dict, dash: Dashboard, gen_id: str) -> None:
     print(f"\n{'═' * 64}")
-    print(f"  Goal      : {GOAL[:72]}…")
+    print(f"  Run ID    : {gen_id}")
     print(f"  Provider  : {config.PROVIDER} / {config.active_model()}")
     print(f"  Memory    : {vector_memory.count()} documents in ChromaDB")
     print(f"{'─' * 64}")
 
-    results = sorted(
-        (r for r in dash._scores.items()),
-        key=lambda x: x[0],
-    )
-    for label, s in results:
+    for label, s in sorted(dash._scores.items()):
         print(
             f"  {label:<30}  "
             f"C={s.get('completeness','?')}  Co={s.get('correctness','?')}  "
@@ -113,20 +111,24 @@ def _print_summary(state: dict, dash: Dashboard) -> None:
         print("  Integration Summary (excerpt):")
         print("  " + report[:400].replace("\n", "\n  "))
     print(f"{'─' * 64}")
-    print("  Artifacts → artifacts/   Memory → memory/chroma/")
+    print(f"  Artifacts → artifacts/{gen_id}/")
+    print(f"  Memory    → memory/chroma/")
     print(f"{'═' * 64}\n")
 
 
 async def main() -> None:
+    gen_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     print(f"\n{'═' * 64}")
     print("  app4 — Multi-Project Orchestrator")
+    print(f"  Run ID   : {gen_id}")
     print(f"  Provider : {config.PROVIDER} / {config.active_model()}")
     print(f"  Memory   : {vector_memory.count()} documents already in ChromaDB")
     print(f"{'═' * 64}\n")
 
-    dash = Dashboard(goal=GOAL)
-    final = await dash.run(run(dash))
-    _print_summary(final, dash)
+    dash = Dashboard(goal=GOAL, gen_id=gen_id)
+    final = await dash.run(run(dash, gen_id))
+    _print_summary(final, dash, gen_id)
 
 
 if __name__ == "__main__":

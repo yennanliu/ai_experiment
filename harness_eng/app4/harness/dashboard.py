@@ -20,8 +20,9 @@ from . import config
 
 
 class Dashboard:
-    def __init__(self, goal: str) -> None:
+    def __init__(self, goal: str, gen_id: str = "") -> None:
         self.goal = goal
+        self.gen_id = gen_id
         self.console = Console()
         self._projects: dict[str, str] = {}    # label → "pending"|"running"|"done"|"error"
         self._scores: dict[str, dict] = {}     # label → scores dict
@@ -93,10 +94,12 @@ class Dashboard:
         return layout
 
     def _header(self) -> Panel:
-        goal_preview = self.goal[:90] + "…" if len(self.goal) > 90 else self.goal
+        goal_preview = self.goal[:80] + "…" if len(self.goal) > 80 else self.goal
+        run_info = f"run=[bold]{self.gen_id}[/]  " if self.gen_id else ""
         return Panel(
             f"[bold cyan]Multi-Project Orchestrator[/]  ·  "
             f"[dim]{config.PROVIDER}/{config.active_model()}[/]  ·  "
+            f"{run_info}"
             f"[yellow]{goal_preview}[/]  ·  "
             f"[dim]{self._phase}[/]",
         )
