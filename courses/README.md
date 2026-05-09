@@ -60,6 +60,3 @@
 - [Yannic Kilcher](https://www.youtube.com/c/YannicKilcher) — Deep dives into cutting-edge AI papers.
 
 ---
-
-## ✅ Want a 12-month learning plan?  
-> You can customize these resources into a roadmap and track your progress!

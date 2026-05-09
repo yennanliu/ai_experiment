@@ -21,6 +21,15 @@
 <p align="center"><img src ="../doc/pic/flow_eng.png" ></p>
 
 
+---
+
+
+
+- Long-Term Agentic Memory With LangGraph
+
+
+<p align="center"><img src ="../doc/pic/types_of_memory_ai_agent.png" ></p>
+
 
 ## Ref
 
