@@ -3,7 +3,7 @@
 
 - https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/ovv0p/introduction?startTime=0
 - https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/a0k5a/baseline-email-assistant
-
+- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/oeqme/email-assistant-with-semantic-memory
 
 #### 2) FreeCodeComp `LangGraph`
 - https://www.youtube.com/watch?v=jGg_1h0qzaM
