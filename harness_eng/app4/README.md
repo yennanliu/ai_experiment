@@ -25,6 +25,9 @@ Each `process_project` invocation:
 ## Run
 
 ```bash
+# install
+uv sync
+
 # First run downloads the ONNX embedding model (~80 MB, cached in ~/.cache/chroma/)
 uv run python main.py
 ```
