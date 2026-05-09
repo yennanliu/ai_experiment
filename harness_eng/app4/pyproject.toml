@@ -1,0 +1,13 @@
+[project]
+name = "harness-orchestrator"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "langchain-anthropic>=0.3.0",
+    "langchain-openai>=0.3.0",
+    "langgraph>=0.3.0",
+    "chromadb>=0.5.0",
+    "rich>=13.0.0",
+    "python-dotenv>=1.0.0",
+]

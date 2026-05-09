@@ -71,3 +71,6 @@ bytebytego/pdfs/
 
 LangGraph_poc/app5/uploads
 LangGraph_poc/app5/chroma_db/chroma.sqlite3
+
+harness_eng/app4/harness/__pycache__
+**/**/__pycache__
