@@ -38,33 +38,39 @@ async def run(dash: Dashboard) -> dict:
 
     async for event in graph.astream_events(inputs, version="v2"):
         etype = event["event"]
+        name = event.get("name", "")
         node = event.get("metadata", {}).get("langgraph_node", "")
         data = event.get("data", {})
 
-        # ── Project discovery ────────────────────────────────────────────
-        if etype == "on_chain_end" and node == "decompose":
-            projects = data.get("output", {}).get("projects", [])
+        # ── Project discovery ─────────────────────────────────────────────
+        # Filter by name==node to skip _fan_out's on_chain_end (same node
+        # metadata but output is a list of Send objects, not a state dict).
+        if etype == "on_chain_end" and name == "decompose" and node == "decompose":
+            output = data.get("output", {})
+            projects = output.get("projects", []) if isinstance(output, dict) else []
             dash.set_projects(projects)
             dash.set_phase("generating")
 
         # ── Per-project lifecycle ─────────────────────────────────────────
-        elif etype == "on_chain_start" and node == "process_project":
+        elif etype == "on_chain_start" and name == "process_project" and node == "process_project":
             project = data.get("input", {}).get("project", {})
             label = project.get("label", "?")
             if label not in dash._projects:
                 dash.set_projects([project])
             dash.set_status(label, "running")
 
-        elif etype == "on_chain_end" and node == "process_project":
-            for r in data.get("output", {}).get("results", []):
+        elif etype == "on_chain_end" and name == "process_project" and node == "process_project":
+            output = data.get("output", {})
+            results = output.get("results", []) if isinstance(output, dict) else []
+            for r in results:
                 dash.set_status(r["label"], "done")
                 dash.set_scores(r["label"], r.get("scores", {}))
 
         # ── Aggregation ───────────────────────────────────────────────────
-        elif etype == "on_chain_start" and node == "aggregate":
+        elif etype == "on_chain_start" and name == "aggregate" and node == "aggregate":
             dash.set_phase("aggregating")
 
-        elif etype == "on_chain_end" and node == "aggregate":
+        elif etype == "on_chain_end" and name == "aggregate" and node == "aggregate":
             final_state = data.get("output", {})
             dash.set_phase("done")
 
