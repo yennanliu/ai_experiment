@@ -20,9 +20,12 @@ from harness.dashboard import Dashboard
 
 
 GOAL = (
-    "Design a production-ready real-time analytics platform: "
-    "data ingestion pipeline, stream processing layer, columnar storage tier, "
-    "and a low-latency query API with observability."
+    # "Design a production-ready real-time analytics platform: "
+    # "data ingestion pipeline, stream processing layer, columnar storage tier, "
+    # "and a low-latency query API with observability."
+    "Desing a prod-ready Youtube like system, "
+    "Users can upload, watch video "
+    "and can see the video list"
 )
 
 
