@@ -4,6 +4,8 @@
 
 ## Todo
 
+- AI agent
+  - `租屋法 法律agent.`
 - Others
   - 2nd brain (personal knowledge base)
   - https://youtu.be/fWhbTE1fjsI?si=6UEEkceXsO8x5Z2T
@@ -12,7 +14,7 @@
   ```
   - source
   - wiki
-  - claude.md
+  - Claude.md
   ```
 - LLM Infra
   - Harness engineering
@@ -20,20 +22,18 @@
   - Line relative apps
     - `check in` app (for company)
     - `Dating and Matching` app 
-  - Spotify chat bot -> song / list recommendations
+  - Spotify chat bot -> song/list recommendations
   - use Google NoteLLM as DB, load, interact in Gemini
   - knowledge base system for US stock (enterprise knowledge base): load multiple 10-K reports,  gen trends, reports, custom query with RAG
   - enterprise EMAIL reply gen system
-- install, run `gstack`  with claude, gemini CLI
+- install, run `gstack`  with Claude, gemini CLI
   - https://github.com/garrytan/gstack
 - copilot agent
   - https://github.com/yennanliu/CS_basics/agents?author=yennanliu
   - https://wellstsai.com/post/using-github-copilot-vscode/
   - https://learn.microsoft.com/zh-tw/visualstudio/ide/copilot-agent-mode?view=visualstudio
 - `resume mock interview`
-  - NoteBook LLM, agent flow, prompt ....
-- Set up clawdbot @ MacBook Air/mini
-  - https://github.com/clawdbot/clawdbot
+  - Notebook LLM, agent flow, prompt ....
 - Train AI as a mock interviewer
 - auto-scrape newly posted jobs, and send an email
 - system design co-worker
@@ -51,7 +51,6 @@
   - MCP server for Claude code
   - custom conf
   - pre, post actions
-  - VS Code Claude code plugin integration
     - data inconsistent
        - Two-phase commit (2pc)
        - Saga
@@ -60,14 +59,10 @@
     - https://github.com/yennanliu/til/blob/master/README.md#20260101
   - snowboard copilot app (android/ ios)
   -  Claude code
-     - chat, session, plugin ... UI
      - web design, FE skills
-     - code-simplifier
-     	- https://github.com/anthropics/claude-plugins-official/blob/main/plugins/code-simplifier/agents/code-simplifier.md
      - finlab claude code plugin
         - https://github.com/koreal6803/finlab-ai-plugin
 - AI projects
   - 1. **搭建私有化 AI 環境**：部署 **Ollama、vLLM、OpenWebUI**，建立地端 LLM 協作環境；同時架設 **Supabase (BaaS)、RabbitMQ** 與 **Dragonfly（Redis 替代方案）**，並針對多核心運算效能進行調校與最佳化
-  - 2. **AI 系統架構設計**：規劃並提出 **EMARS（AI 協作系統）** 與 **電子書管理系統** 的整體架構藍圖，探索 AI 與自動化流程的深度整合與應用場景。
   - 3. **AI 輔助開發（AI-Assisted Coding）**：導入 **OpenCode** 串接本地 LLM 模型，建立高效率的 AI 輔助開發流程，提升開發速度與程式品質。
 
