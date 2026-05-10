@@ -2,6 +2,7 @@
 
 - 20260510
 	- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/oeqme/email-assistant-with-semantic-memory
+	- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/ucvjj/email-assistant-with-semantic-%2B-episodic-memory
 
 
 - 20260509
