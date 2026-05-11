@@ -71,9 +71,8 @@ uv sync
 
 ```bash
 cp .env.example .env
-# Edit .env and add your keys:
+# Edit .env and add your key:
 #   OPENAI_API_KEY=sk-...
-#   SERPER_API_KEY=...   (free at serper.dev — used for web search)
 ```
 
 ### 3. Run

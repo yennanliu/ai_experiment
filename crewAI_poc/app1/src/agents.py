@@ -1,7 +1,4 @@
 from crewai import Agent
-from crewai_tools import SerperDevTool
-
-search_tool = SerperDevTool()
 
 
 def researcher(llm) -> Agent:
@@ -9,10 +6,9 @@ def researcher(llm) -> Agent:
         role="Senior Research Analyst",
         goal="Uncover accurate, insightful information on the given topic",
         backstory=(
-            "You are a meticulous researcher with a talent for finding "
-            "credible sources and synthesizing complex information clearly."
+            "You are a meticulous researcher with a talent for synthesizing "
+            "complex information clearly from your extensive knowledge base."
         ),
-        tools=[search_tool],
         llm=llm,
         verbose=True,
     )
