@@ -156,8 +156,8 @@ async function checkUserControl(page) {
 /**
  * Main automation with controls
  */
-async function autoApplyWithControls(page, startPage = 2, maxPages = 5) {
-  console.log('🚀 Starting Automation with Manual Controls...\n');
+async function autoApplyWithControls(page, startPage = 2, maxPages = 5, targetSuccess = 200) {
+  console.log(`🚀 Starting Automation (Target: ${targetSuccess} successes)...\n`);
   console.log('Controls:');
   console.log('  P = Pause automation');
   console.log('  R = Resume automation');
@@ -178,7 +178,8 @@ async function autoApplyWithControls(page, startPage = 2, maxPages = 5) {
     await setupKeyboardControls(page);
     await updateStatus(page, 'RUNNING');
 
-    const BASE_URL = 'https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&jobsource=joblist_search&keyword=%20%20%20%20%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&order=15&remoteWork=1,2';
+    // Broadened search: Taipei + New Taipei, Software Engineer, Newest First (order=1)
+    const BASE_URL = 'https://www.104.com.tw/jobs/search/?area=6001001000,6001002000&keyword=%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&order=1&jobsource=2018indexpb';
 
     for (let pageNum = startPage; pageNum <= maxPages; pageNum++) {
       // Check if user wants to quit
@@ -198,7 +199,7 @@ async function autoApplyWithControls(page, startPage = 2, maxPages = 5) {
 
       // Navigate to page
       const pageUrl = `${BASE_URL}&page=${pageNum}`;
-      await page.goto(pageUrl, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.goto(pageUrl, { waitUntil: 'networkidle', timeout: 60000 });
       await page.waitForTimeout(2000);
 
       // Re-setup controls after navigation
@@ -336,8 +337,8 @@ async function autoApplyWithControls(page, startPage = 2, maxPages = 5) {
       results.skipped += pageResults.skipped;
 
       // Check if we reached the limit
-      if (results.successful >= 3) {
-        console.log('\n🎯 Target reached: 3 successful applications. Stopping.');
+      if (results.successful >= targetSuccess) {
+        console.log(`\n🎯 Target reached: ${targetSuccess} successful applications. Stopping.`);
         throw new Error('TARGET_REACHED');
       }
 
@@ -353,7 +354,7 @@ async function autoApplyWithControls(page, startPage = 2, maxPages = 5) {
       console.log('\n🛑 Automation stopped by user');
       await updateStatus(page, 'COMPLETED');
     } else if (error.message === 'TARGET_REACHED') {
-      await updateStatus(page, 'COMPLETED', '(3/3 Success)');
+      await updateStatus(page, 'COMPLETED', `(${results.successful}/${targetSuccess} Success)`);
     } else {
       throw error;
     }
@@ -388,14 +389,15 @@ if (require.main === module) {
       useExisting: args.includes('--use-existing'),
       cdpPort: 9222,
       startPage: 2,
-      maxPages: 1,
-      targetSuccess: 3
+      maxPages: 20,
+      targetSuccess: 200
     };
 
     // Parse simple args
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--start-page') config.startPage = parseInt(args[++i], 10);
       if (args[i] === '--max-pages') config.maxPages = parseInt(args[++i], 10);
+      if (args[i] === '--target') config.targetSuccess = parseInt(args[++i], 10);
     }
 
     let browser;
@@ -422,7 +424,7 @@ if (require.main === module) {
     // For simplicity, we'll just run it. The user requested 3 jobs.
     console.log(`🎯 Target: ${config.targetSuccess} successful applications`);
     
-    await autoApplyWithControls(page, config.startPage, config.maxPages);
+    await autoApplyWithControls(page, config.startPage, config.maxPages, config.targetSuccess);
     
     if (config.useExisting) {
       await browser.close();
