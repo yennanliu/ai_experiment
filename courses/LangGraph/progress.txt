@@ -1,4 +1,9 @@
-#### 4) Long-Term Agentic Memory With LangGraph
+#### 4) Long-Term Agentic Memory With LangGraph (completed)
+
+- 20260511
+	- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/uubkz/email-assistant-with-semantic-%2B-episodic-%2B-procedural-memory
+	- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/uubkz/email-assistant-with-semantic-%2B-episodic-%2B-procedural-memory
+
 
 - 20260510
 	- https://learn.deeplearning.ai/courses/long-term-agentic-memory-with-langgraph/lesson/oeqme/email-assistant-with-semantic-memory
