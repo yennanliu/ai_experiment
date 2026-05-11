@@ -1,5 +1,5 @@
 from crewai import Agent, Crew, LLM, Task
-from crewai.flow.flow import Flow, listen, router, start
+from crewai.flow.flow import Flow, listen, or_, router, start
 from pydantic import BaseModel
 
 
@@ -100,7 +100,7 @@ class SmartArticleFlow(Flow[ArticleState]):
 
     # ── Step 4: polish — triggers when EITHER branch above completes ─────────
 
-    @listen(run_technical_crew, run_business_crew)
+    @listen(or_(run_technical_crew, run_business_crew))
     def polish_article(self):
         editor = Agent(
             role="Senior Editor",

@@ -67,7 +67,7 @@ class SmartArticleFlow(Flow[ArticleState]):
     @listen("business")
     def run_business_crew(self): ...    # only fires when route = "business"
 
-    @listen(run_technical_crew, run_business_crew)  # OR — fires when either completes
+    @listen(or_(run_technical_crew, run_business_crew))  # OR — fires when either completes
     def polish_article(self): ...
 ```
 
