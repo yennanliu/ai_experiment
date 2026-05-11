@@ -103,7 +103,8 @@ Crew(
     agents=[researcher, synthesizer],
     tasks=[t1, t2],
     process=Process.sequential,
-    memory=True,        # ← all three memory layers enabled automatically
+    memory=True,
+    embedder={"provider": "onnx"},  # local MiniLM-L6 — no API key required
     verbose=True,
 )
 ```

@@ -13,6 +13,7 @@ def build_crew(question: str) -> Crew:
         agents=[r_agent, s_agent],
         tasks=[t1, t2],
         process=Process.sequential,
-        memory=True,        # enables short-term, long-term, and entity memory
+        memory=True,
+        embedder={"provider": "onnx"},  # local ONNX MiniLM — no API key required
         verbose=True,
     )
