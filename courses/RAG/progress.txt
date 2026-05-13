@@ -1,3 +1,9 @@
+# 20260513
+
+- RAG Fundamentals and Advanced Techniques – Full Course
+	- https://youtu.be/ea2W8IogX80?si=cy0FUSag1v00FucS
+		- 25:32
+
 # 20260504
 
 - RAG from scratch
