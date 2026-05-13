@@ -11,7 +11,7 @@ Open a browser and navigate to:
 
 https://www.104.com.tw
 
-Log in manually and keep the browser session running.
+Wait for me Log in manually and keep the browser session running.
 
 ---
 
