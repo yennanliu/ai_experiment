@@ -16,3 +16,10 @@
 		- https://youtu.be/xZDB1naRUlk?si=OoOceGuLZv8BqHvc
 	- code
 		- https://github.com/pythonontheplane123/LLM_course_part_1
+
+- RAG Fundamentals and Advanced Techniques – Full Course
+	- video
+		- https://youtu.be/ea2W8IogX80?si=cy0FUSag1v00FucS
+	- code
+		- https://github.com/pdichone/rag-intro-chat-with-docs
+		- https://github.com/pdichone/advanced-rag-techniques
