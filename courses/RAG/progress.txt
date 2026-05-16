@@ -2,7 +2,7 @@
 
 - RAG Fundamentals and Advanced Techniques – Full Course
 	- https://youtu.be/ea2W8IogX80?si=cy0FUSag1v00FucS
-		- 46:49
+		- 46:49 -> done
 
 # 20260514
 
