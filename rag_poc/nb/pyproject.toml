@@ -1,0 +1,23 @@
+[project]
+name = "rag-notebooks"
+version = "0.1.0"
+description = "RAG 學習系列 Jupyter Notebooks - FDE 面試準備"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.30.0",
+    "chromadb>=0.5.0",
+    "python-dotenv>=1.0.0",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=3.0.0",
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "tiktoken>=0.7.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ipywidgets>=8.0.0",
+]
