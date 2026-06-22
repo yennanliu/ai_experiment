@@ -7,6 +7,11 @@
 
 ## Progress
 
+- 20260622
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/rm9bg7/agentic-design-patterns
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/shknq1/reflection-to-improve-outputs-of-a-task
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/uz37v2/why-not-just-direct-generation%3F
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/moivym/chart-generation-workflow
 
 - 20260621
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/zqs9ty/degrees-of-autonomy
