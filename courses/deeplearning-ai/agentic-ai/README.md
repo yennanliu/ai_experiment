@@ -12,6 +12,9 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/shknq1/reflection-to-improve-outputs-of-a-task
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/uz37v2/why-not-just-direct-generation%3F
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/moivym/chart-generation-workflow
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/uz37vtiou/ungraded-lab%3A-chart-generation
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/vtzr25/evaluating-the-impact-of-reflection
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/txqmf0/using-external-feedback
 
 - 20260621
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/zqs9ty/degrees-of-autonomy
