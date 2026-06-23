@@ -7,6 +7,13 @@
 
 ## Progress
 
+
+- 20260623
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/txqmf0/using-external-feedback
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/3s0czq/what-are-tools%3F
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/79cpry/creating-a-tool
+
+
 - 20260622
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/rm9bg7/agentic-design-patterns
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/shknq1/reflection-to-improve-outputs-of-a-task
