@@ -8,10 +8,14 @@
 ## Progress
 
 
+- 20260624
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/154qpw/tool-syntax
+
 - 20260623
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/txqmf0/using-external-feedback
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/3s0czq/what-are-tools%3F
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/79cpry/creating-a-tool
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/154qpw/tool-syntax
 
 
 - 20260622
