@@ -10,6 +10,7 @@
 
 - 20260624
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/154qpw/tool-syntax
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/a4gs14/code-execution
 
 - 20260623
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/txqmf0/using-external-feedback
