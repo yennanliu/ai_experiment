@@ -7,6 +7,10 @@
 
 ## Progress
 
+- 20260626
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/a4gs14/code-execution
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/x7jowg/mcp
+
 
 - 20260624
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/154qpw/tool-syntax
