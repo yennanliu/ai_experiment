@@ -10,6 +10,7 @@
 - 20260626
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/a4gs14/code-execution
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/x7jowg/mcp
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/pu5xbl/evaluations-(evals)
 
 
 - 20260624
