@@ -11,6 +11,7 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/a4gs14/code-execution
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/x7jowg/mcp
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/pu5xbl/evaluations-(evals)
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/2ftglp/error-analysis-and-prioritizing-next-steps
 
 
 - 20260624
