@@ -8,7 +8,7 @@
 ## Progress
 
 
-- 20260627 ()
+- 20260627 (done)
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/2ftglp/error-analysis-and-prioritizing-next-steps
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/0kbds1/more-error-analysis-examples
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/fwxyds/component-level-evaluations
@@ -22,6 +22,7 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/egr0a8/planning-with-code-execution
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/608l3n/multi-agentic-workflows
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/gymk4l/communication-patterns-for-multi-agent-systems
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/qjhixk/conclusion
 
 
 - 20260626
@@ -50,6 +51,7 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/uz37vtiou/ungraded-lab%3A-chart-generation
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/vtzr25/evaluating-the-impact-of-reflection
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/txqmf0/using-external-feedback
+
 
 - 20260621
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/zqs9ty/degrees-of-autonomy
