@@ -20,6 +20,7 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/jcl177/planning-workflows
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/wr78er/creating-and-executing-llm-plans
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/egr0a8/planning-with-code-execution
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/608l3n/multi-agentic-workflows
 
 
 - 20260626
