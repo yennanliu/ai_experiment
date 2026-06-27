@@ -8,7 +8,7 @@
 ## Progress
 
 
-- 20260627 (completed)
+- 20260627 ()
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/2ftglp/error-analysis-and-prioritizing-next-steps
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/0kbds1/more-error-analysis-examples
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/fwxyds/component-level-evaluations
@@ -16,6 +16,9 @@
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/ldf4ci/how-to-address-problems-you-identify
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/154qpa/latency%2C-cost-optimization
 	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/hl2aj7/development-process-summary 
+
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/jcl177/planning-workflows
+	- https://learn.deeplearning.ai/courses/agentic-ai/lesson/wr78er/creating-and-executing-llm-plans
 
 
 - 20260626
