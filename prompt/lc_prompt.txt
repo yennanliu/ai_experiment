@@ -1,3 +1,8 @@
 # 1)
 
 offer the full code above, with line-by-line code explanation as a code comment
+
+
+# 2)
+
+❯ refer xxx and  yyy and offer code idea, pattern, similar LC
