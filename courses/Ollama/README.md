@@ -8,3 +8,7 @@
 
 
 ## Progress
+
+- 20260716
+	- https://www.youtube.com/watch?v=GWB9ApTPTv4&t=403s
+		- 44:51
