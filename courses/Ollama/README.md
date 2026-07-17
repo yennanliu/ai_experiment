@@ -11,7 +11,8 @@
 
 - 20260717
 	- https://www.youtube.com/watch?v=GWB9ApTPTv4&t=403s
-		- 1:51:32
+		- 2:22:02
+		- done
 
 - 20260716
 	- https://www.youtube.com/watch?v=GWB9ApTPTv4&t=403s
