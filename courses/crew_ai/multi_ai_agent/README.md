@@ -6,6 +6,9 @@
 - 20260719
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/oqusr/automated-project%3A-planning%2C-estimation%2C-and-allocation
 
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/i1zhm/internal-and-external-integrations
+
+
 - 20260718
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/agfnp/introduction
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/v2td2/overview-of-multi-ai-agent-systems
