@@ -13,6 +13,9 @@
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/w2duf/complex-crew-setups
 
 
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/l04k1/agentic-sales-pipeline
+		- 10:26
+
 - 20260718
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/agfnp/introduction
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/v2td2/overview-of-multi-ai-agent-systems
