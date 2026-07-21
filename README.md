@@ -4,6 +4,8 @@
 
 ## Todo
 
+- `growin` replica?
+  - https://www.growin.ai/en
 - AI agent
   - `租屋法 法律agent.`
 - Others
