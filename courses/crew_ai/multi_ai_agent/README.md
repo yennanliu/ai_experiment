@@ -6,8 +6,10 @@
 - 20260721
 
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/l04k1/agentic-sales-pipeline
-	
+
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/h3une/performance-optimization
+
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/j0doo/support-data-insight-analysis
 
 - 20260719
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/oqusr/automated-project%3A-planning%2C-estimation%2C-and-allocation
