@@ -3,6 +3,13 @@
 
 ## Progress
 
+- 20260723
+
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/j0doo/support-data-insight-analysis
+
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/cannw/multi-model-use-cases
+
+
 - 20260721
 
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/l04k1/agentic-sales-pipeline
