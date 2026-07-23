@@ -9,6 +9,8 @@
 
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/cannw/multi-model-use-cases
 
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/aix1c/content-creation-at-scale
+
 
 - 20260721
 
