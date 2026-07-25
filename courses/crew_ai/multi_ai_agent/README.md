@@ -3,6 +3,12 @@
 
 ## Progress
 
+
+- 20260725
+
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/aix1c/content-creation-at-scale
+
+
 - 20260723
 
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/j0doo/support-data-insight-analysis
