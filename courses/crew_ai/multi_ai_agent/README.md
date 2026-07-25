@@ -4,9 +4,14 @@
 ## Progress
 
 
+- done
+
+
 - 20260725
 
 	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/aix1c/content-creation-at-scale
+
+	- https://learn.deeplearning.ai/courses/practical-multi-ai-agents-and-advanced-use-cases-with-crewai/lesson/msz9h/agentic-workflows-in-industry (done)
 
 
 - 20260723
