@@ -12,6 +12,7 @@
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/8bp20b/data%3A-tokens-for-models-to-read-write-data
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/8bp20b/data%3A-tokens-for-models-to-read-write-data
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/46ys5s/fine-tuning-math%3A-loss%2C-gradients%2C-weight-updates-(part-1)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/vtzw27p4/fine-tuning-math%3A-loss%2C-gradients%2C-weight-updates-(part-2)
 
 
 - 20260729
