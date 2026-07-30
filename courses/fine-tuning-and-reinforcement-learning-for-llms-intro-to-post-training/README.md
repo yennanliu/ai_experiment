@@ -5,6 +5,13 @@
 
 ## Progress
 
+
+- 20260730
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli70/post-training-in-the-wild
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/154zpy/data%3A-what-you-need-and-how-to-prepare-it
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/8bp20b/data%3A-tokens-for-models-to-read-write-data
+
+
 - 20260729
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/154zpc/post-training-example%3A-reasoning
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/cnd1960z/post-training-example%3A-safety-and-security-(rlaif)
