@@ -10,6 +10,8 @@
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli70/post-training-in-the-wild
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/154zpy/data%3A-what-you-need-and-how-to-prepare-it
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/8bp20b/data%3A-tokens-for-models-to-read-write-data
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/8bp20b/data%3A-tokens-for-models-to-read-write-data
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/46ys5s/fine-tuning-math%3A-loss%2C-gradients%2C-weight-updates-(part-1)
 
 
 - 20260729
