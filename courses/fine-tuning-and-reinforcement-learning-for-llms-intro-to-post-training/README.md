@@ -7,8 +7,9 @@
 
 - 20260731
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/cnd19h/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-1)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli7267/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-2)
 
-	
+
 - 20260730
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli70/post-training-in-the-wild
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/154zpy/data%3A-what-you-need-and-how-to-prepare-it
