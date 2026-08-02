@@ -6,6 +6,9 @@
 
 - build `auto dev agent system` via claude SDK, api key gateway hack
   - ref: xxx
+- fine tune open source model (higging face)
+- run / install open source `gamma` model
+- create andriod app with open source `gamma` model
 - `growin` replica?
   - https://www.growin.ai/en
 - AI agent
