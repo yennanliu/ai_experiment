@@ -5,6 +5,12 @@
 
 ## Progress
 
+
+- 20260802
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli7267/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-2)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/536qur/fine-tuning%3A-parameter-efficient-fine-tuning-(peft)
+
+
 - 20260731
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/cnd19h/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-1)
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli7267/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-2)
