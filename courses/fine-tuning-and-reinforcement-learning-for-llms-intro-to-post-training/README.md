@@ -9,6 +9,8 @@
 - 20260802
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli7267/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-2)
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/536qur/fine-tuning%3A-parameter-efficient-fine-tuning-(peft)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/3s0jz5/rl%3A-rewards-and-preference-learning
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/hl2njj/rl%3A-training-objective-and-rlhf
 
 
 - 20260731
