@@ -11,6 +11,7 @@
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/536qur/fine-tuning%3A-parameter-efficient-fine-tuning-(peft)
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/3s0jz5/rl%3A-rewards-and-preference-learning
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/hl2njj/rl%3A-training-objective-and-rlhf
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6ax/rl%3A-ppo-and-grpo-algorithms
 
 
 - 20260731
