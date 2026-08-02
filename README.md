@@ -4,6 +4,8 @@
 
 ## Todo
 
+- build `auto dev agent system` via claude SDK, api key gateway hack
+  - ref: xxx
 - `growin` replica?
   - https://www.growin.ai/en
 - AI agent
