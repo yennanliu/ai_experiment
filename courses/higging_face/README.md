@@ -8,6 +8,6 @@ Finetune LLMs to teach them ANYTHING with Huggingface and Pytorch
 
 - Progress
 	- 20260803
-		- 23:45
+		- 31:53
 	- 20260802
 		- 16:42
