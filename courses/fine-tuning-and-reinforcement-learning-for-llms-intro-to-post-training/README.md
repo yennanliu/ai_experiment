@@ -5,6 +5,9 @@
 
 ## Progress
 
+- 20260803
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6ax/rl%3A-ppo-and-grpo-algorithms
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/rm98gg4q/why-evals-are-the-north-star
 
 - 20260802
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/jcli7267/fine-tuning%3A-hyperparameters-%26-hyperparameter-tuning-(part-2)
