@@ -7,6 +7,10 @@
 
 - 20260804
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/shkcqo/rl-test-environments-and-monitoring-rl-updates
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/a4g31i/reward-hacking
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/0kbls32k/error-analysis%3A-why-it-matters
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/3s0jzel3/error-analysis%3A-diagnosing-errors-%26-interventions
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6at/how-to-invest-in-good-evals
 
 
 - 20260803
