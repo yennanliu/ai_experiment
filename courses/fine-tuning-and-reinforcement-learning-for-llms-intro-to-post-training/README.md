@@ -5,6 +5,10 @@
 
 ## Progress
 
+- 20260804
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/shkcqo/rl-test-environments-and-monitoring-rl-updates
+
+
 - 20260803
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6ax/rl%3A-ppo-and-grpo-algorithms
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/rm98gg4q/why-evals-are-the-north-star
