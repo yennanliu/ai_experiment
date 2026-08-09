@@ -9,6 +9,7 @@
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6at/how-to-invest-in-good-evals
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/536qu1p0/red-teaming%3A-real-world-failures
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/uz3xvs/how-much-data-you-need-for-post-training
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/op1v8e/data-for-fine-tuning
 
 
 - 20260804
