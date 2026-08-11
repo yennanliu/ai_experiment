@@ -7,6 +7,8 @@
 
 - 20260811
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/op1v8e/data-for-fine-tuning
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/zqs7t8/data-for-rl-(part-1)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/a4g31ff/data-for-rl-(part-2)
 
 
 - 20260809
