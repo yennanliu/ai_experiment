@@ -5,6 +5,10 @@
 
 ## Progress
 
+- 20260811
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/op1v8e/data-for-fine-tuning
+
+
 - 20260809
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/egr6at/how-to-invest-in-good-evals
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/536qu1p0/red-teaming%3A-real-world-failures
