@@ -7,8 +7,10 @@
 
 - 20260816
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/bvufke/constitutional-ai%2C-revisited
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/zqs7t7ds/balancing-data-and-rewards
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/k2vdh4/a-production-post-training-pipeline
 
-	
+
 - 20260815
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/a4g31ff/data-for-rl-(part-2)
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/vtzw2i/putting-it-together
