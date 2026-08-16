@@ -5,6 +5,10 @@
 
 ## Progress
 
+- 20260816
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/bvufke/constitutional-ai%2C-revisited
+
+	
 - 20260815
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/a4g31ff/data-for-rl-(part-2)
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/vtzw2i/putting-it-together
