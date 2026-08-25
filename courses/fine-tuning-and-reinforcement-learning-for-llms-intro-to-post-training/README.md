@@ -5,6 +5,12 @@
 
 ## Progress
 
+
+- 20260825
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/k2vdh4/a-production-post-training-pipeline
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/qjh9xq/agents
+
+
 - 20260816
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/bvufke/constitutional-ai%2C-revisited
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/zqs7t7ds/balancing-data-and-rewards
