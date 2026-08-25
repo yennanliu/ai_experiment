@@ -9,6 +9,7 @@
 - 20260825
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/k2vdh4/a-production-post-training-pipeline
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/qjh9xq/agents
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/x7jmwa/rl-promotion-rules-(go-no-go)
 
 
 - 20260816
