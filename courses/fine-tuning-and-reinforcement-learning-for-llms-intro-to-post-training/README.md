@@ -6,6 +6,11 @@
 ## Progress
 
 
+- 20260829
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/x7jmwa/rl-promotion-rules-(go-no-go)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/op1v8qxc1/data-feedback-flywheel
+
+
 - 20260825
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/k2vdh4/a-production-post-training-pipeline
 	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/qjh9xq/agents
