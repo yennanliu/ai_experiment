@@ -6,6 +6,12 @@
 
 ## Progress
 
+(done)
+
+- 20260831
+	- https://learn.deeplearning.ai/courses/build-and-train-an-llm-with-jax/lesson/9i8oms/final-minigpt
+
+
 - 20260829
 	- https://learn.deeplearning.ai/courses/build-and-train-an-llm-with-jax/lesson/53tzu2/data-loading
 	- https://learn.deeplearning.ai/courses/build-and-train-an-llm-with-jax/lesson/46z35k/training-and-saving
