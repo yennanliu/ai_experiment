@@ -1,0 +1,14 @@
+[project]
+name = "lora-exp"
+version = "0.1.0"
+description = "Simplest possible LoRA fine-tune of a small Hugging Face model"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch>=2.4",
+    "transformers>=4.44",
+    "peft>=0.13",
+]
+
+[tool.uv]
+package = false
