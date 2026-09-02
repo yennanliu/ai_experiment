@@ -1,0 +1,14 @@
+lesson: phases/01-math-foundations/02-vectors-matrices-operations
+title: Vectors & Matrices — hand-rolled vs numpy
+tier: T0
+entrypoint: run.py
+runtime_seconds: 10
+needs_env: []
+deps_group: math
+proves: >
+  The lesson's pure-stdlib Vector and Matrix classes compute exactly what numpy
+  computes: matmul, transpose, broadcasting a bias row, the 2x2 determinant and
+  inverse, dot products and normalisation. Same inputs, same numbers, to 1e-12.
+parity_with: phases/01-math-foundations/02-vectors-matrices-operations/code/matrices.py
+reference_doc: phases/01-math-foundations/02-vectors-matrices-operations/docs/en.md
+reference_doc_sha256: 398ce87f481e54f3

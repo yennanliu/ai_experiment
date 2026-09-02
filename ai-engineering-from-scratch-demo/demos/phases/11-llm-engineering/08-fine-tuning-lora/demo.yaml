@@ -1,0 +1,16 @@
+lesson: phases/11-llm-engineering/08-fine-tuning-lora
+title: LoRA & QLoRA — the lesson's LoRALayer vs peft
+tier: T1
+entrypoint: run.py
+runtime_seconds: 90
+needs_env: []
+deps_group: llm
+proves: >
+  The lesson's hand-written LoRALayer is numerically identical to peft's
+  lora.Linear at the same rank and alpha: same forward pass, same trainable-parameter
+  accounting, same merged weights after folding the adapter back into the base layer.
+  It also measures where the lesson diverges -- its "NF4" quantiser is symmetric
+  int4-range, not the NF4 codebook -- and prints the reconstruction error that costs.
+parity_with: phases/11-llm-engineering/08-fine-tuning-lora/code/lora.py
+reference_doc: phases/11-llm-engineering/08-fine-tuning-lora/docs/en.md
+reference_doc_sha256: 6e6752387e06906a

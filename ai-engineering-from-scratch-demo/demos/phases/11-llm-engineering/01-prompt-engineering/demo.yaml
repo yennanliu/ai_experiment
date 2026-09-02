@@ -1,0 +1,17 @@
+lesson: phases/11-llm-engineering/01-prompt-engineering
+title: Prompt Engineering — the lesson's patterns against a real Claude
+tier: T2
+entrypoint: run.py
+runtime_seconds: 45
+needs_env:
+  - ANTHROPIC_API_KEY
+deps_group: llm
+cassette: prompt-patterns.json
+proves: >
+  The lesson's prompt patterns and its response scorer work on real model output,
+  not just on its hash-seeded simulate_llm_call. The same scoring criteria are run
+  over both, side by side, so the simulation's scores are visibly an artifact of a
+  hash rather than a property of the prompt. Also surfaces that the lesson's
+  format_anthropic_request targets an API shape the current models reject.
+reference_doc: phases/11-llm-engineering/01-prompt-engineering/docs/en.md
+reference_doc_sha256: cd2886a19bdcb3f8

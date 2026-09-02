@@ -1,0 +1,58 @@
+# Every push: the free, instant, offline half of the repo.
+#
+# This job installs no torch and no provider SDK. T2 demos still run here,
+# because replaying a committed cassette needs neither a key nor a network --
+# which is the point of D4.
+name: aiefs-demo t0
+
+on:
+  push:
+    paths: ["ai-engineering-from-scratch-demo/**"]
+  pull_request:
+    paths: ["ai-engineering-from-scratch-demo/**"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ai-engineering-from-scratch-demo
+
+env:
+  AIEFS_REF: ${{ github.workspace }}/reference
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # Parity assertions import the lesson's own code, so the reference repo
+      # is a build input, not a nicety.
+      - uses: actions/checkout@v4
+        with:
+          repository: yennanliu/ai-engineering-from-scratch
+          path: reference
+
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --extra math --extra dev
+
+      # Structure gates first: they are cheap and they explain themselves.
+      - name: audit (manifest, README, >=3 tests, no scaffold TODOs)
+        run: uv run python scripts/audit_demos.py
+      - name: dependency groups are honest
+        run: uv run python scripts/check_deps.py
+      - name: coverage table is regenerated, not hand-written
+        run: uv run python scripts/coverage.py --check
+
+      - name: harness tests
+        run: uv run pytest tests -q
+
+      - name: T0 demos run and their tests pass
+        run: uv run demo verify --tier T0
+
+      # Replay only. A missing cassette skips; it never falls through to a
+      # billed live call.
+      - name: T2 demos replay offline
+        run: uv run demo verify --tier T2
+        env:
+          DEMO_MODE: replay

@@ -4,8 +4,9 @@ A companion repo of **runnable, verified example code for every lesson** in
 [`ai-engineering-from-scratch`](https://yennj12.js.org/ai-engineering-from-scratch/index.html)
 (local: `../ai-engineering-from-scratch`).
 
-Status: design proposal. Nothing built yet.
-Date: 2026-09-01.
+Status: **M0 built and verified** (2026-09-02). The harness, the four gates and
+four demos across three tiers all run; see §10. M1 (Phase 11) is next.
+Date: 2026-09-01, revised 2026-09-02.
 
 ---
 
@@ -212,11 +213,16 @@ ai-engineering-from-scratch-demo/
 │   ├── audit_demos.py         # every demo has manifest, README, >=3 tests
 │   └── scaffold.py            # generate a demo skeleton from a lesson path
 ├── cassettes/                 # shared fixtures
-└── .github/workflows/
+└── (CI) .github/workflows/
     ├── t0.yml                 # every push
     ├── t1.yml                 # nightly, model cache
     └── t2-live.yml            # weekly, real keys, re-record cassettes, cost report
 ```
+
+While this lives inside `ai_experiment`, GitHub only reads workflows from the
+*repository* root, so the three files sit at `../.github/workflows/aiefs-demo-*.yml`
+with a `paths:` filter and `working-directory:` set. Splitting the repo out
+(open question 1) moves them back to the layout above and drops both.
 
 Runner UX:
 
@@ -317,13 +323,73 @@ cassette-heavy T2 phases where each demo needs one live recording pass.
 
 ## 9. Open questions for you
 
+(M0 proceeded on a stated default for each; none of these are settled.)
+
 1. **Separate GitHub repo, or a directory inside `ai_experiment`?** The design
    assumes it can stand alone (its own CI, its own `pyproject.toml`), which
    argues for a separate repo with the reference repo as a sibling checkout.
+   *M0 assumed: a directory, for now.* The one place it hurts is CI (see §4),
+   and `harness/parity.py` now searches every ancestor for the reference
+   checkout rather than a fixed sibling, so either answer works unchanged.
 2. **Language scope.** Reference has 129 TS files. Python-only for v1, TS demos
    only for Phases 13–14 where the ecosystem is TS-first?
 3. **Provider.** Claude-only for T2 (cheapest to keep coherent), or
    multi-provider so the cassette layer proves portability?
+   *M0 assumed: Claude-only,* `claude-opus-5`, at `max_tokens: 1024` to hold the
+   $0.02/demo budget. `Cassette` stores a `provider` field, so a second provider
+   is additive rather than a rewrite.
 4. **GPU budget.** Is there any rented-GPU allowance? If not, T3 (~40 lessons,
    mostly Phases 08/12 and parts of 04) ships as explain-and-skip only, and the
    README should say so plainly.
+
+
+---
+
+## 10. M0 — what shipped (2026-09-02)
+
+Built and verified against the real reference checkout. `uv run demo verify`
+is green: 6 pass, 1 skip (the T2 demo, which has no recorded tape yet).
+
+**Harness** — `harness/` is stdlib-only, so `demo coverage`, `demo list` and
+`run.py --explain` work on a bare Python with nothing installed:
+
+| Module | Does |
+|---|---|
+| `manifest.py` | `demo.yaml` schema + a strict YAML subset parser (a full parser would be a dependency the zero-dep rule cannot afford) |
+| `tiers.py` | capability probe; turns "no GPU" into a skip with a remedy, never a stack trace |
+| `parity.py` | `load_reference` (imports the lesson's own code, never copies it) + `assert_close` reporting measured deviation |
+| `cassette.py` | record/replay, provenance, cost, redaction at the write boundary |
+| `coverage.py` | reference tree vs demo tree, plus doc-hash drift detection |
+| `runner.py` | `demo list / run / verify / coverage` |
+| `explain.py` | `--explain` with zero deps; lesson URL derived from the mirrored path |
+
+**Gates** — all mechanical, no human in the loop: `audit_demos.py` (manifest,
+README, ≥3 tests, no surviving scaffold `TODO`, tier budget ceiling),
+`check_deps.py` (imports vs declared `deps_group`), `coverage.py --check`
+(README table regenerated, never hand-written), `demo verify` (it runs, tests
+pass, inside the declared budget). Plus `scaffold.py` and `notebooks.py` (D7).
+
+**Four demos, the four shapes M0 had to prove:**
+
+| Demo | Tier | Result |
+|---|---|---|
+| `01/02-vectors-matrices-operations` | T0 | 11 parity checks vs numpy, worst deviation **1.8e-15** |
+| `07/03-multi-head-attention` | T1 | output *and per-head weights* vs `torch.nn.MultiheadAttention` at **2.8e-16** in float64; GQA vs `enable_gqa=True`; float32 costs 1.6e-07 |
+| `11/08-fine-tuning-lora` | T1 | forward / parameter counts / merged weights vs `peft` across four rank-alpha pairs |
+| `11/01-prompt-engineering` | T2 | skips cleanly with a record command — **no cassette recorded yet** (this environment has no API key) |
+
+55 harness tests plus 40 demo tests (36 run today; 4 wait on the cassette).
+
+**Two findings the design did not anticipate**, both from actually running things:
+
+- The lesson's `format_anthropic_request()` sets `temperature`, which current
+  Claude models reject with a 400. A simulation can never surface that; the T2
+  demo does, and `adapt_request()` shows the fix. This is evidence for D4
+  beyond cost and determinism.
+- The lesson's `quantize_to_nf4` is block-wise *symmetric int4-range*
+  quantisation, not the NF4 codebook. So the LoRA demo reports it as a measured
+  divergence (10.35% of weight RMS) rather than forcing a parity claim — the
+  "where the two diverge" half of §2, which turns out to carry real weight.
+
+**Open for M1:** record `cassettes/prompt-patterns.json` once with a live key
+(`DEMO_MODE=live`), which closes the last M0 shape and unskips 4 tests.
