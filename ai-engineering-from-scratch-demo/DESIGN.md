@@ -1,24 +1,35 @@
 # ai-engineering-from-scratch-demo — Design
 
-A companion repo of **runnable, verified example code for every lesson** in
+A companion repo of **runnable, verified solutions to every exercise** in
 [`ai-engineering-from-scratch`](https://yennj12.js.org/ai-engineering-from-scratch/index.html)
 (local: `../ai-engineering-from-scratch`).
 
-Status: **M0 built and verified** (2026-09-02). The harness, the four gates and
-four demos across three tiers all run; see §10. M1 (Phase 11) is next.
-Date: 2026-09-01, revised 2026-09-02.
+Status: **M0 built and verified** (2026-09-02) — the harness, the four gates and
+four demos across three tiers all run; see §10. **Revised 2026-09-03**: exercise
+solutions are now the repo's unit of value and parity demos are demoted to
+optional (§2, D9). M0.5 — harness extension plus one golden reference — is next.
+
+Every number in §1 and §5 was derived by a census script that reads the reference
+checkout, and none is hand-maintained. That script lands as `scripts/census.py` in
+M0.5 (§6), so the figures below stay re-checkable rather than becoming folklore.
 
 ---
 
 ## 1. What the reference repo actually is
 
-Measured, not assumed (`phases/` tree, 2026-09-01):
+Measured, not assumed (`phases/` tree, 2026-09-03):
 
 | Fact | Number |
 |---|---|
 | Phases | 20 |
 | Lessons (`phases/*/*/`) | **511** |
-| Lessons with code | 505 / 511 (the 6 without are Phase 00 shell/editor/docker lessons) |
+| Lessons with a `## Exercises` list | **474** |
+| **Total exercises** | **2,090** — 3 to 8 per lesson, mode 5 |
+| Lessons with a `## Practice Lab` instead | 5 (38 requirements between them) |
+| Lessons with no practice content at all | 33 |
+| `docs/zh.md` carrying a `## 練習` block | 470 — line-parallel with `en.md` |
+| Lessons with `code/main.py` | 443 (503 have some `.py` under `code/`) |
+| Lessons with code | 505 / 511 (the 6 without are Phase 00 shell/editor/docker) |
 | Python files (excl. `__pycache__`) | 634 |
 | …with a `__main__` block | 607 |
 | Test files | 94 (~18% of lessons) |
@@ -29,47 +40,97 @@ Measured, not assumed (`phases/` tree, 2026-09-01):
 | Python files touching a real LLM SDK (`anthropic`/`openai`) | **20** |
 | Per-lesson dependency manifests | 0 (one root `requirements.txt`) |
 
-The last three rows are the important ones. Phase 07 Lesson 03
-"Multi-Head Attention" opens with:
+Two clusters of rows matter, and they point at two different gaps.
+
+**The exercise rows.** 2,090 problems are posed and **not one is answered.** The
+lesson ends, the exercises are listed, and there is nowhere to check your work.
+This is the gap this repo now exists to close (§2).
+
+**The zero-dependency rows.** Phase 07 Lesson 03 "Multi-Head Attention" opens:
 
 > ```
 > """Multi-head attention from scratch in pure stdlib.
 > No numpy, no torch. A tiny Matrix class carries the ops we need.
 > ```
 
-That is a **deliberate and good** pedagogical choice, stated in `AGENTS.md`:
-code must be self-terminating, exit 0, and never hang on a missing API key. So
-the whole curriculum is zero-dependency, deterministic, hand-rolled, and
-simulated end to end.
+That is a **deliberate and good** pedagogical choice, stated in `AGENTS.md`: code
+must be self-terminating, exit 0, and never hang on a missing API key. So the
+curriculum is hand-rolled, deterministic and simulated end to end — which leaves
+a second, smaller gap that the parity demos address (§2, D5).
+
+### The exercises are already a testable specification
+
+This is the structural fact the whole design rests on. From
+`11-llm-engineering/12-guardrails`:
+
+> - "Test on 50 hand-written prompts and measure precision/recall."
+> - "Test with 20 encoded versions of 'ignore previous instructions.'"
+> - "Test with a burst of 15 requests in 30 seconds."
+> - "…flag any response sentence with <20% overlap as potentially hallucinated."
+
+Acceptance criteria, fixture sizes and thresholds, written into the prompt.
+Nothing has to be invented to know whether a solution is correct. That is what
+makes 2,090 solutions tractable where 426 hand-designed parity demos were not:
+the spec is free, and the gate can be mechanical (§7).
+
+### Exercise mix
+
+Classified by keyword by the census script — estimates, which the scaffold
+proposes and a human confirms per phase batch (§7.4). One bucket per exercise,
+assigned in the priority order shown, so the five sum to 2,090:
+
+| Bucket | Count | Share | Ships as |
+|---|---:|---:|---|
+| prose only, no code possible | 127 | 6% | an answer in `practice/README.md` |
+| needs GPU / heavy training | 119 | 6% | `exNN_*.py` at T3, scaled down (D11) |
+| needs a real provider call | 59 | 3% | `exNN_*.py` at T2 + a cassette (D4) |
+| patches the lesson's own `code/*.py` | 158 | 8% | `exNN_*.py` importing, never forking, that file |
+| plain runnable solution | 1,627 | 78% | `exNN_*.py` |
+
+Buckets are not the same axis as D11's `kind`: everything but the first 127 is
+`kind: code`, and the tier is what differs. The buckets exist to size the work —
+178 exercises need a key or a GPU, 127 need a source to cite, and the remaining
+1,785 need nothing but a laptop.
 
 ## 2. The gap this repo fills
 
-The reference repo teaches the **mechanism**. It never shows the learner the
-**real toolchain doing the same thing**. Concretely, after 511 lessons a learner
-has written attention with a hand-built `Matrix` class but has never:
+**The reference repo asks 2,090 questions and answers none of them.** A learner
+finishing `11-llm-engineering/12-guardrails` is told to build a LlamaGuard-style
+13-category classifier, an encoding-evasion detector across six encodings, a
+sliding-window rate limiter, a RAG hallucination detector, and a 100-prompt
+red-team suite — with no reference answer, no fixture, and no way to score an
+attempt.
 
-- called `torch.nn.MultiheadAttention` and compared the numbers to their own,
-- watched a real HF checkpoint load, tokenize, and generate,
-- seen a real `anthropic.messages.create` response object,
-- run anything in a notebook (295 empty `notebook/` dirs),
-- installed only what one lesson needs (root `requirements.txt` pulls
-  `torch` + `librosa` + `transformers` to run lesson 01).
+So the unit of value is a **solution**:
 
-**So this repo is not a rewrite and not a fork.** Its unit of value is the
-*delta*:
+> For exercise *N* of lesson *L*, this repo ships the clean, simple, runnable
+> answer, verified against the acceptance criterion the exercise itself states —
+> and the same test grades the learner's own attempt (D13).
 
-> For lesson *L*, the reference repo builds *X* from scratch. This repo runs the
-> production equivalent of *X*, side by side, and asserts where the two agree
-> and where they diverge.
+That last clause is what keeps 2,090 solutions from being 2,090 spoilers.
 
-That framing is what keeps 511 examples from being 511 redundant restatements.
+### Parity is one flavour of solution, not the flagship
+
+The earlier framing of this repo made parity assertions the headline: the lesson
+hand-rolls *X*, the demo runs the production equivalent side by side. That is
+still valuable and M0 proved it works — `07/03-multi-head-attention` agrees with
+`torch.nn.MultiheadAttention` to **2.8e-16** in float64. But it answers a
+question the learner did not ask, and it requires inventing the comparison for
+every lesson.
+
+It survives in two forms. Some lessons keep an optional parity demo where the
+comparison is genuinely striking (Phases 01–03, 07, 10 — roughly 200 lessons).
+And some exercises *are* a parity check — "read the Qwen 2.5 72B config from
+HuggingFace, compute total parameters from scratch, compare to the HF-reported
+value and identify where any delta comes from" — so their solutions call
+`harness/parity.py` directly. The M0 investment is reused, not retired.
 
 ## 3. Core design decisions
 
 ### D1 — Path-identical mirroring
 
 ```
-demos/phases/11-llm-engineering/08-fine-tuning-lora/
+demos/phases/11-llm-engineering/12-guardrails/
 ```
 
 Byte-for-byte the same relative path as the reference lesson. Consequences: a
@@ -77,27 +138,31 @@ lesson URL maps to a demo directory by string substitution, the site can
 deep-link, and coverage is a `diff` of two directory listings — not a
 hand-maintained table that rots.
 
-### D2 — Cost/hardware tiers (the decision that makes 511 tractable)
+### D2 — Cost/hardware tiers
 
-The real blocker to "example code for every lesson" is that Phase 01 runs in
-40ms on a laptop and Phase 08 wants an A100. One repo cannot pretend those are
-the same thing, so every demo declares a tier:
+Phase 01 runs in 40 ms on a laptop and Phase 08 wants an A100. One repo cannot
+pretend those are the same thing, so every artifact declares a tier:
 
 | Tier | Means | Budget | Network | CI |
 |---|---|---|---|---|
 | **T0** `cpu-instant` | stdlib / numpy / sklearn | < 10 s | none | every push |
 | **T1** `cpu-heavy` | torch-CPU, small HF checkpoint (< 500 MB) | < 5 min | model download, cached | nightly |
-| **T2** `api` | real provider call (Claude etc.) | < 20 s, < $0.02 | provider | every push **in replay mode** (see D4) |
+| **T2** `api` | real provider call (Claude etc.) | < 20 s, < $0.02 | provider | every push **in replay mode** (D4) |
 | **T3** `gpu` | needs CUDA / bf16 / ≥ 16 GB VRAM | < 30 min | yes | manual / rented runner, tagged only |
 
-A T3 demo on a Mac must exit 0 with a printed explanation of what it *would*
-have done and what to rent — never a stack trace. That rule is inherited from
-the reference repo's "no hangs on missing API keys" and generalized.
+A T3 artifact on a Mac must exit 0 with a printed explanation of what it *would*
+have done and what to rent — never a stack trace. That rule is inherited from the
+reference repo's "no hangs on missing API keys" and generalized. D11 tightens it
+for exercises: an explanation alone is not enough, a scaled-down run is required.
 
-### D3 — One manifest per demo
+### D3 — One manifest per artifact
 
-`demo.yaml`, machine-readable, is what the runner, the CI matrix, the dependency
-groups, and the coverage report all read:
+Two manifest kinds, both machine-readable, both read by the runner, the CI matrix,
+the dependency groups and the coverage report.
+
+`practice.yaml` — one per lesson, the primary artifact (schema in D12).
+
+`demo.yaml` — one per *optional* parity demo:
 
 ```yaml
 lesson: phases/11-llm-engineering/08-fine-tuning-lora
@@ -114,8 +179,6 @@ parity_with: phases/11-llm-engineering/08-fine-tuning-lora/code/lora.py
 reference_doc: phases/11-llm-engineering/08-fine-tuning-lora/docs/en.md
 ```
 
-`parity_with` is optional and is the highest-value field in the file — see D5.
-
 ### D4 — Cassettes, not simulations
 
 The reference repo fakes model responses by hand. This repo **records real ones
@@ -126,56 +189,54 @@ DEMO_MODE=replay   # default. Deterministic, free, offline, CI-safe.
 DEMO_MODE=live     # hits the provider, re-records, prints token cost.
 ```
 
-This is strictly better than a hand-written simulation on three axes: it is real
-model output, it costs the learner nothing, and CI can assert on it. Cassettes
-are committed, redacted of keys, and carry the model ID + date they were recorded
-so staleness is visible.
+Strictly better than a hand-written simulation on three axes: it is real model
+output, it costs the learner nothing, and CI can assert on it. Cassettes are
+committed, redacted of keys, and carry the model ID and date they were recorded so
+staleness is visible. 59 exercises need this.
 
-### D5 — Parity assertions are the flagship artifact
+### D5 — Parity assertions, where the comparison earns its place
 
 Wherever the reference lesson hand-rolls something the ecosystem also provides,
-the demo asserts they match:
+the artifact can assert they match:
 
 ```python
-# phases/07-transformers-deep-dive/03-multi-head-attention/run.py
-mine  = reference_mha(x, heads=4)              # imported from the lesson's code/
+mine   = reference_mha(x, heads=4)             # imported from the lesson's code/
 theirs = torch.nn.MultiheadAttention(...)(x)   # the real thing
 assert_close(mine, theirs, atol=1e-5)
 ```
 
-This is the single most convincing thing the repo can produce: it proves the
-learner's toy implementation *was* the real implementation, and it turns a claim
-in prose into a green test. Roughly 180–220 of the 511 lessons support a parity
-check (all of Phases 01–03, 07, most of 10, parts of 02/04/05).
+This proves the learner's toy implementation *was* the real implementation, and it
+turns a claim in prose into a green test. Roughly 200 lessons support it (all of
+Phases 01–03, 07, most of 10). Per D9 it is now optional per lesson, and its
+machinery (`harness/parity.py`) is called from exercise solutions too.
 
-Where parity is impossible (governance lessons, protocol lessons, capstones), the
-demo instead ships a **scenario runner** — same convention the reference repo's
-`AGENTS.md` already mandates for conceptual lessons, so this is consistent rather
-than novel.
+### D6 — Uniform per-artifact contract
 
-### D6 — Uniform per-demo contract
-
-Every demo, in every language, in every tier:
+Every lesson directory is a **container** with two optional halves:
 
 ```
 demos/phases/<phase>/<lesson>/
-├── demo.yaml
-├── README.md          # 20 lines max: what it proves, how to run, expected output
-├── run.py             # entrypoint; --explain prints concept + lesson link
-├── tests/test_*.py    # >= 3 assertions on the lesson's *claim*, not on plumbing
-├── cassettes/         # T2 only
-└── notebook.ipynb     # optional; generated from run.py via jupytext, not hand-authored
+├── demo.yaml            # optional — the parity demo
+├── run.py               # optional — its entrypoint; --explain prints concept + link
+├── tests/test_*.py      # optional — the demo's tests
+└── practice/            # the deliverable (D10)
+    ├── practice.yaml
+    ├── README.md
+    ├── exNN_<slug>.py
+    ├── fixtures/
+    └── tests/test_practice.py
 ```
 
-Rules: fixed seed; exit 0 or a clear tiered skip; output is a small metric table
-or before/after diff, never a log wall; `--explain` works with zero deps
-installed. Uniformity is the only reason one runner can drive 511 directories.
+Rules for both halves: fixed seed; exit 0 or a clear tiered skip; output is a
+small metric table or a before/after diff, never a log wall; `--explain` works
+with zero deps installed. Uniformity is the only reason one runner can drive 511
+directories.
 
 ### D7 — Notebooks are generated, never hand-written
 
 The reference repo's 295 empty `notebook/` dirs are a promise nobody kept, and
-hand-maintaining 511 notebooks alongside 511 scripts guarantees drift. Use
-`jupytext` to derive `notebook.ipynb` from `run.py` at build time. One source of
+hand-maintaining notebooks alongside scripts guarantees drift. Use `jupytext` to
+derive `notebook.ipynb` from `run.py` / `exNN_*.py` at build time. One source of
 truth, and the empty-directory failure mode cannot recur.
 
 ### D8 — Dependency groups per phase cluster, not one requirements.txt
@@ -191,8 +252,177 @@ uv sync --extra agents    # 13-16
 uv sync --extra infra     # 17
 ```
 
-`scripts/check_deps.py` asserts every demo's imports are covered by its declared
-`deps_group` — otherwise groups rot into a second monolith.
+`scripts/check_deps.py` asserts every artifact's imports are covered by its
+declared `deps_group` — otherwise groups rot into a second monolith.
+
+### D9 — Solutions are the unit of value
+
+The primary deliverable is 2,090 exercise solutions plus 5 labs, not 426 parity
+demos. Rationale, in the order it matters:
+
+1. **The spec is free.** The exercise states the task, the fixture size and the
+   threshold (§1). A parity demo has to invent all three.
+2. **It answers what the learner is actually stuck on.** They hit the exercise
+   list; they never wondered whether the lesson matched torch.
+3. **One commitment, not two.** 2,090 solutions is already the larger promise;
+   layering 426 invented demos on top doubles it for less return.
+
+Parity keeps its machinery and its ~200 optional demos (D5). A lesson may ship
+`practice/` alone, both halves, or — for the 33 lessons with no exercises —
+neither.
+
+### D10 — One file per exercise, index-identical
+
+`ex<NN>_<slug>.py`, zero-padded to match the numbered list in `docs/en.md`.
+Exercise 3 on the lesson page → `ex03_*.py`, by string substitution: the same
+property D1 gives the lesson path, one level deeper. Each file is independently
+runnable (`python ex03_*.py`) and independently graded.
+
+The full shape, for the lesson this design was written against:
+
+```
+demos/phases/11-llm-engineering/12-guardrails/practice/
+├── practice.yaml
+├── README.md                            # bilingual exercise list; prose answers
+├── ex01_safety_category_classifier.py   # 13 MLCommons categories, P/R on 50 prompts
+├── ex02_encoding_evasion_detector.py    # base64/ROT13/hex/leet/zero-width/morse
+├── ex03_sliding_window_rate_limit.py    # 10 req/min sliding, retry-after
+├── ex04_rag_hallucination_detector.py   # sentence overlap < 20% -> flagged
+├── ex05_red_team_suite.py               # 100 attacks / 5 categories, per-cat rates
+├── fixtures/
+│   ├── safety_prompts.json              # the 50 labelled prompts ex01 asks for
+│   ├── encoded_injections.json          # the 20 encodings ex02 asks for
+│   ├── rag_pairs.json                   # the 10 response/source pairs ex04 asks for
+│   └── red_team_100.json                # the 100 attacks ex05 asks for
+└── tests/test_practice.py               # one test function per exercise
+```
+
+Rejected: renaming the tree to `lessons/` with `parity/` and `practice/` as
+siblings. Cleaner on paper, but it churns every harness path and all four M0 demos
+to buy a directory name. One tree, one path map, `demo.yaml` optional instead.
+
+### D11 — Three kinds; tier stays orthogonal
+
+`kind` is the only new axis. Cost and hardware stay on D2's tiers.
+
+| `kind` | When | Ships |
+|---|---|---|
+| `code` | the exercise asks for something runnable — **1,963**, i.e. every non-prose exercise, at whatever tier | `exNN_<slug>.py` + a test |
+| `explain` | prose only — "read Section 3 … explain in three sentences" (127) | a sourced answer in `practice/README.md`, no file |
+| `lab` | the lesson has `## Practice Lab`: **one** deliverable with N requirements, not N exercises (5 lessons, 38 requirements) | `lab_<slug>.py` + one test per requirement |
+
+`lab` exists because `13/28-mcp-tool-contracts-and-content` does not list five
+problems — it says "extend the contract lab with a `search_evidence` tool" and
+then lists nine requirements of that one tool. Treating those as nine exercises
+would produce nine fragments of one program. (`13/10-mcp-resources-and-prompts`
+has both headings, so it ships a lab *and* five exercise files.)
+
+**T3 exercises ship a scaled-down runnable, not just an explanation.** "Swap the
+backing model to Qwen3-Coder-30B on vLLM, compare pass@1 and $-per-task" becomes
+the same comparison code over a 20-item fixture against cassettes, plus the real
+command and its cost printed. D2 permits explain-and-skip; for exercises that is
+not enough, because the exercise asked for a measurement and a skip measures
+nothing. A T3 solution that only skips fails the audit (§8).
+
+### D12 — The exercise text is the spec: stored verbatim, and bilingually
+
+```yaml
+lesson: phases/11-llm-engineering/12-guardrails
+reference_doc: phases/11-llm-engineering/12-guardrails/docs/en.md
+exercises_sha256: <hash of the Exercises SECTION only>   # spec-level drift, D15
+deps_group: llm
+exercises:
+  - index: 1
+    file: ex01_safety_category_classifier.py
+    kind: code
+    tier: T0
+    entry: classify                    # the graded symbol, D13
+    text_en: >
+      Build a LlamaGuard-style classifier. Create a keyword + regex classifier
+      that maps inputs and outputs to 13 safety categories (from the MLCommons
+      AI Safety taxonomy: violent crimes, non-violent crimes, …). Return the
+      category code and confidence. Test on 50 hand-written prompts and measure
+      precision/recall.
+    text_zh: >
+      做一個 LlamaGuard 風格的分類器。建一個關鍵字 + 正規表達式分類器，把輸入與
+      輸出映射到 13 個安全類別（取自 MLCommons AI Safety 分類法：暴力犯罪、
+      非暴力犯罪、…）。回傳類別代碼與信心值。在 50 個手寫提示詞上測試，量測
+      precision/recall。
+    verifies: macro precision >= 0.80 and recall >= 0.75 over fixtures/safety_prompts.json
+    runtime_seconds: 2
+    fixtures: [fixtures/safety_prompts.json]
+    uses_reference: [detect_injection, detect_pii]   # symbols from the lesson's code/
+```
+
+`text_zh` is optional — 4 of the 474 lessons lack a translated exercise block.
+Solution code and docstrings are English, by code convention; the generated
+`README.md` carries both languages, so a solution is findable from the zh lesson
+page, which is the one actually being read.
+
+Storing the text verbatim rather than a summary is what makes D15's drift check
+meaningful and what lets the generator (§7) be handed a spec rather than a gist.
+
+### D13 — Every solution doubles as an auto-grader
+
+`practice.yaml` declares `entry:` — the symbol the test calls.
+`tests/test_practice.py` imports it through `harness/practice.py`, which honours
+an override:
+
+```bash
+pytest                                    # grades the shipped solution
+PRACTICE_IMPL=./my_attempt.py pytest      # grades YOUR attempt, same fixture, same threshold
+```
+
+This is the difference between publishing 2,090 answer keys and publishing 2,090
+graders, and it costs one indirection. It is also the containment for the obvious
+objection to this whole repo — that handing out solutions removes the reason to do
+the exercise. A learner can now attempt the exercise, score it against the same
+50-prompt fixture the solution is held to, and read the answer afterwards.
+
+### D14 — "Clean and simple" gets a mechanical ceiling
+
+Clean, simple, easy-to-understand code is the stated requirement, and across
+2,090 generated files it will not survive on good intentions.
+`scripts/audit_practice.py` enforces:
+
+- **≤ 120 lines** of code per file excluding the docstring; hard fail over 150
+- one file per exercise; **no imports between exercise files** — only stdlib, the
+  declared `deps_group`, `harness/`, and the lesson's own `code/`
+- the module docstring must carry, in this order: the exercise text verbatim; a
+  **"Reading of the exercise:"** line; the approach in ≤ 3 sentences; the expected
+  output
+- `ruff format` clean; `ruff check` with `C901` max-complexity **8**
+- functions over classes unless the exercise asks for state
+- output is a small table or a handful of numbers, never a log wall;
+  `--explain` works with zero deps (both from D6)
+- fixtures are committed JSON, ≤ 50 KB, **labelled**, and generated by a
+  `make_fixture()` in the same file — never an opaque blob
+
+The **"Reading of the exercise:"** line deserves its own note. Many exercises are
+genuinely ambiguous — *"Plot the loss of a tiny one-layer model on a synthetic
+copy task. Do more heads help, plateau, or hurt?"* has no single right answer and
+several defensible setups. Forcing the chosen interpretation into the docstring
+makes the one failure mode a generator cannot be gated against — quietly answering
+a different question — visible in a diff, and it is the specific thing phase-batch
+review reads (§7.4).
+
+A solution that cannot fit in 120 lines is nearly always a misread exercise, not a
+hard exercise. The ceiling is a correctness signal as much as a style one.
+
+### D15 — Exercise-level coverage and spec drift
+
+`demo coverage --practice` generates a 2,090-row table from the tree:
+
+```
+✅ verified   ⬚ unbuilt   📝 prose answered   ⏭ tier-skipped   ⚠ spec drifted
+```
+
+`exercises_sha256` hashes the exercise section alone, which catches what a
+whole-document hash cannot resolve: the lesson body changed but the exercises did
+not (solutions still valid), or the body is untouched and an exercise was reworded
+(every solution under it is now suspect). Since the exercise *is* the spec, drift
+there invalidates the answer — so it is tracked separately from
+`reference_doc_sha256`.
 
 ## 4. Repo layout
 
@@ -201,17 +431,22 @@ ai-engineering-from-scratch-demo/
 ├── DESIGN.md
 ├── README.md                  # coverage table, generated
 ├── pyproject.toml             # uv, extras per D8
-├── demos/phases/…             # path-identical mirror (D1)
+├── demos/phases/…             # path-identical mirror (D1), practice/ inside (D10)
 ├── harness/
-│   ├── runner.py              # run one demo / a phase / a tier
+│   ├── runner.py              # run one artifact / a phase / a tier
+│   ├── practice.py            # practice.yaml loading + the PRACTICE_IMPL shim (D13)
 │   ├── cassette.py            # record & replay (D4)
 │   ├── parity.py              # assert_close + import-from-reference helper (D5)
+│   ├── manifest.py            # demo.yaml + practice.yaml schemas
 │   └── tiers.py               # capability probe: cuda? key? net?
 ├── scripts/
-│   ├── coverage.py            # diff reference tree vs demos tree -> README + badges
+│   ├── census.py              # re-derives every number in §1 and §5
+│   ├── coverage.py            # reference tree vs demo tree -> README + badges
 │   ├── check_deps.py
 │   ├── audit_demos.py         # every demo has manifest, README, >=3 tests
-│   └── scaffold.py            # generate a demo skeleton from a lesson path
+│   ├── audit_practice.py      # D14's ceilings; every doc exercise has an entry
+│   ├── scaffold.py            # generate a demo skeleton from a lesson path
+│   └── scaffold_practice.py   # parse the exercise block -> practice.yaml + stubs
 ├── cassettes/                 # shared fixtures
 └── (CI) .github/workflows/
     ├── t0.yml                 # every push
@@ -227,121 +462,158 @@ with a `paths:` filter and `working-directory:` set. Splitting the repo out
 Runner UX:
 
 ```bash
-demo run phases/11-llm-engineering/08-fine-tuning-lora
-demo run --phase 11 --tier T0        # everything free and instant in phase 11
-demo verify --tier T0                # what CI runs
-demo coverage                        # honest completion table
+demo practice run  phases/11-llm-engineering/12-guardrails        # all 5
+demo practice run  phases/11-llm-engineering/12-guardrails --ex 3 # just exercise 3
+demo practice verify --phase 11 --tier T0
+demo practice list --unbuilt --phase 11
+demo run phases/11-llm-engineering/08-fine-tuning-lora            # the parity demo
+demo verify --tier T0                                             # what CI runs
+demo coverage --practice                                          # honest, per-exercise
 ```
 
-## 5. Tier and effort estimate per phase
+## 5. Measured exercise load per phase
 
-| Phase | Lessons | Dominant tier | Parity checks viable | Notes |
-|---|---:|---|---|---|
-| 00 setup-and-tooling | 12 | T0 | — | 6 lessons are shell/editor; ship a verify script, not a demo |
-| 01 math-foundations | 22 | T0 | **high** | hand-rolled vs numpy/scipy — cleanest parity wins in the repo |
-| 02 ml-fundamentals | 18 | T0 | **high** | vs scikit-learn |
-| 03 deep-learning-core | 13 | T0→T1 | **high** | own autograd vs `torch.autograd` |
-| 04 computer-vision | 28 | T1/T3 | medium | 24 lessons already use torch; SD/NeRF/3DGS are T3 |
-| 05 nlp-foundations | 29 | T0/T1 | medium | vs gensim, HF tokenizers |
-| 06 speech-and-audio | 17 | T1/T3 | low | Whisper-tiny keeps most at T1 |
-| 07 transformers-deep-dive | 16 | T1 | **high** | flagship phase — pure-stdlib attention vs torch |
-| 08 generative-ai | 15 | T3 | low | diffusion; mostly rented-GPU tier |
-| 09 reinforcement-learning | 12 | T0/T1 | medium | vs gymnasium / SB3 |
-| 10 llms-from-scratch | 24 | T1/T3 | **high** | own GPT vs HF `GPT2LMHeadModel` |
-| 11 llm-engineering | 17 | T2 | low | cassettes carry it; **start here** |
-| 12 multimodal-ai | 25 | T2/T3 | low | CLIP is T1, VLMs T2 |
-| 13 tools-and-protocols | 31 | T2 | low | real MCP server/client over stdio — highly demoable |
-| 14 agent-engineering | 42 | T2 | low | largest phase; cassette-heavy |
-| 15 autonomous-systems | 22 | T2 | low | scenario runners |
-| 16 multi-agent-and-swarms | 25 | T2 | low | cassettes + deterministic scheduler |
-| 17 infrastructure-and-production | 28 | T1/T2 | — | docker/k8s; verify-script style |
-| 18 ethics-safety-alignment | 30 | T0/T2 | — | policy scorers, per the reference repo's own convention |
-| 19 capstone-projects | 85 | mixed | — | **do not write 85 demos** — see below |
+`labs` are counted separately: one deliverable each, not N exercises (D11).
 
-**Phase 19 gets different treatment.** 85 capstones, 58 already torch-based, each
-a multi-file project. Writing 85 demos is waste. Instead: cluster them into ~10
-themes, ship one end-to-end showcase per theme, and for the rest ship a
-`smoke.py` that imports the capstone's entrypoint and asserts it constructs.
-That converts 85 line items into 10 real deliverables + 75 cheap guards.
+| Phase | Lessons | Exercises | code | patch | T2 | T3 | prose | labs |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 00 setup-and-tooling | 12 | 45 | 38 | 0 | 3 | 4 | 0 | 0 |
+| 01 math-foundations | 22 | 92 | 91 | 0 | 0 | 0 | 1 | 0 |
+| 02 ml-fundamentals | 18 | 78 | 71 | 0 | 0 | 1 | 6 | 0 |
+| 03 deep-learning-core | 13 | 63 | 56 | 0 | 0 | 5 | 2 | 0 |
+| 04 computer-vision | 28 | 84 | 61 | 0 | 0 | 21 | 2 | 0 |
+| 05 nlp-foundations-to-advanced | 29 | 87 | 74 | 5 | 1 | 7 | 0 | 0 |
+| 06 speech-and-audio | 17 | 51 | 32 | 16 | 0 | 3 | 0 | 0 |
+| 07 transformers-deep-dive | 16 | 52 | 33 | 12 | 1 | 5 | 1 | 0 |
+| 08 generative-ai | 15 | 47 | 29 | 14 | 0 | 4 | 0 | 0 |
+| 09 reinforcement-learning | 12 | 36 | 32 | 3 | 0 | 1 | 0 | 0 |
+| 10 llms-from-scratch | 24 | 116 | 85 | 7 | 0 | 15 | 9 | 0 |
+| **11 llm-engineering** | **17** | **79** | **72** | **0** | **6** | **1** | **0** | **0** |
+| 12 multimodal-ai | 25 | 125 | 101 | 2 | 1 | 5 | 16 | 0 |
+| 13 tools-and-protocols | 31 | 148 | 128 | 10 | 8 | 0 | 2 | **5** |
+| 14 agent-engineering | 42 | 212 | 195 | 0 | 9 | 0 | 8 | 0 |
+| 15 autonomous-systems | 22 | 110 | 60 | 20 | 6 | 2 | 22 | 0 |
+| 16 multi-agent-and-swarms | 25 | 123 | 86 | 23 | 4 | 0 | 10 | 0 |
+| 17 infrastructure-and-production | 28 | 140 | 63 | 21 | 7 | 24 | 25 | 0 |
+| 18 ethics-safety-alignment | 30 | 150 | 93 | 25 | 7 | 2 | 23 | 0 |
+| 19 capstone-projects | 85 | 252 | 227 | 0 | 6 | 19 | 0 | 0 |
+| **Total** | **511** | **2,090** | **1,627** | **158** | **59** | **119** | **127** | **5** |
 
-Effective new-authoring load: **~426 lessons + 10 showcases**, of which ~200
-carry a parity check.
+Reading this table:
+
+- **Phases 14, 19, 18, 13, 17** carry 900 exercises between them — 43% of the work
+  sits in five phases.
+- **Phase 01 is the cleanest batch in the repo**: 92 exercises, 91 of them plain
+  T0 code, one prose. No keys, no GPU, no cassettes.
+- **Phases 17, 15, 18 are the prose-heavy ones** (25, 22, 23) — governance,
+  operations and alignment lessons ask you to argue rather than to run. Their
+  effective code load is much lighter than the raw count suggests.
+- **Phase 04 and 17 hold half of all T3 work** (21 and 24 of 119) — diffusion,
+  NeRF, k8s. These are where D11's scaled-down rule does the most work.
+- **Phase 19's 252 exercises span only 53 of its 85 lessons**; 32 capstones have no
+  exercise block. Solve what exists; do not invent capstone demos.
+
+The 33 lessons with no practice content (`01/15-statistics-for-ml`, two Phase 13
+MCP lessons, 30 Phase 19 capstones) get no `practice/` directory. Coverage marks
+them `n/a` rather than `⬚`, so they never read as unfinished work.
 
 ## 6. Build order
 
 Sequenced by return, not by phase number.
 
-- **M0 — Harness (1 week).** `harness/`, `demo.yaml` schema, runner, cassette
-  record/replay, tier probe, T0 CI, `scaffold.py`, `coverage.py`. Prove it on
-  **three** demos across three tiers: `01/02-vectors-matrices` (T0),
-  `07/03-multi-head-attention` (T1 + parity), `11/08-fine-tuning-lora` (T1) and
-  `11/01-prompt-engineering` (T2 + cassette). If the harness can't carry those
-  four shapes it can't carry 511.
-- **M1 — Phase 11 (17).** Where your own progress currently sits
-  (`progress.txt` → `11/08-fine-tuning-lora`). Immediately useful to you, and it
-  shakes out the cassette design under real API conditions.
-- **M2 — Phases 13 + 14 (73).** Tools/protocols and agent engineering: adjacent
-  to your existing `mcp/`, `agent_sysem/`, `orchestration_agents/` work, and the
-  most demo-able material in the curriculum (a real MCP server over stdio is a
-  far better artifact than a simulated one).
-- **M3 — Phases 01–03 + 07 (69).** The parity showcase. Cheap, fast, entirely
-  T0/T1, and produces the repo's most persuasive tests.
-- **M4 — Phase 10 (24).** own-GPT-vs-HF parity; the natural sequel to M3.
-- **M5 — Long tail (Phases 04–06, 08, 09, 12, 15–18).** Batch by dependency
-  group so one env install serves a whole batch.
-- **M6 — Phase 19 clusters (10 showcases + 75 smoke tests).**
+- **M0 — Harness. Done, 2026-09-02.** See §10.
+- **M0.5 — Practice harness + one golden reference (~3 days).**
+  `practice.yaml` in `harness/manifest.py`; `harness/practice.py` (the
+  `PRACTICE_IMPL` grading shim, D13); `demo practice` subcommands;
+  `scripts/scaffold_practice.py`; `scripts/audit_practice.py`;
+  `coverage.py --practice`; `scripts/census.py`. Then
+  **`11/12-guardrails` built end to end** as the reference every later solution is
+  generated against: 5 exercises, 4 fixtures, no prose items, all T0, no API key
+  required. If the conventions cannot carry those five they cannot carry 2,090.
+- **M1 — Phase 11 (17 lessons, 79 exercises).** Where `progress.txt` sits, so it
+  is immediately useful. Its 6 T2 exercises force the cassette design under real
+  conditions and close M0's last open item by recording
+  `cassettes/prompt-patterns.json`.
+- **M2 — Phases 01, 02, 03, 07 (69 lessons, 285 exercises).** All T0/T1, no keys,
+  no GPU, 1 prose item across 92 in Phase 01. This is where the generation
+  pipeline gets stress-tested at volume, and where reused parity assertions land
+  hardest.
+- **M3 — Phases 13 + 14 (73 lessons, 360 exercises + 5 labs).** Adjacent to the
+  existing `mcp/`, `agent_sysem/` and `orchestration_agents/` work in
+  `ai_experiment`; a real MCP server over stdio is a far better artifact than a
+  simulated one. The 5 labs land here, so `kind: lab` gets exercised.
+- **M4 — Phase 10 (24 lessons, 116 exercises).** own-GPT-vs-HF parity as the
+  natural sequel to M2.
+- **M5 — Long tail: 00, 04, 05, 06, 08, 09, 12, 15, 16, 17, 18 (998 exercises).**
+  Batched by `deps_group` so one env install serves a whole batch. The three
+  prose-heavy phases sit here, so a large slice is written answers rather than code.
+- **M6 — Phase 19 (252 exercises across 53 lessons).**
 
-## 7. How 426 demos actually get written
+## 7. How 2,090 solutions actually get written
 
-Manually authoring 426 demos is not credible; a generation pipeline is, provided
-the gate is execution rather than review-by-eyeball.
+Manually authoring 2,090 solutions is not credible; a generation pipeline is,
+provided the gate is execution rather than review-by-eyeball.
 
-1. `scaffold.py <lesson-path>` reads the lesson's `docs/en.md`, its `code/*.py`,
-   and `quiz.json`, and emits a filled `demo.yaml` + stub `run.py` + test stub.
-2. A per-lesson agent prompt (one template, phase-specific preamble) fills the
-   stub. Input is capped at the lesson's own doc + code — no repo-wide context,
-   so cost stays flat per lesson.
-3. **The gate is mechanical:** `audit_demos.py` + actually running the demo +
-   running its tests. Non-zero exit, missing manifest field, fewer than 3 tests,
-   or a runtime over the declared budget = rejected, no human in the loop.
-4. Human review is per **phase batch**, reading the coverage report and spot
-   checking parity assertions — the place where judgment is actually needed.
+1. **`scaffold_practice.py <lesson>`** parses `## Exercises` from `docs/en.md` and
+   `## 練習` from `docs/zh.md` (and `## Practice Lab`, as one `lab` entry), folds
+   wrapped lines back together, splits the numbered list, and emits `practice.yaml`
+   with verbatim bilingual text plus a stub per exercise with the docstring
+   pre-filled. It proposes `kind`, `tier` and `deps_group` by keyword — the same
+   classifier `census.py` uses, so §5's estimates and the scaffold never disagree.
+2. **One agent invocation per lesson** (3–8 exercises), context capped at that
+   lesson's `docs/en.md`, its `code/*`, and the exercise text. No repo-wide
+   context, so cost is flat per lesson: ~474 invocations, not 2,090.
+3. **The gate is mechanical.** `audit_practice.py` + every `exNN` actually running
+   + `tests/test_practice.py` passing + inside the tier budget. Any of: over
+   length, complexity above 8, a missing `verifies` threshold, a surviving
+   scaffold `TODO`, an unlabelled fixture, a T3 solution that only skips, or a
+   non-zero exit = rejected, with no human in the loop.
+4. **Human review is per phase batch**, and reads three things: the coverage table;
+   every **"Reading of the exercise:"** line, which is where a generator can
+   quietly answer a different question and no gate will catch it; and the
+   `kind`/`tier` classification the scaffold guessed.
 
-Realistic throughput: one phase per session for T0/T1 phases, slower for
-cassette-heavy T2 phases where each demo needs one live recording pass.
+Realistic throughput: one phase per session for T0 phases, slower for
+cassette-heavy and prose-heavy phases where each item needs a live recording pass
+or a real source to cite.
 
 ## 8. Risks and how each is contained
 
 | Risk | Containment |
 |---|---|
-| Reference repo moves; demos rot | `demo.yaml` pins `reference_doc`; `coverage.py` flags lessons whose doc hash changed since the demo was written |
-| Cassettes go stale as models ship | Each cassette records model ID + date; weekly `t2-live.yml` re-records and diffs; a semantic drift is a finding, not a failure |
-| 511 half-finished demos, dishonest README | Coverage is generated from the tree, never hand-written; unbuilt lessons show as `⬚`, matching the reference repo's own ROADMAP glyphs |
-| T3/GPU demos nobody can run | Tiered skip must print the concrete rent-a-GPU command and expected cost; a T3 demo that only crashes fails `audit_demos.py` |
-| API costs during authoring | T2 authoring is the only live-key path, one recording per demo, cost printed and logged per run |
-| Scope creep into rewriting the curriculum | Hard rule: a demo may not re-teach. If `run.py` needs more than 20 lines of README to justify, it belongs upstream as a lesson edit instead |
+| Solutions spoil the exercise | D13 — every solution is also a grader for the learner's own attempt; `practice/README.md` leads with the exercise, not the answer |
+| Generator answers a *different* question | Mandatory "Reading of the exercise:" docstring line (D14); the one thing phase-batch review must read, since no gate can catch it |
+| 2,090 files of plausible-looking slop | D14's mechanical ceilings — 120 lines, complexity 8, one file, no cross-imports. Needing more than 120 lines usually means the exercise was misread |
+| Upstream rewords an exercise | `exercises_sha256` hashes the exercise block alone (D15); affected rows flag `⚠ spec drifted` |
+| Fixtures become unlabelled magic blobs | Committed labelled JSON, ≤ 50 KB, generated by an in-file `make_fixture()` (D14) |
+| T3 exercises nobody can run become dead weight | D11 — a scaled-down runnable plus the real command and cost; a T3 solution that only skips fails the audit |
+| Prose answers become unsourced hand-waving | An `explain` answer must cite the section, figure or table it rests on; the 127 of them are the phase-batch reviewer's other job |
+| Reference repo moves; solutions rot | `practice.yaml` pins `reference_doc` and both hashes; `coverage.py` flags drift |
+| Cassettes go stale as models ship | Each cassette records model ID + date; weekly `t2-live.yml` re-records and diffs; semantic drift is a finding, not a failure |
+| A half-finished repo with a dishonest README | Coverage is generated from the tree, never hand-written; unbuilt exercises show as `⬚`, the 33 exercise-free lessons as `n/a` |
+| API costs during authoring | T2 authoring is the only live-key path; one recording per exercise, cost printed and logged per run |
+| Scope creep into rewriting the curriculum | Hard rule: a solution answers the exercise as posed. It may not re-teach the lesson, and it may not improve the exercise — a bad exercise is an upstream issue to file, not a thing to silently fix |
 
-## 9. Open questions for you
+## 9. Open questions
 
-(M0 proceeded on a stated default for each; none of these are settled.)
+Q2 and Q3 are settled by M0; Q1 and Q4 remain open.
 
-1. **Separate GitHub repo, or a directory inside `ai_experiment`?** The design
-   assumes it can stand alone (its own CI, its own `pyproject.toml`), which
-   argues for a separate repo with the reference repo as a sibling checkout.
-   *M0 assumed: a directory, for now.* The one place it hurts is CI (see §4),
-   and `harness/parity.py` now searches every ancestor for the reference
-   checkout rather than a fixed sibling, so either answer works unchanged.
-2. **Language scope.** Reference has 129 TS files. Python-only for v1, TS demos
-   only for Phases 13–14 where the ecosystem is TS-first?
-3. **Provider.** Claude-only for T2 (cheapest to keep coherent), or
-   multi-provider so the cassette layer proves portability?
-   *M0 assumed: Claude-only,* `claude-opus-5`, at `max_tokens: 1024` to hold the
-   $0.02/demo budget. `Cassette` stores a `provider` field, so a second provider
-   is additive rather than a rewrite.
-4. **GPU budget.** Is there any rented-GPU allowance? If not, T3 (~40 lessons,
-   mostly Phases 08/12 and parts of 04) ships as explain-and-skip only, and the
-   README should say so plainly.
-
+1. **Separate GitHub repo, or a directory inside `ai_experiment`?** Still open,
+   and now weightier: at 2,090 artifacts with a `--practice` coverage badge and
+   three CI workflows, the case for standing alone is stronger than it was at four
+   demos. It only bites CI (§4), and `harness/parity.py` searches every ancestor
+   for the reference checkout rather than a fixed sibling, so either answer works
+   unchanged. *Decide before M1.*
+2. **Language scope.** **Settled: Python-only for v1.** The reference repo's 129
+   TS files cluster in Phases 13–14; revisit at M3, where a TS solution alongside
+   the Python one is cheap because the exercise text is shared.
+3. **Provider.** **Settled: Claude-only for T2** — `claude-opus-5` at
+   `max_tokens: 1024` to hold the $0.02/artifact budget. `Cassette` stores a
+   `provider` field, so a second provider is additive rather than a rewrite.
+4. **GPU budget.** Still open. 119 T3 exercises, half of them in Phases 04 and 17.
+   D11 requires a scaled-down runnable regardless, so there is no *blocked* work —
+   but without an allowance no T3 exercise is ever verified at full scale, and the
+   README should say so plainly rather than implying otherwise.
 
 ---
 
@@ -393,3 +665,31 @@ pass, inside the declared budget). Plus `scaffold.py` and `notebooks.py` (D7).
 
 **Open for M1:** record `cassettes/prompt-patterns.json` once with a live key
 (`DEMO_MODE=live`), which closes the last M0 shape and unskips 4 tests.
+
+## 11. M0.5 — the golden reference, scoped
+
+`11/12-guardrails` is the lesson this revision was designed against, so it is the
+one to build first. It is a good choice on the merits: 5 exercises, all `code`,
+all T0, no prose items, no API key, and each one states its own fixture size and
+threshold.
+
+| Ex | Solution | Fixture | `verifies` |
+|---|---|---|---|
+| 1 | `ex01_safety_category_classifier.py` | 50 labelled prompts | macro P/R over 13 MLCommons categories |
+| 2 | `ex02_encoding_evasion_detector.py` | 20 encodings of one payload | all 20 decoded and flagged; 6 encodings covered |
+| 3 | `ex03_sliding_window_rate_limit.py` | none (generated burst) | 15 req / 30 s → 10 allowed, 5 blocked, retry-after correct |
+| 4 | `ex04_rag_hallucination_detector.py` | 10 response/source pairs | every <20%-overlap sentence flagged, no false positives on the paired set |
+| 5 | `ex05_red_team_suite.py` | 100 attacks / 5 categories | per-category detection rate; the weakest category identified and 3 rules added |
+
+The lesson's `code/guardrails.py` already exports what these build on —
+`detect_injection`, `detect_pii`, `classify_topic`, `check_relevance`,
+`check_system_prompt_leak`, `GuardrailPipeline`, `GuardrailMonitor` — so
+`uses_reference` is populated from real symbols and no solution needs to fork the
+lesson's code. Verified before writing this section, which is why M0.5 can be
+scoped as three days rather than discovered as three weeks.
+
+Exercise 5 is the one to watch: "identify which category has the lowest detection
+rate and write 3 additional rules to improve it" makes the *solution* depend on
+the measurement, so its `verifies` must assert the improvement, not a fixed
+category name — the fixture must not be tuned until the answer is whatever the
+author wanted.
