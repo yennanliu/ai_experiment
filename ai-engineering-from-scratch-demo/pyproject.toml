@@ -1,0 +1,46 @@
+[project]
+name = "ai-engineering-from-scratch-demo"
+version = "0.1.0"
+description = "Runnable, verified example code for every lesson in ai-engineering-from-scratch"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+# The harness core is stdlib-only on purpose (see harness/__init__.py), so the
+# base install has no dependencies at all. `demo coverage`, `demo list` and
+# `run.py --explain` work straight out of a bare `uv sync`.
+dependencies = []
+
+[project.optional-dependencies]
+# D8: one group per phase cluster, so a learner on Phase 01 installs numpy and
+# nothing else. `scripts/check_deps.py` asserts these stay honest.
+math = ["numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.4"]   # phases 01-03
+vision = ["torch>=2.2", "torchvision>=0.17", "pillow>=10.0"] # phases 04, 12
+audio = ["torch>=2.2", "torchaudio>=2.2", "librosa>=0.10"]   # phase 06
+llm = [                                                       # phases 07, 10, 11
+  "torch>=2.2",
+  "numpy>=1.26",
+  "transformers>=4.40",
+  "peft>=0.10",
+  "anthropic>=1.0",
+]
+agents = ["anthropic>=1.0", "mcp>=1.0"]                       # phases 13-16
+infra = ["docker>=7.0"]                                       # phase 17
+dev = ["pytest>=8.0", "jupytext>=1.16", "ruff>=0.5"]
+
+[project.scripts]
+demo = "harness.runner:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["harness"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 96

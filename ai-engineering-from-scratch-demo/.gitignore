@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+# Generated from run.py by jupytext at build time (D7) -- never hand-authored,
+# never committed.
+demos/**/notebook.ipynb
+# HF checkpoints and other T1 downloads.
+.cache/

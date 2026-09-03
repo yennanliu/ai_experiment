@@ -1,0 +1,39 @@
+# Nightly: the torch-CPU tier. Too slow for every push, too important to skip.
+name: aiefs-demo t1
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ai-engineering-from-scratch-demo
+
+env:
+  AIEFS_REF: ${{ github.workspace }}/reference
+  HF_HOME: ${{ github.workspace }}/.hf
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yennanliu/ai-engineering-from-scratch
+          path: reference
+
+      - uses: astral-sh/setup-uv@v5
+
+      # T1 allows a model download but declares a <5min budget, which only
+      # holds if the checkpoint is cached between runs.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.hf
+          key: hf-${{ runner.os }}-${{ hashFiles('ai-engineering-from-scratch-demo/pyproject.toml') }}
+
+      - run: uv sync --extra llm --extra vision --extra audio --extra dev
+      - name: T1 demos run and their tests pass
+        run: uv run demo verify --tier T1

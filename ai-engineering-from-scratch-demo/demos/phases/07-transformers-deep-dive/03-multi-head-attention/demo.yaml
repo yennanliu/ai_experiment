@@ -1,0 +1,16 @@
+lesson: phases/07-transformers-deep-dive/03-multi-head-attention
+title: Multi-Head Attention — pure stdlib vs torch.nn.MultiheadAttention
+tier: T1
+entrypoint: run.py
+runtime_seconds: 60
+needs_env: []
+deps_group: llm
+proves: >
+  The lesson's pure-stdlib multi-head attention -- no numpy, no torch, a hand-written
+  Matrix class -- produces the same outputs and the same per-head attention weights as
+  torch.nn.MultiheadAttention given the same projection weights, to 1e-12 in float64.
+  Its grouped-query variant matches F.scaled_dot_product_attention(enable_gqa=True).
+  The same comparison in float32 shows what the precision, not the algorithm, costs.
+parity_with: phases/07-transformers-deep-dive/03-multi-head-attention/code/main.py
+reference_doc: phases/07-transformers-deep-dive/03-multi-head-attention/docs/en.md
+reference_doc_sha256: 143eb42fb1de2307

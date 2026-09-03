@@ -1,0 +1,57 @@
+# Weekly: re-record every cassette against the live API and report the drift.
+#
+# A cassette that no longer matches what the model says is a *finding*, not a
+# failure -- models ship, and the whole reason cassettes carry a model ID and a
+# date is so that drift is visible. This job re-records, diffs, and opens a PR
+# with the new tapes plus what the re-recording cost.
+name: aiefs-demo t2-live
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ai-engineering-from-scratch-demo
+
+env:
+  AIEFS_REF: ${{ github.workspace }}/reference
+
+jobs:
+  rerecord:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The only job in this repo that holds a real key.
+    environment: live-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yennanliu/ai-engineering-from-scratch
+          path: reference
+
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --extra llm --extra agents --extra dev
+
+      - name: re-record every T2 cassette
+        run: uv run demo run --tier T2 2>&1 | tee /tmp/live.log
+        env:
+          DEMO_MODE: live
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: what changed and what it cost
+        run: |
+          echo '### Cassette drift' >> "$GITHUB_STEP_SUMMARY"
+          git diff --stat -- demos >> "$GITHUB_STEP_SUMMARY" || true
+          grep -E 'cost|recorded' /tmp/live.log >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: cassette-refresh
+          title: "Refresh T2 cassettes"
+          commit-message: "Re-record T2 cassettes against the live API"
+          body: |
+            Weekly re-recording. Review the diff as a *semantic* question:
+            has the model's answer changed in a way the lesson should mention?
+          add-paths: ai-engineering-from-scratch-demo/demos/**/cassettes/*.json
