@@ -17,7 +17,8 @@ from harness import manifest, runner  # noqa: E402
 GROUP_MODULES = {
     "none": set(),
     "math": {"numpy", "sklearn", "scipy"},
-    "vision": {"numpy", "PIL"},
+    # sklearn ships the sample images, pillow decodes them
+    "vision": {"numpy", "PIL", "sklearn"},
     "audio": {"numpy"},
     "llm": {"openai", "torch", "transformers"},
     "agents": set(),

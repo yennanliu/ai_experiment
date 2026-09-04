@@ -1,0 +1,40 @@
+lesson: 10-dimensionality-reduction
+phase: 01-math-foundations
+source: phases/01-math-foundations/10-dimensionality-reduction/docs/en.md
+exercises:
+  - index: 1
+    slug: pca_reconstruction
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Modify the PCA class to support `inverse_transform`. Reconstruct MNIST digits from 10, 50, and 200 components. Print the reconstruction error (mean squared difference from the original) for each.
+    zh: |
+      修改 PCA 類別，讓它支援 `inverse_transform`。分別用 10、50 與 200 個成分重建 MNIST 數字，並印出每一種的重建誤差（與原圖的均方差）。
+    verifies: reconstruction MSE falls 4.914 -> 0.0085 -> 0.0000 across k=10/50/200 on sklearn's 1797x64 load_digits, with 10 components carrying 73.8% of variance; all 64 components reconstruct to 3.9e-29 confirming PCA is a rotation; and n_components=200 is shown to silently return 64, since the eigenvector slice just runs out
+    uses_reference:
+      - PCA
+      - PCA.inverse_transform
+      - reconstruction_error
+  - index: 2
+    slug: tsne_perplexity
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Run t-SNE on the same MNIST subset with perplexity values of 5, 30, and 100. Describe how the output changes. Why does perplexity affect cluster tightness?
+    zh: |
+      在同一份 MNIST 子集上跑 t-SNE，perplexity 分別取 5、30 與 100。描述輸出如何變化。為什麼 perplexity 會影響叢集的緊密程度？
+    verifies: intra/inter class distance ratio measured at perplexity 5/30/100 on 300 digits is 0.2096/0.1734/0.2377 - non-monotone, with the middle value tightest - all well below 1; and perplexity 100 is identified as sitting at the (n-1)/3 ceiling for n=300 rather than being a midpoint
+  - index: 3
+    slug: explained_variance_curve
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Take a dataset with 50 features where only 5 are informative (generate one with `sklearn.datasets.make_classification`). Apply PCA and check whether the explained variance curve correctly identifies that the data is effectively 5-dimensional.
+    zh: |
+      找一份有 50 個特徵、但只有 5 個帶資訊的資料集（用 `sklearn.datasets.make_classification` 生一份）。套用 PCA，檢查解釋變異量曲線是否正確指出這份資料實際上只有 5 維。
+    verifies: the exercise's question is answered NO: on make_classification with 5 informative of 50 features, 90% of variance needs 42 components and the top 5 carry only 23.6%, with the largest component just 5.1x the median; the same curve then nails a genuinely rank-5 dataset at elbow 5, 99.998% in the top 5 and a 199450x drop, showing the failure is the data not the method
+    uses_reference:
+      - PCA
