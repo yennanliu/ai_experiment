@@ -20,7 +20,7 @@ GROUP_MODULES = {
     # sklearn ships the sample images, pillow decodes them
     "vision": {"numpy", "PIL", "sklearn"},
     "audio": {"numpy"},
-    "llm": {"openai", "torch", "transformers"},
+    "llm": {"openai", "torch", "transformers", "jax", "jaxlib", "optax"},
     "agents": set(),
     "infra": set(),
 }
