@@ -1,0 +1,55 @@
+lesson: 06-probability-and-distributions
+phase: 01-math-foundations
+source: phases/01-math-foundations/06-probability-and-distributions/docs/en.md
+exercises:
+  - index: 1
+    slug: inverse_transform_sampling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement inverse transform sampling for the exponential distribution. Verify by sampling 10,000 values and comparing the histogram to the true PDF.
+    zh: |
+      為指數分布實作反轉換取樣。取樣 10,000 個值，把直方圖跟真正的 PDF 比對來驗證。
+    verifies: 10,000 seeded inverse-transform draws put every bin with expected count >=30 within 3 sigma of the analytic mass (worst z 2.69), a binning-free KS distance of 0.0087 below the 0.0136 critical value, and sample mean and variance within 0.02 and 0.03 of 1/lambda and 1/lambda^2
+    uses_reference:
+
+  - index: 2
+    slug: joint_distribution_dice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a joint distribution table for two loaded dice. Compute the marginal distributions and check whether the dice are independent.
+    zh: |
+      為兩顆灌鉛的骰子建一張聯合分布表。算出邊際分布，並檢查這兩顆骰子是否獨立。
+    verifies: two joint tables with the same loaded marginals - one an outer product, one with mass moved onto the diagonal - are both valid distributions; check_independence accepts the first and rejects the second; and the marginals differ by at most 0.0153, showing marginals alone cannot detect dependence
+    uses_reference:
+      - joint_to_marginals
+      - check_independence
+  - index: 3
+    slug: cross_entropy_vs_torch
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Compute the cross-entropy loss for a 5-class classifier that outputs logits `[2.0, 0.5, -1.0, 3.0, 0.1]` when the correct class is index 3. Then verify your answer with PyTorch's `nn.CrossEntropyLoss`.
+    zh: |
+      有一個 5 類別的分類器輸出 logits `[2.0, 0.5, -1.0, 3.0, 0.1]`，而正確類別是索引 3，請算出它的交叉熵損失。然後用 PyTorch 的 `nn.CrossEntropyLoss` 驗證你的答案。
+    verifies: the loss matches nn.CrossEntropyLoss in float64 to 1e-9 and equals -log_softmax[target]; torch's float32 default is shown to differ by 1.8e-8; and on logits near 1000 the naive softmax-then-log route raises OverflowError while the shifted version matches torch to 1e-6
+    uses_reference:
+      - cross_entropy_loss
+      - softmax
+      - log_softmax
+  - index: 4
+    slug: log_probability_sequence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a function that takes a list of log probabilities and returns the most likely sequence, the total log probability, and the equivalent raw probability. Test it with a sentence of 50 words where each word has probability 0.01.
+    zh: |
+      寫一個函式，接收一串對數機率，回傳最可能的序列、總對數機率，以及對應的原始機率。用一個 50 個詞的句子測試，其中每個詞的機率都是 0.01。
+    verifies: a 50-word decode returns the argmax sequence, total log probability 50*log(0.01) to 1e-9, and raw probability 1e-100 to 1e-9 relative; and direct multiplication of the same probabilities is shown to underflow to exactly 0.0 at n=162 where the log route reads -746
+    uses_reference:
+
