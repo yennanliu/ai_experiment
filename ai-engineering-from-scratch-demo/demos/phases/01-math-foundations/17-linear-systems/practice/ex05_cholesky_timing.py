@@ -4,22 +4,16 @@
     positive definite matrices of size 10, 50, 200, 500. Plot the results. Verify
     Cholesky is roughly 2x faster than LU.
 
-Reading of the exercise: "verify Cholesky is roughly 2x faster" does not hold
-here, and the reason is worth more than the claim. The 2x is a **flop** ratio —
-n³/3 against LU's 2n³/3 — but neither implementation is flop-bound. Both consist
-of O(n²) Python-level loop iterations, each delegating an O(n) vector operation
-to numpy, so wall clock measures the *iteration count*, and both have the same
-n²/2 of them.
+Reading of the exercise: "verify Cholesky is roughly 2x faster" does not hold,
+and the reason is worth more than the claim. The 2x is a **flop** ratio — n³/3
+against LU's 2n³/3 — but neither implementation is flop-bound: both are O(n²)
+Python-level iterations each delegating an O(n) vector op to numpy, so wall clock
+measures the iteration count, and both have the same n²/2 of them. The measured
+growth exponent confirms it: **n^2.0**, not n³. Cholesky comes out 1.39x faster
+from its shorter inner dot, not halved flops; `np.linalg.solve` is ~70x faster.
 
-The measured growth exponent confirms it: **n^2.0**, not n³ — the arithmetic
-happens inside numpy where it is nearly free, while ~125,000 call boundaries at
-n=500 are not. Cholesky comes out 1.39x faster from its shorter average inner
-dot, not from halved flops; `np.linalg.solve` is ~70x faster than either.
-
-n=10 is excluded from the ordering check: the decomposition takes microseconds
-there, so the ratio is noise and falls either side of 1.0 between runs.
-
-Tier T1: the 500x500 decompositions take a few seconds.
+Every timing is the best of 3 repeats, and n=10 is excluded from the ordering
+check — microseconds there, so the ratio is noise either side of 1.0.
 """
 
 from __future__ import annotations
@@ -39,9 +33,14 @@ def make_spd(numpy, rng, n):
     return A @ A.T + n * numpy.eye(n)
 
 
-def timed(fn):
-    start = time.perf_counter()
-    return fn(), time.perf_counter() - start
+def timed(fn, repeats=3):
+    """Best of `repeats` — a single sample measures machine load as much as code."""
+    best, value = float("inf"), None
+    for _ in range(repeats):
+        start = time.perf_counter()
+        value = fn()
+        best = min(best, time.perf_counter() - start)
+    return value, best
 
 
 def solve():
@@ -77,6 +76,7 @@ def _exponent(rows, key):
 
 def verify(result):
     rows = result["rows"]
+    big = rows[SIZES[-1]]
     ratios = {n: rows[n]["lu"] / rows[n]["cholesky"] for n in SIZES}
     chol_p, lu_p = _exponent(rows, "cholesky"), _exponent(rows, "lu")
     return [
@@ -104,13 +104,11 @@ def verify(result):
                        f"inner dot product. The exercise's 2x needs a flop-bound "
                        f"implementation to show up at all"),
         practice.Check("np.linalg.solve is orders of magnitude faster than both",
-                       rows[SIZES[-1]]["numpy"] * 50 < rows[SIZES[-1]]["cholesky"],
-                       f"at n={SIZES[-1]}: numpy {rows[SIZES[-1]]['numpy'] * 1e3:.2f} ms, "
-                       f"Cholesky {rows[SIZES[-1]]['cholesky'] * 1e3:.0f} ms, LU "
-                       f"{rows[SIZES[-1]]['lu'] * 1e3:.0f} ms — "
-                       f"{rows[SIZES[-1]]['cholesky'] / rows[SIZES[-1]]['numpy']:.0f}x. "
-                       f"Choosing the better algorithm in Python loses to choosing "
-                       f"blocked, vectorised LAPACK"),
+                       big["numpy"] * 50 < big["cholesky"],
+                       f"at n={SIZES[-1]}: numpy {big['numpy'] * 1e3:.2f} ms, Cholesky "
+                       f"{big['cholesky'] * 1e3:.0f} ms, LU {big['lu'] * 1e3:.0f} ms — "
+                       f"{big['cholesky'] / big['numpy']:.0f}x. Choosing the better "
+                       f"algorithm in Python loses to blocked, vectorised LAPACK"),
     ]
 
 

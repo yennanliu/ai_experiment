@@ -128,7 +128,7 @@ import pathlib
 
 import pytest
 
-from harness import coverage, manifest, parity, practice
+from harness import coverage, manifest, parity, practice, tiers
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 PACK = manifest.load_practice(HERE / "practice.yaml")
@@ -136,6 +136,10 @@ PACK = manifest.load_practice(HERE / "practice.yaml")
 
 @pytest.mark.parametrize("exercise", PACK.code_exercises, ids=lambda e: e.stem)
 def test_solution_passes_its_own_checks(exercise):
+    # honour the DEMO_TIER ceiling, as `demo verify` does — otherwise a T0 gate
+    # silently runs T1 work, including anything that measures wall-clock time
+    if not tiers.selected(exercise.tier):
+        pytest.skip(f"{{exercise.tier}} is above the DEMO_TIER ceiling")
     result = practice.grade_file(HERE / exercise.filename, exercise.stem)
     assert result.status == "pass", practice.report(result)
     assert result.checks, "a solution with no checks proves nothing"
