@@ -146,6 +146,27 @@ def test_check_deps_allows_a_guarded_import_in_the_harness():
     assert "numpy" not in check_deps.toplevel_imports(path)
 
 
+def test_explain_gate_requires_a_resolvable_citation():
+    """DESIGN §6: a prose item's citation must name a real lesson section."""
+    from harness import manifest as m
+
+    exercise = m.Exercise(index=1, slug="x", kind="explain", tier="T0",
+                          en="Explain something", zh="解釋", cites="The Concept")
+    readme = ROOT / "tests" / "_tmp_readme.md"
+    readme.write_text("answer, drawing on The Concept\n", encoding="utf-8")
+    try:
+        assert audit_practice.audit_explain(exercise, readme, {"The Concept"}) == []
+        # cited section does not exist upstream
+        problems = audit_practice.audit_explain(exercise, readme, {"Something Else"})
+        assert any("not a heading" in p for p in problems)
+        # answer missing from the README
+        readme.write_text("no answer here\n", encoding="utf-8")
+        problems = audit_practice.audit_explain(exercise, readme, {"The Concept"})
+        assert any("not answered in README" in p for p in problems)
+    finally:
+        readme.unlink()
+
+
 def test_coverage_check_flags_spec_drift(lesson, monkeypatch):
     pack = manifest.load_practice(lesson / "practice.yaml")
     upstream = "Do something completely different"

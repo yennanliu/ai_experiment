@@ -1,0 +1,36 @@
+lesson: 02-linear-regression
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/02-linear-regression/docs/en.md
+exercises:
+  - index: 1
+    slug: gradient_descent_variants
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement batch gradient descent, stochastic gradient descent (SGD), and mini-batch gradient descent. Compare convergence speed on the same dataset. Which converges fastest? Which has the smoothest cost curve?
+    zh: |
+      實作批次梯度下降、隨機梯度下降（SGD）與小批次梯度下降。在同一份資料集上比較收斂速度。哪一種收斂最快？哪一種的成本曲線最平滑？
+    verifies: all three variants recover the true slope within 0.1 and batch agrees with the lesson's LinearRegression to 0.05; 'fastest' is answered both ways - SGD reaches within 5% of best in 1 epoch against batch's 38, but uses 12,000 updates against 60; SGD lands furthest from the true parameters (0.248 against 0.067); and only batch is monotone, 0 uphill steps against 26 and 28
+    uses_reference:
+      - LinearRegression
+  - index: 2
+    slug: polynomial_overfitting
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Generate data from a cubic function (y = ax^3 + bx^2 + cx + d + noise). Fit polynomials of degree 1, 3, and 10. Compare training R^2 and test R^2. At what degree does overfitting become obvious?
+    zh: |
+      從一個三次函式產生資料（y = ax^3 + bx^2 + cx + d + noise）。配適次數為 1、3、10 的多項式。比較訓練 R^2 與測試 R^2。到第幾次時過度擬合變得明顯？
+    verifies: training R2 rises 0.789/0.933/0.967 with degree while degree 3 wins on test at 0.873; degree 1 is shown to underfit by its low TRAINING score, its gap +0.078 actually exceeding degree 3's +0.060; overfitting is obvious at degree 10 from a gap of +1.857, 31x degree 3's; and degree 10's test R2 is negative at -0.891 while its largest coefficient is only 2.9x degree 3's, so predictions diverge before coefficients look alarming
+  - index: 3
+    slug: lasso_vs_ridge
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Lasso regression (L1 regularization: penalty = alpha * sum(|w_i|)). Train on the multi-feature housing data. Compare which weights go to zero vs Ridge. Why does L1 produce sparse solutions while L2 does not?
+    zh: |
+      實作 Lasso 迴歸（L1 正則化：penalty = alpha * sum(|w_i|)）。在多特徵的房價資料上訓練。比較它與 Ridge 分別讓哪些權重歸零。為什麼 L1 會產生稀疏解，而 L2 不會？
+    verifies: proximal gradient descent gives L1 five EXACT 0.0 weights against zero for L2 and unregularised, and they are precisely the 5 useless features with no informative one dropped; L2's weight mass on those useless features is shown to RISE 2.4x above the unregularised fit, since uniform shrinkage puts the signal 29% low and the noise absorbs the residual; and the mechanism is stated arithmetically - L1 subtracts a constant alpha*lr and clips at zero, L2 multiplies by (1-alpha*lr) and cannot arrive
