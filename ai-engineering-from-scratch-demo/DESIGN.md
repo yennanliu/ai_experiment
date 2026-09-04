@@ -4,10 +4,12 @@ A companion repo of **runnable, verified solutions to every exercise** in
 [`ai-engineering-from-scratch`](https://yennj12.js.org/ai-engineering-from-scratch/index.html)
 (local: `../ai-engineering-from-scratch`).
 
-Status: **M0 built and verified** (2026-09-02) — the harness, the four gates and
-four demos across three tiers all run; see §10. **Revised 2026-09-03**: exercise
-solutions are now the repo's unit of value and parity demos are demoted to
-optional (§2, D9). M0.5 — harness extension plus one golden reference — is next.
+Status: **design settled, nothing built in this branch yet.** M0 was built and
+verified once in a prior spike (2026-09-02) — the harness, four gates and four
+demos across three tiers all ran; that run is kept as evidence in §10, but none
+of its code is here. **Revised 2026-09-03**: exercise solutions are the repo's
+unit of value and parity demos are optional (§2, D9). **2026-09-04**: all four
+open questions closed (§9), and §12 sequences the build from an empty tree.
 
 Every number in §1 and §5 was derived by a census script that reads the reference
 checkout, and none is hand-maintained. That script lands as `scripts/census.py` in
@@ -147,8 +149,8 @@ pretend those are the same thing, so every artifact declares a tier:
 |---|---|---|---|---|
 | **T0** `cpu-instant` | stdlib / numpy / sklearn | < 10 s | none | every push |
 | **T1** `cpu-heavy` | torch-CPU, small HF checkpoint (< 500 MB) | < 5 min | model download, cached | nightly |
-| **T2** `api` | real provider call (Claude etc.) | < 20 s, < $0.02 | provider | every push **in replay mode** (D4) |
-| **T3** `gpu` | needs CUDA / bf16 / ≥ 16 GB VRAM | < 30 min | yes | manual / rented runner, tagged only |
+| **T2** `api` | real provider call (OpenAI / ChatGPT, Q3) | < 20 s, < $0.02 | provider | every push **in replay mode** (D4) |
+| **T3** `gpu` | needs CUDA / bf16 / ≥ 16 GB VRAM | < 30 min | yes | GPU runner available (Q4), tagged only |
 
 A T3 artifact on a Mac must exit 0 with a printed explanation of what it *would*
 have done and what to rent — never a stack trace. That rule is inherited from the
@@ -454,10 +456,10 @@ ai-engineering-from-scratch-demo/
     └── t2-live.yml            # weekly, real keys, re-record cassettes, cost report
 ```
 
-While this lives inside `ai_experiment`, GitHub only reads workflows from the
-*repository* root, so the three files sit at `../.github/workflows/aiefs-demo-*.yml`
-with a `paths:` filter and `working-directory:` set. Splitting the repo out
-(open question 1) moves them back to the layout above and drops both.
+This lives inside `ai_experiment` and stays there (Q1). GitHub only reads
+workflows from the *repository* root, so the three files sit at
+`../.github/workflows/aiefs-demo-*.yml` with a `paths:` filter and
+`working-directory:` set — that indirection is permanent, not a stopgap.
 
 Runner UX:
 
@@ -521,7 +523,8 @@ them `n/a` rather than `⬚`, so they never read as unfinished work.
 
 Sequenced by return, not by phase number.
 
-- **M0 — Harness. Done, 2026-09-02.** See §10.
+- **M0 — Harness. Proven once, to be rebuilt here (§12).** See §10 for what the
+  prior spike established and §12.1 for the rebuild items.
 - **M0.5 — Practice harness + one golden reference (~3 days).**
   `practice.yaml` in `harness/manifest.py`; `harness/practice.py` (the
   `PRACTICE_IMPL` grading shim, D13); `demo practice` subcommands;
@@ -594,33 +597,45 @@ or a real source to cite.
 | API costs during authoring | T2 authoring is the only live-key path; one recording per exercise, cost printed and logged per run |
 | Scope creep into rewriting the curriculum | Hard rule: a solution answers the exercise as posed. It may not re-teach the lesson, and it may not improve the exercise — a bad exercise is an upstream issue to file, not a thing to silently fix |
 
-## 9. Open questions
+## 9. Settled questions
 
-Q2 and Q3 are settled by M0; Q1 and Q4 remain open.
+All four questions that were open through M0 are now closed (2026-09-04).
+Nothing here blocks M1.
 
-1. **Separate GitHub repo, or a directory inside `ai_experiment`?** Still open,
-   and now weightier: at 2,090 artifacts with a `--practice` coverage badge and
-   three CI workflows, the case for standing alone is stronger than it was at four
-   demos. It only bites CI (§4), and `harness/parity.py` searches every ancestor
-   for the reference checkout rather than a fixed sibling, so either answer works
-   unchanged. *Decide before M1.*
-2. **Language scope.** **Settled: Python-only for v1.** The reference repo's 129
+1. **Separate GitHub repo, or a directory inside `ai_experiment`?**
+   **Settled: a directory inside `ai_experiment`.** One repo, no split. The cost
+   is confined to CI (§4): the three workflows live at the *repository* root as
+   `../.github/workflows/aiefs-demo-*.yml`, each carrying a `paths:` filter and
+   `working-directory:`, because GitHub only reads workflows from the root.
+   `harness/parity.py` already searches every ancestor for the reference checkout
+   rather than a fixed sibling, so nothing else changes.
+2. **Language scope.** **Settled: Python-only, `uv`-managed.** `uv` is the sole
+   toolchain — `uv sync --extra <group>` for dependencies (§4), `uv run demo ...`
+   for every command, and a committed `uv.lock` so a solution that verifies here
+   verifies anywhere. No pip, no conda, no bare `python`. The reference repo's 129
    TS files cluster in Phases 13–14; revisit at M3, where a TS solution alongside
    the Python one is cheap because the exercise text is shared.
-3. **Provider.** **Settled: Claude-only for T2** — `claude-opus-5` at
-   `max_tokens: 1024` to hold the $0.02/artifact budget. `Cassette` stores a
-   `provider` field, so a second provider is additive rather than a rewrite.
-4. **GPU budget.** Still open. 119 T3 exercises, half of them in Phases 04 and 17.
-   D11 requires a scaled-down runnable regardless, so there is no *blocked* work —
-   but without an allowance no T3 exercise is ever verified at full scale, and the
-   README should say so plainly rather than implying otherwise.
+3. **Provider.** **Settled: OpenAI (ChatGPT) for T2**, via the `openai` SDK.
+   Pin the exact model and `max_tokens` when the first cassette is recorded, sized
+   to hold the $0.02/artifact budget. `Cassette` stores a `provider` field, so a
+   second provider stays additive rather than a rewrite — but v1 records one
+   provider so cassettes remain comparable.
+4. **GPU budget.** **Settled: both CPU and GPU are available.** T3's 119
+   exercises can therefore be verified at full scale, not just described. D11's
+   scaled-down runnable is still required for every T3 artifact — it is what keeps
+   a CPU-only contributor unblocked — but it is now the fallback path rather than
+   the only path, and the README should say which of the two a given result came
+   from.
 
 ---
 
-## 10. M0 — what shipped (2026-09-02)
+## 10. M0 — what the prior spike proved (2026-09-02)
 
-Built and verified against the real reference checkout. `uv run demo verify`
-is green: 6 pass, 1 skip (the T2 demo, which has no recorded tape yet).
+**This code is not in this branch.** It was built and verified once on a separate
+branch and is recorded here because it de-risks §12.1: every module below is known
+to be buildable to this design, and the two findings at the end of this section
+are the kind of thing only a real run surfaces. `uv run demo verify` was green
+there: 6 pass, 1 skip (the T2 demo, which had no recorded tape).
 
 **Harness** — `harness/` is stdlib-only, so `demo coverage`, `demo list` and
 `run.py --explain` work on a bare Python with nothing installed:
@@ -693,3 +708,94 @@ rate and write 3 additional rules to improve it" makes the *solution* depend on
 the measurement, so its `verifies` must assert the improvement, not a fixed
 category name — the fixture must not be tuned until the answer is whatever the
 author wanted.
+
+---
+
+## 12. Implementation plan
+
+§6 sequences *what* gets built and why. This section is the executable version:
+items, exit gate and effort per milestone, from an empty tree.
+
+**How the effort numbers were derived.** They are estimates, not measurements —
+unlike §1 and §5, nothing here comes from a census script. Two inputs: the prior
+spike's actual cost for M0-scale work (§10), and a stated throughput assumption
+for solution volume. That assumption is **~13 exercises/day through M1** while the
+generation pipeline (§7) is still being tuned, **~30/day for M2–M4** once it is,
+and **~40/day for M5–M6** where prose answers and repeated `deps_group` batches
+dominate. One person, working days. Re-derive the totals if the assumption moves —
+that is the only knob.
+
+### 12.1 M0 — Harness rebuild · ~4 days
+
+Rebuilt from scratch, but against a design the prior spike already validated
+(§10), so this is construction rather than discovery.
+
+| # | Item | Done when |
+|---|---|---|
+| 1 | `pyproject.toml` + `uv.lock`; the six `--extra` groups of D8 | `uv sync --extra math` resolves offline on a clean machine |
+| 2 | `harness/manifest.py` — `demo.yaml` schema + strict YAML subset parser | round-trips every field in D3; rejects an unknown key loudly |
+| 3 | `harness/tiers.py` — capability probe | "no GPU" / "no key" becomes a skip **with a remedy string**, never a stack trace |
+| 4 | `harness/parity.py` — `load_reference` + `assert_close` | imports the lesson's own module; never copies it; reports measured deviation |
+| 5 | `harness/cassette.py` — record/replay, provenance, cost, redaction | a live record then a replay produce byte-identical output; no key survives the write boundary |
+| 6 | `harness/coverage.py` — reference tree vs demo tree + doc-hash drift | `--check` exits non-zero on drift |
+| 7 | `harness/runner.py` + `explain.py` — `demo list/run/verify/coverage`, `--explain` | all four work on bare Python with **zero** deps installed |
+| 8 | Gates: `audit_demos.py`, `check_deps.py`, `coverage.py --check` | each fails a deliberately broken fixture |
+| 9 | CI: `../.github/workflows/aiefs-demo-{t0,t1,t2-live}.yml` with `paths:` + `working-directory:` (Q1) | T0 green on push |
+| 10 | Two seed demos, one T0 + one T1 | `uv run demo verify --tier T0` green |
+
+**Exit gate:** `uv run demo verify` green, and every gate demonstrated failing on
+a broken fixture — a gate never seen to fail is not a gate.
+
+**Risk:** item 2. A strict YAML subset parser is the one place the zero-dep rule
+buys trouble; budget a day for it alone and keep the subset genuinely small.
+
+### 12.2 M0.5 — Practice harness + golden reference · ~3 days
+
+| # | Item | Done when |
+|---|---|---|
+| 1 | `practice.yaml` schema in `manifest.py` (D12, verbatim bilingual text) | parses `11/12-guardrails`' 5 exercises |
+| 2 | `harness/practice.py` — the `PRACTICE_IMPL` grading shim (D13) | one solution grades itself and a deliberately wrong variant fails |
+| 3 | `demo practice run / verify / list` subcommands | `--ex 3` runs exactly one |
+| 4 | `scripts/scaffold_practice.py` — parse `## Exercises` + `## 練習` → stubs | round-trips a lesson with wrapped lines and a `## Practice Lab` |
+| 5 | `scripts/audit_practice.py` — D14's mechanical ceilings | fails a solution over the ceiling |
+| 6 | `coverage.py --practice`; `scripts/census.py` | census reproduces every number in §1 and §5 |
+| 7 | **`11/12-guardrails` end to end** — 5 solutions per §11 | all 5 green at T0, no key, no GPU |
+
+**Exit gate:** the golden reference is green *and* re-scaffolding it from scratch
+reproduces the same file set. If the conventions cannot carry these five, they
+cannot carry 2,090 — stop and revise rather than proceed.
+
+**Risk:** §11's Exercise 5 makes the solution depend on its own measurement. Its
+`verifies` must assert the *improvement*, not a fixed category name.
+
+### 12.3 M1–M6 — Solution volume
+
+| M | Scope | Lessons | Exercises | Effort | Milestone-specific items |
+|---|---|---|---|---|---|
+| **M1** | Phase 11 | 17 | 79 | **~6 d** | 6 T2 exercises force the cassette design under real load; record `cassettes/prompt-patterns.json` against OpenAI (Q3) and pin the model + `max_tokens` to the $0.02 budget |
+| **M2** | Phases 01, 02, 03, 07 | 69 | 285 | **~10 d** | All T0/T1 — no keys, no GPU. Volume stress-test of the §7 pipeline; reused parity assertions land hardest here |
+| **M3** | Phases 13 + 14 | 73 | 360 + 5 labs | **~13 d** | First `kind: lab` entries. A real MCP server over stdio, reusing `mcp/` and `orchestration_agents/` |
+| **M4** | Phase 10 | 24 | 116 | **~4 d** | own-GPT-vs-HF parity, the natural sequel to M2 |
+| **M5** | Long tail: 00, 04, 05, 06, 08, 09, 12, 15, 16, 17, 18 | — | 998 | **~25 d** | Batched by `deps_group`, one env install per batch. Three prose-heavy phases sit here. Phases 04 and 17 carry most of the T3 work — now verifiable at full scale (Q4) |
+| **M6** | Phase 19 | 53 | 252 | **~7 d** | — |
+|  | **Total** |  | **2,090** | **~65 d** | plus 7 d for M0 + M0.5 → **~72 working days ≈ 15 weeks** |
+
+Every milestone shares one exit gate: `uv run demo verify` green for its phases,
+`coverage.py --check --practice` showing no spec drift, and `audit_practice.py`
+clean. A milestone with a red gate is not done, regardless of exercise count.
+
+### 12.4 Sequencing notes
+
+- **12.1 and 12.2 are strictly serial.** Everything after M0.5 is parallelisable
+  by phase, because D1's path-identical mirroring means two phases never touch the
+  same file.
+- **M1 before M2** despite M2 being easier: M1's T2 exercises are the only ones
+  that exercise cassettes end to end, and a cassette bug found at 285 exercises is
+  far more expensive than one found at 79.
+- **The three highest-variance items are all early** — the YAML subset parser
+  (12.1), the grading shim (12.2) and the first real cassette (M1). If the plan
+  slips, it slips there, and it will be visible within the first two weeks.
+- **T3 at full scale (Q4) is not on the critical path.** D11's scaled-down
+  runnable is what CI gates on; full-scale GPU verification is a separate pass over
+  M5's Phase 04 and 17 work, and the README must record which of the two produced
+  any given result.
