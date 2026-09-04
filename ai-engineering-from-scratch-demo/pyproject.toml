@@ -28,3 +28,7 @@ packages = ["harness"]
 [tool.pytest.ini_options]
 testpaths = ["tests", "demos"]
 python_files = ["test_*.py"]
+# Every lesson ships a tests/test_practice.py (D6). Under pytest's default
+# "prepend" import mode those identical basenames collide; importlib mode gives
+# each its own module identity, so no lesson needs an __init__.py.
+addopts = "--import-mode=importlib"
