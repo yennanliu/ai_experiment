@@ -1,0 +1,72 @@
+lesson: 06-knn-and-distances
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/06-knn-and-distances/docs/en.md
+exercises:
+  - index: 1
+    slug: k_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement KNN classification on a 2D dataset with 3 classes. Plot the decision boundary for K=1, K=5, K=15, and K=N. Observe the transition from overfitting to underfitting.
+    zh: |
+      在一個有 3 個類別的二維資料集上實作 KNN 分類。分別畫出 K=1、K=5、K=15 與 K=N 的決策邊界，觀察它如何從過度擬合一路走到擬合不足。
+    verifies: K=1 scores exactly 1.000 on training data by construction, since every point is its own nearest neighbour; K=N emits 1 distinct label over the whole test set and scores 21.7%, BELOW the 33.3% a coin gets over 3 classes, because the training and test majorities differ; test accuracy peaks at the interior K=15; and at K=N the train-test gap is small with both terms near zero, so a small gap is no evidence of a good model
+    uses_reference:
+      - KNN
+      - generate_classification_data
+      - train_test_split
+      - accuracy
+  - index: 2
+    slug: curse_of_dimensionality
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Generate 1000 random points in 2, 5, 10, 50, 100, and 500 dimensions. For each dimensionality, compute the ratio of the maximum pairwise distance to the minimum pairwise distance. Plot the ratio vs dimensionality to visualize the curse of dimensionality.
+    zh: |
+      在 2、5、10、50、100 與 500 維空間裡各產生 1000 個隨機點。對每一種維度，算出所有配對距離中最大值與最小值的比值。把這個比值對維度畫成圖，讓維度詛咒現形。
+    verifies: over 7,140 pairs per dimension the max/min distance ratio collapses monotonically 169.78 to 1.27 across d = 2..500, a 134x fall; the relative spread (max-min)/mean confirms it using every pair rather than the two extremes; and mean distance / sqrt(d) is shown near-constant at 1.22-1.42, so distances grow together while their differences do not
+    uses_reference:
+      - l2_distance
+  - index: 3
+    slug: text_distance_metrics
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Compare L1, L2, and cosine distance for KNN on a text classification problem (use TF-IDF vectors). Which metric gives the best accuracy? Why does cosine tend to win for text?
+    zh: |
+      在一個文字分類問題上（用 TF-IDF 向量）比較 KNN 搭配 L1、L2 與餘弦距離的結果。哪個度量的準確率最好？為什麼餘弦在文字上通常會贏？
+    verifies: cosine wins at 96.7% against L1 90.0% and L2 86.7%, with L2 worst since squaring amplifies the length difference; TF-IDF norms are shown to span 11.9x because documents are 5, 10 or 60 tokens; and both varied lengths and a shared vocabulary are shown necessary - with disjoint vocabularies and uniform lengths all three score 100% and the comparison is vacuous
+    uses_reference:
+      - KNN
+      - l1_distance
+      - l2_distance
+      - cosine_distance
+      - accuracy
+  - index: 4
+    slug: kdtree_vs_brute
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      Implement a KD-tree and measure query time vs brute force for datasets of 1k, 10k, and 100k points in 2D, 10D, and 50D. At what dimensionality does the KD-tree stop being faster than brute force?
+    zh: |
+      實作一棵 KD 樹，並在 2 維、10 維與 50 維、資料量分別為 1k、10k、100k 的情況下，量測它與暴力搜尋的查詢時間。維度到多高時，KD 樹就不再比暴力搜尋快了？
+    verifies: at d=2 the KD-tree beats brute force 25x/109x/413x as n grows 1k/5k/20k, the gap widening as O(log n) against O(n); by d=10 the advantage is 1.00x at n=1000; and at d=50 the tree is SLOWER at every size (0.94-0.98x), because pruning requires one coordinate's gap to exceed the best radius and in high dimensions nothing separates
+    uses_reference:
+      - KDTree
+      - l2_distance
+  - index: 5
+    slug: weighted_knn
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a weighted KNN regressor for y = sin(x) + noise. Compare it with unweighted KNN for K=3, 10, 30. Show that weighting produces smoother predictions, especially for large K.
+    zh: |
+      為 y = sin(x) + noise 打造一個加權 KNN 迴歸器。在 K=3、10、30 下與未加權的 KNN 比較。證明加權會讓預測更平滑，K 大的時候尤其明顯。
+    verifies: the exercise's smoothness claim is FALSE - weighting is rougher at every K (mean |delta pred| 0.1433/0.1245/0.1092 against 0.1090/0.0708/0.0475); what it buys is accuracy at large K (RMSE 0.1115 against 0.1560 at K=30) and costs accuracy at small K (0.1494 against 0.1207 at K=3); and querying the training set is shown to degenerate entirely, RMSE 9e-08 at every K, since the weight 1/(d+1e-10) is 1e10 at distance zero
+    uses_reference:
+      - KNN
