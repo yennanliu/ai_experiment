@@ -127,3 +127,32 @@ def test_kendall_tau_counts_only_strictly_ordered_pairs():
         stats.kendall_tau([1, 2], [1, 2, 3])
     with pytest.raises(ValueError, match="no strictly ordered pairs"):
         stats.kendall_tau([1, 1, 1], [1, 1, 1])
+
+
+def test_fit_line_and_rmse_agree_on_an_exact_fit():
+    xs = [0.0, 1.0, 2.0, 3.0]
+    slope, intercept = stats.fit_line(xs, [1.0, 3.0, 5.0, 7.0])
+    assert slope == pytest.approx(2.0)
+    assert intercept == pytest.approx(1.0)
+    assert stats.rmse(xs, [1.0, 3.0, 5.0, 7.0], slope, intercept) == pytest.approx(0.0)
+    # a constant feature has no slope: the best constant predictor is the mean
+    assert stats.fit_line([2.0] * 4, [1.0, 2.0, 3.0, 4.0]) == (0.0, pytest.approx(2.5))
+    with pytest.raises(ValueError, match="length mismatch"):
+        stats.fit_line([1.0, 2.0], [1.0])
+
+
+def test_least_squares_reports_a_singular_design_rather_than_hiding_it():
+    """`lstsq` answers happily on a rank-deficient design; `cond` is the warning."""
+    np = parity.try_numpy()
+    if np is None:
+        pytest.skip("needs numpy")
+    rows = [[float(i), float(i)] for i in range(1, 9)]      # column 2 duplicates column 1
+    fit = stats.least_squares(np, rows, [2.0 * i for i in range(1, 9)], 6)
+    assert fit["k"] == 2
+    assert fit["train"] == pytest.approx(0.0, abs=1e-9)
+    assert fit["cond"] > 1e8, fit["cond"]
+    # dropping the duplicate fits as well and is well conditioned
+    dropped = stats.least_squares(np, [[r[0]] for r in rows],
+                                  [2.0 * i for i in range(1, 9)], 6)
+    assert dropped["train"] == pytest.approx(0.0, abs=1e-9)
+    assert dropped["cond"] < 1e3, dropped["cond"]

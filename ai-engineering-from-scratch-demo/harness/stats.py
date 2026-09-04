@@ -33,3 +33,46 @@ def kendall_tau(a, b) -> float:
     if not ordered:
         raise ValueError("no strictly ordered pairs: tau is undefined")
     return net / ordered
+
+
+def fit_line(xs, ys) -> tuple:
+    """Least-squares slope and intercept for a single feature.
+
+    The degenerate case is explicit: a constant `xs` has no slope, and returning
+    (0, mean(ys)) — the best constant predictor — is right for the callers here,
+    which compare a feature against doing nothing. A caller that needs to *know*
+    the feature was constant should check the spread itself.
+    """
+    n = len(xs)
+    if n != len(ys):
+        raise ValueError(f"length mismatch: {n} against {len(ys)}")
+    mean_x, mean_y = sum(xs) / n, sum(ys) / n
+    spread = sum((v - mean_x) ** 2 for v in xs)
+    if spread < 1e-12:
+        return 0.0, mean_y
+    slope = sum((a - mean_x) * (b - mean_y) for a, b in zip(xs, ys)) / spread
+    return slope, mean_y - slope * mean_x
+
+
+def rmse(xs, ys, slope: float, intercept: float) -> float:
+    """Root mean squared error of `slope * x + intercept` against `ys`."""
+    return (sum((slope * x + intercept - y) ** 2 for x, y in zip(xs, ys)) / len(ys)) ** 0.5
+
+
+def least_squares(np, matrix, target, n_train: int) -> dict:
+    """Fit `matrix` (plus an intercept) on the first `n_train` rows; score both halves.
+
+    `np` is passed in rather than imported: `harness` must import with nothing
+    installed (DESIGN §4), and a solution that needs least squares has already
+    obtained numpy through `parity.try_numpy()` and skipped if it is absent.
+
+    `cond` is the condition number of the *training* design. It is reported
+    because `lstsq` returns a minimum-norm solution for a singular design without
+    complaining, so a fit can look fine while its coefficients mean nothing.
+    """
+    design = np.array([[1.0] + list(row) for row in matrix])
+    weights = np.linalg.lstsq(design[:n_train], np.array(target[:n_train]), rcond=None)[0]
+    error = design @ weights - np.array(target)
+    return {"train": float(np.sqrt(np.mean(error[:n_train] ** 2))),
+            "test": float(np.sqrt(np.mean(error[n_train:] ** 2))),
+            "cond": float(np.linalg.cond(design[:n_train])), "k": len(matrix[0])}

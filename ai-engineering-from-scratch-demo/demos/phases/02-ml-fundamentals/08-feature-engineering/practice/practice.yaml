@@ -1,0 +1,48 @@
+lesson: 08-feature-engineering
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/08-feature-engineering/docs/en.md
+exercises:
+  - index: 1
+    slug: robust_scaling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add robust scaling (using median and interquartile range instead of mean and standard deviation) to the numerical transforms. Compare it to standard scaling on data with extreme outliers.
+    zh: |
+      在數值轉換裡加上穩健縮放（用中位數與四分位距，取代平均值與標準差）。在含有極端離群值的資料上，把它和標準縮放做比較。
+    verifies: with 5 extreme outliers among 95 N(10,1) inliers, standardisation compresses the inlier IQR to 0.0100 against robust scaling's 0.9577 - a factor of 96 - and puts 100% of inliers inside +-1 spanning 0.0406 in total, against 87% and 3.8885; both transforms are affine so both leave the outliers visible (5.50 and 541.32), which is why the comparison has to be about the inliers; and with the outliers removed the two agree exactly (correlation 1.000000), differing only by 1.4059 in scale against the Gaussian constant IQR/sigma = 1.349
+    uses_reference:
+      - standardize
+      - correlation
+  - index: 2
+    slug: leave_one_out_encoding
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement leave-one-out target encoding: for each row, compute the target mean excluding that row's own target value. Show how this reduces overfitting compared to naive target encoding.
+    zh: |
+      實作留一法目標編碼：對每一列，計算目標平均值時排除該列自己的目標值。展示這樣做和天真的目標編碼相比，如何減少過度擬合。
+    verifies: on a categorical column assigned independently of the target, naive target encoding reaches training correlation +0.4607 and a fitted slope of exactly +1.0000 - an identity map, the feature being a copy of the target - with train/test RMSE 0.8616/1.1409, a gap of +0.2793, and held-out error WORSE than ignoring the feature entirely (0.9940); leave-one-out closes the gap to +0.0345 and matches the mean-only baseline; where the category carries real signal it keeps it (held-out 1.0423 against 1.4886 mean-only and 1.0593 naive); FINDING leave-one-out over-corrects to -0.1323 rather than landing on zero; and FINDING the lesson's smoothing does not address leakage at all (+0.4607, +0.4320, +0.4196 at smoothing 0, 10, 50)
+    uses_reference:
+      - target_encode
+      - correlation
+  - index: 3
+    slug: feature_selection_pipeline
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build an automated feature selection pipeline that combines variance threshold, correlation filtering, and mutual information ranking. Apply it to the housing dataset and compare model performance (use a simple linear regression) with all features vs selected features.
+    zh: |
+      打造一條自動化的特徵選擇流程，把變異數閾值、相關係數篩選與互資訊排序結合起來。把它套用到房價資料集上，並比較「用全部特徵」與「用選出的特徵」時的模型表現（用一個簡單的線性迴歸就好）。
+    verifies: against three planted columns - near-constant, a near-duplicate of sqft, and pure noise - variance_threshold(0.01) removes exactly the first and remove_correlated(0.9) exactly the second, but FINDING mutual information ranks the pure-noise column 2nd of 8 against a 5-bin target (0.1213, above age 0.1190 and bedrooms 0.1090) and 3rd of 8 against the raw continuous target, where every one of 200 prices is its own class; held-out RMSE barely moves (23,725 on all 10 columns, 23,600 after two stages, 24,411 on the MI top-5, against 83,642 for the mean), so selection does not buy accuracy here - what it buys is conditioning, the design's condition number falling from 3.79e+19 to 1.24e+04
+    uses_reference:
+      - impute_median
+      - one_hot_encode
+      - variance_threshold
+      - remove_correlated
+      - mutual_information
+      - bin_values
+      - make_housing_data
