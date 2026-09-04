@@ -7,8 +7,10 @@ prove nothing.
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import importlib.util
+import io
 import os
 import pathlib
 
@@ -52,14 +54,23 @@ def lesson_dir(phase: str, lesson: str) -> pathlib.Path:
 
 
 def load_reference(phase: str, lesson: str, module: str):
-    """Import `phases/<phase>/<lesson>/code/<module>.py` from the reference repo."""
+    """Import `phases/<phase>/<lesson>/code/<module>.py` from the reference repo.
+
+    Import-time stdout is swallowed. Not every lesson module guards its demos
+    behind `if __name__ == "__main__"` — 02/02 and 02/03 do not — and importing
+    one of those otherwise dumps its whole demo transcript into the runner's
+    output (361 lines for one lesson, against ~30 of actual checks). We import
+    their code as a library; they wrote it as a script, and that is the seam.
+    stderr is left alone so a real import failure is still visible.
+    """
     source = lesson_dir(phase, lesson) / "code" / f"{module}.py"
     if not source.is_file():
         raise ReferenceNotFound(f"reference module not found: {source}")
     name = f"_aiefs_ref_{phase}_{lesson}_{module}".replace("-", "_")
     spec = importlib.util.spec_from_file_location(name, source)
     loaded = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(loaded)
+    with contextlib.redirect_stdout(io.StringIO()):
+        spec.loader.exec_module(loaded)
     return loaded
 
 

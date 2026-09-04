@@ -29,6 +29,14 @@ def test_reference_is_found_by_ancestor_search():
     assert (root / "phases" / PHASE / LESSON / "docs" / "en.md").is_file()
 
 
+def test_load_reference_swallows_import_time_stdout(capsys):
+    """Some lesson modules run their demos at import; that must not reach the runner."""
+    parity.load_reference("02-ml-fundamentals", "03-logistic-regression",
+                          "logistic_regression")
+    captured = capsys.readouterr()
+    assert captured.out == "", f"import leaked {len(captured.out)} chars of demo output"
+
+
 def test_load_reference_imports_rather_than_copies():
     module = parity.load_reference(PHASE, LESSON, "vectors")
     assert module.__file__.endswith("code/vectors.py")

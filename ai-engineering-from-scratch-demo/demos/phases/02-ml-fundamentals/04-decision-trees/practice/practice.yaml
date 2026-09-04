@@ -1,0 +1,78 @@
+lesson: 04-decision-trees
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/04-decision-trees/docs/en.md
+exercises:
+  - index: 1
+    slug: tree_depth_boundaries
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Train a single decision tree on a 2D dataset with 3 classes. Manually trace the splits and draw the rectangular decision boundaries. Compare the boundaries at max_depth=2 vs max_depth=10.
+    zh: |
+      在一份有 3 個類別的 2D 資料集上訓練單一棵決策樹。手動追蹤每次分裂，並畫出矩形的決策邊界。比較 max_depth=2 與 max_depth=10 時的邊界。
+    verifies: depth 2 gives 4 leaves using only 2 of 3 classes against depth 10's 29, with leaves = splits + 1 in both; all 31 internal nodes carry a single (feature, threshold) pair, so every region is an axis-aligned box; and depth 10 beats depth 2 on TEST as well as train (98.3% against 66.7%), so this pairing is underfitting rather than overfitting
+    uses_reference:
+      - DecisionTree
+      - generate_classification_data
+      - train_test_split
+      - accuracy
+  - index: 2
+    slug: regression_tree
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement variance reduction splitting for regression trees. Generate y = sin(x) + noise for 200 points and fit your regression tree. Plot the tree's piecewise-constant predictions against the true curve.
+    zh: |
+      為迴歸樹實作變異縮減分裂。從 y = sin(x) + noise 產生 200 個點，並配適你的迴歸樹。把樹的分段常數預測與真實曲線畫在一起比較。
+    verifies: variance_reduction is non-negative; RMSE against the true sine is U-shaped in depth (0.253/0.111/0.161 at depths 2/6/12), so more depth stops helping once 189 leaves fit 200 points; the fit is piecewise constant with distinct values equal to contiguous runs over sorted x; and the steep/flat error ratio is 2.35 at depth 6 but ~1.0 at both extremes, so 'a constant cannot follow a slope' is only visible at the right depth
+    uses_reference:
+      - DecisionTree
+      - variance_reduction
+  - index: 3
+    slug: forest_size
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a random forest with 1, 5, 10, 50, and 200 trees. Plot training accuracy and test accuracy vs number of trees. Observe that test accuracy plateaus but does not decrease (forests resist overfitting).
+    zh: |
+      分別用 1、5、10、50、200 棵樹建構隨機森林。把訓練準確率與測試準確率對樹的數量畫出來。你會觀察到測試準確率會趨於平坦，但不會下降（森林能抵抗過度擬合）。
+    verifies: over 5 seeds per size, test accuracy rises 88.7% to 94.3% from 1 to 200 trees and never falls more than 0.67% below its running maximum - within seed noise, which five points from one seed could not have established; seed-to-seed spread falls 13.3% to 1.7%, showing the variance reduction directly
+    uses_reference:
+      - RandomForest
+      - generate_classification_data
+      - train_test_split
+      - accuracy
+  - index: 4
+    slug: gini_vs_entropy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare Gini impurity vs entropy as split criteria on 5 different datasets. Measure accuracy and tree depth. In most cases, they produce nearly identical results. Explain why.
+    zh: |
+      在 5 份不同的資料集上比較吉尼不純度與熵這兩種分裂標準。量測準確率與樹深度。大多數情況下，兩者的結果幾乎相同。解釋為什麼。
+    verifies: across 5 datasets the two criteria differ by at most 2.0% in test accuracy and agree on depth 5 of 5 times; entropy peaks at exactly 2x Gini (1.0 against 0.5) so H/2 is the fair comparison, where the largest gap over every binary balance is 0.0545 - small but not zero; and the two impurity curves correlate at 0.99578, which is why the argmax over candidate splits coincides
+    uses_reference:
+      - DecisionTree
+      - gini_impurity
+      - entropy
+      - generate_classification_data
+      - train_test_split
+      - accuracy
+  - index: 5
+    slug: permutation_importance
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement permutation importance. Compare it with MDI importance on a dataset where one feature is random noise but has high cardinality. MDI will rank the noise feature highly. Permutation importance will not.
+    zh: |
+      實作置換重要性。在一份「某個特徵其實是隨機雜訊、但基數很高」的資料集上，把它和 MDI 重要性做比較。MDI 會把那個雜訊特徵排得很前面，置換重要性不會。
+    verifies: MDI gives a pure-noise continuous column 25% of total importance while permutation importance on held-out rows gives it +0.02, and permutation ranks both signal features above both noise ones; the 2-valued noise column gets MDI 0.0 despite being equally uninformative, isolating cardinality as the mechanism; and 25% label noise is shown to be required - without it the tree hits 100% train accuracy on signal alone and MDI gives the noise columns 0.006 and 0.000
+    uses_reference:
+      - DecisionTree
+      - train_test_split
+      - accuracy
