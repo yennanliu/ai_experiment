@@ -78,8 +78,9 @@ This is the structural fact the whole design rests on. From
 
 Acceptance criteria, fixture sizes and thresholds, written into the prompt.
 Nothing has to be invented to know whether a solution is correct. That is what
-makes 2,090 solutions tractable where 426 hand-designed parity demos were not:
-the spec is free, and the gate can be mechanical (§6).
+makes 2,090 solutions tractable where hand-designed parity demos were not: the
+spec is free, and the gate can be mechanical (§6). Parity demos have to invent
+their own spec, and only ~200 lessons support one at all (D5).
 
 ### Exercise mix
 
@@ -141,7 +142,7 @@ value and identify where any delta comes from" — so their solutions call
 ## 3. Core design decisions
 ### D1 — Path-identical mirroring
 
-```
+```text
 demos/phases/11-llm-engineering/12-guardrails/
 ```
 
@@ -196,7 +197,7 @@ reference_doc: phases/11-llm-engineering/08-fine-tuning-lora/docs/en.md
 The reference repo fakes model responses by hand. This repo **records real ones
 once** into `cassettes/*.json` and replays them by default:
 
-```
+```text
 DEMO_MODE=replay   # default. Deterministic, free, offline, CI-safe.
 DEMO_MODE=live     # hits the provider, re-records, prints token cost.
 ```
@@ -224,14 +225,18 @@ machinery (`harness/parity.py`) is called from exercise solutions too.
 
 ### D6 — Uniform per-artifact contract
 
-Every lesson directory is a **container** with two optional halves:
+Every lesson directory is a **container** with two halves. The `practice/` half is
+the deliverable and is always present; the parity demo is optional **as a unit** —
+either all four of its files exist or none do, because `audit_demos.py` requires a
+manifest, a README and ≥3 tests of any demo that exists (§7):
 
-```
+```text
 demos/phases/<phase>/<lesson>/
-├── demo.yaml            # optional — the parity demo
-├── run.py               # optional — its entrypoint; --explain prints concept + link
-├── tests/test_*.py      # optional — the demo's tests
-└── practice/            # the deliverable (D10)
+├── demo.yaml            # ┐ the parity demo (D5, D9) — optional, but
+├── run.py               # │ all-or-nothing: its entrypoint; --explain
+├── README.md            # │ prints concept + link
+├── tests/test_*.py      # ┘ ≥3, per audit_demos.py
+└── practice/            # the deliverable (D10) — always present
     ├── practice.yaml
     ├── README.md
     ├── exNN_<slug>.py
@@ -269,7 +274,7 @@ declared `deps_group` — otherwise groups rot into a second monolith.
 
 ### D9 — Solutions are the unit of value
 
-The primary deliverable is 2,090 exercise solutions plus 5 labs, not 426 parity
+The primary deliverable is 2,090 exercise solutions plus 5 labs, not the ~200 parity
 demos. Rationale, in the order it matters:
 
 1. **The spec is free.** The exercise states the task, the fixture size and the
@@ -277,7 +282,7 @@ demos. Rationale, in the order it matters:
 2. **It answers what the learner is actually stuck on.** They hit the exercise
    list; they never wondered whether the lesson matched torch.
 3. **One commitment, not two.** 2,090 solutions is already the larger promise;
-   layering 426 invented demos on top doubles it for less return.
+   layering ~200 invented demos on top adds cost for less return.
 
 Parity keeps its machinery and its ~200 optional demos (D5). A lesson may ship
 `practice/` alone, both halves, or — for the 33 lessons with no exercises —
@@ -288,11 +293,12 @@ neither.
 `ex<NN>_<slug>.py`, zero-padded to match the numbered list in `docs/en.md`.
 Exercise 3 on the lesson page → `ex03_*.py`, by string substitution: the same
 property D1 gives the lesson path, one level deeper. Each file is independently
-runnable (`python ex03_*.py`) and independently graded.
+runnable (`uv run python ex03_sliding_window_rate_limit.py`, per §8 Q2) and
+independently graded.
 
 The full shape, for the lesson this design was written against:
 
-```
+```text
 demos/phases/11-llm-engineering/12-guardrails/practice/
 ├── practice.yaml
 ├── README.md                            # bilingual exercise list; prose answers
@@ -425,7 +431,7 @@ hard exercise. The ceiling is a correctness signal as much as a style one.
 
 `demo coverage --practice` generates a 2,090-row table from the tree:
 
-```
+```text
 ✅ verified   ⬚ unbuilt   📝 prose answered   ⏭ tier-skipped   ⚠ spec drifted
 ```
 
@@ -440,7 +446,7 @@ there invalidates the answer — so it is tracked separately from
 ---
 
 ## 4. Repo layout
-```
+```text
 ai-engineering-from-scratch-demo/
 ├── DESIGN.md
 ├── README.md                  # coverage table, generated
@@ -460,7 +466,8 @@ ai-engineering-from-scratch-demo/
 │   ├── audit_demos.py         # every demo has manifest, README, >=3 tests
 │   ├── audit_practice.py      # D14's ceilings; every doc exercise has an entry
 │   ├── scaffold.py            # generate a demo skeleton from a lesson path
-│   └── scaffold_practice.py   # parse the exercise block -> practice.yaml + stubs
+│   ├── scaffold_practice.py   # parse the exercise block -> practice.yaml + stubs
+│   └── notebooks.py           # generate .ipynb from run.py / exNN (D7)
 ├── cassettes/                 # shared fixtures
 └── (CI) .github/workflows/
     ├── t0.yml                 # every push
@@ -547,11 +554,18 @@ them `n/a` rather than `⬚`, so they never read as unfinished work.
 2. **One agent invocation per lesson** (3–8 exercises), context capped at that
    lesson's `docs/en.md`, its `code/*`, and the exercise text. No repo-wide
    context, so cost is flat per lesson: ~474 invocations, not 2,090.
-3. **The gate is mechanical.** `audit_practice.py` + every `exNN` actually running
-   + `tests/test_practice.py` passing + inside the tier budget. Any of: over
-   length, complexity above 8, a missing `verifies` threshold, a surviving
-   scaffold `TODO`, an unlabelled fixture, a T3 solution that only skips, or a
-   non-zero exit = rejected, with no human in the loop.
+3. **The gate is mechanical, and kind-aware (D11).** For `code` and `lab`:
+   `audit_practice.py` + every `exNN` actually running + `tests/test_practice.py`
+   passing + inside the tier budget. Any of: over length, complexity above 8, a
+   missing `verifies` threshold, a surviving scaffold `TODO`, an unlabelled
+   fixture, a T3 solution that only skips, or a non-zero exit = rejected.
+
+   `explain` items (127) ship prose in `practice/README.md` and no file, so
+   neither "runs" nor `verifies` applies to them. Their equivalent gate is
+   **a resolvable citation**: every answer names the lesson section it draws on,
+   `audit_practice.py` checks that anchor exists in `docs/en.md`, and an answer
+   with no citation or a dead one is rejected. Both paths run with no human in
+   the loop.
 4. **Human review is per phase batch**, and reads three things: the coverage table;
    every **"Reading of the exercise:"** line, which is where a generator can
    quietly answer a different question and no gate will catch it; and the

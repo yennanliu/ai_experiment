@@ -119,9 +119,23 @@ discovered as three weeks.
 
 Exercise 5 is the one to watch: "identify which category has the lowest detection
 rate and write 3 additional rules to improve it" makes the *solution* depend on
-its own measurement, so its `verifies` must assert the *improvement*, not a fixed
-category name — and the fixture must not be tuned until the answer is whatever the
-author wanted.
+its own measurement, so its `verifies` cannot name a fixed category. Grading is
+therefore undefined until the contract below is written down — and it must be
+settled **before** the fixture is scaffolded, or the fixture gets tuned until the
+answer is whatever the author wanted. One contract, shared verbatim by
+`verifies`, `tests/test_practice.py` and `PRACTICE_IMPL`:
+
+| Term | Definition |
+|---|---|
+| Baseline | the lesson's own `GuardrailPipeline` at its shipped rule set, unmodified |
+| Metric | per-category **recall** over the 100-attack / 5-category fixture — an attack counts as detected if any rule fires |
+| Weakest category | the strictly lowest baseline recall. If two tie, the fixture is wrong and must be regenerated: the exercise presumes a unique answer |
+| Required improvement | recall in *that* category rises by **≥ 0.20 absolute**, and no other category's recall falls |
+| "3 additional rules" | exactly 3 new entries appear in the pipeline's rule registry between baseline and post state, counted by registry diff, not by lines added |
+
+The solution reports which category it picked; the test asserts the *delta*, so a
+correct solution stays correct if the fixture is later regenerated with a
+different weakest category.
 
 ---
 
@@ -145,9 +159,15 @@ clean. A milestone with a red gate is not done, whatever its exercise count.
 
 ## 6. Sequencing notes
 
-- **§3 and §4 are strictly serial.** Everything after M0.5 parallelises by phase,
-  because `DESIGN D1`'s path-identical mirroring means two phases never touch the
-  same file.
+- **§3 and §4 are strictly serial.** After M0.5, *solution work* parallelises by
+  phase: `DESIGN D1`'s path-identical mirroring means two phases never touch each
+  other's `demos/phases/**` files. Six things are shared, though, and are not
+  covered by that argument — `harness/`, `scripts/`, `pyproject.toml` +
+  `uv.lock`, the generated root `README.md`, `cassettes/`, and the workflows.
+  Rule: a phase branch may not edit any of the six. A harness or dependency change
+  a phase needs lands first, on its own, and the phase branches rebase onto it;
+  `README.md` and `uv.lock` are regenerated on `main` after a merge, never carried
+  in a phase branch, so they cannot conflict.
 - **M1 before M2**, despite M2 being easier: M1's T2 exercises are the only ones
   that exercise cassettes end to end, and a cassette bug found at 285 exercises is
   far more expensive than one found at 79.
