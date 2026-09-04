@@ -3,7 +3,12 @@
 -  https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/a4g31o/background
 
 
-## Progress
+## Progress (done)
+
+
+- 20260904
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/hl2njqx/infrastructure-(part-2)
+	- https://learn.deeplearning.ai/courses/fine-tuning-and-reinforcement-learning-for-llms-intro-to-post-training/lesson/rm98gm7/production-ready-checklist
 
 
 - 20260831
