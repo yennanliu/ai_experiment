@@ -4,6 +4,9 @@
 
 ## Todo
 
+- official plugin / mcp
+  - ChatGPT -> Claude
+  - webmcp
 - build `auto dev agent system` via claude SDK, api key gateway hack
   - ref: xxx
 - fine tune open source model (higging face)
