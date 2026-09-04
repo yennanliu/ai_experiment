@@ -6,19 +6,25 @@ A companion repo of **runnable, verified solutions to every exercise** in
 
 Status: **design settled, nothing built in this branch yet.** M0 was built and
 verified once in a prior spike (2026-09-02) — the harness, four gates and four
-demos across three tiers all ran; that run is kept as evidence in §10, but none
+demos across three tiers all ran; that run is kept as evidence in §9, but none
 of its code is here. **Revised 2026-09-03**: exercise solutions are the repo's
 unit of value and parity demos are optional (§2, D9). **2026-09-04**: all four
-open questions closed (§9), and §12 sequences the build from an empty tree.
+open questions closed (§8), and the build sequence moved out to
+[`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) — this file is design only.
+
+Bare `§N` refers to a section of this file; `PLAN §N` to one of
+`IMPLEMENTATION_PLAN.md`; `D<n>` to a decision in §3.
 
 Every number in §1 and §5 was derived by a census script that reads the reference
 checkout, and none is hand-maintained. That script lands as `scripts/census.py` in
-M0.5 (§6), so the figures below stay re-checkable rather than becoming folklore.
+M0.5 (PLAN §4), so the figures below stay re-checkable rather than becoming folklore.
+
+---
+
 
 ---
 
 ## 1. What the reference repo actually is
-
 Measured, not assumed (`phases/` tree, 2026-09-03):
 
 | Fact | Number |
@@ -73,12 +79,12 @@ This is the structural fact the whole design rests on. From
 Acceptance criteria, fixture sizes and thresholds, written into the prompt.
 Nothing has to be invented to know whether a solution is correct. That is what
 makes 2,090 solutions tractable where 426 hand-designed parity demos were not:
-the spec is free, and the gate can be mechanical (§7).
+the spec is free, and the gate can be mechanical (§6).
 
 ### Exercise mix
 
 Classified by keyword by the census script — estimates, which the scaffold
-proposes and a human confirms per phase batch (§7.4). One bucket per exercise,
+proposes and a human confirms per phase batch (§6.4). One bucket per exercise,
 assigned in the priority order shown, so the five sum to 2,090:
 
 | Bucket | Count | Share | Ships as |
@@ -94,8 +100,10 @@ Buckets are not the same axis as D11's `kind`: everything but the first 127 is
 178 exercises need a key or a GPU, 127 need a source to cite, and the remaining
 1,785 need nothing but a laptop.
 
-## 2. The gap this repo fills
 
+---
+
+## 2. The gap this repo fills
 **The reference repo asks 2,090 questions and answers none of them.** A learner
 finishing `11-llm-engineering/12-guardrails` is told to build a LlamaGuard-style
 13-category classifier, an encoding-evasion detector across six encodings, a
@@ -127,8 +135,10 @@ HuggingFace, compute total parameters from scratch, compare to the HF-reported
 value and identify where any delta comes from" — so their solutions call
 `harness/parity.py` directly. The M0 investment is reused, not retired.
 
-## 3. Core design decisions
 
+---
+
+## 3. Core design decisions
 ### D1 — Path-identical mirroring
 
 ```
@@ -324,7 +334,7 @@ backing model to Qwen3-Coder-30B on vLLM, compare pass@1 and $-per-task" becomes
 the same comparison code over a 20-item fixture against cassettes, plus the real
 command and its cost printed. D2 permits explain-and-skip; for exercises that is
 not enough, because the exercise asked for a measurement and a skip measures
-nothing. A T3 solution that only skips fails the audit (§8).
+nothing. A T3 solution that only skips fails the audit (§7).
 
 ### D12 — The exercise text is the spec: stored verbatim, and bilingually
 
@@ -362,7 +372,7 @@ Solution code and docstrings are English, by code convention; the generated
 page, which is the one actually being read.
 
 Storing the text verbatim rather than a summary is what makes D15's drift check
-meaningful and what lets the generator (§7) be handed a spec rather than a gist.
+meaningful and what lets the generator (§6) be handed a spec rather than a gist.
 
 ### D13 — Every solution doubles as an auto-grader
 
@@ -406,7 +416,7 @@ copy task. Do more heads help, plateau, or hurt?"* has no single right answer an
 several defensible setups. Forcing the chosen interpretation into the docstring
 makes the one failure mode a generator cannot be gated against — quietly answering
 a different question — visible in a diff, and it is the specific thing phase-batch
-review reads (§7.4).
+review reads (§6.4).
 
 A solution that cannot fit in 120 lines is nearly always a misread exercise, not a
 hard exercise. The ceiling is a correctness signal as much as a style one.
@@ -426,8 +436,10 @@ not (solutions still valid), or the body is untouched and an exercise was reword
 there invalidates the answer — so it is tracked separately from
 `reference_doc_sha256`.
 
-## 4. Repo layout
 
+---
+
+## 4. Repo layout
 ```
 ai-engineering-from-scratch-demo/
 ├── DESIGN.md
@@ -473,8 +485,10 @@ demo verify --tier T0                                             # what CI runs
 demo coverage --practice                                          # honest, per-exercise
 ```
 
-## 5. Measured exercise load per phase
 
+---
+
+## 5. Measured exercise load per phase
 `labs` are counted separately: one deliverable each, not N exercises (D11).
 
 | Phase | Lessons | Exercises | code | patch | T2 | T3 | prose | labs |
@@ -519,43 +533,10 @@ The 33 lessons with no practice content (`01/15-statistics-for-ml`, two Phase 13
 MCP lessons, 30 Phase 19 capstones) get no `practice/` directory. Coverage marks
 them `n/a` rather than `⬚`, so they never read as unfinished work.
 
-## 6. Build order
 
-Sequenced by return, not by phase number.
+---
 
-- **M0 — Harness. Proven once, to be rebuilt here (§12).** See §10 for what the
-  prior spike established and §12.1 for the rebuild items.
-- **M0.5 — Practice harness + one golden reference (~3 days).**
-  `practice.yaml` in `harness/manifest.py`; `harness/practice.py` (the
-  `PRACTICE_IMPL` grading shim, D13); `demo practice` subcommands;
-  `scripts/scaffold_practice.py`; `scripts/audit_practice.py`;
-  `coverage.py --practice`; `scripts/census.py`. Then
-  **`11/12-guardrails` built end to end** as the reference every later solution is
-  generated against: 5 exercises, 4 fixtures, no prose items, all T0, no API key
-  required. If the conventions cannot carry those five they cannot carry 2,090.
-- **M1 — Phase 11 (17 lessons, 79 exercises).** Where `progress.txt` sits, so it
-  is immediately useful. Its 6 T2 exercises force the cassette design under real
-  conditions and close M0's last open item by recording
-  `cassettes/prompt-patterns.json`.
-- **M2 — Phases 01, 02, 03, 07 (69 lessons, 285 exercises).** All T0/T1, no keys,
-  no GPU, 1 prose item across 92 in Phase 01. This is where the generation
-  pipeline gets stress-tested at volume, and where reused parity assertions land
-  hardest.
-- **M3 — Phases 13 + 14 (73 lessons, 360 exercises + 5 labs).** Adjacent to the
-  existing `mcp/`, `agent_sysem/` and `orchestration_agents/` work in
-  `ai_experiment`; a real MCP server over stdio is a far better artifact than a
-  simulated one. The 5 labs land here, so `kind: lab` gets exercised.
-- **M4 — Phase 10 (24 lessons, 116 exercises).** own-GPT-vs-HF parity as the
-  natural sequel to M2.
-- **M5 — Long tail: 00, 04, 05, 06, 08, 09, 12, 15, 16, 17, 18 (998 exercises).**
-  Batched by `deps_group` so one env install serves a whole batch. The three
-  prose-heavy phases sit here, so a large slice is written answers rather than code.
-- **M6 — Phase 19 (252 exercises across 53 lessons).**
-
-## 7. How 2,090 solutions actually get written
-
-Manually authoring 2,090 solutions is not credible; a generation pipeline is,
-provided the gate is execution rather than review-by-eyeball.
+## 6. How 2,090 solutions actually get written
 
 1. **`scaffold_practice.py <lesson>`** parses `## Exercises` from `docs/en.md` and
    `## 練習` from `docs/zh.md` (and `## Practice Lab`, as one `lab` entry), folds
@@ -580,10 +561,11 @@ Realistic throughput: one phase per session for T0 phases, slower for
 cassette-heavy and prose-heavy phases where each item needs a live recording pass
 or a real source to cite.
 
-## 8. Risks and how each is contained
 
-| Risk | Containment |
-|---|---|
+---
+
+## 7. Risks and how each is contained
+
 | Solutions spoil the exercise | D13 — every solution is also a grader for the learner's own attempt; `practice/README.md` leads with the exercise, not the answer |
 | Generator answers a *different* question | Mandatory "Reading of the exercise:" docstring line (D14); the one thing phase-batch review must read, since no gate can catch it |
 | 2,090 files of plausible-looking slop | D14's mechanical ceilings — 120 lines, complexity 8, one file, no cross-imports. Needing more than 120 lines usually means the exercise was misread |
@@ -597,10 +579,10 @@ or a real source to cite.
 | API costs during authoring | T2 authoring is the only live-key path; one recording per exercise, cost printed and logged per run |
 | Scope creep into rewriting the curriculum | Hard rule: a solution answers the exercise as posed. It may not re-teach the lesson, and it may not improve the exercise — a bad exercise is an upstream issue to file, not a thing to silently fix |
 
-## 9. Settled questions
 
-All four questions that were open through M0 are now closed (2026-09-04).
-Nothing here blocks M1.
+---
+
+## 8. Settled questions
 
 1. **Separate GitHub repo, or a directory inside `ai_experiment`?**
    **Settled: a directory inside `ai_experiment`.** One repo, no split. The cost
@@ -629,10 +611,11 @@ Nothing here blocks M1.
 
 ---
 
-## 10. M0 — what the prior spike proved (2026-09-02)
 
-**This code is not in this branch.** It was built and verified once on a separate
-branch and is recorded here because it de-risks §12.1: every module below is known
+---
+
+## 9. What the prior spike proved (2026-09-02)
+
 to be buildable to this design, and the two findings at the end of this section
 are the kind of thing only a real run surfaces. `uv run demo verify` was green
 there: 6 pass, 1 skip (the T2 demo, which had no recorded tape).
@@ -680,122 +663,3 @@ pass, inside the declared budget). Plus `scaffold.py` and `notebooks.py` (D7).
 
 **Open for M1:** record `cassettes/prompt-patterns.json` once with a live key
 (`DEMO_MODE=live`), which closes the last M0 shape and unskips 4 tests.
-
-## 11. M0.5 — the golden reference, scoped
-
-`11/12-guardrails` is the lesson this revision was designed against, so it is the
-one to build first. It is a good choice on the merits: 5 exercises, all `code`,
-all T0, no prose items, no API key, and each one states its own fixture size and
-threshold.
-
-| Ex | Solution | Fixture | `verifies` |
-|---|---|---|---|
-| 1 | `ex01_safety_category_classifier.py` | 50 labelled prompts | macro P/R over 13 MLCommons categories |
-| 2 | `ex02_encoding_evasion_detector.py` | 20 encodings of one payload | all 20 decoded and flagged; 6 encodings covered |
-| 3 | `ex03_sliding_window_rate_limit.py` | none (generated burst) | 15 req / 30 s → 10 allowed, 5 blocked, retry-after correct |
-| 4 | `ex04_rag_hallucination_detector.py` | 10 response/source pairs | every <20%-overlap sentence flagged, no false positives on the paired set |
-| 5 | `ex05_red_team_suite.py` | 100 attacks / 5 categories | per-category detection rate; the weakest category identified and 3 rules added |
-
-The lesson's `code/guardrails.py` already exports what these build on —
-`detect_injection`, `detect_pii`, `classify_topic`, `check_relevance`,
-`check_system_prompt_leak`, `GuardrailPipeline`, `GuardrailMonitor` — so
-`uses_reference` is populated from real symbols and no solution needs to fork the
-lesson's code. Verified before writing this section, which is why M0.5 can be
-scoped as three days rather than discovered as three weeks.
-
-Exercise 5 is the one to watch: "identify which category has the lowest detection
-rate and write 3 additional rules to improve it" makes the *solution* depend on
-the measurement, so its `verifies` must assert the improvement, not a fixed
-category name — the fixture must not be tuned until the answer is whatever the
-author wanted.
-
----
-
-## 12. Implementation plan
-
-§6 sequences *what* gets built and why. This section is the executable version:
-items, exit gate and effort per milestone, from an empty tree.
-
-**How the effort numbers were derived.** They are estimates, not measurements —
-unlike §1 and §5, nothing here comes from a census script. Two inputs: the prior
-spike's actual cost for M0-scale work (§10), and a stated throughput assumption
-for solution volume. That assumption is **~13 exercises/day through M1** while the
-generation pipeline (§7) is still being tuned, **~30/day for M2–M4** once it is,
-and **~40/day for M5–M6** where prose answers and repeated `deps_group` batches
-dominate. One person, working days. Re-derive the totals if the assumption moves —
-that is the only knob.
-
-### 12.1 M0 — Harness rebuild · ~4 days
-
-Rebuilt from scratch, but against a design the prior spike already validated
-(§10), so this is construction rather than discovery.
-
-| # | Item | Done when |
-|---|---|---|
-| 1 | `pyproject.toml` + `uv.lock`; the six `--extra` groups of D8 | `uv sync --extra math` resolves offline on a clean machine |
-| 2 | `harness/manifest.py` — `demo.yaml` schema + strict YAML subset parser | round-trips every field in D3; rejects an unknown key loudly |
-| 3 | `harness/tiers.py` — capability probe | "no GPU" / "no key" becomes a skip **with a remedy string**, never a stack trace |
-| 4 | `harness/parity.py` — `load_reference` + `assert_close` | imports the lesson's own module; never copies it; reports measured deviation |
-| 5 | `harness/cassette.py` — record/replay, provenance, cost, redaction | a live record then a replay produce byte-identical output; no key survives the write boundary |
-| 6 | `harness/coverage.py` — reference tree vs demo tree + doc-hash drift | `--check` exits non-zero on drift |
-| 7 | `harness/runner.py` + `explain.py` — `demo list/run/verify/coverage`, `--explain` | all four work on bare Python with **zero** deps installed |
-| 8 | Gates: `audit_demos.py`, `check_deps.py`, `coverage.py --check` | each fails a deliberately broken fixture |
-| 9 | CI: `../.github/workflows/aiefs-demo-{t0,t1,t2-live}.yml` with `paths:` + `working-directory:` (Q1) | T0 green on push |
-| 10 | Two seed demos, one T0 + one T1 | `uv run demo verify --tier T0` green |
-
-**Exit gate:** `uv run demo verify` green, and every gate demonstrated failing on
-a broken fixture — a gate never seen to fail is not a gate.
-
-**Risk:** item 2. A strict YAML subset parser is the one place the zero-dep rule
-buys trouble; budget a day for it alone and keep the subset genuinely small.
-
-### 12.2 M0.5 — Practice harness + golden reference · ~3 days
-
-| # | Item | Done when |
-|---|---|---|
-| 1 | `practice.yaml` schema in `manifest.py` (D12, verbatim bilingual text) | parses `11/12-guardrails`' 5 exercises |
-| 2 | `harness/practice.py` — the `PRACTICE_IMPL` grading shim (D13) | one solution grades itself and a deliberately wrong variant fails |
-| 3 | `demo practice run / verify / list` subcommands | `--ex 3` runs exactly one |
-| 4 | `scripts/scaffold_practice.py` — parse `## Exercises` + `## 練習` → stubs | round-trips a lesson with wrapped lines and a `## Practice Lab` |
-| 5 | `scripts/audit_practice.py` — D14's mechanical ceilings | fails a solution over the ceiling |
-| 6 | `coverage.py --practice`; `scripts/census.py` | census reproduces every number in §1 and §5 |
-| 7 | **`11/12-guardrails` end to end** — 5 solutions per §11 | all 5 green at T0, no key, no GPU |
-
-**Exit gate:** the golden reference is green *and* re-scaffolding it from scratch
-reproduces the same file set. If the conventions cannot carry these five, they
-cannot carry 2,090 — stop and revise rather than proceed.
-
-**Risk:** §11's Exercise 5 makes the solution depend on its own measurement. Its
-`verifies` must assert the *improvement*, not a fixed category name.
-
-### 12.3 M1–M6 — Solution volume
-
-| M | Scope | Lessons | Exercises | Effort | Milestone-specific items |
-|---|---|---|---|---|---|
-| **M1** | Phase 11 | 17 | 79 | **~6 d** | 6 T2 exercises force the cassette design under real load; record `cassettes/prompt-patterns.json` against OpenAI (Q3) and pin the model + `max_tokens` to the $0.02 budget |
-| **M2** | Phases 01, 02, 03, 07 | 69 | 285 | **~10 d** | All T0/T1 — no keys, no GPU. Volume stress-test of the §7 pipeline; reused parity assertions land hardest here |
-| **M3** | Phases 13 + 14 | 73 | 360 + 5 labs | **~13 d** | First `kind: lab` entries. A real MCP server over stdio, reusing `mcp/` and `orchestration_agents/` |
-| **M4** | Phase 10 | 24 | 116 | **~4 d** | own-GPT-vs-HF parity, the natural sequel to M2 |
-| **M5** | Long tail: 00, 04, 05, 06, 08, 09, 12, 15, 16, 17, 18 | — | 998 | **~25 d** | Batched by `deps_group`, one env install per batch. Three prose-heavy phases sit here. Phases 04 and 17 carry most of the T3 work — now verifiable at full scale (Q4) |
-| **M6** | Phase 19 | 53 | 252 | **~7 d** | — |
-|  | **Total** |  | **2,090** | **~65 d** | plus 7 d for M0 + M0.5 → **~72 working days ≈ 15 weeks** |
-
-Every milestone shares one exit gate: `uv run demo verify` green for its phases,
-`coverage.py --check --practice` showing no spec drift, and `audit_practice.py`
-clean. A milestone with a red gate is not done, regardless of exercise count.
-
-### 12.4 Sequencing notes
-
-- **12.1 and 12.2 are strictly serial.** Everything after M0.5 is parallelisable
-  by phase, because D1's path-identical mirroring means two phases never touch the
-  same file.
-- **M1 before M2** despite M2 being easier: M1's T2 exercises are the only ones
-  that exercise cassettes end to end, and a cassette bug found at 285 exercises is
-  far more expensive than one found at 79.
-- **The three highest-variance items are all early** — the YAML subset parser
-  (12.1), the grading shim (12.2) and the first real cassette (M1). If the plan
-  slips, it slips there, and it will be visible within the first two weeks.
-- **T3 at full scale (Q4) is not on the critical path.** D11's scaled-down
-  runnable is what CI gates on; full-scale GPU verification is a separate pass over
-  M5's Phase 04 and 17 work, and the README must record which of the two produced
-  any given result.
