@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from harness import manifest, runner  # noqa: E402
+from harness import manifest, parity, runner  # noqa: E402
 
 MAX_LINES = 120
 MAX_COMPLEXITY = 8
@@ -58,6 +58,34 @@ def audit_solution(path: pathlib.Path, exercise) -> list:
     return problems
 
 
+def audit_explain(exercise, readme, headings) -> list:
+    """DESIGN §6's gate for prose items: a *resolvable* citation.
+
+    The answer must name a lesson section, that section must actually exist in
+    the reference `docs/en.md`, and the README must carry the answer. A citation
+    that points nowhere is the prose equivalent of a test that asserts nothing.
+    """
+    problems = []
+    body = readme.read_text(encoding="utf-8") if readme.is_file() else ""
+    if exercise.cites not in body:
+        problems.append(f"ex{exercise.index:02d}: citation {exercise.cites!r} "
+                        f"not answered in README")
+    if headings is not None and exercise.cites not in headings:
+        problems.append(f"ex{exercise.index:02d}: cites {exercise.cites!r}, which is not "
+                        f"a heading in the lesson's docs/en.md")
+    return problems
+
+
+def _reference_headings(pack):
+    """The lesson's own section titles, or None if the reference is unreachable."""
+    try:
+        text = parity.doc_text(pack.phase, pack.lesson, "en")
+    except Exception:
+        return None
+    return {line.lstrip("#").strip() for line in text.splitlines()
+            if line.startswith("#")}
+
+
 def audit_lesson(man_path: pathlib.Path) -> list:
     pack = manifest.load_practice(man_path)
     directory = man_path.parent
@@ -65,11 +93,11 @@ def audit_lesson(man_path: pathlib.Path) -> list:
     readme = directory / "README.md"
     if not readme.is_file():
         problems.append(f"{directory}: no README.md")
+    headings = _reference_headings(pack) if any(
+        e.kind == "explain" for e in pack.exercises) else None
     for ex in pack.exercises:
         if ex.kind == "explain":
-            body = readme.read_text(encoding="utf-8") if readme.is_file() else ""
-            if ex.cites not in body:
-                problems.append(f"ex{ex.index:02d}: citation {ex.cites!r} not answered in README")
+            problems += audit_explain(ex, readme, headings)
             continue
         path = directory / ex.filename
         if not path.is_file():

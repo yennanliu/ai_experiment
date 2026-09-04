@@ -1,0 +1,36 @@
+lesson: 01-what-is-machine-learning
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/01-what-is-machine-learning/docs/en.md
+exercises:
+  - index: 1
+    slug: three_way_split
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Take any dataset (e.g., Iris, Titanic). Split it 70/15/15 into train/validation/test. Explain why you should not tune hyperparameters on the test set.
+    zh: |
+      隨便挑一個資料集（例如 Iris、Titanic）。以 70/15/15 切成訓練／驗證／測試。說明為什麼你不該在測試集上調超參數。
+    verifies: the 150 Iris rows split 105/22/23, summing to 150 with zero rows shared between splits and proportions within 1% of 70/15/15; the second call is shown to need test_fraction=0.5 on the remainder rather than 0.15, which would give 38/7; and the prose half is argued mechanically - selecting the best of 40 candidates by validation score inflates that score 0.127 over the same candidate's test score
+    uses_reference:
+      - train_test_split
+  - index: 2
+    slug: three_problems_classified
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      List three real-world problems. For each one, identify whether it is classification, regression, or clustering, and whether it is supervised or unsupervised.
+    zh: |
+      列出三個真實世界的問題。針對每一個，判斷它是分類、迴歸還是分群，以及它屬於監督式還是非監督式。
+    cites: The Three Types of Machine Learning
+  - index: 3
+    slug: diagnose_overfitting
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      A model gets 99% accuracy on training data but 60% on test data. Diagnose the problem and list three things you would try to fix it.
+    zh: |
+      有個模型在訓練資料上準確率 99%，但在測試資料上只有 60%。診斷問題出在哪，並列出三件你會拿來修它的事。
+    cites: Overfitting vs Underfitting

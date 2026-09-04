@@ -1,0 +1,80 @@
+lesson: 05-support-vector-machines
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/05-support-vector-machines/docs/en.md
+exercises:
+  - index: 1
+    slug: support_vectors
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Generate a 2D linearly separable dataset. Train your LinearSVM and identify the support vectors. Verify that the support vectors are the points closest to the decision boundary.
+    zh: |
+      生成一個二維的線性可分資料集。訓練你的 LinearSVM 並找出支持向量。驗證這些支持向量就是離決策邊界最近的那些點。
+    verifies: on separable data the SVM reaches 100% with 5 of 106 points inside the margin, and every margin point is nearer the boundary than every non-margin point (0.4735 against 0.4824, no interleaving); the margin set and the nearest-k set coincide exactly, which is an identity since distance is |f(x)|/||w|| with ||w|| constant; and on non-separable data they diverge (33 of 35) once 12 points are misclassified
+    uses_reference:
+      - LinearSVM
+      - generate_linear_data
+      - generate_noisy_data
+      - dot
+      - vec_norm
+      - accuracy
+  - index: 2
+    slug: c_parameter_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Vary C from 0.001 to 1000 on a noisy dataset. Plot the decision boundary for each C value. Observe the transition from wide margin (underfitting) to narrow margin (overfitting).
+    zh: |
+      在一個帶雜訊的資料集上，把 C 從 0.001 變化到 1000。為每一個 C 值畫出決策邊界。觀察它如何從寬間隔（擬合不足）過渡到窄間隔（過度擬合）。
+    verifies: C=0.001 is shown to DIVERGE rather than underfit - lambda=1000 with lr=0.01 gives a decay factor of -9, so w flips and grows to nan, and stability needs C > lr; over the stable range 1/||w|| falls 7.002 to 0.4576 with support vectors falling 192 to 30; and the largest C does not overfit (gap +5.5%), since a linear model in 2D lacks the capacity
+    uses_reference:
+      - LinearSVM
+      - generate_noisy_data
+      - train_test_split
+      - dot
+      - vec_norm
+      - accuracy
+  - index: 3
+    slug: rbf_kernel_separability
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a dataset where class boundaries are circular (not linear). Show that a linear SVM fails. Compute the RBF kernel matrix and show that the classes become separable in the kernel-induced feature space.
+    zh: |
+      造一個類別邊界是圓形（不是線性）的資料集。證明線性 SVM 會失敗。算出 RBF 核矩陣，並說明在核所誘導的特徵空間裡，這些類別變成可分的了。
+    verifies: the raw linear SVM reaches 55.0% test against a 65.0% majority baseline on circular data while a linear SVM on the kernel rows reaches 92.5% at gamma=5; k(x,x)=1 exactly at every gamma; held-out accuracy is U-shaped (35.0/92.5/80.0% at gamma 0.01/5/50); and the high-gamma failure is overfitting with mean within-class similarity 0.0091 and an 18.8% train-test gap, which is why a within/between ratio cannot be the criterion
+    uses_reference:
+      - LinearSVM
+      - generate_circular_data
+      - train_test_split
+      - compute_kernel_matrix
+      - rbf_kernel
+      - accuracy
+  - index: 4
+    slug: hinge_vs_logistic
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare hinge loss vs logistic loss on the same dataset. Train a linear SVM and logistic regression. Count how many training points contribute to each model's decision boundary (support vectors vs all points).
+    zh: |
+      在同一個資料集上比較合頁損失與邏輯損失。分別訓練一個線性 SVM 和一個邏輯迴歸。數一數各自有多少訓練點對模型的決策邊界有貢獻（支持向量 vs 全部的點）。
+    verifies: both models reach 94.0% on the same 200 points; the hinge boundary depends on exactly 35 of them, the other 165 contributing only weight decay; the logistic boundary depends on all 200, with exactly 0 points having p-y = 0 and the smallest |p-y| at 3.5e-07; so support sparsity is a property of the loss having a flat region, not of the optimiser or data
+    uses_reference:
+      - LinearSVM
+      - generate_noisy_data
+      - dot
+      - accuracy
+  - index: 5
+    slug: svr_epsilon_tube
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement SVR (epsilon-insensitive loss). Fit it to y = sin(x) + noise. Plot the epsilon tube around the predictions and highlight the support vectors (points outside the tube).
+    zh: |
+      實作 SVR（epsilon 不敏感損失）。把它配適到 y = sin(x) + noise。畫出預測值周圍的 epsilon 管子，並標出支持向量（落在管子外的點）。
+    verifies: an epsilon-insensitive SVR on sin's own Taylor basis leaves 71 of 120 points outside a 0.05 tube, falling monotonically to 0 by epsilon=0.4 - past which there are NO support vectors and the weights collapse to ||w|| 0.124 against 1.559; error against the true sine is U-shaped with the optimum at epsilon=0.15, near the noise scale; and at that epsilon the weights recover (1.001, -0.942, 0.736) against sin's (1, -1, 1)

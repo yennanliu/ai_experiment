@@ -17,6 +17,8 @@ whole reason to avoid forming it.
 
 from __future__ import annotations
 
+import math
+
 from harness import parity, practice
 
 PHASE, LESSON = "01-math-foundations", "17-linear-systems"
@@ -64,18 +66,28 @@ def solve():
     return {"rows": rows}
 
 
+def _log_ratio(row) -> float:
+    """log κ(XᵀX) / (2 log κ(X)) — the squaring claim, stated where it survives."""
+    return math.log10(row["kappa_gram"]) / (2 * math.log10(row["kappa_x"]))
+
+
 def verify(result):
     well = result["rows"]["well-conditioned"]
     ill = result["rows"]["ill-conditioned"]
     ill_gaps = ill["gaps"]
     return [
         practice.Check("κ(XᵀX) = κ(X)² — the reason forming the Gram matrix costs you",
-                       abs(well["kappa_gram"] / well["kappa_x"] ** 2 - 1) < 0.05
-                       and abs(ill["kappa_gram"] / ill["kappa_x"] ** 2 - 1) < 0.05,
-                       f"well-conditioned: κ(X) {well['kappa_x']:.1f} -> κ(XᵀX) "
-                       f"{well['kappa_gram']:.1f}; ill-conditioned: {ill['kappa_x']:.2e} -> "
-                       f"{ill['kappa_gram']:.2e}. Squaring the condition number halves the "
-                       f"digits you keep"),
+                       abs(well["kappa_gram"] / well["kappa_x"] ** 2 - 1) < 1e-6
+                       and abs(_log_ratio(ill) - 1) < 0.02,
+                       f"well-conditioned: κ(X) {well['kappa_x']:.4f} -> κ(XᵀX) "
+                       f"{well['kappa_gram']:.4f}, the identity holding to "
+                       f"{abs(well['kappa_gram'] / well['kappa_x'] ** 2 - 1):.1e}. "
+                       f"Ill-conditioned: {ill['kappa_x']:.3e} -> {ill['kappa_gram']:.3e}, "
+                       f"where the *ratio* is only good to "
+                       f"{abs(ill['kappa_gram'] / ill['kappa_x'] ** 2 - 1):.1%} — κ(XᵀX) at "
+                       f"1e14 is itself computed from singular values at the double-"
+                       f"precision floor, so the identity is checked in log space "
+                       f"({_log_ratio(ill):.4f}) where the estimate is reliable"),
         practice.Check("on a random 50x5 matrix all four methods agree to 1e-12",
                        max(well["gaps"].values()) < 1e-12,
                        f"worst gap {max(well['gaps'].values()):.3g} at κ(XᵀX) = "

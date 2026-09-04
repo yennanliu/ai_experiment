@@ -146,7 +146,55 @@ def test_check_deps_allows_a_guarded_import_in_the_harness():
     assert "numpy" not in check_deps.toplevel_imports(path)
 
 
+def test_explain_gate_requires_a_resolvable_citation():
+    """DESIGN §6: a prose item's citation must name a real lesson section."""
+    from harness import manifest as m
+
+    exercise = m.Exercise(index=1, slug="x", kind="explain", tier="T0",
+                          en="Explain something", zh="解釋", cites="The Concept")
+    readme = ROOT / "tests" / "_tmp_readme.md"
+    readme.write_text("answer, drawing on The Concept\n", encoding="utf-8")
+    try:
+        assert audit_practice.audit_explain(exercise, readme, {"The Concept"}) == []
+        # cited section does not exist upstream
+        problems = audit_practice.audit_explain(exercise, readme, {"Something Else"})
+        assert any("not a heading" in p for p in problems)
+        # answer missing from the README
+        readme.write_text("no answer here\n", encoding="utf-8")
+        problems = audit_practice.audit_explain(exercise, readme, {"The Concept"})
+        assert any("not answered in README" in p for p in problems)
+    finally:
+        readme.unlink()
+
+
 def test_coverage_check_flags_spec_drift(lesson, monkeypatch):
     pack = manifest.load_practice(lesson / "practice.yaml")
     upstream = "Do something completely different"
     assert coverage.spec_hash(pack.exercises[0].en) != coverage.spec_hash(upstream)
+
+
+def test_finalize_rejects_an_index_the_manifest_does_not_have(lesson, monkeypatch):
+    """A mistyped exercise index used to update nothing and still report success."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finalize_practice
+
+    # the fixture puts practice/ under tmp_path, so tmp_path stands in for the
+    # lesson directory and its parent for the phase
+    monkeypatch.setattr(finalize_practice, "DEMOS", lesson.parent.parent.parent)
+    phase, lesson_name = lesson.parent.parent.name, lesson.parent.name
+    with pytest.raises(KeyError, match="no such exercise index"):
+        finalize_practice.finalize(phase, lesson_name, {7: {"slug": "nope"}})
+    # and the manifest is left exactly as it was
+    assert "slug: thing" in (lesson / "practice.yaml").read_text(encoding="utf-8")
+
+
+def test_finalize_keeps_backslashes_out_of_re_sub(lesson, monkeypatch):
+    r"""`verifies` prose contains things like \kappa; `re.sub` would eat them."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finalize_practice
+
+    monkeypatch.setattr(finalize_practice, "DEMOS", lesson.parent.parent.parent)
+    finalize_practice.finalize(lesson.parent.parent.name, lesson.parent.name,
+                               {1: {"verifies": r"\kappa(A) grows as \sigma_1/\sigma_n"}})
+    body = (lesson / "practice.yaml").read_text(encoding="utf-8")
+    assert r"verifies: \kappa(A) grows as \sigma_1/\sigma_n" in body

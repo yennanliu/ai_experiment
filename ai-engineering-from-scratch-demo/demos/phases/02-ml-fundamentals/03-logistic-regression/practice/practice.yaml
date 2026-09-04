@@ -1,0 +1,40 @@
+lesson: 03-logistic-regression
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/03-logistic-regression/docs/en.md
+exercises:
+  - index: 1
+    slug: polynomial_features
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Generate a dataset that is NOT linearly separable (e.g., two concentric circles). Train logistic regression and observe its failure. Then add polynomial features (x1^2, x2^2, x1*x2) and train again. Show that the accuracy improves.
+    zh: |
+      生成一個「不是」線性可分的資料集（例如兩個同心圓）。訓練邏輯迴歸，觀察它怎麼失敗。接著加入多項式特徵（x1^2、x2^2、x1*x2）再訓練一次，證明準確率有所提升。
+    verifies: on 300 balanced concentric-circle points the linear model reaches 54.0%, under 0.60 and 46 points below what the right features give, against a 50% majority baseline; adding x1^2, x2^2 and x1*x2 reaches 100%; the two squared terms alone also reach 100%; and the cross term alone reaches only 59.3%, so which term is added is what matters
+    uses_reference:
+      - LogisticRegression
+  - index: 2
+    slug: multiclass_confusion
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a multi-class confusion matrix for the 3-class softmax model. Compute per-class precision and recall. Which class is hardest to classify?
+    zh: |
+      為 3 類別的 softmax 模型實作一個多元分類的混淆矩陣。計算每個類別各自的精確率與召回率。哪一個類別最難分類？
+    verifies: all 360 rows land in the 3x3 matrix with the diagonal-over-total accuracy 75.8% matching the lesson's own accuracy() exactly; every class has precision and recall between 0.4 and 1.0; class 1 is hardest by BOTH measures (recall 0.658, precision 0.637) because it sits between the other two; and the confusion is shown asymmetric - 1 error between classes 0 and 2 against 41 and 45 for the adjacent pairs
+    uses_reference:
+      - SoftmaxRegression
+  - index: 3
+    slug: roc_from_scratch
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build an ROC curve from scratch. For 100 threshold values from 0 to 1, compute the true positive rate and false positive rate. Calculate the AUC (area under the curve) using the trapezoidal rule.
+    zh: |
+      從零畫出 ROC 曲線。對 0 到 1 之間的 100 個閾值，計算真正例率與假正例率，再用梯形法則算出 AUC（曲線下面積）。
+    verifies: 100 thresholds spanning 0 to 1 give a monotone curve reaching (0,0) and (1,1) unaided, with AUC 0.8130 against an accuracy of 74.0%; a grid stopping at 0.05 and 0.95 is shown to lose 0.0600 of area; the trapezoid value differs from the exact Mann-Whitney AUC by 5.0e-05; and refining to 10,000 thresholds moves it closer, confirming the gap is discretisation rather than a different definition
+    uses_reference:
+      - LogisticRegression
