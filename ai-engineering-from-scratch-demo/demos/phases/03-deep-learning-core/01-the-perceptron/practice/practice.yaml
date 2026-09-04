@@ -1,0 +1,40 @@
+lesson: 01-the-perceptron
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/01-the-perceptron/docs/en.md
+exercises:
+  - index: 1
+    slug: nand_gate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Train a perceptron on a NAND gate (the universal gate - any logic circuit can be built from NAND). Verify its weights and bias form a valid decision boundary.
+    zh: |
+      用一個 NAND 閘訓練感知器（NAND 是萬用閘——任何邏輯電路都能只用 NAND 搭出來）。驗證它的權重與偏差項構成一個有效的決策邊界。
+    verifies: the lesson's rule converges on NAND in 6 epochs to w = [-0.20, -0.10], b = +0.20 and all 4 rows correct, but FINDING the geometric margin is exactly 0 - (1,0) scores +0.0000, lying on the line rather than beside it - so flipping `predict`'s >= to > breaks 1 of the 4 rows; MECHANISM the update fires only on an error and z = 0 already predicts 1, so the rule halts the instant the last point reaches the line; ANSWER the trained unit is universal, with NOT, AND, OR and XOR all 4 rows correct when wired from copies of it; and CONTROL the hand-set w = [-1, -1], b = +1.5 of the lesson's own xor_network separates the same rows with margin 0.3536 and survives the strict comparison
+    uses_reference:
+      - Perceptron
+  - index: 2
+    slug: boundary_trajectory
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the Perceptron class to track the decision boundary (w1*x1 + w2*x2 + b = 0) at each epoch. Print how the line shifts during training on the AND gate.
+    zh: |
+      修改 Perceptron 類別，讓它在每個 epoch 記錄決策邊界（w1*x1 + w2*x2 + b = 0）。印出在 AND 閘上訓練時，這條線是怎麼移動的。
+    verifies: the AND boundary starts as 0*x1 + 0*x2 + 0 = 0, which is no line at all, and moves x2 = -1.000*x1 -0.000 -> -2.000*x1 +1.000 -> -2.000*x1 +2.000 over 4 epochs; MECHANISM the (0,0) row updates in epochs 1 and 2 move the bias alone, since w_i += lr*error*x_i is zero when x_i is; FINDING the float run halts two epochs early on a line that is not an AND boundary - (1,0) scores -2.78e-17, negative only by rounding, and the same run in exact rationals continues to epoch 6 and b = -3/10; and ANSWER the final line has slope -2.0 at geometric margin 1.24e-16 against slope -1.0 and margin 0.3536 for the max-margin line x1 + x2 = 1.5
+    uses_reference:
+      - Perceptron
+  - index: 3
+    slug: majority_vote
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a 3-input perceptron that outputs 1 only when at least 2 of the 3 inputs are 1 (a majority vote function). Is this linearly separable? Why?
+    zh: |
+      打造一個三輸入的感知器，只有在三個輸入中至少有 2 個是 1 時才輸出 1（多數表決函式）。這是線性可分的嗎？為什麼？
+    verifies: ANSWER yes - 3-input majority converges in 4 epochs to w = [+0.1, +0.1, +0.1], b = -0.2 with all 8 rows correct, while 3-input parity runs 1000 epochs without converging and a linear program confirms no hyperplane exists; WHY 'at least 2 of 3' is sum(x) >= 2, already a threshold test, so the specification of the function is the separating plane; FINDING the three two-vote rows score exactly 0 and are classified only by the >= tie-break, where the hand-written w = [1, 1, 1], b = -1.5 has margin 0.2887; and a linear program over all 256 Boolean functions of three inputs finds exactly 104 separable - 40.6%, against 14 of 16 at n = 2
+    uses_reference:
+      - Perceptron
