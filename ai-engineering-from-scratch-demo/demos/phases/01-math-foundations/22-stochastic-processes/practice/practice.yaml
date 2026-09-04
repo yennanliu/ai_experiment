@@ -1,0 +1,64 @@
+lesson: 22-stochastic-processes
+phase: 01-math-foundations
+source: phases/01-math-foundations/22-stochastic-processes/docs/en.md
+exercises:
+  - index: 1
+    slug: random_walk_distribution
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Simulate 1000 random walks of 10000 steps.** Plot the distribution of final positions. Verify it is approximately Gaussian with mean 0 and standard deviation sqrt(10000) = 100.
+    zh: |
+      **模擬 1000 條各走 10000 步的隨機漫步。** 把最終位置的分布畫出來。驗證它近似是平均 0、標準差 sqrt(10000) = 100 的高斯分布。
+    verifies: 1000 walks of 10,000 steps give mean +5.9 (inside the 3.16 standard error), sd 102.4 against sqrt(10000)=100, and 69.4% within one sd against the normal's 68.3%; normality is tested on its own terms with skew +0.044, excess kurtosis -0.103 and a KS distance of 0.0369 below the 0.0430 critical value; and all 1000 endpoints are shown to be even, so the support is a lattice and no continuous test can be exact
+    uses_reference:
+      - random_walk_1d
+  - index: 2
+    slug: markov_text_generator
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Build a text generator using a Markov chain.** Train on a small corpus: for each word, count transitions to the next word. Build the transition matrix. Generate new sentences by sampling from the chain.
+    zh: |
+      **用馬可夫鏈打造一個文字生成器。** 在一個小語料庫上訓練：對每個詞，統計它轉移到下一個詞的次數。建出狀態轉移矩陣。再從這條鏈取樣來生成新句子。
+    verifies: a 15-word vocabulary chain generates 19 distinct sentences from 20 seeds; 'the' has a proper distribution over 6 successors; the last corpus word is shown to have an all-zero row - 1 of 15 rows is not a distribution at all, which the exercise's rule does not mention; and exactly 0 of 192 generated bigrams are new, which is provable rather than lucky since a zero transition can never be sampled
+    uses_reference:
+      - MarkovChain
+  - index: 3
+    slug: simulated_annealing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement simulated annealing** using Metropolis-Hastings. Start at high temperature (accept almost everything) and gradually cool down (accept only improvements). Use it to find the minimum of a function with many local minima.
+    zh: |
+      **用 Metropolis-Hastings 實作模擬退火。** 從高溫出發（幾乎什麼都接受），再逐步降溫（只接受有改善的移動）。用它去找一個有很多局部極小值的函式的最小值。
+    verifies: scored on the chain's FINAL state rather than its best-ever visit - best-ever tracking makes a never-cooling chain win 98% and measures random search, not annealing; over 40 seeds annealing reaches mean final energy -0.431 against +1.613 fixed-hot, +2.475 fixed-cold and +2.470 greedy, and reaches the global minimum 18% against 10/0/0%; cold and greedy come out numerically identical, showing the cooling does the work
+    uses_reference:
+
+  - index: 4
+    slug: langevin_temperatures
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Compare Langevin dynamics at different temperatures.** Sample from a double-well potential U(x) = (x^2 - 1)^2. At low temperature, samples cluster in one well. At high temperature, they spread across both. Find the critical temperature where the chain mixes between wells.
+    zh: |
+      **比較不同溫度下的 Langevin 動力學。** 從雙井位勢 U(x) = (x^2 - 1)^2 取樣。低溫時，樣本會聚在其中一個井裡。高溫時，它們會散布在兩個井之間。找出這條鏈能在兩井之間混合的臨界溫度。
+    verifies: at T=0.02 the chain makes 0 barrier crossings in 40,000 steps and stays 100% in its starting well; crossings rise monotonically 0/0/76/621/1421 across T = 0.02/0.1/0.3/1/3; mixing first appears at T=0.3 against a barrier height of 1, consistent with Kramers' exp(-dU/T) rather than a sharp threshold; and equal well occupancy needs T=1, a higher bar than first crossing
+    uses_reference:
+      - langevin_dynamics
+  - index: 5
+    slug: forward_diffusion
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Implement the forward diffusion process.** Start with a 1D signal (e.g., a sine wave). Add noise progressively over 100 steps with a linear noise schedule. Show how the signal degrades to pure noise. Then implement a simple denoiser that reverses the process (even a naive one that just subtracts the estimated noise).
+    zh: |
+      **實作前向擴散過程。** 從一個一維訊號出發（例如一條正弦波）。用線性雜訊排程，在 100 步裡逐步加入雜訊。展示訊號是怎麼退化成純雜訊的。然後實作一個簡單的去噪器，把過程反過來走（就算只是天真地把估計出來的雜訊減掉也行）。
+    verifies: 100 steps of the standard DDPM schedule do NOT reach pure noise - alpha_bar = 0.364 leaves 60% of the amplitude and correlation +0.504 - while 1000 steps or beta_end=0.2 do (corr +0.035 and -0.036); dividing by sqrt(alpha_bar) is shown not to be a denoiser at all, worsening RMSE 0.841 to 1.340 and leaving correlation identical since scaling cannot change it; and a single-FFT-bin prior recovers the sine at RMSE 0.073, 11x better than doing nothing
+    uses_reference:
+      - diffusion_forward

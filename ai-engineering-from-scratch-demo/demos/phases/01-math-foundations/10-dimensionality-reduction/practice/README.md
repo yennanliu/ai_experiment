@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Modify the PCA class to support `inverse_transform`. Reconstruct MNIST digits from 10, 50, an… | code | T0 | `ex01_pca_reconstruction.py` |
-| 2 | Run t-SNE on the same MNIST subset with perplexity values of 5, 30, and 100. Describe how the… | explain | T1 | prose, below |
+| 2 | Run t-SNE on the same MNIST subset with perplexity values of 5, 30, and 100. Describe how the… | code | T1 | `ex02_tsne_perplexity.py` |
 | 3 | Take a dataset with 50 features where only 5 are informative (generate one with `sklearn.data… | code | T0 | `ex03_explained_variance_curve.py` |
 <!-- generated:end -->
 

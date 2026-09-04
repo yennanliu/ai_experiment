@@ -1,27 +1,27 @@
+<!-- generated:start -->
 # 01-math-foundations / 01-linear-algebra-intuition
 
-Solutions to all 6 exercises. Source:
-[lesson page](https://yennj12.js.org/ai-engineering-from-scratch/phases/01-math-foundations/01-linear-algebra-intuition/)
-· upstream spec `phases/01-math-foundations/01-linear-algebra-intuition/docs/en.md`
+Solutions to all 6 exercises. Source: [lesson page](https://yennj12.js.org/ai-engineering-from-scratch/phases/01-math-foundations/01-linear-algebra-intuition/) · upstream spec
+`phases/01-math-foundations/01-linear-algebra-intuition/docs/en.md`
 
 ```bash
-uv run demo practice run 01-linear-algebra-intuition          # all six
-uv run demo practice run 01-linear-algebra-intuition --ex 4   # just exercise 4
-uv run python demos/phases/01-math-foundations/01-linear-algebra-intuition/practice/ex04_orthonormal_check.py
+uv run demo practice run 01-linear-algebra-intuition --ex 1
+uv run demo explain 01-linear-algebra-intuition --ex 1
+uv run pytest demos/phases/01-math-foundations/01-linear-algebra-intuition
 ```
 
-Each solution imports the lesson's own `code/vectors.py` rather than copying it,
-so the checks compare against the reference implementation, never against a fork
-of it (`DESIGN D5`).
+Solutions import the lesson's own `code/` rather than copying it, so every check
+compares against the reference implementation and not a fork of it (`DESIGN D5`).
 
-| # | Exercise | Kind | Tier | Solution |
+| # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Implement `Vector.angle_between(other)` returning degrees | code | T0 | `ex01_angle_between.py` |
-| 2 | 2D scaling matrix (x×2, y×3) applied to `[1, 1]` | code | T0 | `ex02_scaling_matrix.py` |
-| 3 | Most similar of 5 random 50-d vectors, by cosine | code | T0 | `ex03_most_similar_pair.py` |
-| 4 | Verify Gram-Schmidt output is orthonormal | code | T0 | `ex04_orthonormal_check.py` |
-| 5 | A 3×3 matrix of rank 2, and what its columns span | code | T0 | `ex05_rank_two_matrix.py` |
-| 6 | Project `[1,2,3]` onto `[1,1,1]`, and what it means | code | T0 | `ex06_projection_meaning.py` |
+| 1 | Implement `Vector.angle_between(other)` that returns the angle in degrees between two vectors | code | T0 | `ex01_angle_between.py` |
+| 2 | Create a 2D scaling matrix that doubles the x-coordinate and triples the y-coordinate, then a… | code | T0 | `ex02_scaling_matrix.py` |
+| 3 | Given 5 random word-like vectors (dimension 50), find the two most similar using cosine simil… | code | T0 | `ex03_most_similar_pair.py` |
+| 4 | Verify that the Gram-Schmidt output is truly orthonormal: check that every pair has dot produ… | code | T0 | `ex04_orthonormal_check.py` |
+| 5 | Create a 3x3 matrix with rank 2. Verify using the `rank()` method. Then explain what geometri… | code | T0 | `ex05_rank_two_matrix.py` |
+| 6 | Project the vector [1, 2, 3] onto [1, 1, 1]. What does the result represent geometrically? | code | T0 | `ex06_projection_meaning.py` |
+<!-- generated:end -->
 
 ## Prose answers
 

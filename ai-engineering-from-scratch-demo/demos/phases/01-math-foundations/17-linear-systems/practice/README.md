@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Solve the system `[[1,2,3],[4,5,6],[7,8,10]] x = [6, 15, 27]` using your Gaussian elimination… | code | T0 | `ex01_three_solvers_agree.py` |
-| 2 | Generate a 50x5 random matrix X and target y = X @ w_true + noise. Solve for w using normal e… | explain | T0 | prose, below |
+| 2 | Generate a 50x5 random matrix X and target y = X @ w_true + noise. Solve for w using normal e… | code | T0 | `ex02_least_squares_four_ways.py` |
 | 3 | Create a nearly singular matrix by making two columns almost identical (e.g., column 2 = colu… | code | T0 | `ex03_regularization.py` |
 | 4 | Implement the conjugate gradient algorithm for a 100x100 random symmetric positive definite m… | code | T0 | `ex04_conjugate_gradient.py` |
 | 5 | Time your Cholesky solver vs your LU solver vs `np.linalg.solve` on symmetric positive defini… | code | T1 | `ex05_cholesky_timing.py` |
