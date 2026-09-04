@@ -1,0 +1,60 @@
+lesson: 05-chain-rule-and-autodiff
+phase: 01-math-foundations
+source: phases/01-math-foundations/05-chain-rule-and-autodiff/docs/en.md
+exercises:
+  - index: 1
+    slug: pow_and_cubic_gradient
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `__pow__` to the Value class so you can compute `x ** n`. Verify that `d/dx(x^3)` at `x=2` equals `12.0`.
+    zh: |
+      為 Value 類別加上 `__pow__`，讓你能算 `x ** n`。驗證 `d/dx(x^3)` 在 `x=2` 時等於 `12.0`。
+    verifies: x**3 at x=2 evaluates to 8 and d/dx equals 12.0 exactly; the shipped __pow__ matches the analytic n*x^(n-1) to 1e-9 for n in 2,3,5,-1,0.5; the lesson's gradient_check agrees to 1e-5; and a Value-valued exponent is shown to raise TypeError rather than return a gradient-less result
+    uses_reference:
+      - Value
+      - Value.__pow__
+      - Value.backward
+      - gradient_check
+  - index: 2
+    slug: tanh_derivative
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `tanh` as an activation function. Verify that `tanh'(0) = 1` and `tanh'(2) = 0.0707` (approx).
+    zh: |
+      加上 `tanh` 當激活函式。驗證 `tanh'(0) = 1`、`tanh'(2) = 0.0707`（近似值）。
+    verifies: tanh'(0) == 1.0 exactly and tanh'(2) == 0.0706508, within 5e-5 of the 0.0707 the exercise states; matches the analytic 1-tanh^2 to 1e-15 at five points; and the gradient is shown to underflow to exactly 0.0 by x=20
+    uses_reference:
+      - Value.tanh
+      - Value.backward
+      - gradient_check
+  - index: 3
+    slug: neuron_gradients_vs_torch
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Build a computation graph for a single neuron: `y = relu(w1*x1 + w2*x2 + b)`. Compute all five gradients and verify against PyTorch.
+    zh: |
+      為單一神經元建一張計算圖：`y = relu(w1*x1 + w2*x2 + b)`。算出全部五個梯度，並對照 PyTorch 驗證。
+    verifies: all five gradients of relu(w1*x1+w2*x2+b) match torch exactly and match the analytic values; at a pre-activation of exactly 0 both engines pick the same subgradient; and a dead unit passes zero gradient to every leaf. Skips with a remedy when torch is absent
+    uses_reference:
+      - Value
+      - Value.relu
+      - Value.backward
+  - index: 4
+    slug: dual_number_forward_mode
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement forward-mode autodiff using dual numbers. Create a `Dual` class and verify it gives the same derivatives as your reverse-mode engine.
+    zh: |
+      用雙數實作正向模式自動微分。寫一個 `Dual` 類別，驗證它算出的導數跟你的反向模式引擎一致。
+    verifies: a from-scratch Dual class agrees with the lesson's reverse-mode engine to 1e-12 on 5 expressions covering pow/mul/sub/div/add/relu/tanh/exp/log, agrees with a finite difference to 1e-6, and produces identical forward values; the pass-count asymmetry between the two modes is reported
+    uses_reference:
+      - Value
+      - gradient_check

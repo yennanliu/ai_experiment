@@ -10,7 +10,7 @@ dependencies = []
 math   = ["numpy>=1.26"]                       # phases 01-03
 vision = ["numpy>=1.26", "pillow>=10"]         # phases 04, 12
 audio  = ["numpy>=1.26"]                       # phase 06
-llm    = ["openai>=1.40"]                      # phases 07, 10, 11  (§8 Q3)
+llm    = ["openai>=1.40", "torch>=2.2"]        # phases 07, 10, 11  (§8 Q3)
 agents = []                                    # phases 13-16
 infra  = []                                    # phase 17
 dev    = ["pytest>=8"]
