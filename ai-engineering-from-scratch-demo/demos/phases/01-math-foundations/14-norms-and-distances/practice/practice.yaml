@@ -1,0 +1,75 @@
+lesson: 14-norms-and-distances
+phase: 01-math-foundations
+source: phases/01-math-foundations/14-norms-and-distances/docs/en.md
+exercises:
+  - index: 1
+    slug: norm_ordering
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute L1, L2, and L-infinity distances between (1, 2, 3) and (4, 0, 6). Verify that L-inf <= L2 <= L1 always holds for any pair of points. Prove why this ordering is guaranteed.
+    zh: |
+      計算 (1, 2, 3) 與 (4, 0, 6) 之間的 L1、L2 與無窮範數距離。驗證對任意一對點，L-inf <= L2 <= L1 都成立。證明這個順序為什麼是必然的。
+    verifies: L1=8, L2=sqrt(22) and Linf=3 for the stated points; Linf <= L2 <= L1 holds on all 2000 random pairs across dimensions 1-12 with zero violations; the Cauchy-Schwarz bound L1/L2 <= sqrt(d) is never exceeded and is attained exactly when all components are equal; and all three coincide at 5 when the difference has one non-zero component
+    uses_reference:
+      - l1_distance
+      - l2_distance
+      - linf_distance
+      - l1_norm
+      - l2_norm
+  - index: 2
+    slug: cosine_vs_l2
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create two vectors where cosine similarity is high (> 0.9) but L2 distance is large (> 10). Explain geometrically what is happening. Then create two vectors where cosine similarity is low (< 0.3) but L2 distance is small (< 0.5).
+    zh: |
+      造出兩個向量，讓餘弦相似度很高（> 0.9）但 L2 距離很大（> 10）。用幾何解釋這是怎麼一回事。接著再造出兩個向量，讓餘弦相似度很低（< 0.3）但 L2 距離很小（< 0.5）。
+    verifies: case 1 reaches cosine 0.9992 with L2 18.49, case 2 cosine 0.1980 with L2 0.2546; scaling one vector 1x to 100x is shown to move L2 from 0 to 171 while cosine stays at 1.0 to 12 places; and case 2 is bounded by |a|+|b| = 0.402 < 0.5, so the second condition is about length rather than angle
+    uses_reference:
+      - cosine_similarity
+      - l2_distance
+      - l2_norm
+  - index: 3
+    slug: four_metrics_disagree
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a function that takes a dataset and a query point and returns the nearest neighbor under L1, L2, cosine, and Mahalanobis distance. Find a dataset where all four disagree on which point is nearest.
+    zh: |
+      實作一個函式，吃進一個資料集與一個查詢點，回傳 L1、L2、餘弦與馬氏距離下各自的最近鄰。找出一個資料集，讓這四者對「哪個點最近」全都各執一詞。
+    verifies: a seeded sweep finds at trial 22 a 6-point 3-D dataset where L1, L2, cosine and Mahalanobis each pick a different nearest neighbour (points 1, 0, 2, 4); found by search rather than hand-tuned, so the trial count reports how uncommon total disagreement is
+    uses_reference:
+      - l1_distance
+      - l2_distance
+      - cosine_distance
+      - mahalanobis_distance
+      - compute_covariance
+  - index: 4
+    slug: wasserstein_by_hand
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the Wasserstein distance between [0.5, 0.5, 0, 0] and [0, 0, 0.5, 0.5] by hand using the CDF method. Then compute it between [0.25, 0.25, 0.25, 0.25] and [0, 0, 0.5, 0.5]. Which is larger and why?
+    zh: |
+      用 CDF 方法手算 [0.5, 0.5, 0, 0] 與 [0, 0, 0.5, 0.5] 之間的 Wasserstein 距離。接著算 [0.25, 0.25, 0.25, 0.25] 與 [0, 0, 0.5, 0.5] 之間的距離。哪一個比較大？為什麼？
+    verifies: an independent CDF-method derivation gives W1 = 2.0 for pair 1 and 1.0 for pair 2, both matching the lesson's wasserstein_1d to 1e-12; pair 1 is larger by exactly 2x because it transports all its mass two bins while pair 2 moves half one bin; and KL on the same pair is shown to be inf where W1 stays finite
+    uses_reference:
+      - wasserstein_1d
+      - kl_divergence
+  - index: 5
+    slug: minhash
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement MinHash for approximate Jaccard similarity. Generate 100 random sets, compute exact Jaccard for all pairs, and compare with MinHash approximation using 50, 100, and 200 hash functions. Plot the approximation error.
+    zh: |
+      實作 MinHash 來近似 Jaccard 相似度。產生 100 個隨機集合，算出所有配對的精確 Jaccard 值，再與使用 50、100、200 個雜湊函式的 MinHash 近似結果比較。把近似誤差畫成圖。
+    verifies: over 4,950 pairs of 100 sets, MinHash MAE falls 0.0390 -> 0.0258 -> 0.0196 at k = 50/100/200 with signed bias under 0.006 everywhere; quadrupling k reduces error by a measured 1.989x against the sqrt(4) = 2 the standard error sqrt(J(1-J)/k) predicts; and absolute MAE tracks that predicted sigma at 0.8x, which a monotonicity-only check would not detect
+    uses_reference:
+      - jaccard_similarity

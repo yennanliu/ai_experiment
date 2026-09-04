@@ -45,12 +45,12 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**43 / 2090 exercises** (2.1%) across 20 phases.
+**57 / 2090 exercises** (2.7%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
 | ⬚ `00-setup-and-tooling` | 45 | 0 | 0 |
-| 🚧 `01-math-foundations` | 92 | 43 | 11 |
+| 🚧 `01-math-foundations` | 92 | 57 | 14 |
 | ⬚ `02-ml-fundamentals` | 78 | 0 | 0 |
 | ⬚ `03-deep-learning-core` | 63 | 0 | 0 |
 | ⬚ `04-computer-vision` | 84 | 0 | 0 |

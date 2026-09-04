@@ -1,0 +1,68 @@
+lesson: 13-numerical-stability
+phase: 01-math-foundations
+source: phases/01-math-foundations/13-numerical-stability/docs/en.md
+exercises:
+  - index: 1
+    slug: catastrophic_cancellation
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Catastrophic cancellation.** Compute the variance of [1000000.0, 1000001.0, 1000002.0] using the naive formula `E[x^2] - E[x]^2` in float32. Then compute it using Welford's online algorithm. Compare the errors against the true variance (0.6667).
+    zh: |
+      **災難性抵銷。** 在 float32 下用天真公式 `E[x^2] - E[x]^2` 算出 [1000000.0, 1000001.0, 1000002.0] 的變異數。然後改用 Welford 的線上演算法算一次。把兩者的誤差和真正的變異數（0.6667）比較。
+    verifies: Welford in float32 gives 0.666666687 against the exact 2/3, error 2.0e-08, while the naive E[x^2]-E[x]^2 in float32 returns -65536.0, a value no variance can take; float64 does not rescue the naive formula either at 4.07e-05 error; and Welford/float32 beats naive/float64 by 2048x, so the algorithm matters more than the precision
+    uses_reference:
+      - variance_naive
+      - welford_variance
+      - kahan_sum
+  - index: 2
+    slug: machine_epsilon
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Precision hunt.** Find the smallest positive float32 value `x` such that `1.0 + x == 1.0` in Python. This is the machine epsilon. Verify it matches `numpy.finfo(numpy.float32).eps`.
+    zh: |
+      **精度搜捕。** 在 Python 裡找出使 `1.0 + x == 1.0` 成立的最小正 float32 值 `x`。這就是機器 epsilon。驗證它和 `numpy.finfo(numpy.float32).eps` 相符。
+    verifies: float32 eps is exactly 2^-23 and is the spacing above 1.0; the exercise's quantity is different - the largest x with 1+x==1 is eps/2 = 2^-24, a tie that round-to-nearest-even sends down - and bisection locates the boundary at adjacent float32 values 5.96046448e-08 and 5.96046519e-08; the literal question has no answer, since every positive float below the tie vanishes
+    uses_reference:
+
+  - index: 3
+    slug: logsumexp_edge_cases
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Log-sum-exp edge cases.** Test your `logsumexp_stable` function with: (a) all values equal, (b) one value much larger than the rest, (c) all values very negative (-1000). Verify it gives correct results where the naive version fails.
+    zh: |
+      **log-sum-exp 的邊界情況。** 用以下輸入測試你的 `logsumexp_stable` 函式：(a) 所有值都相等，(b) 其中一個值遠大於其他，(c) 所有值都非常負（-1000）。確認在天真版本失敗的地方它仍給出正確結果。
+    verifies: logsumexp_stable matches a closed form to 0 deviation on all four cases; the naive version raises OverflowError on one dominant value of 1000 and ValueError on all values at -1000 - two distinct failure modes, only one of them an overflow - and the stable version handles a mixed [-1000, 1000, 0] to 12 places
+    uses_reference:
+      - logsumexp_stable
+      - logsumexp_naive
+  - index: 4
+    slug: gradient_check_linear_layer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Gradient checking a neural network layer.** Implement a single linear layer `y = Wx + b` and its analytical backward pass. Use `numerical_gradient` to verify correctness for a 3x2 weight matrix.
+    zh: |
+      **對神經網路的層做梯度檢查。** 實作單一線性層 `y = Wx + b` 以及它的解析反向傳遞。用 `numerical_gradient` 驗證一個 3x2 權重矩陣的正確性。
+    verifies: all 9 parameters of a 3x2 linear layer are differentiated, with analytical and numerical gradients agreeing to 1.3e-11 and check_gradient accepting them; and the check is shown to REJECT both a uniformly 5% wrong backward pass and a single flipped sign, which is what makes the agreement meaningful
+    uses_reference:
+      - numerical_gradient
+      - check_gradient
+  - index: 5
+    slug: loss_scaling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Loss scaling experiment.** Simulate training with float16: create random gradients in the range [1e-9, 1e-3], convert to float16, and measure what fraction become zero. Then apply loss scaling (multiply by 1024), convert to float16, scale back, and measure the zero fraction again.
+    zh: |
+      **loss scaling 實驗。** 模擬 float16 訓練：產生範圍在 [1e-9, 1e-3] 的隨機梯度，轉成 float16，量測有多少比例變成零。然後套用 loss scaling（乘以 1024）、轉成 float16、再縮放回來，重新量測歸零的比例。
+    verifies: 24.3% of 20,000 log-uniform gradients over [1e-9,1e-3] vanish in float16, falling to 0.0% at 1024x; both boundaries are probed directly - a gradient of 2.94e-11 vanishes unscaled and survives scaled while one 1% smaller does not, and the largest gradient overflows at scale 6.71e7 against the predicted 65504/1e-3; and uniform sampling is shown to lose 0.00%, so the distribution is the experiment
+    uses_reference:
+      - simulate_float16
