@@ -1,0 +1,54 @@
+lesson: 12-tensor-operations
+phase: 01-math-foundations
+source: phases/01-math-foundations/12-tensor-operations/docs/en.md
+exercises:
+  - index: 1
+    slug: reshape_round_trip
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy -- Reshape round-trip.** Take a tensor of shape `(2, 3, 4)`. Reshape it to `(6, 4)`, then to `(24,)`, then back to `(2, 3, 4)`. Verify element order is preserved at each step by printing the flat data.
+    zh: |
+      **簡單 —— 重塑往返。** 拿一個形狀 `(2, 3, 4)` 的張量。把它重塑成 `(6, 4)`，再到 `(24,)`，再回到 `(2, 3, 4)`。每一步都印出扁平資料，確認元素順序沒變。
+    verifies: the (2,3,4)->(6,4)->(24,)->(2,3,4) chain keeps the flat buffer byte-identical at all 4 snapshots and agrees element-by-element on all 24 indexed positions; only the strides change, each the suffix product of its shape; and reshape((5,5)) on 24 elements raises ValueError rather than padding
+    uses_reference:
+      - Tensor
+      - Tensor.reshape
+  - index: 2
+    slug: broadcasting
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium -- Implement broadcasting.** Extend the `Tensor` class with a `broadcast_to(shape)` method that expands dimensions of size 1 to match a target shape. Then modify `_elementwise_op` to automatically broadcast before operating. Test with shapes `(3, 1)` and `(1, 4)` producing `(3, 4)`.
+    zh: |
+      **中等 —— 實作廣播。** 為 `Tensor` 類別加上一個 `broadcast_to(shape)` 方法，把大小為 1 的維度擴展到符合目標形狀。接著改寫 `_elementwise_op`，讓它在運算前自動廣播。用 `(3, 1)` 與 `(1, 4)` 測試，應該產出 `(3, 4)`。
+    verifies: a Tensor subclass adds broadcast_to and auto-broadcasting elementwise ops; (3,1)+(1,4) gives shape (3,4) with all 12 values correct; (3,2) with (4,2) raises ValueError despite equal rank; and the unmodified Tensor is shown to reject the same pair, which is what the exercise asks to change
+    uses_reference:
+      - Tensor
+      - Tensor._elementwise_op
+  - index: 3
+    slug: einsum_from_scratch
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Hard -- Build einsum from scratch.** Implement a basic `einsum(subscripts, *tensors)` function that handles at least: dot product (`i,i->`), matrix multiply (`ij,jk->ik`), outer product (`i,j->ij`), and transpose (`ij->ji`). Parse the subscript string, identify contracted indices, and loop over all index combinations. Compare your results against `np.einsum`.
+    zh: |
+      **困難 —— 從零打造 einsum。** 實作一個基本的 `einsum(subscripts, *tensors)` 函式，至少要能處理：內積（`i,i->`）、矩陣乘法（`ij,jk->ik`）、外積（`i,j->ij`）與轉置（`ij->ji`）。解析下標字串、辨識出要收縮的索引，然後對所有索引組合跑迴圈。拿 `np.einsum` 來對答案。
+    verifies: all four named patterns match np.einsum to 1e-12, and so do five patterns the implementation was never told about - ij->, ii->i, batched bij,bjk->bik, ij,j->i and the 3-operand chain ij,jk,kl->il - proving the parser is generic rather than four special cases; worst deviation 6.7e-16 across 9 patterns
+    uses_reference:
+
+  - index: 4
+    slug: attention_shape_tracker
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Hard -- Attention shape tracker.** Write a function that takes `batch_size`, `seq_len`, `embed_dim`, and `num_heads` as inputs and prints the exact shape at every step of multi-head attention: input, Q/K/V projection, head split, attention scores, softmax weights, weighted sum, head merge, output projection. Verify against the `demo_attention_einsum()` output.
+    zh: |
+      **困難 —— 注意力形狀追蹤器。** 寫一個函式，接收 `batch_size`、`seq_len`、`embed_dim` 與 `num_heads`，印出多頭注意力每一步的確切形狀：輸入、Q/K/V 投影、拆頭、注意力分數、softmax 權重、加權和、併頭、輸出投影。拿 `demo_attention_einsum()` 的輸出來驗證。
+    verifies: all 8 predicted shapes are derived from batch/seq/embed/heads alone and match a real einsum forward pass exactly; the softmax rows sum to 1 within 2.2e-16 over all 64 attention rows; embed_dim=64 with num_heads=5 raises rather than silently dropping 4 dimensions per head; and scores is identified as the only B*H*T^2 step
+    uses_reference:
+

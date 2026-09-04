@@ -1,0 +1,70 @@
+lesson: 21-graph-theory
+phase: 01-math-foundations
+source: phases/01-math-foundations/21-graph-theory/docs/en.md
+exercises:
+  - index: 1
+    slug: pagerank_from_scratch
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Implement PageRank from scratch.** Start with uniform scores. At each step: score(v) = (1-d)/n + d * sum(score(u)/out_degree(u)) for all u pointing to v. Use d=0.85. Run until convergence (change < 1e-6). Test on a small web graph.
+    zh: |
+      **從零實作 PageRank。** 一開始所有分數都相同。每一步：對所有指向 v 的 u，score(v) = (1-d)/n + d * sum(score(u)/out_degree(u))。取 d=0.85。跑到收斂為止（變化 < 1e-6）。拿一個小的網頁圖來測試。
+    verifies: with dangling mass redistributed the from-scratch PageRank matches the lesson's to 3.1e-07 and sums to 1; implemented as the exercise literally states it the scores sum to only 0.83, because the rule says nothing about nodes with no out-links, and the two implementations then differ by 0.065 rather than 3e-07; adding one out-edge makes the literal rule sum to 1 again
+    uses_reference:
+      - Graph
+      - pagerank
+  - index: 2
+    slug: spectral_clustering
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Find communities using spectral clustering.** Create a graph with two clearly separated clusters (e.g., two cliques connected by a single edge). Run spectral clustering and verify it finds the right split. What happens as you add more cross-cluster edges?
+    zh: |
+      **用譜分群找出社群。** 造一張有兩個明顯分開的叢集的圖（例如兩個團，中間只用一條邊相連）。跑譜分群，確認它切在對的地方。當你把跨叢集的邊愈加愈多，會發生什麼事？
+    verifies: two 6-cliques joined by one edge split perfectly 6/6; the split survives 1, 2, 4 and 8 cross edges at 100% agreement and first fails at 16; and the Fiedler value rises monotonically 0.26/0.47/0.78/1.50/2.83/12.0, growing 46x while agreement stays perfect - a graded separability measure where the label agreement is a cliff
+    uses_reference:
+      - Graph
+      - spectral_clustering
+  - index: 3
+    slug: dijkstra
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Implement Dijkstra's algorithm** for shortest paths in weighted graphs. Compare results to BFS on the same graph with uniform weights.
+    zh: |
+      **實作 Dijkstra 演算法**，在有權重圖上找最短路徑。把結果拿去跟同一張圖（權重全部相同）上的 BFS 對照。
+    verifies: on uniform weights a from-scratch Dijkstra matches the lesson's BFS at every node; on a graph where the direct 0->5 edge weighs 20 against a 5-hop path weighing 5 they disagree, each answering its own question; and on a negative edge the wrong answer is shown to appear one hop DOWNSTREAM at node 3 (2 against a true 1), since the settled node 2 is corrected but node 3 is never re-relaxed
+    uses_reference:
+      - Graph
+      - bfs
+  - index: 4
+    slug: two_layer_message_passing
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Build a 2-layer message passing network.** Apply message passing twice with different weight matrices. Show that after 2 rounds, each node has information from its 2-hop neighborhood.
+    zh: |
+      **做一個兩層的訊息傳遞網路。** 用不同的權重矩陣做兩次訊息傳遞。證明兩輪之後，每個節點都拿到了它 2 跳鄰域內的資訊。
+    verifies: tested by intervention rather than inspection: perturbing node 0 moves only its 1-hop neighbour after one round and its 2-hop neighbour after two, while nodes 3 and 4 hops away stay EXACTLY zero; and influence is shown to alternate by parity - node 1 moves after one round and exactly 0.0 after two - because message_passing normalises A without adding I, so a node never aggregates its own features
+    uses_reference:
+      - Graph
+      - message_passing
+  - index: 5
+    slug: karate_club
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Analyze a real-world graph.** Use the Karate Club graph (34 nodes, 78 edges). Compute degree distribution, Laplacian eigenvalues, and spectral clustering. Compare the spectral clustering result to the known ground truth split.
+    zh: |
+      **分析一張真實世界的圖。** 用 Karate Club 圖（34 個節點、78 條邊）。計算度分布、拉普拉斯特徵值，並做譜分群。把譜分群的結果跟已知的真實分組對照。
+    verifies: the graph is verified as 34 nodes, 78 edges, one component with degree sum 156 before anything is concluded; degrees are hub-dominated at 17 (node 33) and 16 (node 0) against a mean of 4.6; the Laplacian has exactly one zero eigenvalue with Fiedler value 0.4685; and spectral clustering gets 33 of 34 right, missing only node 2, whose 10 edges straddle both factions
+    uses_reference:
+      - Graph
+      - spectral_clustering
+      - connected_components

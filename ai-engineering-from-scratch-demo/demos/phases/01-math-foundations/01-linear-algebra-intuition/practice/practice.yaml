@@ -1,0 +1,82 @@
+lesson: 01-linear-algebra-intuition
+phase: 01-math-foundations
+source: phases/01-math-foundations/01-linear-algebra-intuition/docs/en.md
+exercises:
+  - index: 1
+    slug: angle_between
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement `Vector.angle_between(other)` that returns the angle in degrees between two vectors
+    zh: |
+      實作 `Vector.angle_between(other)`，回傳兩個向量之間的夾角（以度為單位）
+    verifies: an independent Kahan-formula implementation matches the lesson's angle_between within 1e-9 deg over 6 pairs (worst measured 7.1e-15); the 0 and 180 deg cases are exact; and on a near-parallel pair Kahan is exact where the lesson's acos form returns 0 instead of 5.73e-7 deg
+    uses_reference:
+      - Vector
+      - Vector.cosine_similarity
+  - index: 2
+    slug: scaling_matrix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a 2D scaling matrix that doubles the x-coordinate and triples the y-coordinate, then apply it to the vector [1, 1]
+    zh: |
+      建一個二維縮放矩陣，把 x 座標變兩倍、y 座標變三倍，然後把它套用到向量 [1, 1] 上
+    verifies: S @ [1,1] == [2,3] exactly; S is diagonal; the transform is linear (checked on 3 vector pairs) and area scales by det = 6
+    uses_reference:
+      - Matrix
+      - Vector
+  - index: 3
+    slug: most_similar_pair
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Given 5 random word-like vectors (dimension 50), find the two most similar using cosine similarity
+    zh: |
+      給定 5 個隨機的類詞向量（維度 50），用餘弦相似度找出最相似的那兩個
+    verifies: all 10 pairs scored; the argmax pair is ('bank', 'finance') at 0.9 by fixture construction, and the runner-up is at least 0.15 lower
+    fixtures:
+      - fixtures/word_vectors.json
+    uses_reference:
+      - Vector.cosine_similarity
+  - index: 4
+    slug: orthonormal_check
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Verify that the Gram-Schmidt output is truly orthonormal: check that every pair has dot product 0 and every vector has magnitude 1
+    zh: |
+      驗證 Gram-Schmidt 的輸出真的是正交規範的：檢查任兩個向量的內積都是 0，且每個向量的長度都是 1
+    verifies: over 2 well-conditioned bases every pairwise dot is below 1e-12 and every magnitude within 1e-12 of 1, worst deviation reported not just asserted; on a Hilbert-like basis orthogonality degrades 416x while still passing; and on a Lauchli basis gram_schmidt returns 1 of 3 vectors with no error, on inputs whose exact determinant is nonzero
+    uses_reference:
+      - gram_schmidt
+      - Vector
+  - index: 5
+    slug: rank_two_matrix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a 3x3 matrix with rank 2. Verify using the `rank()` method. Then explain what geometric object the columns span.
+    zh: |
+      建一個秩為 2 的 3x3 矩陣。用 `rank()` 方法驗證。然後說明它的欄張成的是什麼幾何物件。
+    verifies: rank() returns 2; the third column is a stated combination of the first two; a point off the plane is shown unreachable, which is what makes the span a plane rather than all of R^3
+    uses_reference:
+      - Matrix
+      - Matrix.rank
+  - index: 6
+    slug: projection_meaning
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Project the vector [1, 2, 3] onto [1, 1, 1]. What does the result represent geometrically?
+    zh: |
+      把向量 [1, 2, 3] 投影到 [1, 1, 1] 上。結果在幾何上代表什麼？
+    verifies: projection equals [2,2,2]; the residual is orthogonal to [1,1,1] within 1e-12; the projection is the closest point on the line, beaten by no sampled alternative
+    uses_reference:
+      - Vector.project_onto

@@ -1,0 +1,69 @@
+lesson: 16-sampling-methods
+phase: 01-math-foundations
+source: phases/01-math-foundations/16-sampling-methods/docs/en.md
+exercises:
+  - index: 1
+    slug: cauchy_inverse_cdf
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement inverse CDF sampling for the Cauchy distribution. The CDF is F(x) = 0.5 + arctan(x)/pi. Generate 10,000 samples and plot the histogram against the true PDF. Notice the heavy tails (extreme values far from center).
+    zh: |
+      為柯西分布實作逆 CDF 取樣。它的 CDF 是 F(x) = 0.5 + arctan(x)/pi。產生 10,000 個樣本，把直方圖跟真正的 PDF 畫在一起。注意它的厚尾（離中心很遠的極端值）。
+    verifies: 10,000 inverse-CDF Cauchy draws pass a KS test against the exact CDF (D=0.0087 < 0.0136), the median is 0.014 and the quartiles are within 0.06 of the exact -1 and +1, 6.3% of samples exceed |10| against a normal's 1-in-1e23, and the running mean is shown wandering across +3.5/+1.4/+11.6/+8.2 rather than converging - because the Cauchy has no mean
+    uses_reference:
+
+  - index: 2
+    slug: beta_rejection
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Use rejection sampling to generate samples from a Beta(2, 5) distribution using a Uniform(0, 1) proposal. Plot the accepted samples against the true Beta PDF. What is the theoretical acceptance rate?
+    zh: |
+      用 Uniform(0, 1) 作為提議分布，以拒絕取樣從 Beta(2, 5) 分布產生樣本。把接受的樣本跟真正的 Beta PDF 畫在一起。理論上的接受率是多少？
+    verifies: the envelope constant is derived as the Beta(2,5) mode value 2.4576, giving a theoretical acceptance rate of 1/M = 40.69% against a measured 40.56% over 49,310 proposals; accepted samples pass a KS test against the exact CDF and match the mean 2/7; and a 4x-too-tall envelope is shown to quarter the rate to 10.2%
+    uses_reference:
+      - rejection_sample_batch
+  - index: 3
+    slug: monte_carlo_convergence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Estimate the integral of sin(x) from 0 to pi using Monte Carlo with 1,000, 10,000, and 100,000 samples. Compare the error at each level. Verify that the error scales as O(1/sqrt(N)).
+    zh: |
+      分別用 1,000、10,000 與 100,000 個樣本，以蒙地卡羅估計 sin(x) 從 0 到 pi 的積分。比較每個層級的誤差。驗證誤差是以 O(1/sqrt(N)) 縮放的。
+    verifies: RMS error over 200 trials at N = 1e3/1e4/1e5 falls 0.0319/0.0106/0.0032, with measured ratios 3.01 and 3.32 against the sqrt(10)=3.16 the O(1/sqrt(N)) claim predicts, and absolute error within 15% of the closed-form sigma*(b-a)/sqrt(N); a single run per N is shown to produce errors out of order, which is what the exercise as written would give
+    uses_reference:
+      - monte_carlo_integral
+  - index: 4
+    slug: metropolis_hastings_2d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Metropolis-Hastings to sample from a 2D distribution p(x, y) proportional to exp(-(x^2 * y^2 + x^2 + y^2 - 8*x - 8*y) / 2). Plot the samples and the chain trajectory. Experiment with different proposal standard deviations.
+    zh: |
+      實作 Metropolis-Hastings，從一個正比於 exp(-(x^2 * y^2 + x^2 + y^2 - 8*x - 8*y) / 2) 的二維分布 p(x, y) 取樣。畫出樣本與鏈的軌跡。試試不同的提議分布標準差。
+    verifies: acceptance falls monotonically 88.7%/19.9%/5.5%/0.8% across proposal widths 0.1/1.5/4.0/12.0 while effective sample size peaks at an interior width of 4.0 (ESS 273 against 34 and 77 at the extremes); the peak sits at 5.5% acceptance, well below the ~23% rule of thumb, because the x^2y^2 coupling makes the target bimodal and wide jumps cross the modes
+    uses_reference:
+      - metropolis_hastings_2d
+  - index: 5
+    slug: decoding_strategies
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a complete text generation demo: given a vocabulary of 10 words with logits, generate sequences of 20 tokens using (a) greedy, (b) temperature=0.7, (c) top-k=3, (d) top-p=0.9. Compare the diversity of outputs across 5 runs.
+    zh: |
+      打造一個完整的文字生成示範：給定一個有 10 個詞、各自帶 logits 的詞彙表，分別用 (a) 貪婪、(b) temperature=0.7、(c) top-k=3、(d) top-p=0.9 生成 20 個詞元的序列。跑 5 次，比較輸出的多樣性。
+    verifies: greedy gives 1 distinct token and 1 unique sequence across 5 runs while all three sampling strategies give 5/5 unique; support sizes derived from the lesson's own distribution functions are 10, 3 and 3 tokens, so top-p and top-k coincide on these logits - and a flat logit vector separates them, with top-p admitting 9 where top-k still admits 3
+    uses_reference:
+      - temperature_sample
+      - top_k_sample
+      - top_p_sample
+      - temperature_distribution
+      - top_k_distribution
+      - top_p_distribution

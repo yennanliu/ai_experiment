@@ -1,0 +1,70 @@
+lesson: 17-linear-systems
+phase: 01-math-foundations
+source: phases/01-math-foundations/17-linear-systems/docs/en.md
+exercises:
+  - index: 1
+    slug: three_solvers_agree
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Solve the system `[[1,2,3],[4,5,6],[7,8,10]] x = [6, 15, 27]` using your Gaussian elimination, your LU solver, and `np.linalg.solve`. Verify all three give the same answer within floating-point tolerance.
+    zh: |
+      用你的高斯消去法、你的 LU 求解器，以及 `np.linalg.solve` 解 `[[1,2,3],[4,5,6],[7,8,10]] x = [6, 15, 27]`。驗證三者在浮點誤差容許範圍內給出同樣的答案。
+    verifies: gaussian_elimination, lu_solve and np.linalg.solve agree to 3.1e-15 and all match an exact Fraction-based elimination giving x = [3,-3,3] with no rounding; every residual is at machine precision; det = -3 confirms invertibility; and kappa(A) = 88 is reported, since three solvers agreeing on an ill-conditioned system would prove much less
+    uses_reference:
+      - gaussian_elimination
+      - lu_decompose
+      - lu_solve
+      - condition_number
+  - index: 2
+    slug: least_squares_four_ways
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Generate a 50x5 random matrix X and target y = X @ w_true + noise. Solve for w using normal equations, QR (via `np.linalg.qr`), SVD (via `np.linalg.svd`), and `np.linalg.lstsq`. Compare all four solutions. Measure the condition number of X^T X and explain how it affects which method you trust.
+    zh: |
+      產生一個 50x5 的隨機矩陣 X 與目標 y = X @ w_true + noise。分別用正規方程、QR（`np.linalg.qr`）、SVD（`np.linalg.svd`）與 `np.linalg.lstsq` 解出 w。比較這四個解。量測 X^T X 的條件數，並說明它如何影響你該相信哪個方法。
+    uses_reference:
+      - condition_number
+    verifies: kappa(XtX) is confirmed equal to kappa(X)^2 on both designs; on a random 50x5 matrix all four methods agree to 2.7e-15, so the exercise as written cannot distinguish them; and at kappa(XtX) = 5.8e14 the normal equations differ from lstsq by 3.06e3 against QR's 3.3e-05 and SVD's 2.9e-11, while all four residuals stay identical at 0.7180
+  - index: 3
+    slug: regularization
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Create a nearly singular matrix by making two columns almost identical (e.g., column 2 = column 1 + 1e-10 * noise). Compute its condition number. Solve Ax = b with and without regularization (add 0.01 * I). Compare the solutions and residuals. Explain why regularization helps.
+    zh: |
+      讓兩欄幾乎相同（例如第 2 欄 = 第 1 欄 + 1e-10 * noise），造出一個接近奇異的矩陣。算出它的條件數。在有和沒有正則化（加 0.01 * I）的情況下解 Ax = b。比較兩者的解與殘差，並解釋為什麼正則化有幫助。
+    verifies: a near-duplicate column gives kappa = 2.1e11 and an unregularized solution norm of 1.4e10 against ridge's 0.98; the residual is shown to get WORSE with ridge (0.279 vs 2.6e-06), as it must; and what improves is stability - perturbing b by 1e-8 moves the plain solution by 409 and the ridge solution by 1.5e-08, a factor of 2.7e10, with the plain shift bounded by kappa*delta
+    uses_reference:
+      - ridge_regression
+      - condition_number
+  - index: 4
+    slug: conjugate_gradient
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement the conjugate gradient algorithm for a 100x100 random symmetric positive definite matrix. Count how many iterations it takes to converge to tolerance 1e-8. Compare with the theoretical maximum of n iterations.
+    zh: |
+      對一個 100x100 的隨機對稱正定矩陣實作共軛梯度法。數一數它要幾次迭代才收斂到容許誤差 1e-8。跟理論上限的 n 次迭代比一比。
+    verifies: on three 100x100 SPD systems differing only in conditioning, CG needs 31, 178 and 728 iterations - up to 7.3x the 'theoretical maximum of n', which holds only in exact arithmetic; the lesson's default max_iter=n is shown to return unconverged answers on two of the three with residuals 1.4e-3 and 7.25 and no error raised; and the counts track sqrt(kappa) within 20% of the 0.5*sqrt(kappa)*ln(2/tol) bound
+    uses_reference:
+      - conjugate_gradient
+  - index: 5
+    slug: cholesky_timing
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Time your Cholesky solver vs your LU solver vs `np.linalg.solve` on symmetric positive definite matrices of size 10, 50, 200, 500. Plot the results. Verify Cholesky is roughly 2x faster than LU.
+    zh: |
+      在大小 10、50、200、500 的對稱正定矩陣上，分別為你的 Cholesky 求解器、你的 LU 求解器與 `np.linalg.solve` 計時。把結果畫出來。驗證 Cholesky 大約比 LU 快兩倍。
+    verifies: Cholesky solves all four sizes to 2.8e-17 and is faster than LU at every size, but by 1.39x at n=500 rather than the 2x flop ratio; the measured growth exponent is n^1.99 and n^2.06 rather than n^3, because both implementations are O(n^2) Python iterations each making one numpy call, so call boundaries dominate; and np.linalg.solve is 71x faster than either
+    uses_reference:
+      - cholesky
+      - cholesky_solve
+      - lu_decompose

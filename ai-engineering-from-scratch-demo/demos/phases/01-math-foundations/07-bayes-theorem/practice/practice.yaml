@@ -1,0 +1,55 @@
+lesson: 07-bayes-theorem
+phase: 01-math-foundations
+source: phases/01-math-foundations/07-bayes-theorem/docs/en.md
+exercises:
+  - index: 1
+    slug: sequential_tests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Multiple tests.** A patient tests positive twice on independent tests (both 99% accurate, disease prevalence 1 in 10,000). What is P(sick) after both tests? Use the posterior from the first test as the prior for the second.
+    zh: |
+      **多次檢驗。** 一位病人在兩次獨立檢驗中都呈陽性（兩次的準確率都是 99%，疾病盛行率為 10,000 分之 1）。兩次檢驗之後 P(sick) 是多少？把第一次檢驗的後驗當成第二次的先驗。
+    verifies: P(sick|+) = 0.009804 and P(sick|++) = 0.495; chaining the posterior is shown identical to one update with the likelihood ratio squared (9801) to 1e-12; the lesson's sequential_bayes agrees; and 3 positives are needed to pass 90%
+    uses_reference:
+      - bayes
+      - sequential_bayes
+  - index: 2
+    slug: smoothing_impact
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Smoothing impact.** Run the spam classifier with smoothing values of 0.01, 0.1, 1.0, and 10.0. How do the top word probabilities change? What happens with smoothing=0 and a word that appears only in ham?
+    zh: |
+      **平滑的影響。** 把垃圾郵件分類器分別用 0.01、0.1、1.0 與 10.0 的平滑值跑一遍。最高機率的那些字的機率怎麼變？如果 smoothing=0，而某個字只出現在 ham 裡，會發生什麼事？
+    verifies: across alpha in 0.01/0.1/1/10 the unseen-word probability rises monotonically (0.00082 to 0.0431) while a seen word's falls (0.2463 to 0.0560); smoothing=0 makes _log_likelihood raise ValueError on a ham-only word; and at alpha=10 P(spam) collapses from 0.9989 toward the prior at 0.5927
+    uses_reference:
+      - NaiveBayes
+      - NaiveBayes.top_words
+      - NaiveBayes.predict_proba
+  - index: 3
+    slug: length_feature
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add features.** Extend the NaiveBayes class to also use message length (short/long) as a feature alongside word counts. Estimate P(short|spam) and P(short|ham) from the training data and fold it into the prediction score.
+    zh: |
+      **加入特徵。** 擴充 NaiveBayes 類別，讓它除了詞的計數之外，也把訊息長度（短／長）當成一個特徵。從訓練資料估計 P(short|spam) 與 P(short|ham)，並把它納入預測分數。
+    verifies: a NaiveBayes subclass folds a smoothed binary length feature into predict_proba; P(short|spam)=0.8333 exceeds P(short|ham)=0.3333 as the data implies; the feature shifts P(spam) by up to 0.0713 and in the direction it predicts on every probe; and spam being 100% short shows why the feature needs its own smoothing
+    uses_reference:
+      - NaiveBayes
+  - index: 4
+    slug: map_vs_mle
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **MAP by hand.** Given observed data (7 heads in 10 coin flips), compute the MAP estimate of the bias using a Beta(2,2) prior. Compare it to the MLE estimate (7/10).
+    zh: |
+      **手算 MAP。** 已知觀測資料（10 次投擲硬幣中有 7 次正面），用 Beta(2,2) 先驗算出偏差的 MAP 估計。把它跟 MLE 估計（7/10）做比較。
+    verifies: the posterior is Beta(9,5) and the MAP is 8/12 = 0.666667 against an MLE of 0.7; a Beta(1,1) prior reproduces the MLE exactly; the MAP equals the count-weighted blend of MLE and prior mean to 1e-12, making Beta(2,2) worth exactly 2 pseudo-observations; and the prior's pull decays to 4e-5 by n=10000
+    uses_reference:
+      - beta_update

@@ -1,0 +1,70 @@
+lesson: 19-complex-numbers
+phase: 01-math-foundations
+source: phases/01-math-foundations/19-complex-numbers/docs/en.md
+exercises:
+  - index: 1
+    slug: complex_arithmetic
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Complex arithmetic by hand.** Compute (2 + 3i) * (4 - i) and verify with the code. Then compute (5 + 2i) / (1 - 3i). Draw both results on the complex plane and check that multiplication rotated and scaled the first number.
+    zh: |
+      **手算複數運算。** 算出 (2 + 3i) * (4 - i)，並用程式碼驗證。接著算 (5 + 2i) / (1 - 3i)。把兩個結果畫在複平面上，確認乘法確實把第一個數旋轉並縮放了。
+    verifies: independent hand expansions give (2+3i)(4-i) = 11+10i and (5+2i)/(1-3i) = -0.1+1.7i, both matched by the lesson's Complex and by Python's built-in complex to 1e-12; and the drawing claim is turned into a polar identity - |ab| = |a||b| and arg(ab) = arg(a)+arg(b) mod 2pi, plus z*conj(z) = |z|^2 which the division relies on
+    uses_reference:
+      - Complex
+      - to_polar
+  - index: 2
+    slug: rotation_sequence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Rotation sequence.** Start with the point (1, 0). Multiply by e^(i*pi/6) twelve times. Verify that you return to (1, 0) after 12 multiplications. Print the coordinates at each step and confirm they trace a regular 12-gon.
+    zh: |
+      **旋轉序列。** 從點 (1, 0) 開始，連續乘上 e^(i*pi/6) 十二次。驗證 12 次乘法之後你回到了 (1, 0)。印出每一步的座標，確認它們描出一個正十二邊形。
+    verifies: 12 multiplications by e^(i*pi/6) return to (1,0) with 1.1e-15 accumulated drift rather than exactly, all 13 points sit at radius 1 to 0, every consecutive gap is pi/6 to 5.6e-16, and the 12 vertices are distinct - so the path is a full 12-gon rather than a shorter polygon retraced
+    uses_reference:
+      - Complex
+      - euler
+  - index: 3
+    slug: dft_known_signal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **DFT of a known signal.** Create a signal that is the sum of sin(2*pi*3*t) and 0.5*sin(2*pi*7*t) sampled at 32 points. Run your DFT. Verify that the magnitude spectrum has peaks at frequencies 3 and 7, with the peak at 7 being half the height of the peak at 3.
+    zh: |
+      **已知訊號的 DFT。** 建立一個訊號，它是 sin(2*pi*3*t) 與 0.5*sin(2*pi*7*t) 的和，取樣 32 個點。跑你的 DFT。驗證振幅頻譜在頻率 3 與 7 處有峰值，且 7 處的峰高是 3 處的一半。
+    verifies: the 32-point DFT peaks at bins 3 and 7 with every other bin below 3.6e-14, and the 7:3 magnitude ratio is exactly 2.0 to 1e-12; dft round-trips through idft to 7.6e-15; a 3.5-cycle sinusoid is shown leaking above 10% across 8 bins, so the clean ratio depends entirely on integer frequencies; and |X[k]| = |X[N-k]| confirms the real-input mirror
+    uses_reference:
+      - dft
+      - idft
+  - index: 4
+    slug: roots_of_unity
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Roots of unity visualization.** Compute the 8th roots of unity. Verify that they sum to zero. Verify that multiplying any root by the primitive root e^(2*pi*i/8) gives the next root.
+    zh: |
+      **單位根視覺化。** 算出 8 次單位根。驗證它們相加為零。驗證任一個根乘上原根 e^(2*pi*i/8) 就會得到下一個根。
+    verifies: all 8 roots sit at radius 1, sum to zero with residual 6.0e-16, and multiplying each by the primitive gives the next across all 8 pairs including the wrap-around; every root to the 8th power returns 1 to 1.8e-15; and the 8 distinct phases confirm the primitive visits each exactly once
+    uses_reference:
+      - roots_of_unity
+      - euler
+      - Complex
+  - index: 5
+    slug: rotation_matrix_equivalence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Rotation matrix equivalence.** For 10 random angles and 10 random points, verify that complex multiplication gives the same result as matrix-vector multiplication with the 2x2 rotation matrix. Print the maximum numerical difference.
+    zh: |
+      **旋轉矩陣等價性。** 取 10 個隨機角度與 10 個隨機點，驗證複數乘法與 2x2 旋轉矩陣的矩陣─向量乘法給出相同結果。印出最大的數值差異。
+    verifies: all 100 angle-point pairs agree bit-exactly (difference exactly 0.0), because the two routes compute the same four products - so the check is an identity rather than evidence; the structural claims are tested instead: composing two rotations equals multiplying the rotors to 6.7e-16, length is preserved, and the rotors commute, which is where the 3D analogy fails
+    uses_reference:
+      - Complex
+      - euler

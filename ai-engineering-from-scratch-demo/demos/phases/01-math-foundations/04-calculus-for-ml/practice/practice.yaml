@@ -1,0 +1,41 @@
+lesson: 04-calculus-for-ml
+phase: 01-math-foundations
+source: phases/01-math-foundations/04-calculus-for-ml/docs/en.md
+exercises:
+  - index: 1
+    slug: second_derivative
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement `numerical_second_derivative(f, x)` using `numerical_derivative` called twice. Verify that the second derivative of x^3 at x=2 is 12.
+    zh: |
+      用 `numerical_derivative` 呼叫兩次來實作 `numerical_second_derivative(f, x)`。驗證 x^3 在 x=2 處的二階導數是 12。
+    verifies: a second derivative built by nesting numerical_derivative gives 11.923796 at the lesson's default h=1e-7, which rounds to 12 but carries 0.076 error; the same method at h=1e-2 reaches 8e-12; and the error is shown U-shaped in h, reaching 12 (100%) at h=1e-9
+    uses_reference:
+      - numerical_derivative
+  - index: 2
+    slug: gradient_descent_2d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Use gradient descent to find the minimum of f(x, y) = (x - 3)^2 + (y + 1)^2. Start from (0, 0). The answer should converge to (3, -1).
+    zh: |
+      用梯度下降找出 f(x, y) = (x - 3)^2 + (y + 1)^2 的最小值。從 (0, 0) 出發。答案應該收斂到 (3, -1)。
+    verifies: converges to (3,-1) within 1e-6; the gradient vanishes there; the error contracts by a constant factor whose spread over 11 steps is under 1e-6 and which equals the theoretical |1-2*lr|=0.8; and the final distance matches the closed form d0*0.8^100 to 1e-6 relative
+    uses_reference:
+      - gradient_descent_nd
+      - numerical_gradient
+  - index: 3
+    slug: momentum_comparison
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add momentum to the gradient descent loop: maintain a velocity vector that accumulates past gradients. Compare convergence speed with and without momentum on f(x) = x^4 - 3x^2.
+    zh: |
+      為梯度下降迴圈加上動量：維護一個速度向量，累積過去的梯度。在 f(x) = x^4 - 3x^2 上比較有動量與沒有動量的收斂速度。
+    verifies: momentum is measured 2.3x SLOWER than plain descent (234 vs 101 steps to 1e-6), with 25 direction reversals against 0, and from x0=+2.5 it crosses the ridge into the -sqrt(1.5) well; plain descent at the matched effective rate lr/(1-beta)=0.1 takes 10 steps, beating both
+    uses_reference:
+      - numerical_derivative

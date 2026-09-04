@@ -1,0 +1,59 @@
+lesson: 09-information-theory
+phase: 01-math-foundations
+source: phases/01-math-foundations/09-information-theory/docs/en.md
+exercises:
+  - index: 1
+    slug: alphabet_entropy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the entropy of the English alphabet assuming uniform distribution (26 letters). Then estimate it using actual letter frequencies. Which is higher and why?
+    zh: |
+      假設英文字母是均勻分布（26 個字母），計算它的熵。接著用實際的字母頻率估算一次。哪一個比較高，為什麼？
+    verifies: H(uniform over 26) equals log2(26) = 4.700440 to 1e-12; real English letter frequencies give 4.181386, strictly less, since uniform maximises entropy; the 0.519054 gap is shown to equal D_KL(real||uniform) to 1e-12 exactly; and surprisal ranks 'z' at 10.48 bits against 'e' at 3.06
+    uses_reference:
+      - entropy
+      - kl_divergence
+      - information_content
+  - index: 2
+    slug: cross_entropy_by_hand
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A model outputs logits [5.0, 2.0, 0.5] for a sample with true class 1. Compute the cross-entropy loss by hand, then verify with your `cross_entropy_loss` function. What logits would give zero loss?
+    zh: |
+      有一個模型對某個樣本輸出 logits [5.0, 2.0, 0.5]，而真實類別是 1。請手算交叉熵損失，然後用你的 `cross_entropy_loss` 函式驗證。什麼樣的 logits 會讓損失變成零？
+    verifies: an independent log-sum-exp derivation gives 3.059114, matching the lesson's cross_entropy_loss to 1e-12 and equalling -log p_1; and the exercise's closing question is answered negatively - no finite logits give exactly zero loss, with a margin sweep showing 4.12e-09 at margin 20 and the first exact 0.0 only at margin 40, a float64 artifact
+    uses_reference:
+      - cross_entropy_loss
+      - softmax
+  - index: 3
+    slug: kl_asymmetry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Show that KL divergence is not symmetric. Pick two distributions P and Q and compute D_KL(P || Q) and D_KL(Q || P). Explain why they differ.
+    zh: |
+      證明 KL 散度不對稱。挑兩個分布 P 與 Q，算出 D_KL(P || Q) 與 D_KL(Q || P)，並解釋為什麼它們不一樣。
+    verifies: four pairs computed both directions, all non-negative; a deliberately palindromic P/Q pair comes out symmetric at 1.684413 both ways, showing one example proves nothing; a q with 1e-9 mass at p's mode is 8x asymmetric (20.27 vs 2.4); and D_KL(p||p)=0 with H(p,q)-H(p) reproducing the divergence exactly
+    uses_reference:
+      - kl_divergence
+      - cross_entropy
+      - entropy
+  - index: 4
+    slug: sequence_perplexity
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a function that computes perplexity for a sequence of token predictions. Given a list of (true_token_index, predicted_logits) pairs, return the perplexity of the sequence.
+    zh: |
+      寫一個函式，計算一串詞元預測的困惑度。輸入是一串 (true_token_index, predicted_logits) 配對，回傳這個序列的困惑度。
+    verifies: a uniform model over 8 tokens gives perplexity exactly 8.000000000, a confident correct model 1.002, and a confidently wrong one 2988; perplexity is invariant to doubling the sequence length, which is the check that catches exp(sum) for exp(mean); and the lesson's own perplexity() agrees on the uniform case
+    uses_reference:
+      - cross_entropy_loss
+      - perplexity
+      - entropy

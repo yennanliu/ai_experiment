@@ -1,0 +1,73 @@
+lesson: 20-fourier-transform
+phase: 01-math-foundations
+source: phases/01-math-foundations/20-fourier-transform/docs/en.md
+exercises:
+  - index: 1
+    slug: pure_tone_identification
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Pure tone identification.** Create a signal with a single sine wave at an unknown frequency (between 1 and 50 Hz), sampled at 128 Hz for 1 second. Use your DFT to identify the frequency. Verify the answer matches. Now add Gaussian noise with standard deviation 0.5 and repeat. How does noise affect the spectrum?
+    zh: |
+      **辨識純音。** 建立一個只含單一正弦波的訊號，頻率未知（在 1 到 50 Hz 之間），以 128 Hz 取樣 1 秒。用你的 DFT 找出這個頻率，並驗證答案吻合。接著加入標準差 0.5 的高斯雜訊再做一次。雜訊對頻譜有什麼影響？
+    verifies: a 17 Hz tone at 128 Hz for 1 s is identified exactly, since 1 Hz bins make an integer frequency land in one bin; sigma=0.5 noise leaves the peak unmoved but raises the floor from 6e-14 to 13.8, cutting the peak-to-floor ratio to 4.2x; and a sigma sweep locates the breaking point at 2.0, matching the sigma*sqrt(N/2) = 8*sigma per-bin noise estimate against a peak of N/2 = 64
+    uses_reference:
+      - generate_signal
+      - spectral_analysis
+  - index: 2
+    slug: fft_vs_dft
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **FFT vs DFT verification.** Generate a random signal of length 64. Compute both DFT (O(N^2)) and FFT. Verify that all coefficients match to within 1e-10. Time both functions on signals of length 256, 512, 1024, and 2048. Plot the ratio of DFT time to FFT time.
+    zh: |
+      **FFT 對 DFT 的驗證。** 產生一個長度 64 的隨機訊號。同時算 DFT（O(N^2)）與 FFT，驗證所有係數的差都在 1e-10 以內。對長度 256、512、1024、2048 的訊號各測兩個函式的執行時間，把 DFT 時間與 FFT 時間的比值畫出來。
+    verifies: all 64 coefficients match to 1.3e-13, about 800x inside the exercise's 1e-10 bar; timing at N = 256/512/1024/2048 fits DFT at N^2.01 and FFT at N^1.16 when the exponents are fitted separately, and the DFT/FFT ratio grows 5.8x against the 5.8x that N/log2(N) predicts; at N=2048 the DFT takes 2.1 s against 8 ms
+    uses_reference:
+      - dft
+      - fft
+  - index: 3
+    slug: convolution_theorem
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Convolution theorem proof by example.** Create signal x = [1, 2, 3, 4, 0, 0, 0, 0] and filter h = [1, 1, 1, 0, 0, 0, 0, 0]. Compute their circular convolution directly (nested loop). Then compute it via FFT (transform, multiply, inverse transform). Verify the results match. Now do linear convolution by zero-padding appropriately.
+    zh: |
+      **用例子證明摺積定理。** 建立訊號 x = [1, 2, 3, 4, 0, 0, 0, 0] 與濾波器 h = [1, 1, 1, 0, 0, 0, 0, 0]。先直接算它們的循環摺積（雙層迴圈），再用 FFT 算一次（轉換、相乘、反轉換），驗證結果一致。接著適當補零，做出線性摺積。
+    verifies: circular convolution by nested loop and via FFT agree to 8.9e-16, and convolve_direct on the unpadded signals matches the first 6 entries exactly - so the exercise's zero-padding step changes nothing as given, since 4+3-1 = 6 taps already fit in 8; running the same convolution at N=4 exhibits the wrap-around it prevents, folding taps 5 and 6 onto positions 1 and 2
+    uses_reference:
+      - fft
+      - ifft
+      - convolve_direct
+  - index: 4
+    slug: windowing_effects
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Windowing effects.** Create a signal that is the sum of two sine waves at 10 Hz and 12 Hz (very close). Sample at 128 Hz for 1 second. Compute the power spectrum with no window, Hann window, and Hamming window. Which window makes it easiest to distinguish the two peaks? Why?
+    zh: |
+      **加窗的效果。** 建立一個由 10 Hz 與 12 Hz（非常接近）兩個正弦波相加而成的訊號，以 128 Hz 取樣 1 秒。分別在不加窗、加 Hann 窗、加 Hamming 窗的情況下算功率頻譜。哪一個窗函數最容易分辨出兩個峰？為什麼？
+    verifies: scored by valley depth between the peaks, only the rectangular window resolves 10 and 12 Hz - its valley is numerically zero while Hann's is 0.98x, higher than the lower peak, merging the tones; Hamming's narrower main lobe beats Hann at 1.36x; and at 1 bin apart no treatment resolves them, since only a longer observation narrows a bin
+    uses_reference:
+      - generate_signal
+      - fft
+      - power_spectrum
+      - hann_window
+      - hamming_window
+      - apply_window
+  - index: 5
+    slug: positional_encoding
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Positional encoding analysis.** Generate the sinusoidal positional encodings for d_model = 128 and max_pos = 512. For each pair of positions (p1, p2), compute the dot product of their encodings. Show that the dot product depends only on |p1 - p2|, not on the absolute positions. What happens to the dot product as the distance increases?
+    zh: |
+      **位置編碼分析。** 為 d_model = 128 與 max_pos = 512 產生正弦式位置編碼。對每一組位置 (p1, p2)，算它們編碼的內積。證明這個內積只取決於 |p1 - p2|，跟絕對位置無關。距離變大時，內積會怎麼變？
+    verifies: the self dot product is exactly d_model/2 = 64, and across 530 pairs at 9 distances the spread within a distance is 2e-13 - so dependence on |p1-p2| alone is exact, by the angle-difference identity; the sparse distances look monotone but a dense sweep every 8 positions shows 28 of 63 steps rising, and the floor stays at 11.5, about 18% of the self value, never approaching orthogonality
+    uses_reference:
+      - positional_encoding

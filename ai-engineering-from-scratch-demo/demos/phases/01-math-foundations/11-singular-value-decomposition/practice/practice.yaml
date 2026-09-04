@@ -1,0 +1,69 @@
+lesson: 11-singular-value-decomposition
+phase: 01-math-foundations
+source: phases/01-math-foundations/11-singular-value-decomposition/docs/en.md
+exercises:
+  - index: 1
+    slug: svd_via_eigendecomposition
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement the full SVD from scratch without using power iteration. Instead, compute the eigendecomposition of A^T A to get V and the singular values, then compute U = A V Sigma^{-1}. Compare numerical accuracy with your power iteration version and with NumPy.
+    zh: |
+      不用冪次迭代，從零實作完整的 SVD。改成計算 A^T A 的特徵分解來取得 V 與奇異值，再算出 U = A V Sigma^{-1}。把數值精度跟你的冪次迭代版本以及 NumPy 比一比。
+    verifies: the prescribed AtA route reproduces A = U S Vt to 1e-12 with U orthonormal, and matches numpy to 5.9e-16 on a well-conditioned matrix; on one with sigma spanning 1e-9 its relative error is 8.7e-09, since forming AtA squares the condition number; and the lesson's svd_from_scratch is shown to return 2 of 4 singular values with no error, breaking out when an AtA eigenvalue falls below 1e-10
+    uses_reference:
+      - svd_from_scratch
+      - power_iteration
+  - index: 2
+    slug: image_compression
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Load a real grayscale image (or convert one to grayscale). Compress it at ranks 1, 5, 10, 25, 50, 100. For each rank, compute the compression ratio and the relative error. Find the rank where the image becomes visually acceptable.
+    zh: |
+      載入一張真實的灰階影像（或把一張影像轉成灰階）。在秩 1、5、10、25、50、100 下分別壓縮它。對每個秩算出壓縮率與相對誤差。找出影像在哪個秩開始看起來可以接受。
+    verifies: a real 427x640 grayscale image compressed at ranks 1/5/10/25/50/100 gives monotonically falling relative error 29.2% to 7.4%; the 10% threshold is first met at rank 100, storing 39.1% of the pixels; rank 1 already holds 91.5% of spectral energy; and every rank tested is below the k < mn/(m+n+1) = 256 break-even
+    uses_reference:
+      - truncated_svd
+      - reconstruct
+      - compression_ratio
+  - index: 3
+    slug: recommendation_system
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a tiny recommendation system. Create a 10x8 user-movie ratings matrix with some known entries. Fill missing entries with row means. Compute SVD and reconstruct a rank-3 approximation. Use the reconstructed matrix to predict the missing ratings. Verify that the predictions are reasonable.
+    zh: |
+      做一個迷你推薦系統。建立一個 10x8 的使用者-電影評分矩陣，其中部分元素已知。用列平均補齊缺失的元素。算出 SVD 並重建秩 3 的近似。用重建後的矩陣預測缺失的評分，並驗證預測結果合理。
+    verifies: a 10x8 ratings matrix with 31% hidden, row-mean filled and rank-3 reconstructed, predicts within the 1-5 range everywhere, holds 0.141 MAE on observed entries, and beats the row-mean baseline it was initialised from on held-out entries by 12% (0.879 vs 0.995) - the only check that shows the factorisation learned cross-user structure rather than reproducing the fill
+    uses_reference:
+      - truncated_svd
+      - reconstruct
+  - index: 4
+    slug: latent_topics
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Create a 100x50 document-term matrix with 3 synthetic topics. Each topic has 5 associated terms. Add noise. Apply SVD and verify that the top 3 singular values are much larger than the rest. Project documents into the 3D latent space and check that documents from the same topic cluster together.
+    zh: |
+      建立一個 100x50 的文件-詞彙矩陣，內含 3 個合成主題，每個主題有 5 個相關詞彙。加入雜訊。套用 SVD，並驗證前 3 個奇異值遠大於其餘的。把文件投影到 3 維潛在空間，檢查同一主題的文件是否聚在一起。
+    verifies: a 100x50 document-term matrix with 3 planted topics gives sigma3/sigma4 = 3.59 with 83.4% of energy in the top 3; the 3D projection separates classes at intra/inter 0.159 against 0.469 in raw term space; and each component is shown to load on a distinct topic block, in the permuted order [2,1,0], beating noise-term loadings by at least 10x
+    uses_reference:
+      - truncated_svd
+  - index: 5
+    slug: optimal_rank_vs_noise
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Generate a clean low-rank matrix (rank 3, size 50x40) and add Gaussian noise at different levels (sigma = 0.1, 0.5, 1.0, 2.0). For each noise level, find the optimal truncation rank by sweeping k from 1 to 40 and measuring reconstruction error against the clean matrix. Plot how the optimal k changes with noise level.
+    zh: |
+      產生一個乾淨的低秩矩陣（秩 3，大小 50x40），並在不同強度下加入高斯雜訊（sigma = 0.1、0.5、1.0、2.0）。對每個雜訊強度，把 k 從 1 掃到 40 並量測對乾淨矩陣的重建誤差，找出最佳的截斷秩。畫出最佳 k 如何隨雜訊強度變化。
+    verifies: sweeping k=1..40 at sigma 0.1/0.5/1.0/2.0 puts the optimal rank at 3 for every noise level, not a decreasing function of sigma; truncating at the true rank beats full rank at every level by a near-constant 2.6-2.9x, which is scale-free since both errors scale linearly in sigma; and the spectral gap sigma3/sigma4 collapses 24.8 -> 1.4, with Gavish-Donoho thresholding recovering 3,3,3,2 components
+    uses_reference:
+      - truncated_svd
+      - reconstruct

@@ -1,0 +1,72 @@
+# T0 — every pull request, plus pushes to main. `DESIGN §8` Q1 keeps this repo
+# inside ai_experiment, so the workflow lives at the *repository* root with a
+# paths: filter and a working-directory:, rather than beside the code it runs.
+#
+# The push trigger is scoped to main on purpose: an unscoped `push` fires
+# alongside `pull_request` on every branch commit, so each push to an open PR ran
+# the whole suite twice.
+name: aiefs-demo T0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-engineering-from-scratch-demo/**'
+      - '.github/workflows/aiefs-demo-t0.yml'
+  pull_request:
+    paths:
+      - 'ai-engineering-from-scratch-demo/**'
+      - '.github/workflows/aiefs-demo-t0.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ai-engineering-from-scratch-demo
+
+jobs:
+  t0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Solutions import the lesson's own code rather than copying it (D5), so
+      # the reference checkout is a build input, not an optional extra.
+      - name: Check out the reference curriculum
+        uses: actions/checkout@v4
+        with:
+          repository: yennanliu/ai-engineering-from-scratch
+          path: reference
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: The harness must import with nothing installed (DESIGN §4)
+        run: python3 -c "import harness, harness.runner, harness.coverage; print(harness.__version__)"
+
+      - run: uv sync --extra math --extra dev
+
+      - name: Gates
+        env:
+          AIEFS_REFERENCE: ${{ github.workspace }}/reference
+        run: |
+          uv run python scripts/check_deps.py
+          uv run python scripts/audit_practice.py
+          uv run demo coverage --check
+
+      - name: Verify T0
+        env:
+          AIEFS_REFERENCE: ${{ github.workspace }}/reference
+          DEMO_TIER: T0
+        run: |
+          uv run demo verify
+          uv run pytest -q
+
+      - name: Coverage table
+        env:
+          AIEFS_REFERENCE: ${{ github.workspace }}/reference
+        run: uv run demo coverage --phase 01

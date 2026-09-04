@@ -1,0 +1,65 @@
+lesson: 08-optimization
+phase: 01-math-foundations
+source: phases/01-math-foundations/08-optimization/docs/en.md
+exercises:
+  - index: 1
+    slug: learning_rate_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Learning rate sweep.** Run vanilla gradient descent on the Rosenbrock function with learning rates [0.0001, 0.0005, 0.001, 0.005, 0.01]. Plot or print the final loss after 5000 steps for each. Find the largest learning rate that still converges.
+    zh: |
+      **學習率掃描。** 在 Rosenbrock 函式上用學習率 [0.0001, 0.0005, 0.001, 0.005, 0.01] 跑原始版梯度下降。把每一種在 5000 步後的最終損失畫出來或印出來。找出仍然會收斂的最大學習率。
+    verifies: the largest converging rate is 0.005 and lr=0.01 aborts after 4 of 5000 steps, detectable by history length not loss; and the loss is shown U-shaped in lr, with the best rate 0.001 at loss 0.0038 beating the largest converging rate's 0.788 by 210x
+    uses_reference:
+      - GradientDescent
+      - optimize
+      - rosenbrock
+      - rosenbrock_gradient
+      - distance_to_minimum
+  - index: 2
+    slug: momentum_comparison
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Momentum comparison.** Run SGD with momentum values [0.0, 0.5, 0.9, 0.99] on the Rosenbrock function. Track the loss at every step. Which momentum value converges fastest? Which overshoots?
+    zh: |
+      **動量比較。** 在 Rosenbrock 函式上用動量值 [0.0, 0.5, 0.9, 0.99] 跑 SGD。追蹤每一步的損失。哪個動量值收斂最快？哪個會衝過頭？
+    verifies: beta=0.9 crosses find_convergence_step's threshold at step 836 against 5001 for plain SGD; only beta=0.99 travels past the minimum, reaching x=2.04 with 2486 loss-increasing steps and a peak loss of 26.4 above its own start of 24.2; and beta=0.99 reaches the lowest final loss while being slower to the threshold
+    uses_reference:
+      - SGDMomentum
+      - optimize
+      - rosenbrock
+      - find_convergence_step
+  - index: 3
+    slug: saddle_escape
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Saddle point escape.** Define the function `f(x, y) = x^2 - y^2` (a saddle point at the origin). Start at (0.01, 0.01). Compare how vanilla GD, SGD with momentum, and Adam behave. Which escapes the saddle point?
+    zh: |
+      **逃離鞍點。** 定義函式 `f(x, y) = x^2 - y^2`（原點是一個鞍點）。從 (0.01, 0.01) 出發。比較原始版 GD、帶動量的 SGD 與 Adam 的行為。哪一個逃出了鞍點？
+    verifies: all three optimizers escape f=x^2-y^2 with |x| driven below 1e-10; momentum reaches |y|>1 at step 49, Adam at 76, plain GD at 233 - so Adam beats GD out of the flat region by 3x - yet after 2000 steps Adam is at |y|=30 against 5e14, matching steps*lr because its normalisation caps each step near lr
+    uses_reference:
+      - GradientDescent
+      - SGDMomentum
+      - Adam
+      - optimize
+  - index: 4
+    slug: learning_rate_decay
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement learning rate decay.** Add an exponential decay schedule to the GradientDescent class: `lr = lr_0 * 0.999^step`. Compare convergence with and without decay on the Rosenbrock function.
+    zh: |
+      **實作學習率衰減。** 為 GradientDescent 類別加上指數衰減排程：`lr = lr_0 * 0.999^step`。在 Rosenbrock 函式上比較有衰減與沒衰減的收斂情形。
+    verifies: a GradientDescent subclass applies lr = lr0 * 0.999^step, falling to 6.7e-06 by step 5000; at lr=0.001 decay is worse than plain (0.46 vs 0.0038) because the schedule's total travel is capped at lr0/(1-0.999); and at lr=0.01 no decay from 0.999 down to 0.5 prevents divergence, since every schedule starts at lr0
+    uses_reference:
+      - GradientDescent
+      - optimize
+      - rosenbrock
+      - distance_to_minimum

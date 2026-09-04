@@ -1,0 +1,68 @@
+lesson: 18-convex-optimization
+phase: 01-math-foundations
+source: phases/01-math-foundations/18-convex-optimization/docs/en.md
+exercises:
+  - index: 1
+    slug: convexity_gallery
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Convexity gallery.** Test these functions for convexity using the checker: f(x) = x^4, f(x) = sin(x), f(x,y) = x^2 + y^2, f(x,y) = x*y, f(x) = max(x, 0). Explain why each result makes sense.
+    zh: |
+      **凸性圖鑑。** 用檢查器檢驗下列函式的凸性：f(x) = x^4、f(x) = sin(x)、f(x,y) = x^2 + y^2、f(x,y) = x*y、f(x) = max(x, 0)。解釋每個結果為什麼合理。
+    verifies: all five functions get the analytically correct verdict from 4,000 random chords; x*y's rejection is independently confirmed by its indefinite Hessian eigenvalues +/-1; sin's rejection is confirmed by an exhibited chord on [0, 3pi/2] with a 1.2071 gap rather than a sampled one; and max(x,0) is identified as the case only a chord test can settle, having no Hessian at 0
+    uses_reference:
+      - check_convexity
+      - hessian_eigenvalues_2d
+      - is_positive_semidefinite_2d
+  - index: 2
+    slug: newton_vs_gd
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Newton vs gradient descent race.** Run both methods on f(x,y) = 50*x^2 + y^2 from the starting point (10, 10). How many steps does each need to reach loss < 1e-10? What happens to gradient descent when the condition number (ratio of largest to smallest Hessian eigenvalue) increases?
+    zh: |
+      **牛頓法與梯度下降賽跑。** 從起點 (10, 10) 出發，在 f(x,y) = 50*x^2 + y^2 上跑這兩種方法。各自要幾步才能讓損失降到 1e-10 以下？當條件數（Hessian 最大特徵值與最小特徵值的比值）變大時，梯度下降會怎樣？
+    verifies: on f = 50x^2 + y^2 from (10,10), gradient descent needs 684 steps to loss < 1e-10 and Newton needs 1, landing exactly on [0,0] because the Hessian is exact on a quadratic; Newton stays at 1 step for kappa = 1/10/50/500 while GD grows 1/132/684/6901, a 52x rise over a 50x rise in kappa - within 5% of the (kappa-1)/(kappa+1) contraction
+    uses_reference:
+      - optimize_gd
+      - newtons_method
+  - index: 3
+    slug: lagrange_geometry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Lagrange multiplier geometry.** Minimize f(x,y) = (x-3)^2 + (y-3)^2 subject to x + 2y = 4. Verify the solution by checking that the gradient of f is parallel to the gradient of g at the solution.
+    zh: |
+      **拉格朗日乘數的幾何。** 在 x + 2y = 4 的約束下最小化 f(x,y) = (x-3)^2 + (y-3)^2。透過檢查解的位置上 f 的梯度是否與 g 的梯度平行來驗證答案。
+    verifies: the constrained minimum converges to (2,1), matching the closed-form perpendicular foot to 4.4e-16, satisfying x+2y=4 and giving grad f parallel to grad g with cross product 1.8e-15 and lambda = -2; and because the parallel condition also holds at maxima, 81 points sampled along the constraint line confirm t=0 is the minimum
+    uses_reference:
+      - lagrange_solve
+  - index: 4
+    slug: l1_constraint_sparsity
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Regularization constraint.** Implement L1-constrained optimization: minimize (x-3)^2 + (y-2)^2 subject to |x| + |y| <= 1. Show that the solution has one coordinate equal to zero (sparsity from the diamond constraint).
+    zh: |
+      **正則化約束。** 實作 L1 約束下的最佳化：在 |x| + |y| <= 1 的約束下最小化 (x-3)^2 + (y-2)^2。證明解裡有一個座標剛好等於零（來自菱形約束的稀疏性）。
+    verifies: projected gradient descent onto the L1 ball converges to the vertex (1,0) with exactly one zero coordinate and an active budget; the same problem on an L2 ball gives (0.832, 0.555) with no zero coordinate, showing sparsity comes from the diamond's corners rather than from constraining a norm; and the L1 objective 8.0 exceeds L2's 6.79, so sparsity is bought
+    uses_reference:
+
+  - index: 5
+    slug: hessian_eigenvalues
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hessian eigenvalue analysis.** Compute the Hessian of the Rosenbrock function at (1,1) and at (-1,1). Compute eigenvalues at both points. What do the eigenvalues tell you about the curvature at the minimum versus far from it?
+    zh: |
+      **Hessian 特徵值分析。** 算出 Rosenbrock 函式在 (1,1) 與 (-1,1) 的 Hessian。在這兩個點都算出特徵值。這些特徵值告訴你在最小值處與離最小值很遠處的曲率有什麼不同？
+    verifies: at (1,1) the gradient vanishes, f=0 and both eigenvalues are positive with ratio 2508 - a narrow valley; (-1,1) has the IDENTICAL spectrum {1001.60, 0.3994} because the off-diagonal sign flip preserves trace and determinant, so eigenvalues alone cannot locate a minimum and only the gradient distinguishes them; and (0,1) is exhibited as a point where the Hessian genuinely is indefinite, with eigenvalues 200 and -398
+    uses_reference:
+      - hessian_eigenvalues_2d
+      - is_positive_semidefinite_2d

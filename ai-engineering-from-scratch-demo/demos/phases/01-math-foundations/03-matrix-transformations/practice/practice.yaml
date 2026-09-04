@@ -1,0 +1,51 @@
+lesson: 03-matrix-transformations
+phase: 01-math-foundations
+source: phases/01-math-foundations/03-matrix-transformations/docs/en.md
+exercises:
+  - index: 1
+    slug: unit_square_transforms
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Apply rotation, scaling, and shearing to a unit square (corners at [0,0], [1,0], [1,1], [0,1]). Print the transformed corners for each. Verify that rotation preserves distances between corners.
+    zh: |
+      把旋轉、縮放與剪切施加在一個單位正方形上（頂點在 [0,0]、[1,0]、[1,1]、[0,1]）。分別印出轉換後的頂點。驗證旋轉保持了頂點之間的距離。
+    verifies: rotation preserves all 6 pairwise corner distances within 1e-12 and has det 1; scaling and shearing are run as controls and change distances by more than 0.1; all three have det 1, so the checks separate isometry from area preservation
+    uses_reference:
+      - rotation_2d
+      - scaling_2d
+      - shearing_2d
+      - mat_vec_mul
+      - det_2x2
+  - index: 2
+    slug: eigenvalues_by_hand
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Find the eigenvalues of the matrix [[4, 2], [1, 3]] by hand using the characteristic equation. Then verify with your from-scratch function and with NumPy.
+    zh: |
+      用特徵方程式手算矩陣 [[4, 2], [1, 3]] 的特徵值。然後用你從零寫的函式與 NumPy 各驗證一次。
+    verifies: an independent characteristic-polynomial derivation gives 5 and 2, agreeing with the lesson's eigenvalues_2x2 and with numpy.linalg.eigvals to 1e-12; each eigenvector satisfies Av = lambda v; and trace/det match the sum/product of the eigenvalues
+    uses_reference:
+      - eigenvalues_2x2
+      - eigenvector_2x2
+      - mat_vec_mul
+  - index: 3
+    slug: composed_transformations
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a composition of three transformations (rotate 30 degrees, scale by [1.5, 0.8], shear with kx=0.3) and apply it to 8 points arranged in a circle. Print before and after coordinates. Compute the determinant of the composed matrix and verify it equals the product of the individual determinants.
+    zh: |
+      建立三個轉換的組合（旋轉 30 度、縮放 [1.5, 0.8]、以 kx=0.3 剪切），並施加在排成一圈的 8 個點上。印出轉換前後的座標。算出組合矩陣的行列式，並驗證它等於各個行列式的乘積。
+    verifies: det of the composed map equals the product of the three individual dets within 1e-12; composing once equals applying the three in sequence within 1e-12; and because that identity is order-blind, reversing the order is shown to keep the det while moving points by more than 0.1
+    uses_reference:
+      - rotation_2d
+      - scaling_2d
+      - shearing_2d
+      - mat_mul
+      - mat_vec_mul
+      - det_2x2
