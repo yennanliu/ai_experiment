@@ -67,19 +67,24 @@ def verify(result):
                        tests[-1] > tests[0] and abs(tests[-1] - tests[-2]) < 0.02,
                        f"{tests[0]:.1%} at 1 tree -> {tests[-1]:.1%} at {SIZES[-1]}, with "
                        f"only {abs(tests[-1] - tests[-2]):.1%} between the last two sizes"),
-        practice.Check("ANSWER: it never falls materially below its running best",
+        practice.Check("ANSWER: over this sweep it never falls materially below its best",
                        worst_drop < 0.02,
-                       f"largest drop below the running maximum: {worst_drop:.2%} — "
-                       f"within seed noise. Five points from one seed could not have "
-                       f"supported this claim either way"),
+                       f"largest drop below the running maximum: {worst_drop:.2%}, over "
+                       f"sizes {SIZES} and {len(SEEDS)} seeds — within seed noise. This is "
+                       f"an observed finite-sweep result, not a proof: a size outside "
+                       f"{SIZES} or a sixth seed could show more, and one seed alone could "
+                       f"not have supported the claim either way"),
         practice.Check("MECHANISM: averaging cuts variance without shifting the mean",
                        rows[SIZES[-1]]["train"] >= rows[1]["train"],
                        f"train accuracy {rows[1]['train']:.1%} -> "
-                       f"{rows[SIZES[-1]]['train']:.1%}. Each tree is fit on a bootstrap "
-                       f"sample, so their errors are partly independent; averaging n of "
-                       f"them divides the variance of that average by up to n while leaving "
-                       f"its expectation alone. Adding trees therefore cannot overfit — the "
-                       f"resistance is bagging's, not the tree's"),
+                       f"{rows[SIZES[-1]]['train']:.1%} — the fit does not tighten as trees "
+                       f"are added, which is the signature of averaging rather than of "
+                       f"capacity growth. Each tree is fit on a bootstrap sample, so their "
+                       f"errors are partly independent; averaging n of them divides the "
+                       f"variance of that average by up to n while leaving its expectation "
+                       f"alone. That argument is why the plateau above is expected — the "
+                       f"resistance is bagging's, not the tree's — but the argument is "
+                       f"theory, and only the plateau is measured here"),
     ]
 
 

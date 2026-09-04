@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Implement KNN classification on a 2D dataset with 3 classes. Plot the decision boundary for K… | code | T0 | `ex01_k_sweep.py` |
-| 2 | Generate 1000 random points in 2, 5, 10, 50, 100, and 500 dimensions. For each dimensionality… | code | T0 | `ex02_curse_of_dimensionality.py` |
+| 2 | Generate 1000 random points in 2, 5, 10, 50, 100, and 500 dimensions. For each dimensionality… | code | T1 | `ex02_curse_of_dimensionality.py` |
 | 3 | Compare L1, L2, and cosine distance for KNN on a text classification problem (use TF-IDF vect… | code | T0 | `ex03_text_distance_metrics.py` |
 | 4 | Implement a KD-tree and measure query time vs brute force for datasets of 1k, 10k, and 100k p… | code | T1 | `ex04_kdtree_vs_brute.py` |
 | 5 | Build a weighted KNN regressor for y = sin(x) + noise. Compare it with unweighted KNN for K=3… | code | T0 | `ex05_weighted_knn.py` |
@@ -42,18 +42,26 @@ majority (50.0%): predicting the wrong constant is worse than guessing.
 Note the train-test gap at K=N is +13.8% with *both* terms near zero — a small
 gap is no evidence of a good model.
 
-**2 — the ratio collapses 134×, and √d is why.**
+**2 — the ratio collapses 1068×, and √d is why.**
+
+At the exercise's own 1000 points, so 499,500 pairs per dimensionality:
 
 | d | max/min | (max−min)/mean | mean/√d |
 |---:|---:|---:|---:|
-| 2 | 169.78 | 3.463 | 1.218 |
-| 10 | 10.98 | 1.736 | 1.375 |
-| 500 | **1.27** | 0.235 | 1.416 |
+| 2 | 1424.17 | 4.085 | 1.261 |
+| 10 | 12.40 | 1.978 | 1.379 |
+| 500 | **1.33** | 0.285 | 1.415 |
 
-At d=500 the furthest of 7,140 pairs is only 27% further apart than the closest.
+At d=500 the furthest of 499,500 pairs is only 33% further apart than the closest.
 The relative spread confirms it using *every* pair rather than the two extremes —
 worth having, because max/min is set by two observations and one unusually close
 pair moves it a lot.
+
+How much it matters is visible in the d=2 row: at n=120 that ratio is **170**, at
+n=1000 it is **1424**. More points push the closest pair closer without moving the
+furthest, so the headline statistic is a function of sample size as much as of
+dimension. The (max−min)/mean column does not have that problem, and the collapse
+it reports — 4.085 to 0.285 — is the claim worth quoting.
 
 The mechanism is in the last column: mean distance / √d is nearly constant, so
 mean distance ≈ √(2d) for unit Gaussians. Distances all grow together; the
@@ -72,25 +80,35 @@ topic vocabularies and uniform lengths all three metrics score **100%** and the
 comparison is vacuous — which is what a first attempt produces. This corpus shares
 7 common words and varies lengths deliberately.
 
-**4 — the KD-tree stops winning at about d=10, and is slower by d=50.**
+**4 — the question has no single answer: the crossover moves with n.**
 
-| | n=1k | n=5k | n=20k |
+At the exercise's own 1k/10k/100k:
+
+| | n=1k | n=10k | n=100k |
 |---|---:|---:|---:|
-| d=2 | 25× | 109× | **413×** |
-| d=10 | 1.00× | 1.18× | 1.87× |
-| d=50 | 0.97× | 0.98× | **0.94×** |
+| d=2 | 24× | 217× | **1808×** |
+| d=10 | 1.00× | 1.48× | **3.03×** |
+| d=50 | 0.97× | 0.94× | 0.97× |
 
 At d=2 the advantage *grows* with n, because the tree is O(log n) per query where
 the scan is O(n). At d=50 the tree is doing all of the scan's distance work plus
-traversal bookkeeping on top.
+traversal bookkeeping on top, at every size.
+
+**d=10 is where the framing breaks.** "At what dimensionality does the KD-tree
+stop being faster" presumes one crossover dimension. At n=1,000 the answer looks
+like d=10 (1.00×, a dead heat). At n=100,000 the same d=10 is 3.03× ahead. There
+is a crossover *surface*, not a crossover dimension, and a sweep that stopped at
+20k points would have confidently reported d=10 — which is what an earlier draft
+of this solution did.
 
 A branch is pruned only when the splitting coordinate's gap alone exceeds the
 current best radius — and by exercise 2's measurement, in high dimensions every
 point is roughly equidistant, so almost nothing prunes and the tree visits nearly
-every leaf.
+every leaf. What n buys at moderate d is depth: more levels means more chances for
+one coordinate's gap to be decisive before the leaves are reached.
 
-(Sizes stop at 20k rather than 100k: brute force here is a pure-Python O(n) scan
-per query and 100k × 50D takes minutes without changing the answer.)
+(Timings are best-of-3 at 1k and 10k, single-run at 100k, where a 6-second
+measurement is far less load-sensitive than a sub-millisecond one.)
 
 **5 — the exercise's claim is false. Weighting is rougher, not smoother.**
 

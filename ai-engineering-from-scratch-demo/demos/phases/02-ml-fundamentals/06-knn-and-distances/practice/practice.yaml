@@ -20,13 +20,13 @@ exercises:
   - index: 2
     slug: curse_of_dimensionality
     kind: code
-    tier: T0
+    tier: T1
     deps_group: none
     en: |
       Generate 1000 random points in 2, 5, 10, 50, 100, and 500 dimensions. For each dimensionality, compute the ratio of the maximum pairwise distance to the minimum pairwise distance. Plot the ratio vs dimensionality to visualize the curse of dimensionality.
     zh: |
       在 2、5、10、50、100 與 500 維空間裡各產生 1000 個隨機點。對每一種維度，算出所有配對距離中最大值與最小值的比值。把這個比值對維度畫成圖，讓維度詛咒現形。
-    verifies: over 7,140 pairs per dimension the max/min distance ratio collapses monotonically 169.78 to 1.27 across d = 2..500, a 134x fall; the relative spread (max-min)/mean confirms it using every pair rather than the two extremes; and mean distance / sqrt(d) is shown near-constant at 1.22-1.42, so distances grow together while their differences do not
+    verifies: over the exercise's own 1000 points (499,500 pairs) per dimension the max/min distance ratio collapses monotonically 1424.17 to 1.33 across d = 2..500; the relative spread (max-min)/mean confirms it using every pair rather than the two extremes, falling 4.085 to 0.285; and mean distance / sqrt(d) is near-constant at 1.26-1.42, so distances grow together while their differences do not. The d=2 ratio is itself n-dependent (170 at n=120), which is why the ratio alone is the weaker statistic
     uses_reference:
       - l2_distance
   - index: 3
@@ -54,7 +54,7 @@ exercises:
       Implement a KD-tree and measure query time vs brute force for datasets of 1k, 10k, and 100k points in 2D, 10D, and 50D. At what dimensionality does the KD-tree stop being faster than brute force?
     zh: |
       實作一棵 KD 樹，並在 2 維、10 維與 50 維、資料量分別為 1k、10k、100k 的情況下，量測它與暴力搜尋的查詢時間。維度到多高時，KD 樹就不再比暴力搜尋快了？
-    verifies: at d=2 the KD-tree beats brute force 25x/109x/413x as n grows 1k/5k/20k, the gap widening as O(log n) against O(n); by d=10 the advantage is 1.00x at n=1000; and at d=50 the tree is SLOWER at every size (0.94-0.98x), because pruning requires one coordinate's gap to exceed the best radius and in high dimensions nothing separates
+    verifies: at d=2 the KD-tree beats brute force 24x/217x/1808x as n grows over the exercise's own 1k/10k/100k, the gap widening as O(log n) against O(n); at d=50 the tree is SLOWER at every size (0.94-0.97x) because pruning needs one coordinate's gap to exceed the best radius and in high dimensions nothing separates; and at d=10 the answer depends on n - 1.00x at 1k but 3.03x at 100k, so there is a crossover surface rather than the single crossover dimension the question presumes
     uses_reference:
       - KDTree
       - l2_distance

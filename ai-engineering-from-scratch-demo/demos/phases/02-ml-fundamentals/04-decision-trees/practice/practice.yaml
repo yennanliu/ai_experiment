@@ -39,7 +39,7 @@ exercises:
       Build a random forest with 1, 5, 10, 50, and 200 trees. Plot training accuracy and test accuracy vs number of trees. Observe that test accuracy plateaus but does not decrease (forests resist overfitting).
     zh: |
       分別用 1、5、10、50、200 棵樹建構隨機森林。把訓練準確率與測試準確率對樹的數量畫出來。你會觀察到測試準確率會趨於平坦，但不會下降（森林能抵抗過度擬合）。
-    verifies: over 5 seeds per size, test accuracy rises 88.7% to 94.3% from 1 to 200 trees and never falls more than 0.67% below its running maximum - within seed noise, which five points from one seed could not have established; seed-to-seed spread falls 13.3% to 1.7%, showing the variance reduction directly
+    verifies: over 5 tree sizes and 5 seeds the seed-to-seed accuracy spread falls from 8.0% at 1 tree to 1.5% at 50, test accuracy rises then plateaus, and the largest drop below the running maximum is 0.67% - an observed finite-sweep result rather than a proof that more trees cannot hurt; train accuracy does not tighten as trees are added, which is the signature of averaging rather than of capacity growth
     uses_reference:
       - RandomForest
       - generate_classification_data
@@ -54,14 +54,15 @@ exercises:
       Compare Gini impurity vs entropy as split criteria on 5 different datasets. Measure accuracy and tree depth. In most cases, they produce nearly identical results. Explain why.
     zh: |
       在 5 份不同的資料集上比較吉尼不純度與熵這兩種分裂標準。量測準確率與樹深度。大多數情況下，兩者的結果幾乎相同。解釋為什麼。
-    verifies: across 5 datasets the two criteria differ by at most 2.0% in test accuracy and agree on depth 5 of 5 times; entropy peaks at exactly 2x Gini (1.0 against 0.5) so H/2 is the fair comparison, where the largest gap over every binary balance is 0.0545 - small but not zero; and the two impurity curves correlate at 0.99578, which is why the argmax over candidate splits coincides
+    verifies: accuracy and depth match across 5 datasets (3 of 5 identical to the digit, 5 of 5 on depth) while the impurity curves differ by at most 0.0545 once put on one axis (H peaks at 1.0 bit, Gini at 0.5); and the FINDING that the usual explanation is false - Kendall's tau between the two candidate-split gain rankings is only 0.877-0.914 over 398 root candidates, and on 2 of 5 datasets the criteria pick a different root threshold outright, so the trees agree because near-tied candidates cut near-equivalent partitions, not because the rankings coincide
     uses_reference:
       - DecisionTree
       - gini_impurity
       - entropy
+      - information_gain
+      - accuracy
       - generate_classification_data
       - train_test_split
-      - accuracy
   - index: 5
     slug: permutation_importance
     kind: code

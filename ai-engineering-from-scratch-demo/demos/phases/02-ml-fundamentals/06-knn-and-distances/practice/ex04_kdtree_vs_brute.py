@@ -4,16 +4,17 @@
     1k, 10k, and 100k points in 2D, 10D, and 50D. At what dimensionality does the
     KD-tree stop being faster than brute force?
 
-Reading of the exercise: sizes are 1k/5k/20k rather than up to 100k, because
-brute force here is a pure-Python O(n) scan per query and 100k × 50D would take
-minutes without changing the answer. Timings are best-of-3 — a single wall-clock
-sample measures machine load as much as code.
+Reading of the exercise: the sizes are the exercise's own 1k/10k/100k. Timings
+are best-of-3 at 1k and 10k; at 100k a single run is used, because a 6-second
+measurement is far less sensitive to machine load than a 0.5-millisecond one and
+three of them would triple the tier cost for no accuracy.
 
-ANSWER: the tree stops winning at about **d=10** and is actively *slower* by
-d=50 (0.96x). At d=2 it wins by 398x at n=20k, and that advantage grows with n
-because the tree is O(log n) where the scan is O(n).
+ANSWER: "at what dimensionality does the KD-tree stop being faster" has no single
+answer — the crossover moves with n. At d=50 the tree is slower at every size
+(0.94-0.98x). At d=10 it is a wash at n=1k (1.00x) but wins 3.1x at n=100k, so
+the full sweep contradicts the reading the reduced one invites; see the README.
 
-Tier T1: the 20k-point runs take a few seconds.
+Tier T1: the 100k-point 50D runs are ~6 seconds each.
 """
 
 from __future__ import annotations
@@ -26,10 +27,10 @@ from harness import parity, practice
 PHASE, LESSON = "02-ml-fundamentals", "06-knn-and-distances"
 SEED, K, N_QUERIES = 42, 5, 20
 DIMENSIONS = (2, 10, 50)
-SIZES = (1_000, 5_000, 20_000)
+SIZES = (1_000, 10_000, 100_000)
 
 
-def timed(fn, repeats=3):
+def timed(fn, repeats):
     best = float("inf")
     for _ in range(repeats):
         start = time.perf_counter()
@@ -42,10 +43,11 @@ def measure(ref, dim, n):
     rng = random.Random(SEED)
     points = [[rng.gauss(0, 1) for _ in range(dim)] for _ in range(n)]
     queries = [[rng.gauss(0, 1) for _ in range(dim)] for _ in range(N_QUERIES)]
+    repeats = 3 if n <= 10_000 else 1
     tree = ref.KDTree(points)
-    kd = timed(lambda: [tree.query(q, k=K) for q in queries])
+    kd = timed(lambda: [tree.query(q, k=K) for q in queries], repeats)
     brute = timed(lambda: [sorted(range(n), key=lambda i: ref.l2_distance(points[i], q))[:K]
-                           for q in queries])
+                           for q in queries], repeats)
     return {"kd": kd, "brute": brute, "speedup": brute / kd}
 
 
@@ -73,10 +75,14 @@ def verify(result):
                        _by_size(rows, 2, lambda n, r: f"n={n}: {r['speedup']:.0f}x")
                        + " — the tree is O(log n) per query where the scan is O(n), so the "
                          "gap widens with n rather than staying fixed"),
-        practice.Check("ANSWER: by d=10 the advantage has almost gone",
-                       rows[(10, SIZES[0])]["speedup"] < 1.5,
+        practice.Check("ANSWER: d=10 is the crossover — but only at the smallest n",
+                       rows[(10, SIZES[0])]["speedup"] < 1.2
+                       and rows[(10, big)]["speedup"] > 2,
                        _by_size(rows, 10, lambda n, r: f"n={n}: {r['speedup']:.2f}x")
-                       + f" — at n={SIZES[0]} it is already a wash"),
+                       + f" — a wash at n={SIZES[0]:,}, but the tree is well ahead again by "
+                         f"n={big:,}. FINDING: the question presumes one crossover dimension; "
+                         f"there is a crossover *surface*, and a sweep stopping at 20k points "
+                         f"would have reported d=10 as the answer"),
         practice.Check("ANSWER: at d=50 the tree is SLOWER than brute force",
                        max(rows[(50, n)]["speedup"] for n in SIZES) < 1.05,
                        _by_size(rows, 50, lambda n, r: f"n={n}: {r['speedup']:.2f}x")

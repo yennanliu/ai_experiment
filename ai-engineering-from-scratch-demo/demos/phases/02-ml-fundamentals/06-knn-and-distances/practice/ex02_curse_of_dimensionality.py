@@ -6,11 +6,17 @@
     the curse of dimensionality.
 
 Reading of the exercise: the ratio is the right statistic and it collapses
-exactly as advertised — 169.8 at d=2 down to 1.265 at d=500. But the ratio alone
-is fragile: it is set by the two most extreme of ~7,000 pairs, so one unusually
-close pair moves it a lot. Check 4 adds the relative spread (max − min)/mean,
-which uses every pair, and check 5 shows what actually drives the collapse — the
-mean distance grows as √d while the spread does not.
+exactly as advertised. But the ratio alone is fragile: it is set by the two most
+extreme of the 499,500 pairs, so one unusually close pair moves it a lot. Check 4
+adds the relative spread (max − min)/mean, which uses every pair, and check 5
+shows what actually drives the collapse — the mean distance grows as √d while the
+spread does not.
+
+Tier T1: the exercise's own 1000 points mean half a million pure-Python distance
+computations per dimensionality, ~20 seconds in total. Reducing n would speed it
+up without changing the answer, but the ratio's own fragility is n-dependent —
+its value is set by the extremes of the pair distribution — so the reported
+numbers only mean what the exercise says at the size the exercise asks for.
 """
 
 from __future__ import annotations
@@ -21,7 +27,7 @@ import random
 from harness import parity, practice
 
 PHASE, LESSON = "02-ml-fundamentals", "06-knn-and-distances"
-SEED, N = 42, 120
+SEED, N = 42, 1000
 DIMENSIONS = (2, 5, 10, 50, 100, 500)
 
 
@@ -62,8 +68,11 @@ def verify(result):
         practice.Check("ANSWER: the max/min ratio collapses toward 1",
                        _falling(ratios) and ratios[-1] < 1.5,
                        _join(rows, lambda d, r: f"d={d}: {r['ratio']:.2f}")
-                       + " — at d=500 the furthest pair is only 27% further apart than the "
-                         "closest, so 'nearest' stops meaning much"),
+                       + f" — at d=500 the furthest pair is only "
+                         f"{100 * (ratios[-1] - 1):.0f}% further apart than the closest, so "
+                         f"'nearest' stops meaning much. The d=2 value is n-dependent (it was "
+                         f"170 at n=120): more points push the closest pair closer without "
+                         f"moving the furthest, which is the fragility check 4 answers"),
         practice.Check("…which is what breaks KNN: no neighbour is distinctively near",
                        ratios[0] / ratios[-1] > 100,
                        f"the ratio falls {ratios[0] / ratios[-1]:.0f}x from d=2 to d=500. "

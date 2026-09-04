@@ -70,25 +70,53 @@ The largest drop below the running maximum is 0.67% — within seed noise. Five
 points from a single seed could not have supported the claim either way, which is
 why each size is averaged.
 
+That 0.67% is an **observed result over this sweep**, not a proof: it covers the
+five listed sizes and five seeds, and a size outside that set or a sixth seed
+could show more. What is measured is a plateau, not an impossibility.
+
 The spread column is the mechanism, visible directly: each tree is fit on a
 bootstrap sample so their errors are partly independent, and averaging n of them
 divides the variance of that average by up to n while leaving its expectation
-alone. Adding trees therefore *cannot* overfit — the resistance belongs to bagging,
-not to the trees.
+alone. Train accuracy also does not tighten as trees are added, which is the
+signature of averaging rather than of capacity growth. That argument is *why* the
+plateau is expected — the resistance belongs to bagging, not to the trees — but
+the argument is theory and only the plateau is measured here.
 
-**4 — why Gini and entropy agree.**
+**4 — why Gini and entropy agree, and why the usual explanation is wrong.**
 
 Across 5 datasets they differ by at most 2.0% in test accuracy and agree on depth
-5 times out of 5. The reason has two parts, both measurable.
+5 times out of 5. The textbook explanation runs: the two impurity curves are
+near-identical, so they rank candidate splits identically, so the trees coincide.
+The first step holds, the second is measurably false, and the third needs a
+different reason.
 
-They are **not** the same function: entropy peaks at exactly 1.0 bit where Gini
-peaks at 0.5, so H/2 is the fair comparison, and even then the largest gap over
-every binary class balance is **0.0545** — small, but not zero.
+**Step 1 holds.** They are not the same function: entropy peaks at exactly 1.0 bit
+where Gini peaks at 0.5, so H/2 against Gini is the fair comparison, and even then
+the largest gap over every binary class balance is **0.0545** — small, but not
+zero.
 
-What matters is that a split is chosen by *argmax* of impurity reduction, not by
-the impurity value. The two curves correlate at **0.99578** over p ∈ (0,1), so
-they order candidate splits identically almost everywhere. The trees coincide
-because the ranking does.
+**Step 2 fails.** Correlating the two standalone impurity *curves* is not a
+measurement of split ranking; the tree ranks candidates by weighted child impurity
+reduction, which the lesson exposes as `information_gain`. Scoring every one of
+the 398 candidate splits available at the root under both criteria and comparing
+the two orderings gives a Kendall tau of only:
+
+| seed | 1 | 2 | 3 | 4 | 5 |
+|---|---:|---:|---:|---:|---:|
+| tau | 0.913 | 0.899 | 0.892 | 0.877 | 0.914 |
+
+About **1 candidate pair in 20 is ordered differently**. And the disagreement
+reaches the argmax: on **2 of the 5 datasets** the two criteria select a different
+root threshold outright (the same feature, a different cut). So the trees are not
+identical, and "the rankings coincide" is not why they agree.
+
+**Step 3, the actual reason.** Accuracy still ties to the digit on 3 of 5 and
+depth on 5 of 5 *despite* the different root split. The candidates the two
+criteria disagree about are the near-tied ones — which is exactly what a tau of
+0.9 on a smooth concave objective means — and near-tied candidates cut the data
+into near-equivalent partitions. Which of them wins at the root changes the tree
+and does not change what reaches the leaves. The agreement is in the outcome, not
+in the ranking.
 
 **5 — MDI ranks the noise feature highly; permutation does not. With two caveats.**
 

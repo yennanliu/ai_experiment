@@ -171,3 +171,30 @@ def test_coverage_check_flags_spec_drift(lesson, monkeypatch):
     pack = manifest.load_practice(lesson / "practice.yaml")
     upstream = "Do something completely different"
     assert coverage.spec_hash(pack.exercises[0].en) != coverage.spec_hash(upstream)
+
+
+def test_finalize_rejects_an_index_the_manifest_does_not_have(lesson, monkeypatch):
+    """A mistyped exercise index used to update nothing and still report success."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finalize_practice
+
+    # the fixture puts practice/ under tmp_path, so tmp_path stands in for the
+    # lesson directory and its parent for the phase
+    monkeypatch.setattr(finalize_practice, "DEMOS", lesson.parent.parent.parent)
+    phase, lesson_name = lesson.parent.parent.name, lesson.parent.name
+    with pytest.raises(KeyError, match="no such exercise index"):
+        finalize_practice.finalize(phase, lesson_name, {7: {"slug": "nope"}})
+    # and the manifest is left exactly as it was
+    assert "slug: thing" in (lesson / "practice.yaml").read_text(encoding="utf-8")
+
+
+def test_finalize_keeps_backslashes_out_of_re_sub(lesson, monkeypatch):
+    r"""`verifies` prose contains things like \kappa; `re.sub` would eat them."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import finalize_practice
+
+    monkeypatch.setattr(finalize_practice, "DEMOS", lesson.parent.parent.parent)
+    finalize_practice.finalize(lesson.parent.parent.name, lesson.parent.name,
+                               {1: {"verifies": r"\kappa(A) grows as \sigma_1/\sigma_n"}})
+    body = (lesson / "practice.yaml").read_text(encoding="utf-8")
+    assert r"verifies: \kappa(A) grows as \sigma_1/\sigma_n" in body

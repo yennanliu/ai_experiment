@@ -1,0 +1,48 @@
+lesson: 07-unsupervised-learning
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/07-unsupervised-learning/docs/en.md
+exercises:
+  - index: 1
+    slug: kmeans_plus_plus
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement K-Means++ initialization: instead of picking random centroids, pick the first randomly and each subsequent centroid with probability proportional to its squared distance from the nearest existing centroid. Compare convergence speed to random initialization.
+    zh: |
+      實作 K-Means++ 初始化：不要隨機挑質心，而是第一個隨機挑，之後每個質心被選中的機率正比於它到最近的既有質心的平方距離。把收斂速度和隨機初始化做比較。
+    verifies: k-means++ converges in 12.20 iterations against random's 15.12 on 9 tight clusters (19% fewer) and reaches better mean inertia 400.44 against 414.59 over 40 seeds; on 4 well-separated blobs the inertia advantage disappears entirely, so the benefit is insurance against bad starts rather than a uniform improvement; and the best run over 40 seeds is identical (379.80 against 379.93), so it finds the same optimum more often rather than a better one
+    uses_reference:
+      - make_blobs
+      - euclidean_distance
+      - compute_inertia
+  - index: 2
+    slug: agglomerative_linkage
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add hierarchical agglomerative clustering to the code. Implement Ward's linkage and produce a dendrogram (as a nested list of merges). Cut it at different levels and compare to K-Means results.
+    zh: |
+      在程式碼裡加上階層式聚合分群。實作 Ward's linkage 並產生一張樹狀圖（用嵌套的 list 表示合併順序）。在不同高度把它切開，並和 K-Means 的結果比較。
+    verifies: the merge history has exactly n - k entries; on separated blobs Ward and K-Means both score 1.000 so the comparison is vacuous there; on moons single linkage recovers the truth exactly at 1.000 while Ward reaches 0.760 and K-Means 0.750; and Ward agrees with K-Means at 0.950, more than either agrees with the truth, since Ward's variance criterion is the same spherical assumption
+    uses_reference:
+      - agglomerative_clustering
+      - kmeans
+      - make_moons
+      - make_blobs
+  - index: 3
+    slug: outlier_agreement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a simple anomaly detection pipeline: run DBSCAN and GMM on the same data, flag points that both methods agree are outliers (noise in DBSCAN, low probability in GMM). Measure the overlap and discuss when the methods disagree.
+    zh: |
+      打造一條簡單的異常偵測管線：對同一份資料同時跑 DBSCAN 與 GMM，把兩種方法都認定是離群值的點標記出來（在 DBSCAN 裡是雜訊點，在 GMM 裡是機率很低的點）。量測兩者的重疊程度，並討論它們在什麼情況下會判斷不一致。
+    verifies: DBSCAN flags 21 of 25 planted outliers with 0 false positives; reading 'low probability' as low max-responsibility INVERTS the answer - planted outliers average 0.9306 against inliers' 0.8885 and only 3 of 25 are caught with 19 false positives - because responsibility says which component, not whether any; scored by distance to the nearest mean GMM catches 19 with 3 false; and the intersection catches 19 with 0 false
+    uses_reference:
+      - dbscan
+      - gmm
+      - make_moons
+      - euclidean_distance

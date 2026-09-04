@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from harness import cassette, coverage, explain, parity, practice, tiers
+from harness import cassette, coverage, explain, parity, practice, stats, tiers
 
 PHASE, LESSON = "01-math-foundations", "01-linear-algebra-intuition"
 
@@ -35,6 +35,13 @@ def test_load_reference_swallows_import_time_stdout(capsys):
                           "logistic_regression")
     captured = capsys.readouterr()
     assert captured.out == "", f"import leaked {len(captured.out)} chars of demo output"
+
+
+def test_quiet_swallows_runtime_output(capsys):
+    """Several lesson functions print while running, not only at import."""
+    with parity.quiet():
+        print("this should not escape")
+    assert capsys.readouterr().out == ""
 
 
 def test_load_reference_imports_rather_than_copies():
@@ -106,3 +113,17 @@ def test_a_failing_check_fails_the_grade(tmp_path):
         "                 'verify': lambda r: [practice.Check('no', False, 'nope')]}\n")
     result = practice.grade_file(path)
     assert result.status == "fail" and not result.ok
+
+
+def test_kendall_tau_counts_only_strictly_ordered_pairs():
+    """Ties are dropped from the denominator, not scored as half-agreements."""
+    assert stats.kendall_tau([1, 2, 3], [10, 20, 30]) == 1.0
+    assert stats.kendall_tau([1, 2, 3], [30, 20, 10]) == -1.0
+    # one of three pairs inverted -> (2 - 1) / 3
+    assert stats.kendall_tau([1, 2, 3], [1, 3, 2]) == pytest.approx(1 / 3)
+    # a tie in b removes that pair entirely rather than counting against
+    assert stats.kendall_tau([1, 2, 3], [1, 1, 2]) == 1.0
+    with pytest.raises(ValueError, match="length mismatch"):
+        stats.kendall_tau([1, 2], [1, 2, 3])
+    with pytest.raises(ValueError, match="no strictly ordered pairs"):
+        stats.kendall_tau([1, 1, 1], [1, 1, 1])

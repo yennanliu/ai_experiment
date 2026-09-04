@@ -4,28 +4,19 @@
     Measure accuracy and tree depth. In most cases, they produce nearly identical
     results. Explain why.
 
-Reading of the exercise: "explain why" has a precise answer that can be measured
-rather than asserted. Both criteria are concave, maximal at a uniform split and
-zero at a pure one, and over the whole range of binary class balances they agree
-on the *ranking* of candidate splits almost everywhere — check 5 measures that
-agreement directly by sweeping p from 0 to 1 and correlating the two curves,
-which is why the trees they build coincide.
-
-The scaled comparison matters: entropy in bits peaks at exactly 1.0 where Gini
-peaks at 0.5, so the two are not on the same axis at all. Compared as H/2 against
-Gini the largest gap over every binary balance is 0.0545 — small, but not zero:
-they are similar curves, not the same one rescaled.
+Reading of the exercise: the tempting answer to "explain why" — near-identical
+concave curves, so identical split rankings, so identical trees — is measurably
+false at its middle step. Checks 5 and 6 measure that ranking with the lesson's
+own `information_gain` instead of inferring it; the README carries the argument.
 """
 
 from __future__ import annotations
 
-import math
-
-from harness import parity, practice
+from harness import parity, practice, stats
 
 PHASE, LESSON = "02-ml-fundamentals", "04-decision-trees"
 SEEDS = (1, 2, 3, 4, 5)
-DEPTH = 6
+CRITERIA, DEPTH = ("gini", "entropy"), 6
 
 
 def tree_depth(node):
@@ -34,81 +25,92 @@ def tree_depth(node):
     return 1 + max(tree_depth(node["left"]), tree_depth(node["right"]))
 
 
-def _both_criteria(ref, seed):
-    X, y = ref.generate_classification_data(n_samples=250, seed=seed)
-    X_train, y_train, X_test, y_test = ref.train_test_split(X, y, seed=seed)
-    entry = {}
-    for criterion in ("gini", "entropy"):
-        tree = ref.DecisionTree(max_depth=DEPTH, criterion=criterion)
-        tree.fit(X_train, y_train)
-        entry[criterion] = {"test": ref.accuracy(y_test, tree.predict(X_test)),
-                            "depth": tree_depth(tree.tree)}
-    return entry
+def _fit(ref, criterion, X_train, y_train, X_test, y_test) -> tuple:
+    tree = ref.DecisionTree(max_depth=DEPTH, criterion=criterion)
+    tree.fit(X_train, y_train)
+    return ref.accuracy(y_test, tree.predict(X_test)), tree_depth(tree.tree)
 
 
-def _impurity_sweep(ref, n=1000):
-    """Both criteria at every binary class balance."""
-    return [(i / n,
-             ref.gini_impurity([0] * i + [1] * (n - i)),
-             ref.entropy([0] * i + [1] * (n - i))) for i in range(1, n)]
+def _curves(ref, n=1000) -> dict:
+    pairs = [(ref.gini_impurity([0] * i + [1] * (n - i)),
+              ref.entropy([0] * i + [1] * (n - i))) for i in range(1, n)]
+    return {"gap": max(abs(g - e / 2) for g, e in pairs),
+            "peak_gini": max(g for g, _ in pairs), "peak_h": max(e for _, e in pairs)}
+
+
+def _root_gains(ref, X, y) -> list:
+    """Root candidates under both criteria, enumerated as `_best_split` does."""
+    out = []
+    for feature in range(len(X[0])):
+        values = sorted({row[feature] for row in X})
+        for low, high in zip(values, values[1:]):
+            cut = (low + high) / 2.0
+            side = [row[feature] <= cut for row in X]
+            parts = [[v for v, s in zip(y, side) if s is w] for w in (True, False)]
+            out.append([(feature, cut)]
+                       + [ref.information_gain(y, *parts, c) for c in CRITERIA])
+    return out
+
+
+def _one_seed(ref, seed) -> dict:
+    """Both trees and the root ranking, off one shared train/test split."""
+    parts = ref.train_test_split(
+        *ref.generate_classification_data(n_samples=250, seed=seed), seed=seed)
+    gains = _root_gains(ref, parts[0], parts[1])
+    ranked = [[row[i] for row in gains] for i in (1, 2)]
+    picks = {gains[max(range(len(gains)), key=col.__getitem__)][0] for col in ranked}
+    fits = [_fit(ref, c, *parts) for c in CRITERIA]
+    return {"acc": [f[0] for f in fits], "depth": [f[1] for f in fits],
+            "n": len(gains), "tau": stats.kendall_tau(*ranked),
+            "same_pick": len(picks) == 1}
 
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "trees")
-    rows = {seed: _both_criteria(ref, seed) for seed in SEEDS}
-    sweep = _impurity_sweep(ref)
-    gaps = [abs(g - e / 2) for _, g, e in sweep]
-    return {"rows": rows, "max_gap": max(gaps),
-            "max_gini": max(g for _, g, _ in sweep),
-            "max_entropy": max(e for _, _, e in sweep),
-            "correlation": _correlation([g for _, g, _ in sweep],
-                                        [e for _, _, e in sweep])}
+    return {"seeds": {seed: _one_seed(ref, seed) for seed in SEEDS},
+            "curves": _curves(ref)}
 
 
-def _correlation(a, b):
-    ma, mb = sum(a) / len(a), sum(b) / len(b)
-    da = [v - ma for v in a]
-    db = [v - mb for v in b]
-    return (sum(x * y for x, y in zip(da, db))
-            / math.sqrt(sum(v * v for v in da) * sum(v * v for v in db)))
+def _summary(result) -> dict:
+    """Everything `verify` compares, so `verify` stays a flat list of claims."""
+    got = result["seeds"]
+    gaps = {s: abs(got[s]["acc"][0] - got[s]["acc"][1]) for s in SEEDS}
+    return {
+        "table": "; ".join(f"{s}: {got[s]['acc'][0]:.0%}/d{got[s]['depth'][0]} vs "
+                           f"{got[s]['acc'][1]:.0%}/d{got[s]['depth'][1]}" for s in SEEDS),
+        "taus": ", ".join(f"{s}: {got[s]['tau']:.3f}" for s in SEEDS),
+        "worst": max(gaps.values()), "same_accuracy": sum(g < 1e-9 for g in gaps.values()),
+        "same_depth": sum(got[s]["depth"][0] == got[s]["depth"][1] for s in SEEDS),
+        "same_pick": sum(got[s]["same_pick"] for s in SEEDS),
+        "ranked_apart": all(0.85 < got[s]["tau"] < 0.98 for s in SEEDS),
+        "candidates": got[SEEDS[0]]["n"],
+    }
 
 
 def verify(result):
-    rows = result["rows"]
-    same_accuracy = sum(1 for s in SEEDS
-                        if abs(rows[s]["gini"]["test"] - rows[s]["entropy"]["test"]) < 1e-9)
-    same_depth = sum(1 for s in SEEDS
-                     if rows[s]["gini"]["depth"] == rows[s]["entropy"]["depth"])
-    worst = max(abs(rows[s]["gini"]["test"] - rows[s]["entropy"]["test"]) for s in SEEDS)
+    got, curves, n = _summary(result), result["curves"], len(SEEDS)
     return [
-        practice.Check(f"both criteria run on all {len(SEEDS)} datasets",
-                       len(rows) == len(SEEDS),
-                       "; ".join(f"seed {s}: gini {rows[s]['gini']['test']:.1%}/"
-                                 f"d{rows[s]['gini']['depth']}, entropy "
-                                 f"{rows[s]['entropy']['test']:.1%}/"
-                                 f"d{rows[s]['entropy']['depth']}" for s in SEEDS)),
-        practice.Check("accuracy is nearly identical everywhere",
-                       worst < 0.05,
-                       f"{same_accuracy} of {len(SEEDS)} datasets identical to the digit, "
-                       f"worst difference {worst:.1%}"),
+        practice.Check(f"both criteria run on all {n} datasets",
+                       len(result["seeds"]) == n, "acc/depth " + got["table"]),
+        practice.Check("accuracy is nearly identical everywhere", got["worst"] < 0.05,
+                       f"{got['same_accuracy']} of {n} identical, worst {got['worst']:.1%}"),
         practice.Check("…and the trees are the same depth",
-                       same_depth >= len(SEEDS) - 1,
-                       f"{same_depth} of {len(SEEDS)} agree on depth"),
-        practice.Check("WHY (1): they are the same curve on different axes",
-                       result["max_gap"] < 0.06
-                       and abs(result["max_entropy"] / result["max_gini"] - 2) < 1e-9,
-                       f"entropy peaks at {result['max_entropy']:.4f} bits where Gini peaks "
-                       f"at {result['max_gini']:.4f} — a factor of 2. Compared on the same "
-                       f"scale, H/2 against Gini, the largest gap over every binary balance "
-                       f"is {result['max_gap']:.4f} — small but not zero, so these are "
-                       f"similar curves rather than one rescaled into the other"),
-        practice.Check("WHY (2): so they rank candidate splits the same way",
-                       result["correlation"] > 0.99,
-                       f"correlation between the two impurity curves over p ∈ (0,1) is "
-                       f"{result['correlation']:.5f}. A split is chosen by which candidate "
-                       f"lowers impurity most, and two near-identical concave functions "
-                       f"order the candidates identically almost everywhere — the trees "
-                       f"coincide because the *argmax* does, not because the numbers match"),
+                       got["same_depth"] >= n - 1, f"{got['same_depth']} of {n} agree"),
+        practice.Check("WHY (1): near-identical curves, on axes differing by exactly 2",
+                       curves["gap"] < 0.06
+                       and abs(curves["peak_h"] / curves["peak_gini"] - 2) < 1e-9,
+                       f"H peaks at {curves['peak_h']:.4f} bits, Gini at "
+                       f"{curves['peak_gini']:.4f}; largest gap {curves['gap']:.4f}"),
+        practice.Check("FINDING: they do NOT rank candidate splits the same way",
+                       got["ranked_apart"],
+                       f"tau over {got['candidates']} root candidates — {got['taus']} — "
+                       f"about 1 pair in 20 ordered differently"),
+        practice.Check("WHY (2): they can pick a different root split and still tie",
+                       got["same_pick"] < n,
+                       f"same root (feature, threshold) on {got['same_pick']} of {n}; "
+                       f"elsewhere a different threshold on the same feature, yet accuracy "
+                       f"ties on {got['same_accuracy']} of {n} — near-tied candidates cut "
+                       f"near-equivalent partitions"),
     ]
 
 

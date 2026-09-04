@@ -129,6 +129,19 @@ def assert_close(mine, theirs, atol: float = 1e-9, label: str = "parity") -> Dev
     return deviation
 
 
+@contextlib.contextmanager
+def quiet():
+    """Swallow stdout from a chatty reference function.
+
+    `load_reference` silences a module's *import*, but several lesson functions
+    also print while running — `kmeans` announces "Converged at iteration N",
+    `gmm` likewise. A solution that calls those in a loop would bury its own
+    checks. stderr is untouched.
+    """
+    with contextlib.redirect_stdout(io.StringIO()):
+        yield
+
+
 def try_numpy():
     """numpy if installed, else None.
 
