@@ -7,8 +7,8 @@
 Reading of the exercise: "measure how fast" is the load-bearing phrase — the lesson
 says variance "grows proportionally to N", which is a testable rate, not a direction.
 Checks 1-3 measure the unscaled rate and find it exponential, check 4 adds the pre-norm
-the lesson never mentions and recovers the rate it claims, and checks 5-6 measure what
-the 1/sqrt(2N) factor converges to. Tables and full traces are in the README.
+the lesson never mentions and recovers the rate it claims, checks 5-6 measure what the
+1/sqrt(2N) factor converges to. Tables and full traces are in the README.
 """
 
 from __future__ import annotations
@@ -19,8 +19,7 @@ import random
 from harness import parity, practice
 
 PHASE, LESSON = "03-deep-learning-core", "08-weight-initialization"
-SEED, XSEED, WIDTH = 20250904, 8675309, 48    # weights vs inputs: separate streams
-DEPTHS = (10, 25, 50, 100)                    # residual depths N the scaling is asked of
+SEED, XSEED, WIDTH, DEPTHS = 20250904, 8675309, 48, (10, 25, 50, 100)   # two RNG streams
 
 
 def rms(rows) -> float:
@@ -28,13 +27,11 @@ def rms(rows) -> float:
     return (sum(v * v for v in flat) / len(flat)) ** 0.5
 
 
-def pre(sample, norm):
-    """Pre-LayerNorm reduced to the part that matters here: fix the input scale."""
+def pre(sample, norm):   # pre-LayerNorm reduced to what matters here: fix input scale
     return [v / (rms([sample]) or 1.0) for v in sample] if norm else sample
 
 
-def sublayer(ref, sample, w1, w2):
-    """Kaiming -> ReLU -> Kaiming: the block whose output joins the residual stream."""
+def sublayer(ref, sample, w1, w2):   # Kaiming -> ReLU -> Kaiming, the residual block
     hidden = [ref.relu(sum(a * b for a, b in zip(row, sample))) for row in w1]
     return [sum(a * b for a, b in zip(row, hidden)) for row in w2]
 
@@ -80,9 +77,8 @@ def solve():
 
 def verify(result):
     plain, scaled, hold = result["plain"], result["scaled"], result["hold"]
-    blew = plain[-1] / plain[0]
     trail = ", ".join(f"L{i} {plain[i]:.2e}" for i in (0, 1, 10, 25, 50))
-    held = ", ".join(f"N={n} {v:.3f}" for n, v in hold.items())
+    blew, held = plain[-1] / plain[0], ", ".join(f"N={n} {v:.3f}" for n, v in hold.items())
     grew = ", ".join(f"N={n} {v ** 0.5:.2e}x" for n, v in result["grow"].items())
     return [
         practice.Check("ANSWER: 50 layers with and without the 1/sqrt(2N) factor",
@@ -92,32 +88,28 @@ def verify(result):
                        f"{scaled[-1] / scaled[0]:.2f} against {blew:.2e}"),
         practice.Check("FINDING: unscaled growth is exponential, not proportional to N",
                        result["rate"] > 2.5 and blew > 1e6 * 51 ** 0.5,
-                       f"measured variance factor {result['rate']:.3f} per layer, so L50 sits "
-                       f"{blew:.2e}x above L0 where 'proportional to N' predicts sqrt(51) = "
-                       f"{51 ** 0.5:.2f}x — {math.log10(blew / 51 ** 0.5):.1f} decades low"),
+                       f"variance factor {result['rate']:.3f} per layer: L50 sits {blew:.2e}x "
+                       f"above L0, {math.log10(blew / 51 ** 0.5):.1f} decades past the sqrt(51) "
+                       f"= {51 ** 0.5:.2f}x that 'proportional to N' predicts"),
         practice.Check("MECHANISM: the sublayer output scales with its input, so adds multiply",
                        1.6 < result["gain"] < 2.4,
-                       f"E[sublayer(x)^2]/E[x^2] = {result['gain']:.3f} for one fresh "
-                       f"Kaiming-ReLU-Kaiming block (two Kaiming layers double the second "
-                       f"moment, ReLU halves it once), so x + f(x) carries "
-                       f"{1 + result['gain']:.2f}x the variance of x, every layer"),
+                       f"E[sublayer(x)^2]/E[x^2] = {result['gain']:.3f} for one fresh Kaiming-"
+                       f"ReLU-Kaiming block: two Kaiming layers double the second moment, ReLU "
+                       f"halves it, so x + f(x) carries {1 + result['gain']:.2f}x the variance"),
         practice.Check("CONTROL: pre-normalise the sublayer input and the linear rate appears",
                        abs(result["ln_plain"] / math.sqrt(101) - 1) < 0.10,
-                       f"with an RMS-norm in front of the sublayer — what a pre-LN transformer "
-                       f"actually has — the unscaled stream reaches {result['ln_plain']:.3f}x, "
-                       f"{abs(result['ln_plain'] / math.sqrt(101) - 1) * 100:.0f}% off "
-                       f"sqrt(1 + 2*50) = {math.sqrt(101):.3f}"),
+                       f"an RMS-norm in front of the sublayer — what a pre-LN transformer "
+                       f"actually has — holds the unscaled stream to {result['ln_plain']:.3f}x "
+                       f"against the claimed sqrt(1 + 2*50) = {math.sqrt(101):.3f}"),
         practice.Check("ANSWER: 1/sqrt(2N) bounds the stream at a depth-independent variance",
                        max(hold.values()) < 3.3 and min(hold.values()) > 2.3,
                        f"scaled variance ratio by depth — {held} — against the closed form "
-                       f"(1 + 1/N)^N rising to e = {math.e:.3f}. Unscaled over the same depths: "
-                       f"{grew}. The factor turns an exponential in N into a constant"),
+                       f"(1 + 1/N)^N rising to e = {math.e:.3f}; unscaled, {grew}"),
         practice.Check("FINDING: the 2 in 2N counts two residual adds per block, not one",
                        1.8 < result["ln_scaled"] < 2.5,
-                       f"normalised sublayer, scaled by 1/sqrt(2N), 50 single-add layers: "
-                       f"variance ratio {result['ln_scaled']:.3f} against the exact 1 + 2N/(2N) "
-                       f"= 2. GPT-2 applies it inside blocks that add twice; one add per "
-                       f"counted layer wants 1/sqrt(N)"),
+                       f"normalised sublayer, scaled by 1/sqrt(2N), 50 single-add layers: ratio "
+                       f"{result['ln_scaled']:.3f} against the exact 1 + 2N/(2N) = 2. GPT-2 "
+                       f"scales blocks that add twice; one add per layer wants 1/sqrt(N)"),
     ]
 
 
