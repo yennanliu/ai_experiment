@@ -106,9 +106,10 @@ def digest(result) -> dict:
             "over": sum(r["over"] for r in runs.values()), "span": spread(runs),
             "biggest": max(r["biggest"] for r in runs.values()),
             "delta": max(r["delta"] for r in runs.values()), **deepest(result["deep"]),
+            "fired": [n for n in NAMES if runs[(n, 1.0)]["first"] is not None],
             "succeeded": ", ".join(f"{n} at epoch {runs[(n, 1.0)]['first']} ending "
                                    f"{runs[(n, 1.0)]['end'][1]:.1f}%"
-                                   for n in ("relu", "gelu", "swish"))}
+                                   for n in NAMES if runs[(n, 1.0)]["first"] is not None)}
 
 
 def verify(result):
@@ -133,13 +134,12 @@ def verify(result):
                        f"gradient is at most 0.25|h| and the hidden one at most 0.25|w2| * act' * "
                        f"|x| — reaching {HIGH:.0f} needs |h| > 400 or |w2| > 200, which a sigmoid "
                        f"output cannot ask for"),
-        practice.Check("FINDING: the low threshold fires where training *succeeded*",
-                       all(runs[(n, 1.0)]["first"] is not None
-                           and runs[(n, 1.0)]["end"][1] > 95 for n in ("relu", "gelu", "swish")),
-                       f"at lr = 1.0 the warning first fires for {d['succeeded']} accuracy. The "
-                       f"per-layer mean falls below {LOW} because the loss is near zero, so on this "
-                       f"network 'gradient too small' is a convergence signal, not an alarm — the "
-                       f"whole live range is {d['span'][0]:.1e} to {d['span'][1]:.1e}"),
+        practice.Check("FINDING: wherever the low threshold fires, training had *succeeded*",
+                       d["fired"] and all(runs[(n, 1.0)]["end"][1] > 95 for n in d["fired"]),
+                       f"at lr = 1.0 it fires for {d['succeeded']}. The per-layer mean falls below "
+                       f"{LOW} because the loss is near zero, so on this network 'gradient too "
+                       f"small' is a convergence signal, not an alarm — the whole live range is "
+                       f"{d['span'][0]:.1e} to {d['span'][1]:.1e}"),
         practice.Check("CONTROL: the threshold is right, its location is not",
                        d["dead"]["relu"] is not None and d["dead"]["sigmoid"] is None,
                        f"run the same rule over the lesson's own 10-layer "

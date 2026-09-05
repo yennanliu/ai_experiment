@@ -94,7 +94,7 @@ independent streams ReLU reaches exactly 0 in **400/400** runs, median layer **2
 It dies the first time `Σw` is negative, so the index is geometric with p = 1/2 —
 seed 42 merely got a long run. GELU dies in 36/400; sigmoid and tanh in 0.
 
-**3 — ELU has no dead units, and the lesson's detector cannot see the difference.**
+**3 — ELU keeps its units where ReLU loses a quarter of them, and the lesson's detector cannot see the difference.**
 
 Units firing for no input after 200 epochs on circles:
 
@@ -104,7 +104,9 @@ Units firing for no input after 200 epochs on circles:
 | ELU | 0 | 0 | 0 | 0 | 0 |
 
 At the lesson's own `lr = 0.1` the dying-ReLU rate the exercise asks about is
-**0%**. The 25% starts at `lr = 0.3`.
+**0%**. The 25% starts at `lr = 0.3`. (The `lr = 2.0` ELU entry is 0 on macOS and
+1 on Linux — a last-ulp `exp` difference amplified over 200 epochs — so the check
+compares totals rather than pinning each cell.)
 
 **FINDING: `dead_neuron_detector` with its `relu` replaced by ELU gives identical
 fire counts on all 20 neurons** over 20,000 pre-activations (10,037 of them ≤ 0) —
@@ -139,11 +141,13 @@ so the output-layer gradient is at most `0.25|h|` and the hidden one at most
 sigmoid output cannot ask for. The largest single gradient over 5 activations × 4
 learning rates is **2.2506** — 44× below the alarm.
 
-**FINDING: the low threshold fires where training *succeeded*.** At `lr = 1.0` the
-first warning is relu epoch 145 (ending 99.0%), gelu 175 (97.5%), swish 142
-(96.5%). The per-layer mean falls under 0.001 because the loss is near zero. On
-this network "gradient too small" is a **convergence signal, not an alarm** — the
-whole live range is 7.2e-08 to 5.4e-02.
+**FINDING: wherever the low threshold fires, training had *succeeded*.** At
+`lr = 1.0` it fires for relu at epoch 145 (ending 99.0%), gelu at 175 (97.5%) and
+swish at 142 (96.5%) — every arm it fires for ends above 95%. The per-layer mean
+falls under 0.001 because the loss is near zero. On this network "gradient too
+small" is a **convergence signal, not an alarm** — the whole live range is 7.2e-08
+to 5.4e-02. (Which arms trip it varies with the platform's libm, so the check
+asserts the implication rather than the membership.)
 
 **CONTROL: the threshold is right; its location is not.** Run the same rule over
 the lesson's own 10-layer `vanishing_gradient_experiment`:
