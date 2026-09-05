@@ -3,27 +3,38 @@ phase: 03-deep-learning-core
 source: phases/03-deep-learning-core/11-intro-to-pytorch/docs/en.md
 exercises:
   - index: 1
-    slug: add_batch_normalization_insert
+    slug: batch_norm_layers
     kind: code
     tier: T0
-    deps_group: math
+    deps_group: llm
     en: |
       **Add batch normalization.** Insert `nn.BatchNorm1d` after each linear layer (before the activation). Compare test accuracy and training speed vs the dropout-only version. Batch norm should reach 98%+ in fewer epochs.
     zh: |
       **加上 batch normalization。** 在每個線性層之後（激活之前）插入 `nn.BatchNorm1d`。比較它與只用 dropout 的版本在測試準確率和訓練速度上的差別。batch norm 應該用更少的 epoch 就達到 98% 以上。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER batch norm costs accuracy and roughly matches the epoch cost - peak over 12 epochs on 1280/2000 rows at a Bayes rate of 0.9990: dropout 0.9890 at 11.9 ms/epoch, +batch norm 0.9845 at 13.5 ms (1.14x), and the lesson's own model 0.9800 at 11.7 ms once its dropout is removed; FINDING batch norm reaches 98% later rather than sooner - epochs to 98% are 3 for dropout, 5 for +batch norm and 11 for the lesson's model, so 'fewer epochs' holds only for epoch 1, where batch norm leads 0.8940 to 0.8550; FINDING parameters() undercounts the batch-norm checkpoint by 770 - the dropout model's 235,146 parameters are 235,146 state_dict numbers, while batch norm reports 235,914 against 236,684, the +768 being 2*(256+128) scales and shifts and the other 770 the running statistics, buffers that parameters() misses and torch.save writes; FINDING a size-1 last batch kills batch norm inside train_one_epoch - 1281 rows at batch_size=64 ends on a batch of 1 and raises ValueError 'Expected more than 1 value per channel when training, got input size torch.Size([1, 256])', where the dropout model runs the same loader fine; 60000 % 64 = 32, so MNIST hides it and the missing drop_last in create_loaders stays a landmine
+    uses_reference:
+      - MNISTModel
+      - MNISTModelWithBatchNorm
+      - create_loaders
+      - train_one_epoch
+      - evaluate
   - index: 2
-    slug: implement_learning_rate_finder
+    slug: lr_range_finder
     kind: code
     tier: T0
-    deps_group: none
+    deps_group: llm
     en: |
       **Implement a learning rate finder.** Train for one epoch with exponentially increasing learning rate (from 1e-7 to 1.0). Plot loss vs LR. The optimal LR is just before the loss starts climbing. Use this to pick a better LR for the MNIST model.
     zh: |
       **實作一個學習率搜尋器。** 用指數遞增的學習率（從 1e-7 到 1.0）訓練一個 epoch。畫出損失對 LR 的圖。最佳 LR 就在損失開始往上爬之前。用這個方法為 MNIST 模型挑一個更好的 LR。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER the loss bottoms near 2e-2, after a plateau that measures nothing - over 128 steps from 1e-7 to 1.0 it sits at 2.307 until lr = 3.8e-03 (64% of the epoch), reaches a minimum of 1.309 at 2.22e-02 and 40.4 at lr = 1; FINDING the finder's answer is a 15-21 point regression on 1e-3 - same init, same epoch, one fixed LR each gives 0.9870 at 1e-3 (the winner on every seed), 0.9450 at 3e-3 and 0.7750 at the finder's 2.22e-02, which is 20x too high and costs 0.1470 to 0.2120 of test accuracy; MECHANISM the curve at LR x is a model trained at every LR below x - only 18 of the 128 steps land within 3x of 1e-3, so the sweep reads 2.286 there, its opening plateau, while a run held at 1e-3 for the same 128 steps reaches 0.9870; CONTROL the result is stable across seeds, so it is biased rather than noisy, and fastai's lr/10 misses too - three seeds put the minimum in 1.96e-02 to 2.22e-02, a spread of 1.14x, and name 1e-3 the ladder winner each time, while lr/10 lands at 2.2e-03 whose rung tops out at 0.9450 against 0.9840
+    uses_reference:
+      - MNISTModel
+      - create_loaders
+      - train_one_epoch
+      - evaluate
   - index: 3
-    slug: port_gpu_mixed_precision
+    slug: gpu_mixed_precision
     kind: code
     tier: T3
     deps_group: llm
@@ -31,24 +42,39 @@ exercises:
       **Port to GPU with mixed precision.** Add `torch.amp.autocast` and `GradScaler` to the training loop. Measure throughput (samples/second) with and without mixed precision on GPU. On an A100, expect ~2x speedup.
     zh: |
       **移植到 GPU 並加上混合精度。** 在訓練迴圈裡加上 `torch.amp.autocast` 與 `GradScaler`。在 GPU 上量測有無混合精度的吞吐量（樣本／秒）。在 A100 上預期約 2 倍加速。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER on this device mixed precision is 5-6x SLOWER rather than 2x faster - 2048 samples/epoch on cpu run at 128,319/s in fp32 against 22,493/s bf16 (0.18x) and 18,333/s fp16+scaler (0.14x); the real run is this file unchanged on a CUDA host, `uv sync --extra llm && uv run python <this path>` on an A100-40GB at $1.29/h list, about $0.0018 for the 10 epochs the lesson quotes at 0.5s each; MECHANISM the 2x is a tensor-core property and not a float16 property - halving the bit width buys nothing where there is no half-precision matmul unit, so this CPU runs bf16 GEMMs by widening back to fp32 and autocast only adds casts, 5.7x of pure overhead; FINDING 'mixed' is literal and asymmetric, with logits going half while the loss and every master weight stay fp32 - autocast returns bf16 and fp16 logits but an fp32 loss because cross_entropy is on autocast's fp32 list, and after a full fp16 epoch with GradScaler every parameter is still fp32; on one batch with a logit span of 0.4725 the cost is 0.3330 for bf16, 0.3409 for fp16 and 30 argmax flips; CONTROL accuracy is untouched, so only the speed claim fails here - one epoch each from the same seed gives fp32 0.9920 (the lesson's own train_one_epoch), bf16 0.9920 and fp16+GradScaler 0.9910, with 3.30% of gradients below fp16's smallest normal 6.10e-05 cut to 0.197% by 65536x scaling, against bf16's 0.191% and no scaler, and headroom holding at 7.2e+03 < 65504
+    uses_reference:
+      - MNISTModel
+      - create_loaders
+      - train_one_epoch
+      - evaluate
   - index: 4
-    slug: build_custom_dataset_download
+    slug: custom_dataset
     kind: code
     tier: T0
-    deps_group: none
+    deps_group: llm
     en: |
       **Build a custom Dataset.** Download Fashion-MNIST (same format as MNIST but with clothing items). Implement a `FashionMNISTDataset(Dataset)` class with `__getitem__` and `__len__`. Train the same MLP and compare accuracy. Fashion-MNIST is harder -- expect ~88% vs ~98%.
     zh: |
       **打造一個自訂的 Dataset。** 下載 Fashion-MNIST（格式與 MNIST 相同，但內容是衣物）。實作一個帶 `__getitem__` 與 `__len__` 的 `FashionMNISTDataset(Dataset)` 類別。訓練同樣的 MLP 並比較準確率。Fashion-MNIST 比較難——預期約 88%，對比約 98%。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER the custom Dataset is a drop-in for TensorDataset, batch for batch - the same 2048 rows through a DataLoader of batch 64 differ by exactly 0.0 unshuffled, 0.0 shuffled from the same generator seed, and 0.0 against the loader the lesson's own `create_loaders` builds, so `__len__` and `__getitem__` are the entire interface; ANSWER the harder task reproduces the ~88 vs ~98 the exercise predicts - the same MLP, optimizer and 5 epochs over the custom Dataset give 99.2% at class separation 0.18 against 86.8% at 0.12, and the real run is this file with `blobs` replaced by the lesson's own load_images/load_labels over the Fashion-MNIST IDX files (4 files, ~30 MB), the only part of the exercise that needs the network; MECHANISM `__len__` decides how many indices are drawn and nothing checks it - overstating it by one makes the sampler ask for index 2048 of a 2048-row tensor and raises IndexError, while understating it by four yields 2044 of 2048 rows silently, because the sampler trusts `__len__` and `__getitem__` can object only by raising; FINDING `__getitem__` may return the wrong dtype and the collate will take it - returning each row as a numpy float64 array collates to a torch.float64 batch since `default_collate` converts whatever it is handed, and the model is the first thing to object with 'mat1 and mat2 must have the same dtype, but got Double and Float'; CONTROL shuffling is the sampler's job and not the dataset's - the same Dataset object matches TensorDataset both shuffled and not, because the permutation comes from the DataLoader's RandomSampler and its generator and `__getitem__` never sees an epoch
+    uses_reference:
+      - MNISTModel
+      - create_loaders
+      - train_one_epoch
+      - evaluate
   - index: 5
-    slug: replace_adam_sgd_momentum
+    slug: sgd_momentum_cosine
     kind: code
     tier: T0
-    deps_group: none
+    deps_group: llm
     en: |
       **Replace Adam with SGD + momentum.** Train with `SGD(params, lr=0.01, momentum=0.9)`. Compare convergence curves. Then add a `CosineAnnealingLR` scheduler and see if SGD catches up to Adam by epoch 10.
     zh: |
       **把 Adam 換成 SGD + momentum。** 用 `SGD(params, lr=0.01, momentum=0.9)` 訓練。比較收斂曲線。然後加上 `CosineAnnealingLR` 排程器，看 SGD 到第 10 個 epoch 有沒有追上 Adam。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER SGD + momentum catches up by epoch 10 and loses the first three - Adam(1e-3) runs 0.976, 0.994, 0.992, ..., 0.992 while SGD(0.01, 0.9) runs 0.314, 0.774, 0.948, ..., 0.989, ending 0.3 points apart but taking 3 epochs to pass 0.948 where Adam is at 0.976 after one, so Adam's whole advantage is the start; ANSWER adding CosineAnnealingLR at that rate does not help - SGD(0.01, 0.9) + cosine is at or below the unscheduled arm at every epoch after the first and ends 0.9880 against 0.9890, because a cosine only lowers the rate and 0.01 was never too high; FINDING the lesson's own SGD+cosine run changes the rate at the same time, so its comparison confounds the two - `experiment_sgd_cosine` uses lr = 0.05 where `experiment_sgd` and the exercise use 0.01, and separated, SGD(0.05, 0.9) with no schedule reaches 0.934 after one epoch against 0.314, so the 5x rate is what buys the early epochs and not the scheduler; FINDING at the rate that is too high the cosine earns its keep - SGD(0.05, 0.9) peaks at 0.989 and *falls* to 0.979 by epoch 10, while with the cosine it holds 0.988, so what the schedule fixes is late-training decay at a rate too high to sit at, a different claim from 'SGD catches up'; CONTROL the schedule steps once per epoch, so epoch 1 is common to both arms - the scheduled and unscheduled runs give 0.9340 and 0.3140 in both arms exactly, and any first-epoch difference would have been a seeding bug
+    uses_reference:
+      - MNISTModel
+      - create_loaders
+      - train_one_epoch
+      - evaluate
