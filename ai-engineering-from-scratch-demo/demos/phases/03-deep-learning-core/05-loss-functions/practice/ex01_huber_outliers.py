@@ -80,18 +80,37 @@ def solve() -> dict:
             in [("mse", ref.mse_gradient, LR), ("huber", huber_gradient, LR),
                 ("half", ref.mse_gradient, LR / 2)]}
     (xs, ys), pr, tg = sets[0], [0.4, -1.2, 0.9, 2.5], [0.5, 0.3, 0.95, -1.0]
-    hit = lambda g: sum(abs(v) for v, y in zip(g, ys) if abs(y) > 1.5) / sum(map(abs, g))
+    mse_share, huber_share = shares(ref, ys)
     return {k: sum(v) / len(SEEDS) for k, v in runs.items()} | {
         "worst": min(a / b for a, b in zip(runs["mse"], runs["huber"])),
-        "mse_share": hit(ref.mse_gradient([0.0] * 60, ys)),
-        "huber_share": hit(huber_gradient([0.0] * 60, ys)),
-        "wide": max(abs(a - b) for a, b in zip(
-            train(xs, ys, ref.mse_gradient)[0],
-            train(xs, ys, lambda p, t: huber_gradient(p, t, 1e9), 2 * LR)[0])),
-        "clean": error(train(xs, [math.sin(x) for x in xs], huber_gradient))
-        / error(train(xs, [math.sin(x) for x in xs], ref.mse_gradient)),
-        "fd": max(fd_gap(fn, gr, pr, tg, i) for fn, gr in
-                  [(ref.mse, ref.mse_gradient), (huber, huber_gradient)] for i in range(4))}
+        "mse_share": mse_share, "huber_share": huber_share,
+        "wide": widest(ref, xs, ys), "clean": clean_ratio(ref, xs),
+        "fd": gradcheck(ref, pr, tg)}
+
+
+def widest(ref, xs, ys) -> float:
+    """Huber at delta = 1e9 is MSE at half the rate — how far the fitted lines drift apart."""
+    return max(abs(a - b) for a, b in zip(
+        train(xs, ys, ref.mse_gradient)[0],
+        train(xs, ys, lambda p, t: huber_gradient(p, t, 1e9), 2 * LR)[0]))
+
+
+def clean_ratio(ref, xs) -> float:
+    """Huber's error against MSE's on the same curve with no outliers at all."""
+    clean = [math.sin(x) for x in xs]
+    return error(train(xs, clean, huber_gradient)) / error(train(xs, clean, ref.mse_gradient))
+
+
+def shares(ref, ys) -> tuple:
+    """How much of the gradient at zero the |y| > 1.5 outliers own, under each loss."""
+    hit = lambda g: sum(abs(v) for v, y in zip(g, ys) if abs(y) > 1.5) / sum(map(abs, g))
+    return hit(ref.mse_gradient([0.0] * 60, ys)), hit(huber_gradient([0.0] * 60, ys))
+
+
+def gradcheck(ref, preds, targets) -> float:
+    """Worst finite-difference gap for both losses over the sample points."""
+    return max(fd_gap(fn, gr, preds, targets, i) for fn, gr in
+               [(ref.mse, ref.mse_gradient), (huber, huber_gradient)] for i in range(4))
 
 
 def verify(result) -> list:
