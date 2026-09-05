@@ -4,12 +4,11 @@
     total number of trainable weights and biases. Test it on a 784-256-128-10
     network (the classic MNIST architecture). How many parameters does it have?
 
-Reading of the exercise: `count_parameters` already exists in the lesson's own
-`code/main.py`, so "implement" is best read as "check that it counts what it
-claims to". Check 1 answers the arithmetic question against a closed form and
-check 2 against an independent count of the forward pass's own work. Checks 3 and
-4 then feed it two networks whose declared shape and actual shape disagree, which
-is exactly what a parameter count is used to catch; check 5 prices the answer.
+Reading of the exercise: `count_parameters` already exists in the lesson's own `code/main.py`,
+so "implement" is best read as "check that it counts what it claims to". Check 1 answers the
+arithmetic against a closed form, check 2 against an independent count of the forward pass's own
+work; checks 3-4 feed it networks whose declared and actual shapes disagree — what a parameter
+count is for — and check 5 prices the answer.
 """
 
 from __future__ import annotations
@@ -26,11 +25,8 @@ SHALLOW = [784, 295, 10]
 
 def stack(ref, sizes, rng):
     """The lesson's Layers, sized head to tail, with weights from a private RNG."""
-    return ref.Network([
-        ref.Layer(sizes[i - 1], sizes[i],
-                  weights=[[rng.uniform(-1, 1) for _ in range(sizes[i - 1])]
-                           for _ in range(sizes[i])])
-        for i in range(1, len(sizes))])
+    return ref.Network([ref.Layer(sizes[i - 1], sizes[i], weights=[[rng.uniform(-1, 1)
+        for _ in range(sizes[i - 1])] for _ in range(sizes[i])]) for i in range(1, len(sizes))])
 
 
 def closed_form(sizes) -> int:
@@ -39,16 +35,11 @@ def closed_form(sizes) -> int:
 
 def sigmoid_calls(ref, net, x) -> int:
     """One forward pass, counting activations — an independent count of the biases."""
-    tally, real = [0], ref.sigmoid
-
-    def counted(z):
-        tally[0] += 1
-        return real(z)
-
-    ref.sigmoid = counted
+    calls, real = [], ref.sigmoid
+    ref.sigmoid = lambda z: (calls.append(z), real(z))[1]              # noqa: E731
     net.forward(x)
     ref.sigmoid = real
-    return tally[0]
+    return len(calls)
 
 
 def deep_bytes(obj) -> int:
@@ -74,59 +65,52 @@ def solve():
     net = stack(ref, MNIST, random.Random(0))
     total = net.count_parameters()
     weights = sum(MNIST[i - 1] * MNIST[i] for i in range(1, len(MNIST)))
-    return {
-        "total": total, "closed": closed_form(MNIST), "weights": weights,
-        "biases": total - weights, "first": MNIST[0] * MNIST[1] + MNIST[1],
-        "calls": sigmoid_calls(ref, net, [0.5] * 784),
-        "bytes": sum(deep_bytes(l.weights) + deep_bytes(l.biases) for l in net.layers),
-        "shallow": closed_form(SHALLOW), **mismatches(ref),
-    }
+    return {"total": total, "closed": closed_form(MNIST), "weights": weights,
+            "biases": total - weights, "first": MNIST[0] * MNIST[1] + MNIST[1],
+            "calls": sigmoid_calls(ref, net, [0.5] * 784), "shallow": closed_form(SHALLOW),
+            "bytes": sum(deep_bytes(l.weights) + deep_bytes(l.biases) for l in net.layers),
+            **mismatches(ref)}
 
 
 def verify(result):
-    total, per = result["total"], [MNIST[i - 1] * MNIST[i] + MNIST[i] for i in range(1, 4)]
+    r, per = result, [MNIST[i - 1] * MNIST[i] + MNIST[i] for i in range(1, 4)]
+    total, ghost, byt = r["total"], r["ghost"], r["bytes"]
     return [
         practice.Check("ANSWER: the 784-256-128-10 network has 235,146 parameters",
-                       total == 235146 == result["closed"],
-                       f"{per[0]:,} + {per[1]:,} + {per[2]:,} = {total:,}, matching the "
-                       f"closed form sum(n_prev * n + n) exactly. {result['weights']:,} are "
-                       f"weights and {result['biases']} are biases, so the biases are "
-                       f"{100 * result['biases'] / total:.2f}% of the model — and the very "
-                       f"first weight matrix alone is {100 * result['first'] / total:.1f}% "
-                       f"of it. A shallow 784-295-10 costs {result['shallow']:,}, within "
-                       f"{100 * abs(result['shallow'] - total) / total:.1f}% of the same "
-                       f"budget for one hidden layer instead of two"),
-        practice.Check("…and the bias count is confirmed by an independent count of the "
-                       "forward pass's own work",
-                       result["calls"] == result["biases"] == 394,
-                       f"one forward pass calls `sigmoid` exactly {result['calls']} times, "
-                       f"once per neuron, which is the same {result['biases']} the method "
-                       f"sums from len(layer.biases) — 256 + 128 + 10"),
+                       total == 235146 == r["closed"],
+                       f"{per[0]:,} + {per[1]:,} + {per[2]:,} = {total:,}, matching the closed form "
+                       f"sum(n_prev * n + n) exactly. {r['weights']:,} are weights and {r['biases']} "
+                       f"are biases, so the biases are {100 * r['biases'] / total:.2f}% of the model "
+                       f"— and the very first weight matrix alone is {100 * r['first'] / total:.1f}% "
+                       f"of it. A shallow 784-295-10 costs {r['shallow']:,}, within "
+                       f"{100 * abs(r['shallow'] - total) / total:.1f}% of the same budget for one "
+                       f"hidden layer instead of two"),
+        practice.Check("…and the bias count is confirmed by counting the forward pass's own work",
+                       r["calls"] == r["biases"] == 394,
+                       f"one forward pass calls `sigmoid` exactly {r['calls']} times, once per "
+                       f"neuron, which is the same {r['biases']} the method sums from "
+                       f"len(layer.biases) — 256 + 128 + 10"),
         practice.Check("FINDING: it counts weights the forward pass never reads",
-                       result["ghost"] == 267914 and result["ghost_out"] == 10,
-                       f"declare the middle layer Layer(512, 128) between a 256-wide layer "
-                       f"and the output and the count reports {result['ghost']:,} against "
-                       f"{total:,} — {result['ghost'] - total:,} too many, "
-                       f"{100 * (result['ghost'] - total) / total:.1f}% — while the network "
-                       f"still returns {result['ghost_out']} outputs and raises nothing. "
-                       f"MECHANISM: `forward` zips weights against inputs, so the 256 "
-                       f"unmatched columns per neuron are dropped at run time and counted "
-                       f"at rest"),
+                       ghost == 267914 and r["ghost_out"] == 10,
+                       f"declare the middle layer Layer(512, 128) between a 256-wide layer and the "
+                       f"output and the count reports {ghost:,} against {total:,} — "
+                       f"{ghost - total:,} too many, {100 * (ghost - total) / total:.1f}% — while "
+                       f"the network still returns {r['ghost_out']} outputs and raises nothing. "
+                       f"MECHANISM: `forward` zips weights against inputs, so the 256 unmatched "
+                       f"columns per neuron are dropped at run time and counted at rest"),
         practice.Check("…and it can double-count a layer's two contradictory shapes at once",
-                       result["thin"] == 7 and result["thin_out"] == 1,
-                       f"Layer(2, 5, weights=[[1.0, 1.0]]) declares 5 neurons but supplies "
-                       f"one row. `forward` loops over len(self.weights) and returns "
-                       f"{result['thin_out']} value; `count_parameters` takes the weights "
-                       f"from the rows and the biases from n_neurons and reports "
-                       f"{result['thin']} = 2 + 5. Neither half is checked against the other"),
+                       r["thin"] == 7 and r["thin_out"] == 1,
+                       f"Layer(2, 5, weights=[[1.0, 1.0]]) declares 5 neurons but supplies one row. "
+                       f"`forward` loops over len(self.weights) and returns {r['thin_out']} value; "
+                       f"`count_parameters` takes the weights from the rows and the biases from "
+                       f"n_neurons and reports {r['thin']} = 2 + 5. Neither half is checked"),
         practice.Check("what 235,146 pure-Python parameters cost to hold",
-                       31 < result["bytes"] / total < 35,
-                       f"{result['bytes']:,} bytes = {result['bytes'] / 1e6:.2f} MB, "
-                       f"{result['bytes'] / total:.1f} bytes per parameter — an 8-byte list "
-                       f"slot plus a 24-byte float object each. The same weights as float32 "
-                       f"would be {4 * total / 1e6:.2f} MB, so the from-scratch "
-                       f"representation costs {result['bytes'] / (4 * total):.1f}x the "
-                       f"array a framework would allocate"),
+                       31 < byt / total < 35,
+                       f"{byt:,} bytes = {byt / 1e6:.2f} MB, {byt / total:.1f} bytes per parameter "
+                       f"— an 8-byte list slot plus a 24-byte float object each. The same weights "
+                       f"as float32 would be {4 * total / 1e6:.2f} MB, so the from-scratch "
+                       f"representation costs {byt / (4 * total):.1f}x the array a framework "
+                       f"would allocate"),
     ]
 
 
