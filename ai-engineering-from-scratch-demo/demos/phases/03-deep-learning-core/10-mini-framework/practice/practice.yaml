@@ -3,7 +3,7 @@ phase: 03-deep-learning-core
 source: phases/03-deep-learning-core/10-mini-framework/docs/en.md
 exercises:
   - index: 1
-    slug: add_softmaxcrossentropyloss_class_multi
+    slug: softmax_cross_entropy
     kind: code
     tier: T0
     deps_group: none
@@ -11,9 +11,15 @@ exercises:
       Add a `SoftmaxCrossEntropyLoss` class for multi-class classification. Softmax the predictions, compute cross-entropy loss, and handle the combined backward pass. Test it on a 3-class spiral dataset.
     zh: |
       加一個 `SoftmaxCrossEntropyLoss` 類別做多類別分類。對預測值取 softmax、算交叉熵損失，並處理合併後的反向傳遞。用一組 3 類別的螺旋資料集測試它。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER `p - y` is the gradient of the softmax cross-entropy loss - worst |analytic - central difference| is 1.866e-09 over 200 random logit triples x 3 logits at h = 1e-06, the difference quotient's own O(h^2) error; ANSWER the 3-class spiral is learned with it - a 144/36 split through Linear(2,16)-ReLU-Linear(16,16)-ReLU-Linear(16,3) and 30 epochs of Adam(lr=0.02) reaches train 100.0% and test 100.0% against 33.3% chance, mean loss 0.9410 -> 0.000292; CONTROL the identical run on permuted labels lands at chance - shuffling the labels among the same points gives train 42.4%, test 30.6% and a loss stalled at 1.0708 against ln 3 = 1.0986; FINDING the un-combined backward underflows to zero on confident logits - composing the softmax Jacobian with dCE/dp reproduces `p - y` exactly at logits (5, 0, -5), returns 8.757e-12 at (30, 0, -30) where the true gradient is 1.000000, and returns exactly 0.0 at (400, 0, -400), because dCE/dp = -1/p reaches ~1e+26 while the Jacobian row carries a factor p ~ 1e-26, so the product survives only if neither end is rounded away first - and `p - y` never forms either factor
+    uses_reference:
+      - Sequential
+      - Linear
+      - ReLU
+      - Adam
+      - DataLoader
   - index: 2
-    slug: implement_learning_rate_scheduling
+    slug: set_lr_warmup_cosine
     kind: code
     tier: T0
     deps_group: none
@@ -21,9 +27,18 @@ exercises:
       Implement learning rate scheduling in the optimizer: add a `set_lr()` method and wire in the cosine schedule from Lesson 09. Train the circle classifier with warmup + cosine and compare to constant LR.
     zh: |
       在最佳化器裡實作學習率排程：加一個 `set_lr()` 方法，把單元 09 的餘弦排程接進來。用 warmup + 餘弦訓練圓形分類器，跟固定學習率比較。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER warmup + cosine buys optimization, not generalization - final mean training loss over seeds (1, 2, 3), 20 epochs of Adam on the circle classifier, is 0.0230 / 0.0368 / 0.0216 at a constant lr = 0.01 against 0.0125 / 0.0121 / 0.0105 with a 240-step warmup and cosine tail, lower on every seed, while the 60 held-out rows give 98.3 / 98.3 / 100.0 against 100.0 / 98.3 / 100.0, within 1.7 points; CONTROL the ordering of the learning rates does the work and not their mean - the same 4800 rates shuffled, an identical multiset at an identical mean of 0.005005, give 0.0237 / 0.0359 / 0.0247, landing with the constant arm rather than the cosine one, because only a monotone tail spends the END of training at a small rate; CONTROL the set_lr plumbing itself changes nothing - set_lr on a constant schedule reproduces the reference loop that never touches lr bit for bit, 0.022959050444682435 against 0.022959050444682435 over 4800 steps; FINDING changing the learning rate by rebuilding Adam silently turns it into signSGD - a fresh Adam per step resets `t`, pinning bias correction at t = 1 where m_hat/(sqrt(v_hat)+eps) = g/(|g|+eps), so all 43 of the 193 parameters with |g| > 1e-5 moved by 0.999998-1.000000 x lr although their gradients span 5.20e-03 to 9.87e-01; after 4800 steps it still reports t = 1, at loss 1.6800 / 76.7% against 0.0230 / 98.3% for set_lr
+    uses_reference:
+      - Sequential
+      - Linear
+      - ReLU
+      - Sigmoid
+      - BCELoss
+      - Adam
+      - DataLoader
+      - make_circle_data
   - index: 3
-    slug: add_save_load_method
+    slug: save_load_json
     kind: code
     tier: T0
     deps_group: none
@@ -31,9 +46,18 @@ exercises:
       Add a `save()` and `load()` method to Sequential that serializes all weights to a JSON file and loads them back. Verify that a loaded model produces the same predictions as the original.
     zh: |
       為 Sequential 加上 `save()` 與 `load()` 方法，把所有權重序列化成 JSON 檔案，再讀回來。驗證讀回來的模型能產生跟原本一樣的預測。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER the loaded model's predictions are identical rather than merely close - 81 of 81 grid predictions equal to the last bit after an 833-byte JSON round trip, max |difference| exactly 0.0, with all 33 scalar parameters equal; CONTROL the model it was loaded into really did disagree first - before the load the differently-seeded target differed from the original by up to 0.9181 on that grid, so this is not a model compared to itself; FINDING `parameters()` is not a state dict, because BatchNorm's buffers are missing - a save built from exactly what `Sequential.parameters()` enumerates ('weights', 'biases', 'gamma', 'beta') reloads a BatchNorm model to predictions off by 0.9913, against 0.0 once running_mean and running_var travel too, and `BatchNorm.forward` moves running_mean to 2.1175 while leaving running_var at [1.0]; FINDING load must write through the lists, because rebinding freezes training - both loads restore the checkpoint exactly (gap 0.0 either way), but `parameters()` hands the optimizer the list objects themselves, so rebinding `module.weights = [...]` leaves it on the old ones and after 200 Adam steps the predictions have moved 0.0, against 0.4407 when loaded in place
+    uses_reference:
+      - Sequential
+      - Linear
+      - ReLU
+      - Sigmoid
+      - BatchNorm
+      - BCELoss
+      - Adam
+      - make_circle_data
   - index: 4
-    slug: implement_weight_decay_l2
+    slug: adam_weight_decay
     kind: code
     tier: T0
     deps_group: none
@@ -41,9 +65,18 @@ exercises:
       Implement weight decay (L2 regularization) in the Adam optimizer. Add a `weight_decay` parameter that shrinks weights toward zero each step. Compare training with decay=0 vs decay=0.01.
     zh: |
       在 Adam 最佳化器裡實作權重衰減（L2 正則化）。加一個 `weight_decay` 參數，每一步都把權重往零收縮。比較 decay=0 與 decay=0.01 的訓練結果。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER at decay 0.01 the weights shrink 6% and nothing else moves - 40 epochs and 1000 Adam steps end at 0.0619/96.0% with ||theta|| 11.975 at decay 0, against 0.0596/97.0% with 11.235 at decay 0.01, a 6.2% smaller norm and one test point of accuracy on 100 held-out rows; MECHANISM the decoupled rule is exactly a geometric shrink - with every gradient zeroed, 1000 steps of `w -= lr*wd*w` land on ||theta|| * (1 - lr*wd)^n to 1.1e-14 relative, predicting a 9.5% shrink over this run against the 6.2% measured, the gradient pushing the rest back; FINDING the other reading of 'L2' shrinks more than twice as hard at the same 0.01 - folding wd*w into the gradient before the step ends at ||theta|| 5.347 against 11.235, 2.1x, at 0.0798/98.0%, because Adam divides the coupled term by sqrt(v_hat) so it survives as a pull of order lr however small w is while the decoupled term vanishes with w, and the exercise's own wording picks the weaker one; FINDING `parameters()` does not distinguish weights from biases - the list holds 465 entries of which 41 are biases, told apart only by `j is None`, so a loop over it decays them too, and excluding them gives ||theta|| 11.371 against 11.235 because the biases start at 0.0 and stay small; CONTROL ten times the decay does move the norm and not the accuracy - decay 0.1 ends at ||theta|| 7.753, 35% below the undecayed run, at 0.0543/97.0%, since a 465-parameter net on 400 training points has nothing to over-fit
+    uses_reference:
+      - Sequential
+      - Linear
+      - ReLU
+      - Sigmoid
+      - BCELoss
+      - Adam
+      - DataLoader
+      - make_circle_data
   - index: 5
-    slug: replace_per_sample_training
+    slug: minibatch_accumulation
     kind: code
     tier: T0
     deps_group: math
@@ -51,4 +84,14 @@ exercises:
       Replace the per-sample training loop with proper mini-batch gradient accumulation: accumulate gradients across all samples in a batch, then divide by batch size and take one optimizer step. Measure whether this changes convergence speed.
     zh: |
       把逐樣本的訓練迴圈換成正規的小批次梯度累積：把一個批次裡所有樣本的梯度累積起來，再除以批次大小，然後做一次最佳化器更新。量測這樣會不會改變收斂速度。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER it changes convergence, and in opposite directions on the two clocks - the per-sample loop reaches test loss < 0.10 at epoch 3 against the per-batch loop's 6, but after 40 epochs per-sample ends at 0.2612/94.0% and per-batch at 0.0619/96.0%, so the per-sample loop arrives first and then walks away; MECHANISM it is 16x fewer optimizer steps for the same data - 16,000 against 1,000 over the same 40 epochs, because `train_framework` iterates a DataLoader of batch 16 and then calls zero_grad and step *inside* the inner loop, so its batching only decides the shuffling order; MECHANISM the framework was already built for this - `Linear.backward` writes `self.weight_grads[i][j] += ...`, so gradients already accumulate across calls and the whole change is moving zero_grad and step out of the inner loop and scaling once, with no new state and no new method; MECHANISM 'divide by batch size' is a no-op under Adam - the same loop with and without the 1/16 gives 0.0619/96.0% against 0.0623/96.0%, because Adam divides the update by sqrt(v_hat) and a constant factor on every gradient cancels out of it; CONTROL under the lesson's SGD the same division decides the run - at the same lr = 0.01 it gives 0.3864/82.0% divided against 0.1232/94.0% undivided, since dividing by 16 is a 16x learning-rate cut and nothing downstream undoes it
+    uses_reference:
+      - Sequential
+      - Linear
+      - ReLU
+      - Sigmoid
+      - BCELoss
+      - Adam
+      - SGD
+      - DataLoader
+      - make_circle_data

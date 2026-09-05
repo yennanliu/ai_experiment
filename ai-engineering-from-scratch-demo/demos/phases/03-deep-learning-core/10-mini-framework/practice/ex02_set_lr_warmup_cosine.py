@@ -6,9 +6,8 @@
 
 Reading of the exercise: `set_lr` is one assignment, so the question worth asking is what it buys
 and what the obvious alternative costs. Check 1 compares warmup+cosine to constant LR over three
-seeds, check 2 re-runs the identical multiset of learning rates in shuffled order to separate the
-schedule's shape from its mean, check 3 is the parity control on the plumbing, and check 4
-measures changing the LR by rebuilding the optimizer instead.
+seeds, check 2 reshuffles that multiset to separate the schedule's shape from its mean, check 3 is
+the parity control on the plumbing, and check 4 changes the LR by rebuilding the optimizer instead.
 """
 
 from __future__ import annotations
@@ -19,36 +18,27 @@ from harness import parity, practice
 
 PHASE, LESSON, SCHED = "03-deep-learning-core", "10-mini-framework", "09-learning-rate-schedules"
 LR, EPOCHS, N, SEEDS = 0.01, 20, 300, (1, 2, 3)
-TRAIN = int(0.8 * N)
-STEPS, WARM = EPOCHS * TRAIN, int(0.05 * EPOCHS * TRAIN)
+TRAIN, STEPS, WARM = int(0.8 * N), EPOCHS * int(0.8 * N), int(0.04 * EPOCHS * N)
 
 
 def set_lr(self, lr):
     self.lr = lr                   # `Adam.step` reads `self.lr` fresh, so this is the whole method
 
 
-def flat(model, slot=0):
-    """Every scalar parameter (slot 0) or its gradient (slot 3), in `parameters()` order."""
+def flat(model, slot=0):        # every scalar parameter (slot 0) or its gradient (slot 3)
     return [e[slot][e[1]][e[2]] if e[2] is not None else e[slot][e[1]] for e in model.parameters()]
 
 
 def probe(model, before, lr):
     live = [(abs(a - b) / lr, abs(g)) for a, b, g in zip(flat(model), before, flat(model, 3))
             if abs(g) > 1e-5]
-    ratios, mags = [q for q, _ in live], [g for _, g in live]
-    return {"lo": min(ratios), "hi": max(ratios), "live": len(live), "total": len(before),
-            "gmin": min(mags), "gmax": max(mags)}
+    return {"lo": min(q for q, _ in live), "hi": max(q for q, _ in live), "live": len(live),
+            "total": len(before), "gmin": min(g for _, g in live), "gmax": max(g for _, g in live)}
 
 
 def retune(ref, opt, model, lrs, step, rebuild):
     opt = ref.Adam(model.parameters(), lr=LR) if rebuild else opt  # the other way to change the LR
-    if lrs is not None:
-        opt.set_lr(lrs[step])
-    return opt
-
-
-def acc(model, rows):
-    return 100.0 * sum((model.forward(x)[0] >= 0.5) == (t[0] == 1.0) for x, t in rows) / len(rows)
+    return opt if lrs is None else (opt.set_lr(lrs[step]), opt)[1]
 
 
 def fit(ref, lrs, seed, rebuild=False):
@@ -68,11 +58,11 @@ def fit(ref, lrs, seed, rebuild=False):
                 opt.zero_grad(), model.backward(crit.backward()), opt.step()
                 unit = probe(model, before, opt.lr) if step == 0 and opt.lr else unit
                 step += 1
-    return {"loss": run / TRAIN, "acc": acc(model, data[TRAIN:]), "t": opt.t, "unit": unit}
+    hits = sum((model.forward(x)[0] >= 0.5) == (t[0] == 1.0) for x, t in data[TRAIN:])
+    return {"loss": run / TRAIN, "acc": 100.0 * hits / (N - TRAIN), "t": opt.t, "unit": unit}
 
 
-def fmt(values, spec=".4f"):
-    return " / ".join(format(v, spec) for v in values)
+fmt = lambda values, spec=".4f": " / ".join(format(v, spec) for v in values)   # noqa: E731
 
 
 def solve():
@@ -88,7 +78,6 @@ def solve():
     for name, lrs in (("const", const), ("cosine", cos), ("shuffled", perm)):
         runs = [fit(ref, lrs, s) for s in SEEDS]
         out[name], out[name + "_acc"] = [v["loss"] for v in runs], [v["acc"] for v in runs]
-    out["sched_loss"] = out["const"][0]
     return out
 
 
@@ -97,31 +86,30 @@ def verify(r):
     return [
         practice.Check("ANSWER: warmup + cosine buys optimization, not generalization",
                        all(c < k for c, k in zip(r["cosine"], r["const"])) and max(gap) <= 2.0,
-                       f"final mean training loss, seeds {SEEDS}, {EPOCHS} epochs of Adam on the circle "
-                       f"classifier: constant lr={LR} {fmt(r['const'])} vs warmup({r['warm']} steps)"
-                       f"+cosine {fmt(r['cosine'])} — lower on every seed. Test accuracy on the "
-                       f"{r['held']} held-out rows: {fmt(r['const_acc'], '.1f')} vs "
-                       f"{fmt(r['cosine_acc'], '.1f')}, at most {max(gap):.1f} points apart"),
+                       f"final mean training loss over seeds {SEEDS} ({EPOCHS} epochs of Adam, circle "
+                       f"classifier): constant lr={LR} {fmt(r['const'])} vs warmup({r['warm']} steps)"
+                       f"+cosine {fmt(r['cosine'])} — lower on every seed; on the {r['held']} held-out "
+                       f"rows {fmt(r['const_acc'], '.1f')} vs {fmt(r['cosine_acc'], '.1f')}, within "
+                       f"{max(gap):.1f} points"),
         practice.Check("CONTROL: the ordering of the learning rates does the work, not their mean",
                        all(s > c for s, c in zip(r["shuffled"], r["cosine"])),
-                       f"the same {r['steps']} learning rates shuffled — identical multiset, identical "
-                       f"mean {r['mean_lr']:.6f} — give {fmt(r['shuffled'])}, landing with the "
-                       f"constant-LR run {fmt(r['const'])}, not with cosine {fmt(r['cosine'])}. "
-                       f"MECHANISM: only a monotone tail spends the END of training at a small LR"),
+                       f"the same {r['steps']} rates shuffled — identical multiset, identical mean "
+                       f"{r['mean_lr']:.6f} — give {fmt(r['shuffled'])}, landing with constant LR "
+                       f"{fmt(r['const'])}, not cosine {fmt(r['cosine'])}. MECHANISM: only a monotone "
+                       f"tail spends the END of training at a small LR"),
         practice.Check("CONTROL: the set_lr plumbing itself changes nothing",
-                       r["sched_loss"] == r["plain"]["loss"],
-                       f"the same run driven through set_lr on a constant schedule reproduces the "
-                       f"reference loop that never touches lr, bit for bit: {r['sched_loss']!r} vs "
-                       f"{r['plain']['loss']!r} after {r['steps']} steps"),
+                       r["const"][0] == r["plain"]["loss"],
+                       f"set_lr on a constant schedule reproduces the reference loop that never touches "
+                       f"lr, bit for bit: {r['const'][0]!r} vs {r['plain']['loss']!r}, {r['steps']} steps"),
         practice.Check("FINDING: changing the LR by rebuilding Adam silently turns it into signSGD",
-                       r["rebuild"]["t"] == 1 and r["rebuild"]["loss"] > 10 * r["sched_loss"],
+                       r["rebuild"]["t"] == 1 and r["rebuild"]["loss"] > 10 * r["const"][0],
                        f"a fresh Adam per step resets `t`, pinning bias correction at t=1 where "
                        f"m_hat/(sqrt(v_hat)+eps) = g/(|g|+eps): there all {u['live']} of {u['total']} "
-                       f"parameters with |g| > 1e-5 moved by {u['lo']:.6f}-{u['hi']:.6f} x lr although "
-                       f"their gradients span {u['gmin']:.2e} to {u['gmax']:.2e}. After {r['steps']} "
-                       f"steps the rebuilt optimizer still reports t={r['rebuild']['t']} and lands at "
-                       f"loss {r['rebuild']['loss']:.4f} / {r['rebuild']['acc']:.1f}% against "
-                       f"{r['sched_loss']:.4f} / {r['const_acc'][0]:.1f}% for set_lr"),
+                       f"parameters with |g| > 1e-5 moved by {u['lo']:.6f}-{u['hi']:.6f} x lr although their "
+                       f"gradients span {u['gmin']:.2e} to {u['gmax']:.2e}. After {r['steps']} "
+                       f"steps it still reports t={r['rebuild']['t']}, at loss {r['rebuild']['loss']:.4f}"
+                       f" / {r['rebuild']['acc']:.1f}% against {r['const'][0]:.4f} / "
+                       f"{r['const_acc'][0]:.1f}% for set_lr"),
     ]
 
 
