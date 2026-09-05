@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """D14's mechanical ceilings, plus D10 and D12 structure. No human in the loop.
 
-Exit non-zero on any violation. Every rule here is one `DESIGN §6` lists as a
+Exit non-zero on any violation. D14's line ceiling is the one rule with two numbers —
+"<= 120 lines of code per file excluding the docstring; hard fail over 150" — so a file
+between the two is reported rather than rejected, which is what §6.4's phase-batch review
+reads. The docstring is excluded because it is mandated content (the exercise text verbatim
+plus the "Reading of the exercise:" line), and charging a solution for how long its own
+exercise is measures the wrong thing. Every rule here is one `DESIGN §6` lists as a
 rejection reason, so a solution that passes this passes the generation gate.
 """
 
@@ -15,7 +20,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from harness import manifest, parity, runner  # noqa: E402
 
-MAX_LINES = 120
+MAX_LINES = 120          # D14's target: over it the audit says so, for §6.4 to read
+HARD_LINES = 150         # D14's "hard fail over 150" — the number that exits non-zero
 MAX_COMPLEXITY = 8
 BANNED = ("TODO", "FIXME", "XXX", "<<<", "raise NotImplementedError")
 
@@ -32,16 +38,34 @@ def complexity(node) -> int:
     return score
 
 
-def audit_solution(path: pathlib.Path, exercise) -> list:
-    problems = []
+def docstring_lines(tree) -> int:
+    """The module docstring's own line count.
+
+    D14 puts the ceiling on *code*, "excluding the docstring", and the docstring is
+    mandated content — the exercise text verbatim plus the "Reading of the exercise:"
+    line — so counting it would charge a solution for how long its exercise is.
+    """
+    first = tree.body[0] if tree.body else None
+    if (isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)):
+        return first.end_lineno - first.lineno + 1
+    return 0
+
+
+def audit_solution(path: pathlib.Path, exercise) -> tuple:
+    """Returns (problems, warnings) — D14 fails over 150 lines and only reports over 120."""
+    problems, warnings = [], []
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
-    if len(lines) > MAX_LINES:
-        problems.append(f"{len(lines)} lines > ceiling {MAX_LINES} (D14)")
+    tree = ast.parse(text)
+    code = len(lines) - docstring_lines(tree)
+    if code > HARD_LINES:
+        problems.append(f"{code} lines of code > hard ceiling {HARD_LINES} (D14)")
+    elif code > MAX_LINES:
+        warnings.append(f"{code} lines of code > target {MAX_LINES} (D14)")
     for banned in BANNED:
         if banned in text:
             problems.append(f"contains {banned!r} — a surviving scaffold marker")
-    tree = ast.parse(text)
     doc = ast.get_docstring(tree) or ""
     if "Reading of the exercise:" not in doc:
         problems.append("docstring has no 'Reading of the exercise:' line (DESIGN §6.4)")
@@ -55,7 +79,7 @@ def audit_solution(path: pathlib.Path, exercise) -> list:
              if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)}
     if "PRACTICE_IMPL" not in names:
         problems.append("no PRACTICE_IMPL (D13)")
-    return problems
+    return problems, warnings
 
 
 def audit_explain(exercise, readme, headings) -> list:
@@ -86,10 +110,10 @@ def _reference_headings(pack):
             if line.startswith("#")}
 
 
-def audit_lesson(man_path: pathlib.Path) -> list:
+def audit_lesson(man_path: pathlib.Path) -> tuple:
     pack = manifest.load_practice(man_path)
     directory = man_path.parent
-    problems = []
+    problems, warnings = [], []
     readme = directory / "README.md"
     if not readme.is_file():
         problems.append(f"{directory}: no README.md")
@@ -103,7 +127,9 @@ def audit_lesson(man_path: pathlib.Path) -> list:
         if not path.is_file():
             problems.append(f"ex{ex.index:02d}: missing {ex.filename} (D10)")
             continue
-        problems += [f"{ex.filename}: {p}" for p in audit_solution(path, ex)]
+        found, warned = audit_solution(path, ex)
+        problems += [f"{ex.filename}: {p}" for p in found]
+        warnings += [f"{ex.filename}: {w}" for w in warned]
         for fixture in ex.fixtures:
             if not (directory / fixture).is_file():
                 problems.append(f"ex{ex.index:02d}: fixture {fixture} missing")
@@ -113,7 +139,7 @@ def audit_lesson(man_path: pathlib.Path) -> list:
     n_tests = len(list(tests.glob("test_*.py"))) if tests.is_dir() else 0
     if n_tests < 1:
         problems.append(f"{directory}: no tests/test_*.py")
-    return problems
+    return problems, warnings
 
 
 def main(argv=None) -> int:
@@ -123,15 +149,12 @@ def main(argv=None) -> int:
         return 1
     failed = 0
     for path in paths:
-        problems = audit_lesson(path)
+        problems, warnings = audit_lesson(path)
         label = path.parent.parent.name
-        if problems:
-            failed += 1
-            print(f"FAIL {label}")
-            for problem in problems:
-                print(f"     {problem}")
-        else:
-            print(f"ok   {label}")
+        failed += bool(problems)
+        print(f"{'FAIL' if problems else 'warn' if warnings else 'ok  '} {label}")
+        for line in problems + warnings:
+            print(f"     {line}")
     return 1 if failed else 0
 
 

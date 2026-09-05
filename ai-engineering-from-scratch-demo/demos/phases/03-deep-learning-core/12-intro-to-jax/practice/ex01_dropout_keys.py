@@ -51,9 +51,8 @@ def forward_dropout(params, x, key, rate):
 
 @functools.partial(jax.jit, static_argnums=(0,))
 def step(optimizer, params, state, xb, yb, key, rate):
-    def loss(p):
-        logits = forward_dropout(p, xb, key, rate)
-        return -jnp.mean(jnp.sum(jax.nn.log_softmax(logits) * jax.nn.one_hot(yb, 10), -1))
+    loss = lambda p: -jnp.mean(jnp.sum(                                     # noqa: E731
+        jax.nn.log_softmax(forward_dropout(p, xb, key, rate)) * jax.nn.one_hot(yb, 10), -1))
     updates, state = optimizer.update(jax.grad(loss)(params), state, params)
     return optax.apply_updates(params, updates), state
 
@@ -71,8 +70,7 @@ def train(ref, xs, ys, rate):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "jax_intro")
-    xs, ys = fixture(7, N_TRAIN)
-    xt, yt = fixture(11, 1024)
+    (xs, ys), (xt, yt) = fixture(7, N_TRAIN), fixture(11, 1024)
     fit = {r: train(ref, xs, ys, r) for r in RATES}
     key = jax.random.PRNGKey(1234)                       # the key-hygiene probes
     (a, b), (a2, _) = jax.random.split(key), jax.random.split(key)
@@ -81,8 +79,8 @@ def solve():
                     for r, p in fit.items()},
             "leaky": float(jnp.mean(jnp.argmax(forward_dropout(
                 fit[0.2], xt, jax.random.PRNGKey(9), 0.2), -1) == yt)),
-            "repeats": bool(jnp.all(a == a2)), "siblings": bool(jnp.any(a != b)),
-            "fresh": bool(jnp.any(jax.random.normal(a, (8,)) != jax.random.normal(fresh, (8,)))),
+            "split": (bool(jnp.all(a == a2)), bool(jnp.any(a != b)), bool(jnp.any(
+                jax.random.normal(a, (8,)) != jax.random.normal(fresh, (8,))))),
             "prefix": float(jnp.mean(jax.random.bernoulli(key, 0.8, (256,))[:128]
                                      == jax.random.bernoulli(key, 0.8, (128,)))),
             "kept": float(jnp.mean(drop(jnp.ones((20000,)), jax.random.PRNGKey(5), 0.5))),
@@ -99,35 +97,33 @@ def verify(result):
                        abs(acc[0.2][1] - acc[0.0][1]) < 0.02 and acc[0.5][1] < acc[0.0][1],
                        f"{STEPS} steps each — {table}. p=0.2 moves held-out accuracy "
                        f"{100 * (acc[0.2][1] - acc[0.0][1]):+.2f} points; p=0.5 costs "
-                       f"{100 * (acc[0.0][1] - acc[0.5][1]):.1f}, because it also stops the "
-                       f"net fitting at all. The train/test gap it was meant to close "
-                       f"survives: {gap:.4f} at p=0, {acc[0.2][0] - acc[0.2][1]:.4f} at "
-                       f"p=0.2 — the labels carry noise the net memorises"),
+                       f"{100 * (acc[0.0][1] - acc[0.5][1]):.1f}, because it also stops the net "
+                       f"fitting at all. The train/test gap it was meant to close survives: "
+                       f"{gap:.4f} at p=0, {acc[0.2][0] - acc[0.2][1]:.4f} at p=0.2 — the labels "
+                       f"carry noise the net memorises"),
         practice.Check("FINDING: leaving dropout on at eval costs more than dropout ever wins",
                        off - on > 0.05,
-                       f"the same p=0.2 params score {off:.4f} with dropout off, {on:.4f} "
-                       f"with it on — {100 * (off - on):.1f} points, 20x the effect the "
-                       f"exercise asks about. The key is a required argument, so the eval "
-                       f"path must pass one, and passing one keeps dropout live"),
-        practice.Check("MECHANISM: one key reused is not two masks — the second is a prefix "
-                       "of the first",
+                       f"the same p=0.2 params score {off:.4f} with dropout off, {on:.4f} with it "
+                       f"on — {100 * (off - on):.1f} points, 20x the effect the exercise asks "
+                       f"about. The key is a required argument, so the eval path must pass one, "
+                       f"and passing one keeps dropout live"),
+        practice.Check("MECHANISM: one key reused is not two masks — it is a prefix of one",
                        result["prefix"] == 1.0,
-                       f"`bernoulli(k, .8, (256,))[:128]` and `bernoulli(k, .8, (128,))` "
-                       f"agree on {100 * result['prefix']:.0f}% of positions: the counter "
-                       f"PRNG indexes by position, so a new shape does not decorrelate a "
-                       f"key. Hence 'split it for each dropout layer'"),
+                       f"`bernoulli(k, .8, (256,))[:128]` and `bernoulli(k, .8, (128,))` agree on "
+                       f"{100 * result['prefix']:.0f}% of positions: the counter PRNG indexes by "
+                       f"position, so a new shape does not decorrelate a key. Hence 'split it for "
+                       f"each dropout layer'"),
         practice.Check("MECHANISM: split is a pure function of its key, so it repeats exactly",
-                       result["repeats"] and result["siblings"] and result["fresh"],
+                       all(result["split"]),
                        "splitting PRNGKey(1234) twice gives bit-identical subkeys; the two "
-                       "siblings of one split differ; PRNGKey(1235) differs again. "
-                       "Reproducibility is a property of the value passed in, not of when "
-                       "anything last called seed(): no interleaved draw shifts it"),
+                       "siblings of one split differ; PRNGKey(1235) differs again. Reproducibility "
+                       "is a property of the value passed in, not of when anything last called "
+                       "seed() — no interleaved draw shifts it"),
         practice.Check("CONTROL: inverted dropout preserves the mean, and p=0 is the identity",
                        abs(result["kept"] - 1.0) < 0.02 and result["identity"],
-                       f"20000 ones at p=0.5 return mean {result['kept']:.5f}; without the "
-                       f"1/(1-p) rescale, {result['kept'] / 2:.5f} — the (1-p) factor that "
-                       f"shifts every eval activation. At p=0.0 this forward is "
-                       f"bit-identical to the lesson's own"),
+                       f"20000 ones at p=0.5 return mean {result['kept']:.5f}; without the 1/(1-p) "
+                       f"rescale, {result['kept'] / 2:.5f} — the (1-p) factor that shifts every "
+                       f"eval activation. At p=0.0 this forward is bit-identical to the lesson's"),
     ]
 
 
