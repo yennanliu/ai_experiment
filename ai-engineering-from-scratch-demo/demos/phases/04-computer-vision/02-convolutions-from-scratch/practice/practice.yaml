@@ -1,0 +1,43 @@
+lesson: 02-convolutions-from-scratch
+phase: 04-computer-vision
+source: phases/04-computer-vision/02-convolutions-from-scratch/docs/en.md
+exercises:
+  - index: 1
+    slug: sizes_and_receptive_field
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Easy)** Given a 128x128 grayscale input and a stack of `[Conv3x3(s=1,p=1), Conv3x3(s=2,p=1), Conv3x3(s=1,p=1), Conv3x3(s=2,p=1)]`, compute the output spatial size and the receptive field at each layer by hand. Verify with a PyTorch `nn.Sequential` of dummy convs.
+    zh: |
+      **（簡單）** 給定一張 128x128 的灰階輸入與一疊 `[Conv3x3(s=1,p=1), Conv3x3(s=2,p=1), Conv3x3(s=1,p=1), Conv3x3(s=2,p=1)]`，用手算出每一層的輸出空間尺寸與感受野。再用一個由虛設卷積組成的 PyTorch `nn.Sequential` 驗證。
+    verifies: ANSWER the sizes are 128, 128, 64, 64, 32 and torch agrees - the lesson's own `output_size` and an `nn.Sequential` of four `nn.Conv2d` give the same chain, each stride-2 layer halving and each stride-1 layer with p=1 preserving; ANSWER the receptive field is 3, 5, 9, 13 and 13 is what actually reaches the output - the lesson's `receptive_field` gives that layer by layer, and differentiating one centre output back to the input marks a 13x13 block of pixels with non-zero gradient, so formula and measurement agree; FINDING inside that 13x13 the unit is nowhere near uniform - with every weight set to 1 the centre input pixel carries 169 of influence against 1 at the corner, 169x, and the central 5x5 is 14.8% of the area but 42.8% of the total weight, so the theoretical receptive field is an outer bound rather than what the unit integrates; FINDING at the border it is not 13 either - the output at (0, 0) reaches only 7x7 and sums to 0.209 of the centre unit's influence, the rest of its window falling on the zeros `pad2d` inserted, so 'the receptive field at each layer' is a statement about interior units only; CONTROL the size chain is not invertible - a 127x127 input ends at 32 exactly where 128 does, because `output_size` floors, so the output shape does not determine the input shape
+    uses_reference:
+      - output_size
+      - receptive_field
+  - index: 2
+    slug: grouped_and_depthwise
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Medium)** Extend `conv2d_naive` and `conv2d_im2col` to accept a `groups` argument. Show that `groups=C_in=C_out` reproduces a depthwise convolution and that its parameter count is `C * K * K` instead of `C * C * K * K`.
+    zh: |
+      **（中等）** 擴充 `conv2d_naive` 與 `conv2d_im2col`，讓它們接受 `groups` 參數。證明 `groups=C_in=C_out` 會重現深度卷積，而它的參數量是 `C * K * K` 而不是 `C * C * K * K`。
+    verifies: ANSWER both kernels take `groups` and both match torch at every setting - im2col against naive and against `F.conv2d(..., groups=g)` differ by at most 9.5e-06 at g = 1, 2, 3 and 6, and slicing the channel axis is the whole extension since neither of the lesson's kernels changes; ANSWER at groups = C the parameter count is C*K*K rather than C*C*K*K - 324, 162, 108, 54 weights at g = 1, 2, 3, 6, so dense 324 = C*C*K*K against depthwise 54 = C*K*K, a factor of C = 6, because each group only ever sees C_in/g input channels; MECHANISM the arithmetic falls by the same factor, which the exercise does not say - 46,656 multiply-accumulates at g = 1 against 7,776 at g = 6, since a group's matmul is (C/g x C/g*K*K) @ (C/g*K*K x HW) and there are g of them, so parameters and FLOPs both drop 6x and the second is why depthwise is on phones; CONTROL 'reproduces a depthwise convolution' is about cost rather than output - the same filters written into a dense C x C weight with 270 of 324 entries zero give an identical result to 9.5e-07, so a dense conv can produce every depthwise output and what `groups` changes is that it stops storing and multiplying the zeros
+    uses_reference:
+      - conv2d_naive
+      - conv2d_im2col
+  - index: 3
+    slug: im2col_backward
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Hard)** Implement the backward pass of `conv2d_im2col` by hand: given the gradient of the output, compute the gradient of `x` and `w`. Verify against `torch.autograd.grad` on the same inputs and weights. The trick: the gradient of im2col is `col2im`, and it has to accumulate overlapping windows.
+    zh: |
+      **（困難）** 手工實作 `conv2d_im2col` 的反向傳遞：給定輸出的梯度，算出 `x` 與 `w` 的梯度。用相同的輸入與權重跟 `torch.autograd.grad` 對照驗證。訣竅是：im2col 的梯度就是 `col2im`，而且它必須把重疊的視窗累加起來。
+    verifies: ANSWER both gradients match `torch.autograd.grad` - worst |difference| for dx and dw is 1.9e-06 and 0.0 at stride 1 pad 1, and 0.0 and 0.0 at stride 3 pad 0, because forward is `w_flat @ cols` so backward is `d @ cols.T` for the weights and `col2im(w_flat.T @ d)` for the input, the two transposes of one matmul plus the adjoint of the lowering; FINDING swap the `+=` for `=` and the input gradient is simply wrong - the identical code with `canvas[window] = patch` misses the true dx by 13.2 at stride 1, because every input pixel is read by several windows so its gradient is a sum of their contributions and assignment keeps only whichever window wrote last; CONTROL at stride = kernel the same mistake is invisible - at stride 3 with a 3x3 kernel and no padding the windows tile without overlapping and `=` scores exactly 0.0, so a test written only at that setting would pass the broken implementation, which is why the exercise names the overlap; MECHANISM `col2im` is an adjoint rather than an inverse - folding a lowered field of ones straight back counts 9 = K^2 windows per interior pixel falling to 4 at a corner, and `im2col` writes 2187 numbers from 243 pixels, so it is not invertible and `col2im` returns the transpose of that map rather than undoing it
+    uses_reference:
+      - im2col
+      - output_size
