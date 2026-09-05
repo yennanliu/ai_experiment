@@ -1,0 +1,80 @@
+lesson: 08-weight-initialization
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/08-weight-initialization/docs/en.md
+exercises:
+  - index: 1
+    slug: lecun_vs_xavier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add LeCun initialization (Var = 1/fan_in, designed for SELU activation). Run the 50-layer experiment with LeCun init + tanh and compare to Xavier + tanh.
+    zh: |
+      加上 LeCun 初始化（Var = 1/fan_in，為 SELU 激活函式設計的）。用 LeCun 初始化配 tanh 跑一次 50 層實驗，並跟 Xavier 配 tanh 比較。
+    verifies: ANSWER on a square stack LeCun + tanh *is* Xavier + tanh, bit for bit - 50 layers with a worst difference of exactly 0.0, giving L1 0.5465, L5 0.2692, L10 0.1967, L25 0.1494, L50 0.0576, because 2/(fan_in + fan_out) == 1/fan_in exactly when fan_out == fan_in (checked at widths 16, 64, 100, 256, 1024) and `forward_deep` only ever builds width x width layers; FINDING the trajectory they share fails the lesson's own criterion - mean |activation| falls 0.5465 -> 0.0576 over 50 layers, a 9.5x drop, and 49 of the 50 layers sit outside the flowchart's [0.5, 2.0] band from L2 on; MECHANISM tanh contracts, so a gain of 1 has no non-zero fixed point - E[tanh(z)^2]/E[z^2] is 0.397 at rms 1.0, 0.697 at rms 0.5 and 0.857 at rms 0.3, under 1 everywhere and nearing 1 only as the signal dies, while Var(w) = 1/fan_in preserves variance across the linear map alone; layer-50 magnitude by forward gain is 0.0924 at g = 1.000, 0.4640 at 1.414 and 0.5628 at 1.667; ANSWER LeCun is stable with the activation the exercise names - LeCun + SELU holds mean |activation| 0.8256 -> 0.7710, a 7% change over 50 layers against tanh's 89%, because SELU's negative branch amplifies and repairs tanh's contraction; CONTROL the two formulas do differ on layers that are not square - over 50 alternating 16/64 linear layers LeCun ends at rms 1.1040 and Xavier at 4.17e-03, a factor of 265, since Xavier averages the forward and backward requirements and a non-square layer then meets neither
+    uses_reference:
+      - forward_deep
+      - xavier_init
+      - tanh_act
+  - index: 2
+    slug: residual_scaling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the GPT-2 residual scaling: multiply the output of each layer by 1/sqrt(2*N) before adding to the residual stream. Run 50 layers with and without scaling, measure how fast the residual magnitude grows.
+    zh: |
+      實作 GPT-2 的殘差縮放：在把每一層的輸出加進殘差流之前，先乘上 1/sqrt(2*N)。跑 50 層，比較有做跟沒做縮放的差別，量測殘差的大小成長得多快。
+    verifies: ANSWER 50 layers with and without the 1/sqrt(2N) factor - the unscaled residual stream goes rms 9.68e-01 at L0 to 1.65e+00 at L1, 1.81e+02 at L10, 8.91e+05 at L25 and 3.30e+11 at L50, while the same stream scaled by 1/sqrt(2*50) goes 0.9681 -> 1.6334, a factor of 1.69 against 3.41e+11; FINDING the unscaled growth is exponential rather than proportional to N - the variance factor is 2.893 per layer, so L50 sits 3.41e+11x above L0, 10.7 decades past the sqrt(51) = 7.14x that 'proportional to N' predicts; MECHANISM the sublayer output scales with its input, so the adds multiply - E[sublayer(x)^2]/E[x^2] is 1.970 for one fresh Kaiming-ReLU-Kaiming block, since two Kaiming layers double the second moment and ReLU halves it, leaving x + f(x) with 2.97x the variance; CONTROL pre-normalise the sublayer input and the linear rate appears - an RMS-norm in front of the sublayer, which is what a pre-LN transformer has, holds the unscaled stream to 10.347x against the claimed sqrt(1 + 2*50) = 10.050; ANSWER 1/sqrt(2N) bounds the stream at a depth-independent variance - the scaled variance ratio is 2.757 at N=10, 2.966 at 25, 2.846 at 50 and 2.732 at 100 against the closed form (1 + 1/N)^N rising to e = 2.718, where unscaled the same depths give 1.87e+02x, 9.21e+05x, 3.41e+11x and 1.89e+22x; FINDING the 2 in 2N counts two residual adds per block and not one - a normalised sublayer scaled by 1/sqrt(2N) over 50 single-add layers gives a ratio of 2.127 against the exact 1 + 2N/(2N) = 2, so GPT-2's factor is for blocks that add twice and one add per layer wants 1/sqrt(N)
+    uses_reference:
+      - kaiming_init
+      - relu
+  - index: 3
+    slug: init_health_check
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create an "init health check" function that takes a network's layer dimensions and activation type, then recommends the correct initialization and warns if the current init will cause problems.
+    zh: |
+      做一個「初始化健檢」函式，吃進一個網路的各層維度與激活函式類型，然後推薦正確的初始化，並在目前的初始化會出問題時發出警告。
+    verifies: ANSWER the check calls all six of the lesson's configs correctly from fan_in * std^2 * slope^2 and nothing else - zero+sigmoid symmetric, random(1.0)+relu explodes, random(0.01)+relu dies, xavier+sigmoid dies, xavier+tanh ok, kaiming+relu ok - each matching the measured 50-layer outcome, and it predicts the magnitude to 0.7 decades over the 37 and -63 decades the two random inits actually reach; FINDING the lesson's own health metric ranks the two DEAD configs top - layers with mean |activation| inside the flowchart's [0.5, 2.0] are 50/50 for zero+sigmoid and 30/50 for xavier+sigmoid against 16/50 for kaiming+relu and 1/50 for xavier+tanh, yet the across-sample spread at layer 50 is 0.0e+00 and 1.8e-17 for the first two against 0.130 and 0.091 for the last two; MECHANISM sigmoid's offset pins mean |a| at 0.5 while the signal dies - xavier+sigmoid holds mean |a| at 0.5005 for all 50 layers because sigmoid is centred on 0.5, while deviations contract by 0.235 per layer, measured against sigmoid'(0) = 0.25 which Xavier's 2/(fan_in + fan_out) ignores; FINDING at this depth no init scale rescues sigmoid - the across-sample spread at layer 50 with Xavier scaled by 1, 2, 4 and 6 is 1.8e-17, 4.8e-17, 1.4e-11 and 7.9e-08, all still dead, so raising the gain only trades vanishing deviations for a saturated sigmoid and the check should recommend changing activation; CONTROL the same rule does fix tanh, which has no offset - the check recommends std = 0.2083 (gain 5/3) against Xavier's 0.1252, and the layer-50 spread rises 0.0911 -> 0.6268 with mean |a| 0.0715 -> 0.5628, into the band
+    uses_reference:
+      - forward_deep
+      - zero_init
+      - random_init
+      - xavier_init
+      - kaiming_init
+      - sigmoid
+      - tanh_act
+      - relu
+  - index: 4
+    slug: fan_in_16_vs_1024
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the experiment with fan_in = 16 vs fan_in = 1024. Xavier and Kaiming adapt to fan_in, but random init doesn't. Show how the gap between "works" and "breaks" widens with larger layers.
+    zh: |
+      用 fan_in = 16 和 fan_in = 1024 各跑一次實驗。Xavier 與 Kaiming 會隨 fan_in 調整，隨機初始化不會。呈現「能用」與「壞掉」之間的落差如何隨著層變寬而拉大。
+    verifies: ANSWER Kaiming holds across a 64x change in fan_in and a fixed scale does not - magnitude after 6 layers is 0.26, 0.724, 0.566, 0.629 for Kaiming at widths 16, 64, 256, 1024, a per-layer gain of 0.984 to 1.02, while random N(0,1) gives 133, 2.37e+04, 1.19e+06, 8.44e+07 at gains of 2.78 to 23; MECHANISM the per-layer gain is sigma * sqrt(fan_in / 2) - measured over the closed form it is 0.984, 1.066, 1.021, 1.017 across the four widths, worst deviation 6.6%, and sigma = 1.0 and 0.01 give the same ratio to the last digit because the two matrices are proportional; a ReLU layer halves the variance of a symmetric pre-activation, so fan_in * sigma^2 / 2 is the variance gain and its square root the magnitude gain; ANSWER the band of scales a 50-layer net survives narrows as 1/sqrt(fan_in) - staying inside [1e-06, 1e+06] needs a gain in [0.7586, 1.3183], so sigma must lie in [0.26820, 0.46607] at fan_in 16 and [0.03352, 0.05826] at 1024, 8.0x narrower for a 64x wider layer, and sigma = 1.0 is outside every one of them; FINDING Xavier is not neutral under ReLU, losing 1/sqrt(2) a layer at every width - its per-layer gain is 0.696, 0.754, 0.722, 0.719 because sqrt(1/n) * sqrt(n/2) = 0.7071 with the fan_in cancelling, which over 50 layers is 2^-25 = 3.0e-08 and is why Kaiming's extra factor of 2 exists; CONTROL all four strategies are one random matrix times a constant - `forward_deep` re-seeds to 42 on every call and every init draws the same `random.gauss` values in the same order, so the four matrices agree to exactly 0.0 after dividing by 1, 0.01, sqrt(1/n) and sqrt(2/n)
+    uses_reference:
+      - forward_deep
+      - random_init
+      - xavier_init
+      - kaiming_init
+      - relu
+  - index: 5
+    slug: orthogonal_vs_kaiming
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement orthogonal initialization (generate a random matrix, compute its SVD, use the orthogonal matrix U). Compare to Kaiming for ReLU networks at 50 layers.
+    zh: |
+      實作 orthogonal 初始化（產生一個隨機矩陣、算它的 SVD、取那個正交矩陣 U）。在 50 層的 ReLU 網路上跟 Kaiming 比較。
+    verifies: ANSWER orthogonal at the usual gain of 1 vanishes where Kaiming holds, and beats it once given ReLU's factor - at layer 50 and width 64 orthogonal(gain=1) reaches 1.551e-08 at a per-layer gain of 0.7181, Kaiming 0.2572 at 1.0068 and orthogonal(gain=sqrt(2)) 0.5203 at 1.0156, where 0.718 is 1/sqrt(2), the half a ReLU removes and an orthogonal matrix does nothing to replace; MECHANISM the factor is orthonormal to 2e-15, so a linear stack of 50 does not move at all - ||Q^T Q - I||_max is 1.8e-15 and ||Qv|| - ||v|| is 1.8e-15, and with the activation removed 50 such layers take the magnitude 0.7969 -> 0.7876, a per-layer gain of 0.9998 +/- 0.0108, so every bit of the decay above is the ReLU; FINDING Kaiming's sqrt(2) is a ReLU correction and not a general one - the same stack with the activation removed has a per-layer gain of 1.4151, sqrt(2) to 0.001, and reaches 2.551e+07 by layer 50, because its variance 2/fan_in is calibrated to a nonlinearity that throws half of it away; FINDING 'use the orthogonal matrix U' is the wrong matrix off the diagonal - for a 64 -> 16 layer `svd(A, full_matrices=False)` returns U of shape (16, 16) where the weight matrix must be (16, 64), which U @ Vt supplies, and the recipe reads correctly only because `forward_deep` is square throughout; CONTROL orthogonal fixes the scale exactly and Kaiming draws it - across the 49 transitions with the activation removed the per-layer gain is 0.9998 +/- 0.0108 orthogonal against 1.4151 +/- 0.0729 Kaiming, 6.8x tighter, while under ReLU the masking dominates and the spreads converge at 0.1979 against 0.2221
+    uses_reference:
+      - forward_deep
+      - kaiming_init
+      - relu

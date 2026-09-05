@@ -1,0 +1,80 @@
+lesson: 09-learning-rate-schedules
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/09-learning-rate-schedules/docs/en.md
+exercises:
+  - index: 1
+    slug: exponential_decay
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement exponential decay: lr(t) = lr_0 * gamma^t where gamma = 0.999. Compare to cosine annealing on the circle dataset.
+    zh: |
+      實作指數衰減：lr(t) = lr_0 * gamma^t，其中 gamma = 0.999。在圓形資料集上和餘弦退火比較。
+    verifies: ANSWER read literally (t = step) exponential decay ends at 0.133798 against cosine's 0.008420 after 300 epochs, 9.0x worse at the closest of seeds (42, 7, 99); FINDING it does not converge slowly but stops - the epoch loss is bit-identical from epoch 168 to 299 because 0.999^(200*168) puts the rate at 1.26e-16 - and MECHANISM gamma fixes an absolute time constant (half-life 693 steps) where cosine fixes a relative one, so matching cosine's lr_min over 60000 steps needs gamma = 0.99985806; and read as t = epoch the same schedule BEATS cosine at every seed, so the comparison the exercise asks for has opposite answers under the two readings of an unqualified t; CONTROL what decides it is the integral of the schedule, not its shape - a constant rate matched to cosine's integral lands within 10%, while the 1.73x spread in integral moves the loss 31%
+    uses_reference:
+      - cosine_schedule
+      - constant_schedule
+      - train_with_schedule
+      - make_circle_data
+  - index: 2
+    slug: lr_range_test
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the learning rate range test (Leslie Smith): train for a few hundred steps while exponentially increasing the LR from 1e-7 to 1. Plot loss vs LR. The optimal max LR is just before the loss starts increasing.
+    zh: |
+      實作學習率範圍測試（Leslie Smith）：訓練幾百步，同時讓學習率從 1e-7 指數式上升到 1。把損失對學習率畫出來。最佳的最大學習率就落在損失開始上升之前。
+    verifies: ANSWER over the specified 1e-7 to 1 window the loss never starts increasing - 25 bins fall monotonically from 0.611381 at lr = 1.38e-07 to 0.123033 at lr = 7.48e-01, with 0 rises - so 'just before the loss starts increasing' selects the top of whatever window was chosen; FINDING the turning point is real but sits above the stated ceiling, at lr = 1.88e+00 with the first rise at 5.19e+00 once the sweep is widened to 1e+04; MECHANISM nothing diverges - MSE on a sigmoid is bounded by 1 and the worst value over lr in [1e-07, 1e+05] is 0.715, so the lesson's own DIVERGED test (end > 1.0) can never fire - and a too-high rate instead pins the loss at the positive-class fraction 0.285 (57/200) as the output saturates; CONTROL with a fresh network per rate the curve does turn inside the window, at lr = 1.0 for 3 epochs and 0.1 for 100, so the reported lr_max is a function of its step budget
+    uses_reference:
+      - constant_schedule
+      - train_with_schedule
+      - make_circle_data
+      - lr_sensitivity
+  - index: 3
+    slug: warmup_length
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Train with warmup + cosine but vary the warmup length: 0%, 1%, 5%, 10%, 20% of total steps. Find the sweet spot where training is most stable.
+    zh: |
+      用暖身加餘弦訓練，但改變暖身長度：總步數的 0%、1%、5%、10%、20%。找出訓練最穩定的那個甜蜜點。
+    verifies: ANSWER 20% wins the 0/1/5/10/20% grid at all three data seeds, but the whole grid is within 6% worst-to-best (ratio 1.054); FINDING there is no stability to trade against - 0 epoch-over-epoch loss increases across all 15 grid runs (4485 transitions) - and no spend either, since the integral of the schedule varies 0.006% across the grid because the ramp gives back about half the peak rate over W steps and compresses the cosine into T-W; FINDING 20% only wins because the grid stops there, and extending to 50% and 75% gives three different winners at three seeds, all within 1%; what warmup does buy is a delay - 18, 20, 25, 33, 46 epochs to reach loss < 0.05 - monotone in warmup length at every seed; MECHANISM the trainer is plain SGD carrying no optimizer state, so it cannot exhibit the zero-initialised-moment failure warmup prevents
+    uses_reference:
+      - warmup_cosine_schedule
+      - cosine_schedule
+      - train_with_schedule
+      - make_circle_data
+  - index: 4
+    slug: warm_restarts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement cosine annealing with warm restarts (SGDR): reset the learning rate to lr_max every T steps and decay again. Compare to standard cosine on a longer training run.
+    zh: |
+      實作帶暖重啟的餘弦退火（SGDR）：每 T 步把學習率重設回 lr_max，然後再次衰減。在較長的訓練上和標準餘弦比較。
+    verifies: ANSWER over 600 epochs SGDR at period 5000 or 20000 and plain cosine finish within 2% of each other at every seed; MECHANISM restarts cannot change what a schedule spends, since a cycle integrates to about 0.5*(lr_max + lr_min)*T_i and the cycles sum to the run length whatever the period - measured integrals agree to 0.1%; FINDING the residual flips sign with the data seed, and the only reproducible effect of a restart is a loss spike of 5-30% at each one; FINDING the lesson's three schedules disagree about what happens past total_steps - cosine clamps to lr_min, warmup_cosine climbs back to 97% of peak (a warm restart by accident, and it helps), and one_cycle returns -0.099983, twice the peak rate with the wrong sign, which is gradient ascent
+    uses_reference:
+      - cosine_schedule
+      - warmup_cosine_schedule
+      - one_cycle_schedule
+      - train_with_schedule
+      - make_circle_data
+  - index: 5
+    slug: schedule_surgeon
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a "schedule surgeon" that monitors training loss and automatically switches from warmup to cosine when the loss stabilizes, and reduces lr if the loss plateaus for too long.
+    zh: |
+      做一個「排程外科醫生」：監控訓練損失，在損失穩定下來時自動從暖身切換到餘弦，並在損失停滯太久時降低學習率。
+    verifies: ANSWER the controller fires both triggers - handoff at epoch 28/21/19 over seeds (42, 7, 99) and plateau cuts at epochs 51-59 - beats cosine at every seed and loses to a plain constant rate at every seed; FINDING there is no handoff point to detect: end loss against a FIXED handoff epoch is strictly decreasing over 4..52 at all three seeds, so the best switch point is the latest one tried, while the loss trigger fires 9 epochs apart depending only on the data seed; and every plateau cut lands in the last third of the run below 9% of peak, where the schedule it supervises has already stalled; CONTROL a constant rate spending the same integral reproduces the surgeon within 8% at every seed, and the closed loop is only expressible at all because train_with_schedule is bit-deterministic under replay
+    uses_reference:
+      - cosine_schedule
+      - constant_schedule
+      - train_with_schedule
+      - make_circle_data

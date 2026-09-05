@@ -1,0 +1,73 @@
+lesson: 03-backpropagation
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/03-backpropagation/docs/en.md
+exercises:
+  - index: 1
+    slug: sub_and_neg
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `__sub__` method to the Value class (a - b = a + (-1 * b)). Then implement a `__neg__` method. Verify that the gradients are correct by comparing with manual calculation for a simple expression like (a - b)^2.
+    zh: |
+      為 Value 類別加上 `__sub__` 方法（a - b = a + (-1 * b)）。接著實作 `__neg__` 方法。拿 (a - b)^2 這種簡單的表達式跟手算結果比對，驗證梯度是對的。
+    verifies: ANSWER (a-b)^2 differentiates exactly as the hand derivation says - at a = 3.0, b = 1.25 the engine gives d/da +3.5000 against 2(a-b) = +3.5000 and d/db -3.5000 against -2(a-b), deviation exactly 0.0, and a central difference at h = 1e-05 agrees to 2.293e-11, which is the quotient's own O(h^2) truncation rather than the engine's error; FINDING there is nothing to add - `code/main.py` already defines `__sub__` as `self + (-other)` and `__neg__` as `self * -1`, the identity the exercise dictates, and neither appears in docs/en.md, so the reader is asked to re-derive code they were handed; MECHANISM that identity costs five nodes and negates on one side only - the graph under `a - b` holds 5 nodes joined by ['*', '+'] because a + (-1 * b) materialises a Value(-1) leaf and a multiply a primitive subtraction would not need, and `1.0 - Value(2.0)` raises TypeError since there is no `__rsub__`; MECHANISM `diff * diff` stores a child *set* of length 1 and still gets the gradient right - `_backward` captured both operands and runs `self.grad +=` then `other.grad +=` against the same object, accumulating 2*diff, so the set decides traversal and not credit; FINDING a second `backward()` compounds rather than doubles - three calls on one graph give d/da = 3.5, 10.5, 21.0, because `backward` sets the root to 1.0 but never clears the interior, so pass n re-propagates already-accumulated interior gradients and the total tracks the triangular numbers; `zero_grad()` resets parameters only, and training survives because each epoch builds a graph from scratch
+    uses_reference:
+      - Value
+  - index: 2
+    slug: relu_xor
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `relu` method to Value (output max(0, x), derivative is 1 if x > 0, else 0). Replace sigmoid with relu in the hidden layers and train on XOR again. Compare convergence speed. You should see faster training -- this previews Lesson 04.
+    zh: |
+      為 Value 加上 `relu` 方法（輸出 max(0, x)，導數在 x > 0 時是 1，否則是 0）。把隱藏層的 sigmoid 換成 relu，再訓練一次 XOR。比較收斂速度。你應該會看到訓練變快 —— 這是單元 04 的預告。
+    verifies: ANSWER where relu converges at all it is several times faster - on the 2 of 8 seeds where both activations reach loss < 0.04, relu takes 29 epochs against sigmoid's 245 (8.4x) and 74 against 295 (4.0x); FINDING but that is 2 seeds in 8, and the usual relu outcome is no training at all - sigmoid converges on 8/8 in 245-472 epochs while relu converges on 2, the rest parking for good at the constant-output losses 0.5001, 0.6667, 0.6668 and 1.0, so 'you should see faster training' is true only conditional on training happening; MECHANISM relu'(x <= 0) = 0 kills units and `bias = Value(0.0)` kills the (0, 0) row at birth - units dead at init are [1, 1, 1, 0, 3, 1, 1, 1] of 4 and after 600 epochs [1, 2, 2, 2, 3, 1, 2, 3], with 5 of 8 seeds losing units mid-training and none recovering, and the input (0, 0) sits exactly on the kink at init on every seed, so |grad| into layer 0 from that row peaks at 0.0000 for relu against 0.0521 at worst for sigmoid; CONTROL halve the learning rate and sigmoid stops converging too - the same sigmoid net at lr = 0.5 converges on 4/8 instead of 8/8, so relu's derivative of 1 against sigmoid's 0.25 ceiling rescales the effective step as much as it reshapes the landscape, and part of the measured speed-up is a learning rate the comparison never controls for
+    uses_reference:
+      - Value
+      - Neuron
+      - Network
+      - mse_loss
+  - index: 3
+    slug: pow_and_mse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `__pow__` method on Value for integer powers. Use it to replace `mse_loss` with a proper `(predicted - target) ** 2` expression. Verify gradients match the original implementation.
+    zh: |
+      在 Value 上實作 `__pow__` 方法以支援整數次方。用它把 `mse_loss` 換成正規的 `(predicted - target) ** 2` 表達式。驗證梯度跟原本的實作一致。
+    verifies: ANSWER `(predicted - target) ** 2` reproduces `mse_loss` to within one ulp of the gradient - over 136 parameter gradients (17 params x 8 seeds) the worst disagreement is 5.551e-17 and the loss values agree exactly; CONTROL on a one-row graph the two agree bitwise, so `__pow__` itself is exact - training on a single XOR row matches every parameter to 0.0 on all 8 seeds, since `diff * diff` credits `diff` twice by `+=` and `diff ** 2` once by 2*diff, which is the same float; FINDING the residue is the engine's and not the rewrite's - rebuilding the *same* `mse_loss` graph twice moves the gradients by up to 5.551e-17, the same order as the rewrite's, because `_children` is a `set` so `build_topo` visits children in an order set by object hashes rather than by construction, and all 68 parameter accumulations (17 params x 4 rows) land in whatever order that gives; FINDING 'integer powers' is load-bearing and the rule breaks three ways outside them - `Value(0.0) ** 0` forwards to 1.0 and then raises ZeroDivisionError in backward because k * x**(k-1) is 0 * 0.0**-1, `2 ** Value(3.0)` raises TypeError since there is no `__rpow__` any more than `__rsub__`, and `Value(-8.0) ** 0.5` silently stores a complex that `__repr__`'s `:.4f` cannot print
+    uses_reference:
+      - Value
+      - Network
+      - mse_loss
+  - index: 4
+    slug: clip_to_unit_box
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add gradient clipping to the training loop: after calling `backward()`, clip all gradients to [-1, 1]. Train a deeper network (4+ layers with sigmoid) and compare loss curves with and without clipping. This is your first defense against exploding gradients.
+    zh: |
+      在訓練迴圈裡加上梯度裁剪：呼叫 `backward()` 之後，把所有梯度裁到 [-1, 1]。訓練一個更深的網路（4 層以上，用 sigmoid），比較有裁剪與沒裁剪的損失曲線。這是你對付梯度爆炸的第一道防線。
+    verifies: ANSWER the clip never fires, so the two loss curves are one curve - 400 epochs on a 2-4-4-4-1 sigmoid net at seeds (42, 7, 99) clip 0 of 68,400 parameter updates and the curves stay within 4.4e-16 of each other, four ulps, so the comparison the exercise asks for has nothing to compare; CONTROL even that residue is not the clip - two *identical* unclipped runs from seed 42 differ by the same 4.4e-16 on about 130 of 400 epochs, because `Value.backward` walks `v._children`, a set, so the topological order and hence the order gradient contributions are summed in follows object hashes and moves between runs; MECHANISM the clip cannot fire because every gradient here is bounded by 2 - the largest anywhere in the run is 0.3611, and the most exposed parameter is the output bias whose gradient is a sum over 4 rows of 2(p - t) * sigmoid'(z) with |p - t| <= 1 and sigmoid' <= 1/4, so at most 4 * 2 * 0.25 = 2 and only if all four rows are maximally wrong at once; scaling every initial weight by 16 still peaks at 0.4445; FINDING a deep sigmoid net does not explode, it vanishes - mean |grad| per layer at init runs 7.34e-04, 4.25e-03, 1.55e-02, 1.94e-01 from input to output, a 264x attenuation, and each hidden layer added divides the input layer's gradient by about 5; a clip is a ceiling and the problem is a floor; FINDING neither arm learns XOR at all - final loss 0.999707, 0.999933, 0.999988 is exactly 1.0, the loss of predicting 0.5 on all four rows, so the network has not learned a wrong answer, it has not moved; CONTROL what fixes it is a bigger init and not a clip - multiplying the lesson's own He-initialised weights by 8 takes the same four-layer net to 0.003071, 0.003208, 0.011993 on the same seeds and epochs, 83x better at the worst seed, with the clip firing 0 times there too
+    uses_reference:
+      - Value
+      - Network
+      - mse_loss
+  - index: 5
+    slug: smallest_gradients
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a visualization: after training on XOR, print the gradient of every parameter in the network. Identify which layer has the smallest gradients. This demonstrates the vanishing gradient problem you read about in the Concept section.
+    zh: |
+      做一個視覺化：在 XOR 上訓練完之後，把網路裡每一個參數的梯度印出來。找出哪一層的梯度最小。這會實際展示你在核心概念一節讀到的梯度消失問題。
+    verifies: ANSWER on the lesson's own 2-4-1 net the hidden layer is the smallest at all three seeds - after 1000 epochs the per-layer table is L1 mean 3.55e-04 (min 1.78e-05, max 7.06e-04) against L2 mean 5.60e-04 (min 1.08e-05, max 1.07e-03), with layer-1/layer-2 ratios 0.63, 0.57, 0.43; FINDING measuring *after* training understates the effect about tenfold - the same ratio before the first update is 0.087, 0.137, 0.033, a 7-30x attenuation, against 0.43-0.63 after, because training ends at a minimum where every gradient is small, making the last epoch the worst moment to look for a gradient that vanishes with depth; FINDING on a deeper net 'which layer is smallest' has two answers and neither is layer 1 - a 2-4-4-4-1 net after 1000 epochs gives layer 2 by mean |grad| at all three seeds and layers 3, 2, 3 by the single smallest parameter, while before training both rules agree on layer 1 at every seed, so the ordering the Concept section describes is there and training erases it; MECHANISM at init the attenuation is monotone and about 1/5 per layer - mean |grad| per layer runs 7.34e-04, 4.25e-03, 1.55e-02, 1.94e-01 and adding a hidden layer divides the input layer's gradient by 4.4, 3.8, 13.9, since sigmoid' <= 1/4 and the He-scaled weights are under 1 so each layer multiplies by less than one; CONTROL the deep net's gradients are not small because it converged - its final loss is 0.934676, 0.999347, 0.999958 against the 1.0 of predicting 0.5 everywhere, so it never left its initialisation and its post-training gradients are small for the reason the exercise says, unlike the 2-4-1 net's, which are small because it succeeded
+    uses_reference:
+      - Value
+      - Network
+      - mse_loss

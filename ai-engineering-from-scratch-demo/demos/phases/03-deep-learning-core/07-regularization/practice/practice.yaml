@@ -1,0 +1,74 @@
+lesson: 07-regularization
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/07-regularization/docs/en.md
+exercises:
+  - index: 1
+    slug: spatial_dropout
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement spatial dropout for 2D data: instead of dropping individual neurons, drop entire feature channels. Simulate this by treating groups of consecutive features as channels and dropping whole groups. Compare the train-test gap to standard dropout on the circle dataset with hidden_size=32.
+    zh: |
+      為 2D 資料實作空間 dropout（spatial dropout）：不是丟掉個別神經元，而是丟掉整個特徵通道。把連續的幾組特徵當成通道、整組一起丟掉，以此模擬。在 hidden_size=32 的圓形資料集上，比較它與標準 dropout 的訓練測試落差。
+    verifies: ANSWER spatial dropout does not beat standard dropout on this fixture - train-test gap over 8 mask seeds is +1.25 +/- 1.08 pp at width 1, +1.17 +/- 1.94 pp at width 4 and -0.67 +/- 1.60 pp at width 16, against +2.00 pp with no dropout at all, so widths 1 and 4 differ by 0.08 pp against a seed sd of 1.94 pp, under half the noise the answer is read through, on 150 test points where one flipped label is 0.67 pp; CONTROL at width 1 this *is* the lesson's own Dropout, value for value - same global RNG stream, same 1/(1-p) scaling - so every width is the lesson's code regrouped rather than a reimplementation; MECHANISM grouping holds the mean and scales the standard deviation by sqrt(width) - over 6000 masks the summed activation has mean/sd 31.98/3.68 at width 1, 31.96/5.24 at 2, 31.96/7.35 at 4, 32.01/10.44 at 8 and 32.12/14.71 at 16 against a flat 32.00 (worst drift 0.4%), and every sd over sqrt(width) is 3.68, because 1/(1-p) stays per-channel while C draws replace 32; FINDING only width 16 moves the number, and it underfits rather than regularizes - its gap of -0.67 pp is negative, test above train, at 96.75% test accuracy, because with 2 channels both are off in 8.7% of passes (p^C = 9.00%), erasing the hidden layer that often and leaving the output on b2 alone
+    uses_reference:
+      - Dropout
+      - RegularizedNetwork
+      - make_circle_data
+  - index: 2
+    slug: smoothing_plus_dropout
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement label smoothing from lesson 05 combined with dropout from this lesson. Train with four configurations: neither, dropout only, label smoothing only, both. Measure the final train-test accuracy gap for each. Which combination gives the smallest gap?
+    zh: |
+      把單元 05 的標籤平滑與這一課的 dropout 結合起來。用四種設定訓練：兩者都不用、只用 dropout、只用標籤平滑、兩者都用。量測每一種設定最後的訓練測試準確率落差。哪一種組合的落差最小？
+    verifies: ANSWER 'neither' gives the smallest gap and every regularizer widens it - eval-mode train minus test accuracy is +2.00 pp for neither, +2.89 pp dropout, +2.67 pp smoothing and +2.11 pp both, with the dropout rows varying by +/-0.92 and +/-0.25 over 6 mask seeds; CONTROL two-class smoothing is BCE on a softened target - lesson 05's `label_smoothed_cce(alpha=0.1)` is BCE at target 0.95 to 2.8e-16, and lesson 07's own `backward` differentiates it to 3.5e-10; FINDING regularization does not close the gap here, it costs test accuracy - 97.33% for neither against 96.22% dropout, 95.33% smoothing and 95.78% both, because a plain net already at +2.00 pp on 150 test points has no overfitting to remove and every constraint added is capacity lost; FINDING read off the lesson's own printout the answer reverses - `train_model` grades the training set *through* the dropout mask, so its printed gap= line reads neither +2.00, dropout +0.89, smoothing +2.67, both -0.56 pp and picks 'both' as the winner, an artefact of measuring train accuracy in training mode; MECHANISM smoothing buys the gap with confidence and log-loss bills it - the top test prediction is 0.9999999999 unsmoothed against 0.9927 smoothed, a 0.95 ceiling it still overshoots, and test loss on hard labels is 0.1658 against 0.0592
+    uses_reference:
+      - RegularizedNetwork
+      - make_circle_data
+  - index: 3
+    slug: batchnorm_before_relu
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a BatchNorm layer between the hidden layer and the activation in your circle-dataset network. Train with and without BatchNorm at learning rates 0.01, 0.05, and 0.1. BatchNorm should allow stable training at higher learning rates where the vanilla network diverges.
+    zh: |
+      在你圓形資料集網路的隱藏層與激活函式之間，加上一層 BatchNorm。在學習率 0.01、0.05 與 0.1 之下，各訓練一次有 BatchNorm 與沒有 BatchNorm 的版本。BatchNorm 應該能讓訓練在原版網路會發散的那些較高學習率下仍然穩定。
+    verifies: MECHANISM as shipped, the lesson's BatchNorm cannot go where the exercise puts it - `RegularizedNetwork` trains one sample at a time and `BatchNorm.forward` on a batch of one returns [0.0, 0.0, 0.0, 0.0], since the batch variance is 0 so x_hat is 0 and the output is beta, which makes the hidden layer independent of its input; nor is there a gradient, `hasattr(cls, 'backward')` being False for BatchNorm, LayerNorm and RMSNorm and True only for Dropout, so gamma and beta never move and any use back-propagates as if the layer were the identity; ANSWER at the three rates the exercise names the vanilla network never diverges - the lesson's own network and loop over 200 epochs reach 100% test accuracy at lr 0.01 (loss 0.0361), 0.05 (0.0069) and 0.1 (0.0067), so there is nothing to rescue; ANSWER batched, so the layer can run at all, it is worse at all three rates - with mini-batches of 16 and the lesson's own BatchNorm between z1 and the ReLU, plain scores 80/96/100% against BatchNorm's 72/92/96%, because normalising 16 pre-activations over 16 samples throws away the scale the one output neuron reads and the gamma that would learn it back never moves; FINDING BatchNorm lowers the rate at which training collapses rather than raising it - past the named rates plain holds 100% to lr = 4.0 and only fails at 8.0, while BatchNorm reaches 100% at none of 1.0, 2.0, 3.0, 4.0 or 8.0
+    uses_reference:
+      - BatchNorm
+      - RegularizedNetwork
+      - make_circle_data
+      - sigmoid
+  - index: 4
+    slug: early_stopping
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement early stopping: track test loss each epoch, save the best weights, and stop if test loss hasn't improved for 20 epochs. Run the regularized network for 1000 epochs. Report which epoch had the best test accuracy and how many epochs of computation you saved.
+    zh: |
+      實作提早停止：每個 epoch 追蹤測試損失、存下最佳權重，若測試損失連續 20 個 epoch 都沒有改善就停止。把正則化後的網路跑 1000 個 epoch。回報哪一個 epoch 有最好的測試準確率，以及你省下了多少個 epoch 的運算。
+    verifies: ANSWER the best test-accuracy epoch is the first of a 992-way tie - 100.0% is first reached at epoch 8 unregularized and epoch 11 regularized, but 992 and 976 of the 1000 epochs tie at that accuracy, so on 50 held-out points at 100% the question names the first of a tie rather than a best; ANSWER 889 epochs saved on the regularized network and 0 on the plain one - patience 20 stops the regularized arm at epoch 111, while on the unregularized arm it never fires at all because its test loss is still setting records at epoch 999 (0.0005, the best of the run); FINDING the rule keeps a worse model than the one it throws away - it restores epoch 90 at test loss 0.0427 while the run's best is 0.0292 at epoch 640, 529 epochs after the stop, and 0.0364 at the end, so patience 20 fired on a plateau rather than on overfitting; MECHANISM there is no overfitting here to stop - train loss falls 0.5644 -> 0.0013 unregularized and 0.5780 -> 0.1130 regularized while test loss falls with it, rising on only 216 and 483 of 999 epoch-to-epoch steps and never turning, because 150 training points and 16 hidden units is not a setting where the curves separate; CONTROL the number being stopped on is the number being reported - the same 50 points choose the stopping epoch, select the weights and score the result, and the 100.0% they report does not survive a fresh 200-point draw, where the finished nets score 98.0% and 97.5%
+    uses_reference:
+      - RegularizedNetwork
+      - make_circle_data
+  - index: 5
+    slug: layernorm_vs_rmsnorm
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Compare LayerNorm vs RMSNorm on a 4-layer network (not just 2). Initialize both with the same weights. Train for 200 epochs and compare final accuracy, training speed (time per epoch), and gradient magnitudes at the first layer. Verify that RMSNorm is faster with the same accuracy.
+    zh: |
+      在一個四層（不只兩層）的網路上比較 LayerNorm 與 RMSNorm。兩者用相同的權重初始化。訓練 200 個 epoch，比較最終準確率、訓練速度（每個 epoch 的時間）與第一層的梯度大小。驗證 RMSNorm 在準確率相同的情況下確實更快。
+    verifies: ANSWER RMSNorm is faster and the accuracies are not the same - 200 epochs on a 2-16-16-16-1 net from one shared init give RMSNorm 100.0% at 12.15 ms/epoch against LayerNorm 94.0% at 12.85 ms, 5.4% faster and 6 points more accurate, so half of 'faster with the same accuracy' holds and the half naming accuracy does not; MECHANISM the gap is large per call and small per epoch - one call on a 16-vector costs about 1.8 us for LayerNorm against 0.9 us for RMSNorm, roughly 2x, since LayerNorm computes a mean, a variance and a beta where RMSNorm computes one sum of squares, but an epoch is 150 samples x 4 layers of pure-Python matrix work so the norm calls carry only about 5% of it; FINDING the fastest and most accurate arm is no normalisation at all - the same net with the norms removed scores 100.0% at 11.30 ms/epoch; MECHANISM the two are not the same transform here - RMSNorm is LayerNorm without the mean subtraction so they coincide only at zero mean, and on this net's first hidden pre-activation |mean(z)| / rms(z) averages about 0.19; FINDING gamma never moves, so training the norms is not what is being compared - after 200 epochs every gamma in both arms is still exactly 1.0 because neither class has a backward, and the first-layer |grad| is 0.5163 with no norm against 0.5886 with LayerNorm and 0.5857 with RMSNorm, the two norms differing from each other by 0.5%
+    uses_reference:
+      - LayerNorm
+      - RMSNorm
+      - make_circle_data
+      - sigmoid

@@ -1,0 +1,71 @@
+lesson: 02-multi-layer-networks
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/02-multi-layer-networks/docs/en.md
+exercises:
+  - index: 1
+    slug: two_hidden_layers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a 2-4-2-1 network (two hidden layers) and run the forward pass on XOR data with random weights. Print the intermediate hidden layer outputs to see how the representation transforms at each layer.
+    zh: |
+      打造一個 2-4-2-1 網路（兩層隱藏層），用隨機權重在 XOR 資料上跑一次前向傳播。把中間隱藏層的輸出印出來，看看表示在每一層是怎麼變形的。
+    verifies: ANSWER no random 2-4-2-1 net solves XOR - 0 of 20000 nets at the lesson's U(-1, 1) init get all four rows right, and 25 of 20000 do at the U(-20, 20) magnitude the lesson hand-tunes to, so depth alone buys nothing; FINDING the representation does not transform, it contracts - mean ||h([0,1]) - h([1,0])|| over 2000 nets falls 1.4142 -> 0.3753 -> 0.0644 -> 0.0073 from input to output, so the one pair XOR must separate reaches the output 192x closer together than it started; CONTROL one hidden layer less keeps that pair 5.6x further apart (2-4-1 ends 0.0411 against 0.0073 under identical init), so the loss is the extra layer and not the fixture; MECHANISM sigmoid is 1/4-Lipschitz and U(-1, 1) weights have mean |w| = 0.5, so the composed map is a contraction with per-layer ratios 0.265, 0.172, 0.114, and the default biases of 0 send [0, 0] to exactly [0.5, 0.5, 0.5, 0.5] in all 20 seeds; FINDING the forward pass never checks a dimension - a middle Layer(8, 2) fed only 4 values returns 0.6925049241102278, bit-identical to the correctly wired Layer(4, 2), and raises nothing, because `forward` zips weights to inputs and silently drops the four unmatched weights per neuron
+    uses_reference:
+      - Network
+      - Layer
+  - index: 2
+    slug: hidden_layer_width
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the hidden layer size in the circle classifier from 8 to 2, then to 32. Run the forward pass with random weights each time. Does the number of hidden neurons change the output range or distribution? Why?
+    zh: |
+      把圓形分類器的隱藏層大小從 8 改成 2，再改成 32。每次都用隨機權重跑一次前向傳播。隱藏神經元的數量會改變輸出的範圍或分布嗎？為什麼？
+    verifies: ANSWER yes to both, and neither one reaches the classifier - the range one net covers over 200 points more than triples, 0.0747 at h=2 to 0.2199 at h=32 and 0.2568 at h=128, and the distribution pooled over 400 nets goes from unimodal at 0.5 (h=2 spans [0.212, 0.766], sd 0.1041, nothing past 0.2 or 0.8) to piled at both ends (h=128 spans [1.61e-06, 0.999933], sd 0.3838); WHY the output neuron's pre-activation spreads as sqrt(h) - its sd over sqrt(h) is 0.306, 0.298, 0.284, 0.301 across a 64x change in h, matching Var(z) = h * Var(w) * E[a^2] = h/3 * 0.25 for sd 0.289 * sqrt(h); FINDING accuracy is flat in h all the same - 52.1, 50.3, 51.6, 52.0 %, a spread of 1.8 points - because the decision is z >= 0 and widening rescales z symmetrically about it, moving how far from the threshold a net lands but never which side; FINDING every width just gives a constant classifier at the majority rate - the best of 1600 nets is 82.5%, exactly the rate of always saying 'outside', 270-318 of 400 nets per width give one answer for all 200 points, and the lesson's own printed 17.5% is the floor of that, 'inside' everywhere
+    uses_reference:
+      - Network
+      - Layer
+  - index: 3
+    slug: count_parameters
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `count_parameters` method on the Network class that returns the total number of trainable weights and biases. Test it on a 784-256-128-10 network (the classic MNIST architecture). How many parameters does it have?
+    zh: |
+      在 Network 類別上實作一個 `count_parameters` 方法，回傳可訓練的權重與偏差項總數。拿一個 784-256-128-10 的網路（經典的 MNIST 架構）來測。它有多少參數？
+    verifies: ANSWER the 784-256-128-10 network has 235,146 parameters - 200,960 + 32,896 + 1,290, matching the closed form sum(n_prev * n + n) exactly - of which 234,752 are weights and 394 biases, so biases are 0.17% of the model while the first weight matrix alone is 85.5% of it, and a shallow 784-295-10 costs 234,535, within 0.3% of the same budget; the bias count is confirmed independently by instrumenting the forward pass, which calls `sigmoid` exactly 394 times, once per neuron (256 + 128 + 10); FINDING it counts weights the forward pass never reads - declaring the middle layer Layer(512, 128) between a 256-wide layer and the output reports 267,914 against 235,146, 32,768 too many (13.9%), while the network still returns 10 outputs and raises nothing, because `forward` zips weights against inputs and drops the 256 unmatched columns per neuron at run time; FINDING it will also double-count a layer's two contradictory shapes at once - Layer(2, 5, weights=[[1.0, 1.0]]) declares 5 neurons with one row, `forward` returns 1 value and `count_parameters` reports 7 = 2 + 5, neither half checked against the other; COST 235,146 pure-Python parameters occupy 7,718,304 bytes = 7.72 MB, 32.8 bytes each (an 8-byte list slot plus a 24-byte float), 8.2x the 0.94 MB the same weights would take as float32
+    uses_reference:
+      - Network
+      - Layer
+      - sigmoid
+  - index: 4
+    slug: rgb_color_classifier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a forward pass for a 3-4-4-2 network. Feed it RGB color values (normalized to 0-1) and observe the two outputs. This is the architecture for a simple color classifier with two classes.
+    zh: |
+      為一個 3-4-4-2 網路打造前向傳播。餵給它 RGB 色彩值（正規化到 0-1），觀察那兩個輸出。這就是一個有兩個類別的簡單色彩分類器的架構。
+    verifies: ANSWER the predicted class is fixed over the whole RGB cube for almost every net - 282 of 300 random 3-4-4-2 nets give one argmax for all 125 colours, because the decision is sign(out0 - out1) whose sd over the colours, 0.00686, is 22x smaller than its mean per-net offset 0.15254 in 291 of 300 nets; FIXTURE one forward pass over the 8 corners gives black [0.8080, 0.4872] and white [0.8079, 0.4910], the outputs moving only 0.0019 and 0.0111 across the corners; FINDING the two outputs are independent sigmoids and not a distribution - over 300 nets x 125 colours their sum averages 0.9869 but ranges [0.3673, 1.5751], with only 2.11% of 37500 landing within 0.01 of 1; FINDING the colour barely reaches the output at all - one net's outputs move 0.0210 over the cube against 0.1055 sd across nets, 5.0x more, so which net you drew matters more than which colour you fed it; CONTROL 'normalized to 0-1' is what buys even that much response - the same nets on raw 0-255 bytes pin 91.6% of first-layer activations to within 1e-6 of 0 or 1 (0.0% when normalized) and leave 39.4 of 125 colours distinguishable against 125.0, because sigmoid is flat past |z| ~ 6
+    uses_reference:
+      - Network
+      - Layer
+  - index: 5
+    slug: leaky_step
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace sigmoid with a "leaky step" function: return 0.01 * z if z < 0, else 1.0. Run the forward pass on XOR with the same hand-tuned weights from Step 4. Does it still work? Why is the smooth sigmoid preferred over hard cutoffs?
+    zh: |
+      把 sigmoid 換成一個「洩漏階梯」函式：z < 0 時回傳 0.01 * z，否則回傳 1.0。用步驟 4 那組手動調好的權重，在 XOR 上跑前向傳播。它還能動嗎？為什麼平滑的 sigmoid 比硬切斷更受青睞？
+    verifies: ANSWER yes it still works, but the outputs stop being probabilities - leaky step on the Step 4 weights gives -0.120, +1.000, +1.000, -0.120, the same 4/4 sigmoid gets, except two are negative so only the >= 0.5 rule still reads them; FINDING it works over a wider range of weights than sigmoid does - scaling the weights by s, leaky step is 4/4 from s = 0.2 up while sigmoid needs s >= 0.2 too but fails 2/4 below it, since scaling z leaves the leaky step's sign pattern intact and pulls sigmoid off its ends; WHY the smooth one is preferred is the gradient - central differences over all 36 (parameter, row) pairs at s = 0.1 give max |d out/d theta| 0.2496 for sigmoid against 0.0100 for leaky, which is exactly zero in 26 of the 36 against 8, because leaky's slope is 0.01 below zero and 0 above and it jumps a full 1.0000 at z = 0 where sigmoid moves 2.50e-13; FINDING at the Step 4 weights themselves sigmoid has no usable gradient either - at s = 1.0 its largest is 4.55e-05, 5489x smaller than at s = 0.1, and leaky's 0.0100 is the larger of the two, so smoothness pays only where a unit is not already saturated; CONTROL what solves XOR is the nonlinearity and not the smoothness - a hard step with no leak also gets 4/4, while dropping the nonlinearity (z -> z) returns 370.0 for all four inputs and 2/4, since two affine layers compose to one
+    uses_reference:
+      - Network
+      - Layer
+      - sigmoid

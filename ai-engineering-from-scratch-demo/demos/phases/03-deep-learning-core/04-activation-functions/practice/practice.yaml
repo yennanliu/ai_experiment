@@ -1,0 +1,82 @@
+lesson: 04-activation-functions
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/04-activation-functions/docs/en.md
+exercises:
+  - index: 1
+    slug: prelu_alpha
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Parametric ReLU (PReLU) where the negative slope alpha is a learnable parameter. Train it on the circle dataset and compare to fixed Leaky ReLU.
+    zh: |
+      實作 Parametric ReLU（PReLU），讓負半邊的斜率 alpha 變成可學習的參數。在圓形資料集上訓練它，並跟固定的 Leaky ReLU 比較。
+    verifies: ANSWER alpha learns and leaves the range Leaky ReLU lives in - it runs 0.0100 -> -2.6283 over 200 epochs, crossing zero inside the first, and a negative slope makes the unit a V (x for x > 0, 2.63|x| below), non-monotone and positive on both sides, which suits a circle label that is even in each coordinate so one V does what two ReLUs would have to; MECHANISM alpha really is trained rather than drifting - sum_i dL/dz_i * min(z_i, 0) is -6.50939919e-02 against a central difference of the sample loss of -6.50939919e-02, relative error 5.66e-10; ANSWER against fixed Leaky ReLU it buys almost nothing - loss 0.0097 against 0.0099 at fixed alpha = 0.01, accuracy 98.5% against 99.0%, and 14 epochs to loss < 0.05 against 16, a 2% edge and half a point of accuracy the wrong way for a parameter that moved by 2.6; FINDING the alpha it finds is worth far more than learning it - frozen at the learned -2.6283 from epoch 0 the same net reaches loss < 0.05 in 5 epochs rather than 16 (3.2x) and ends at 0.0059 against 0.0099, because PReLU spends the run travelling there and trains under a slope that is only good at the end; CONTROL alpha = 1 is the ridge the descent runs away from - there leaky_relu is the identity, the hidden layer is linear and the net is one logistic regression stuck at loss 0.2046 and 71.5% accuracy, exactly the 143/200 base rate of calling every point outside, so alpha descends away from it and the learned slope goes negative
+    uses_reference:
+      - ActivationNetwork
+      - leaky_relu
+      - leaky_relu_derivative
+      - make_circle_data
+  - index: 2
+    slug: fifty_layers
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run the vanishing gradient experiment with 50 layers instead of 10. Plot the magnitude at each layer for sigmoid, tanh, ReLU, and GELU. At which layer does each activation's signal effectively reach zero?
+    zh: |
+      把梯度消失實驗改成 50 層而不是 10 層。把 sigmoid、tanh、ReLU 與 GELU 在每一層的大小畫出來。每種激活函式的訊號分別在第幾層實際上歸零？
+    verifies: ANSWER at 50 layers only ReLU's signal reaches zero, and it reaches it exactly - at seed 42 ReLU is exactly 0.0 from layer 6, GELU falls below 1e-06 at layer 7 and ends 1.03e-18 without ever being 0, tanh bottoms at 5.69e-06 (layer 15) then recovers to 1.12e-03, and sigmoid never falls below 0.0705, ending 0.9659; FINDING that is the lesson's ranking upside down - the activation blamed for vanishing gradients is the only one whose signal survives 50 layers and the one credited with fixing it is the only one that dies, because sigmoid(z) = 0.5 + z/4 + O(z^3) pulls a fading signal back to its non-zero centre while relu(0) = 0 absorbs, the next z being 0 * sum(w); FINDING the gradient on the same trace ranks them the other way - prod of act'(z_l) * sum(w_l) gives sigmoid 5.181e-38, gelu 9.815e-17, tanh 5.355e-02, relu 0.0, so sigmoid is 36 orders below tanh while its signal is the healthiest of the four: the magnitude the experiment prints is not the quantity its title names; MECHANISM the measured per-layer factor against the textbook ceiling - geometric mean of act'(z)*sum(w) over 400 runs is sigmoid 0.2182 against the lesson's 0.25, tanh 0.5241 against its 1.0, gelu 0.4851, and relu 1.1604 over its 193 surviving layers where act' = 1, which is the weight sum alone at 1.1848 in closed form; CONTROL 'layer 6' is a coin flip and not a property of ReLU - over 400 independent streams ReLU reaches exactly 0 in 400/400 runs at median layer 2, since it dies the first time sum(w) is negative and the index is geometric with p = 1/2, so seed 42 merely got a long run; GELU dies in 36/400, sigmoid and tanh in 0
+    uses_reference:
+      - sigmoid
+      - sigmoid_derivative
+      - tanh_act
+      - tanh_derivative
+      - relu
+      - relu_derivative
+      - gelu
+      - gelu_derivative
+      - vanishing_gradient_experiment
+  - index: 3
+    slug: elu_dead_neurons
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the ELU (Exponential Linear Unit): elu(x) = x if x > 0, alpha * (e^x - 1) if x <= 0. Compare its dead neuron rate to ReLU on the same network.
+    zh: |
+      實作 ELU（Exponential Linear Unit）：elu(x) = x if x > 0, alpha * (e^x - 1) if x <= 0。在同一個網路上比較它與 ReLU 的死亡神經元比例。
+    verifies: ANSWER ELU keeps its units where ReLU loses a quarter of them, and neither loses any at the lesson's own learning rate - 200 epochs on circles at lr 0.1, 0.3, 0.5, 1.0, 2.0 leave ReLU with [0, 2, 2, 2, 2] of 8 units firing for no input against ELU's [0, 0, 0, 0, 0] here (the lr = 2.0 entry is 0 or 1 depending on the platform's libm, which is why the check compares totals rather than pinning each), so at lr = 0.1 the dying-ReLU rate the exercise asks about is 0% and the 25% starts at lr = 0.3; FINDING the lesson's own detector cannot tell ELU from ReLU at all - `dead_neuron_detector` with its `relu` replaced by ELU gives fire counts identical on all 20 neurons over 20000 pre-activations (10037 of them <= 0) and 0 dead for both, because elu(z) > 0 exactly when relu(z) > 0, so its `act(z) > 0` test is a test of sign(z) and not of the activation; MECHANISM the difference is in the derivative and not the output - relu'(z) is exactly 0.0 on 10037 of those 20000 values while elu'(z) = alpha*e^z never falls below 8.50e-06, so a ReLU unit negative on every sample gets zero into w1 and b1 and can never come back where ELU has no such state; FINDING dead units are not what costs accuracy here - the best fit in the whole sweep is ReLU at lr = 0.5 with loss 0.0002 and 100.0% accuracy *and* 2 of 8 units dead, while ELU keeps all 8 alive for a best loss of 0.0058 and is 0.0800 against ReLU's 0.0114 at lr = 2.0; CONTROL at alpha = 0 this ELU is the lesson's ReLU exactly - max |elu(z, alpha=0) - relu(z)| over the detector's 20000 values is 0.0, so the comparison runs against the lesson's own function
+    uses_reference:
+      - ActivationNetwork
+      - dead_neuron_detector
+      - relu
+      - relu_derivative
+      - make_circle_data
+  - index: 4
+    slug: gradient_health_monitor
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a "gradient health monitor" that runs during training: at each epoch, compute the average gradient magnitude at each layer. Print a warning when any layer's gradient drops below 0.001 or exceeds 100.
+    zh: |
+      做一個「梯度健康監測器」，在訓練過程中跑：每個 epoch 算出每一層的平均梯度大小。任何一層的梯度掉到 0.001 以下或超過 100 時就印出警告。
+    verifies: ANSWER on the settings the lesson runs, the monitor never warns - 5 activations x 200 epochs x 2 layers at its own lr = 0.1 on its own 200-point circle data give 0 of 2000 layer-epoch readings outside [0.001, 100]; the monitor's numbers are `backward`'s own, reproducing the weight delta it applies to 1.05e-15; MECHANISM the upper threshold cannot fire on this network at all - the largest single gradient over 5 activations x 4 learning rates is 2.2506, 44x below the alarm, because |d_out| = |p - t| * p(1-p) <= 0.25 so the output-layer gradient is at most 0.25|h| and the hidden one at most 0.25|w2| * act' * |x|, and reaching 100 needs |h| > 400 or |w2| > 200, which a sigmoid output cannot ask for; FINDING wherever the low threshold fires, training had *succeeded* - at lr = 1.0 it fires for relu at epoch 145 (ending 99.0%), gelu at 175 (97.5%) and swish at 142 (96.5%), and every arm it fires for ends above 95%, because the per-layer mean falls under 0.001 once the loss is near zero; which arms trip it varies with the platform's libm, so the check asserts the implication and not the membership, and the whole live range is 7.2e-08 to 5.4e-02; CONTROL the threshold is right and its location is not - run the same rule over the lesson's own 10-layer `vanishing_gradient_experiment` and it fires on relu at layer 5 and gelu at layer 4 and never on sigmoid (last three layers: sigmoid 0.521604, relu 0.000000, gelu 0.000000), so the alarm catches the activation the lesson credits with fixing vanishing gradients and stays silent on the one it blames
+    uses_reference:
+      - ActivationNetwork
+      - make_circle_data
+      - vanishing_gradient_experiment
+  - index: 5
+    slug: xor_instead_of_circles
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the training comparison to use the XOR dataset from Lesson 01 instead of circles. Which activation converges fastest on XOR? Why does this differ from the circle results?
+    zh: |
+      把訓練比較改用單元 01 的 XOR 資料集，而不是圓形資料集。哪個激活函式在 XOR 上收斂最快？為什麼這跟圓形資料集的結果不同？
+    verifies: ANSWER at the lesson's own settings the comparison is degenerate - 200 epochs at lr = 0.1 end at sigmoid 0.2550/50%, tanh 0.1504/100%, relu 0.0499/100%, gelu 0.0511/100%, swish 0.1071/100%, so only relu reaches loss < 0.05 and it does so at epoch 200, the last one, while sigmoid finishes at chance on four rows; ANSWER given room, relu converges fastest on XOR - epochs to loss < 0.05 over 10,000 are relu 200, gelu 203, swish 273, tanh 345, sigmoid 2698, and the lesson's 200-epoch budget stops inside relu's margin and before anything else arrives; WHY it differs from circles is a different winner in a different unit - on circles the same code ranks gelu 13, swish 13, relu 16, tanh 28, sigmoid 123 epochs, but an epoch is 4 updates on XOR and 200 on circles, so in *updates* XOR needs relu 800, gelu 812, swish 1092, tanh 1380, sigmoid 10792 against circles' gelu 2600, swish 2600, relu 3200, tanh 5600, sigmoid 24600; MECHANISM XOR zeroes most of the hidden-layer gradient outright - 93.9% of relu's hidden weight gradients are exactly zero on XOR against 36.0% on circles, since `d_h * x[j]` is exactly 0 whenever x[j] is and half of XOR's coordinates are, where on circles no coordinate is ever exactly 0 and the 36.0% is dead units alone; FINDING on XOR the answer is not stable and the lesson cannot see that - redrawing the same init at three seeds makes the XOR winner relu, tanh, gelu, with relu failing to reach loss < 0.05 in 2,000 epochs at one of them, while on circles it is gelu, swish, gelu, always one of the two smooth activations and nothing fails; `ActivationNetwork.__init__` calls random.seed(0), so the shipped comparison is one draw its caller cannot vary
+    uses_reference:
+      - ActivationNetwork
+      - make_circle_data

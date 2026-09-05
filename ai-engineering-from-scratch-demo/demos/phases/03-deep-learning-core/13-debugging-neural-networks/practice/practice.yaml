@@ -1,0 +1,64 @@
+lesson: 13-debugging-neural-networks
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/13-debugging-neural-networks/docs/en.md
+exercises:
+  - index: 1
+    slug: exploding_gradient_detector
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Add an exploding gradient detector.** Modify the `NetworkDebugger` to detect when gradients exceed a threshold and automatically suggest a gradient clipping value. Test it on a 20-layer network with no normalization.
+    zh: |
+      **加上梯度爆炸偵測器。** 修改 `NetworkDebugger`，讓它在梯度超過某個門檻時偵測到，並自動建議一個梯度裁剪值。拿一個 20 層、完全沒有正規化的網路來測試。
+    verifies: ANSWER a gain-2.8 initialisation drives the loss to NaN in 60 steps, and the lesson's own `check_gradients()` calls that run HEALTHY - the diagnostic named for this failure is silent on it; MECHANISM NaN fails every comparison, so both threshold branches skip - all 41 recorded grad_output abs_means are NaN and the guards `< 1e-7` and `> 100` are (False, False) for NaN; MECHANISM and before any NaN the > 100 bound is out of reach here - at gain 2.8 the probe norm is 63.9 yet the largest grad_output abs_mean is 1.34e-02, 7473x under the bound, because the hook averages |grad| over a 32x32 tensor rather than taking a norm; FINDING `check_loss_health()` catches what `check_gradients()` misses - the loss monitor returns NAN_OR_INF on the exploding run and NOT_DECREASING on the control, and it is the only check that tests math.isnan
+    uses_reference:
+      - NetworkDebugger
+  - index: 2
+    slug: dead_neuron_resurrector
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Build a dead neuron resurrector.** Write a function that identifies dead ReLU neurons (always outputting 0) and reinitializes their incoming weights with Kaiming initialization. Show that this recovers a network where >70% of neurons are dead.
+    zh: |
+      **打造一個死神經元復活器。** 寫一個函式，找出死掉的 ReLU 神經元（永遠輸出 0），並用 Kaiming 初始化重設它們的輸入權重。證明這能救回一個超過 70% 神經元都死掉的網路。
+    verifies: ANSWER reinitialising a dead unit's incoming *and* outgoing weights recovers the network, and lands exactly where a never-damaged one lands - the same architecture built without the lesson's own BUG 2 bias ends at loss 0.0008 and 100.0% accuracy from 1/48 dead units, so recovery is a match rather than an improvement; FINDING the instruction as written, incoming weights only, does not recover it - Kaiming on the incoming weights of all 38 dead units revives 2, leaves 36 of 48 (75%) dead, and still fails `overfit_one_batch` at loss 0.5644 and 68.0% accuracy; MECHANISM Kaiming scales from fan_in and knows nothing about the bias - a resurrected unit has to push w.x past 6.0 to clear the -6.0 bias, and per layer the best it manages is 6.93, 1.12 and 0.65, so only layer 1, fed by raw inputs, gets there; MECHANISM a dead unit stays dead because its gradient is exactly 0 - summed |grad| over every dead unit's weight row and bias is 0.0, and 200 Adam steps move the dead count from 38 to 38, since ReLU'(z) = 0 below zero
+    uses_reference:
+      - overfit_one_batch
+  - index: 3
+    slug: lr_finder_csv
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Implement the learning rate finder with plotting.** Extend `find_learning_rate` to save results as a CSV and write a separate script that reads the CSV and displays the LR vs loss curve using matplotlib. Identify the optimal LR for ResNet-18 on CIFAR-10.
+    zh: |
+      **實作帶繪圖的學習率搜尋器。** 擴充 `find_learning_rate`，把結果存成 CSV，再另外寫一個腳本讀取這份 CSV，用 matplotlib 顯示 LR 對損失的曲線。找出 ResNet-18 在 CIFAR-10 上的最佳 LR。
+    verifies: ANSWER the CSV the plot script reads round-trips exactly - 100 (lr, loss) pairs written with `csv.writer` at full repr precision and read back compare equal as floats, pair for pair, and the plot is one call over those two columns; FINDING 'just before the loss starts climbing' points at nothing here - across 1e-07 to 10 the loss never rises once (0 rises in 99, 199 and 399 transitions), the minimum is the *last* sample of every sweep, and the divergence guard never fires, all three sweeps running their full length; FINDING so the suggested LR is a function of the sweep resolution rather than of the curve - suggested/minimum/ratio by step count is 1.318/8.318/6.31x at 100, 3.631/9.120/2.51x at 200 and 6.026/9.550/1.58x at 400, because `results[min_idx - 10]` is a fixed *step* offset so the ratio is exactly (end/start)^(10/steps), matched to 0.00%, and the suggestion moves 4.6x across the three sweeps while the curve does not move; CONTROL the model really is restored, so the sweep costs nothing - `find_learning_rate` deep-copies state_dict() and loads it back, leaving every parameter bit-identical (0.0 worst difference), though it does not restore the caller's optimizer; MECHANISM the sweep is full-batch, so its rate is for a batch size the training loop will not use - it calls `model(x_data)` on all 512 rows at once, and held at one rate for the same 100 full-batch steps the losses are 2.2461 at lr 1e-3, 0.0008 at the suggested 1.318 and 0.0011 at 1.0
+    uses_reference:
+      - find_learning_rate
+  - index: 4
+    slug: data_pipeline_validator
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Create a data pipeline validator.** Write a function that checks for: duplicate samples across train/test splits, label distribution imbalance (>10:1 ratio), input normalization (mean near 0, std near 1), and NaN/Inf values in the data. Run it on a deliberately corrupted dataset.
+    zh: |
+      **做一個資料流程驗證器。** 寫一個函式，檢查以下項目：訓練／測試切分之間有沒有重複樣本、標籤分布是否失衡（比例超過 10:1）、輸入是否正規化（平均值接近 0、標準差接近 1），以及資料裡有沒有 NaN/Inf 值。拿一份刻意弄壞的資料集跑一遍。
+    verifies: ANSWER the validator is silent on a clean split and names each fault - 12 duplicate rows, imbalance 594:1, unnormalised (mean 2.94, std 3.99) and 2 non-finite, one rule each on 600 train and 200 test rows of 10 features, where the lesson's own NetworkDebugger offers check_activations, check_gradients and check_loss_health and nothing that looks at the data; FINDING 'duplicate samples' needs an equality rule and exact equality is only a lower bound - copying 12 training rows into the test set is caught, but adding 1e-05 to each of the same rows first hides all 12, so any resize, re-encode or augmentation between the split and the check makes a leak invisible to an == test; FINDING '>10:1' does not say ratio of what - the imbalanced split [594, 6, 0, 0] is 594:1 as max over min, which fires, but 4.0:1 as max over the mean, which does not, and the rule cannot be evaluated at all when a class is absent since min is 0; FINDING 'mean near 0, std near 1' passes a dataset with no feature near either - offsetting alternate features by +/-0.6 and scaling by 0.8 (offset^2 + spread^2 = 1) leaves the pooled mean at -0.012 and the pooled std at 0.993 so all four rules stay silent, while the worst per-feature mean is 0.67; CONTROL NaN is the only unambiguous rule and it has to run first - two poisoned entries are counted exactly, but the same tensor's mean and std come back NaN so the normalisation rule evaluates `abs(nan) > 0.1` as False and stays silent, and a validator running the four rules in the order the exercise lists them reports the NaNs last and the normalisation not at all
+    uses_reference:
+      - NetworkDebugger
+  - index: 5
+    slug: locate_the_transpose
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Debug a real failure.** Take the mini-framework from Lesson 10, introduce a subtle bug (e.g., transpose the weight matrix in backward), and use gradient checking to locate exactly which parameter has incorrect gradients. Document the debugging process.
+    zh: |
+      **除掉一個真實的失敗。** 拿單元 10 的迷你框架，塞進一個不明顯的 bug（例如在反向傳遞裡把權重矩陣轉置），再用梯度檢查精準定位是哪個參數的梯度不對。把整個除錯過程記錄下來。
+    verifies: FINDING the exercise's two halves do not compose - this lesson's `gradient_check` on the lesson-10 framework raises AttributeError 'list object has no attribute double', since it calls x.double() and model.named_parameters() while lesson 10 has Python lists and a parameters() of its own, so the checker here is written to the same formula over all 369 parameters; ANSWER the check separates the two models by eight orders of magnitude - the worst relative difference is 1.389e-08 on the clean model against 1.946e+00 with one line of module 2's backward transposed, so the lesson's own 1e-5 threshold calls the first OK and the second a MISMATCH; FINDING it names the layer before the bug rather than the layer with it - per module the worst relative differences are module 0 1.95e+00, module 2 1.39e-08 and module 4 6.20e-10, because the transpose corrupts `input_grad`, which is the next layer down's error, while module 2's own weight gradients stay right; MECHANISM the bug is only insertable where the layer is square - `self.weights[j][i]` needs a row j, so on the 4->16 layer it raises 'list index out of range' on the first backward pass and only the 16->16 layer accepts it in silence, which is what 'subtle' means here; CONTROL the lesson's own sampling rule would have missed it - `gradient_check` tests min(5, param.numel()) entries per parameter in flat order, and while the first 5 of module 0 already disagree here, the entries at 5..100 disagree just as much, so a bug confined to those would have been reported OK
+    uses_reference:
+      - gradient_check
