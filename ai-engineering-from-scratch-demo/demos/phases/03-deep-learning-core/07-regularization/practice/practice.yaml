@@ -1,0 +1,54 @@
+lesson: 07-regularization
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/07-regularization/docs/en.md
+exercises:
+  - index: 1
+    slug: implement_spatial_dropout_2d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement spatial dropout for 2D data: instead of dropping individual neurons, drop entire feature channels. Simulate this by treating groups of consecutive features as channels and dropping whole groups. Compare the train-test gap to standard dropout on the circle dataset with hidden_size=32.
+    zh: |
+      為 2D 資料實作空間 dropout（spatial dropout）：不是丟掉個別神經元，而是丟掉整個特徵通道。把連續的幾組特徵當成通道、整組一起丟掉，以此模擬。在 hidden_size=32 的圓形資料集上，比較它與標準 dropout 的訓練測試落差。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: implement_label_smoothing_lesson
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement label smoothing from lesson 05 combined with dropout from this lesson. Train with four configurations: neither, dropout only, label smoothing only, both. Measure the final train-test accuracy gap for each. Which combination gives the smallest gap?
+    zh: |
+      把單元 05 的標籤平滑與這一課的 dropout 結合起來。用四種設定訓練：兩者都不用、只用 dropout、只用標籤平滑、兩者都用。量測每一種設定最後的訓練測試準確率落差。哪一種組合的落差最小？
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: add_batchnorm_layer_between
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a BatchNorm layer between the hidden layer and the activation in your circle-dataset network. Train with and without BatchNorm at learning rates 0.01, 0.05, and 0.1. BatchNorm should allow stable training at higher learning rates where the vanilla network diverges.
+    zh: |
+      在你圓形資料集網路的隱藏層與激活函式之間，加上一層 BatchNorm。在學習率 0.01、0.05 與 0.1 之下，各訓練一次有 BatchNorm 與沒有 BatchNorm 的版本。BatchNorm 應該能讓訓練在原版網路會發散的那些較高學習率下仍然穩定。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: implement_early_stopping_track
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement early stopping: track test loss each epoch, save the best weights, and stop if test loss hasn't improved for 20 epochs. Run the regularized network for 1000 epochs. Report which epoch had the best test accuracy and how many epochs of computation you saved.
+    zh: |
+      實作提早停止：每個 epoch 追蹤測試損失、存下最佳權重，若測試損失連續 20 個 epoch 都沒有改善就停止。把正則化後的網路跑 1000 個 epoch。回報哪一個 epoch 有最好的測試準確率，以及你省下了多少個 epoch 的運算。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: compare_layernorm_vs_rmsnorm
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Compare LayerNorm vs RMSNorm on a 4-layer network (not just 2). Initialize both with the same weights. Train for 200 epochs and compare final accuracy, training speed (time per epoch), and gradient magnitudes at the first layer. Verify that RMSNorm is faster with the same accuracy.
+    zh: |
+      在一個四層（不只兩層）的網路上比較 LayerNorm 與 RMSNorm。兩者用相同的權重初始化。訓練 200 個 epoch，比較最終準確率、訓練速度（每個 epoch 的時間）與第一層的梯度大小。驗證 RMSNorm 在準確率相同的情況下確實更快。
+    verifies: TODO state the threshold this solution asserts

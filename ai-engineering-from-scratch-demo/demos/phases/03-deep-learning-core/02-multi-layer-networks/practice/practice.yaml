@@ -1,0 +1,54 @@
+lesson: 02-multi-layer-networks
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/02-multi-layer-networks/docs/en.md
+exercises:
+  - index: 1
+    slug: build_2_4_2
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a 2-4-2-1 network (two hidden layers) and run the forward pass on XOR data with random weights. Print the intermediate hidden layer outputs to see how the representation transforms at each layer.
+    zh: |
+      打造一個 2-4-2-1 網路（兩層隱藏層），用隨機權重在 XOR 資料上跑一次前向傳播。把中間隱藏層的輸出印出來，看看表示在每一層是怎麼變形的。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: change_hidden_layer_size
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Change the hidden layer size in the circle classifier from 8 to 2, then to 32. Run the forward pass with random weights each time. Does the number of hidden neurons change the output range or distribution? Why?
+    zh: |
+      把圓形分類器的隱藏層大小從 8 改成 2，再改成 32。每次都用隨機權重跑一次前向傳播。隱藏神經元的數量會改變輸出的範圍或分布嗎？為什麼？
+    cites: TODO name the lesson section this answer draws on
+  - index: 3
+    slug: implement_count_parameters_method
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `count_parameters` method on the Network class that returns the total number of trainable weights and biases. Test it on a 784-256-128-10 network (the classic MNIST architecture). How many parameters does it have?
+    zh: |
+      在 Network 類別上實作一個 `count_parameters` 方法，回傳可訓練的權重與偏差項總數。拿一個 784-256-128-10 的網路（經典的 MNIST 架構）來測。它有多少參數？
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: build_forward_pass_3
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a forward pass for a 3-4-4-2 network. Feed it RGB color values (normalized to 0-1) and observe the two outputs. This is the architecture for a simple color classifier with two classes.
+    zh: |
+      為一個 3-4-4-2 網路打造前向傳播。餵給它 RGB 色彩值（正規化到 0-1），觀察那兩個輸出。這就是一個有兩個類別的簡單色彩分類器的架構。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: replace_sigmoid_leaky_step
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Replace sigmoid with a "leaky step" function: return 0.01 * z if z < 0, else 1.0. Run the forward pass on XOR with the same hand-tuned weights from Step 4. Does it still work? Why is the smooth sigmoid preferred over hard cutoffs?
+    zh: |
+      把 sigmoid 換成一個「洩漏階梯」函式：z < 0 時回傳 0.01 * z，否則回傳 1.0。用步驟 4 那組手動調好的權重，在 XOR 上跑前向傳播。它還能動嗎？為什麼平滑的 sigmoid 比硬切斷更受青睞？
+    cites: TODO name the lesson section this answer draws on

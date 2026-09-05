@@ -1,0 +1,54 @@
+lesson: 03-backpropagation
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/03-backpropagation/docs/en.md
+exercises:
+  - index: 1
+    slug: add_sub_method_value
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `__sub__` method to the Value class (a - b = a + (-1 * b)). Then implement a `__neg__` method. Verify that the gradients are correct by comparing with manual calculation for a simple expression like (a - b)^2.
+    zh: |
+      為 Value 類別加上 `__sub__` 方法（a - b = a + (-1 * b)）。接著實作 `__neg__` 方法。拿 (a - b)^2 這種簡單的表達式跟手算結果比對，驗證梯度是對的。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: add_relu_method_value
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `relu` method to Value (output max(0, x), derivative is 1 if x > 0, else 0). Replace sigmoid with relu in the hidden layers and train on XOR again. Compare convergence speed. You should see faster training -- this previews Lesson 04.
+    zh: |
+      為 Value 加上 `relu` 方法（輸出 max(0, x)，導數在 x > 0 時是 1，否則是 0）。把隱藏層的 sigmoid 換成 relu，再訓練一次 XOR。比較收斂速度。你應該會看到訓練變快 —— 這是單元 04 的預告。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: implement_pow_method_value
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `__pow__` method on Value for integer powers. Use it to replace `mse_loss` with a proper `(predicted - target) ** 2` expression. Verify gradients match the original implementation.
+    zh: |
+      在 Value 上實作 `__pow__` 方法以支援整數次方。用它把 `mse_loss` 換成正規的 `(predicted - target) ** 2` 表達式。驗證梯度跟原本的實作一致。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: add_gradient_clipping_training
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add gradient clipping to the training loop: after calling `backward()`, clip all gradients to [-1, 1]. Train a deeper network (4+ layers with sigmoid) and compare loss curves with and without clipping. This is your first defense against exploding gradients.
+    zh: |
+      在訓練迴圈裡加上梯度裁剪：呼叫 `backward()` 之後，把所有梯度裁到 [-1, 1]。訓練一個更深的網路（4 層以上，用 sigmoid），比較有裁剪與沒裁剪的損失曲線。這是你對付梯度爆炸的第一道防線。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: build_visualization_after_training
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a visualization: after training on XOR, print the gradient of every parameter in the network. Identify which layer has the smallest gradients. This demonstrates the vanishing gradient problem you read about in the Concept section.
+    zh: |
+      做一個視覺化：在 XOR 上訓練完之後，把網路裡每一個參數的梯度印出來。找出哪一層的梯度最小。這會實際展示你在核心概念一節讀到的梯度消失問題。
+    verifies: TODO state the threshold this solution asserts

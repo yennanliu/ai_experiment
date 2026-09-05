@@ -1,0 +1,54 @@
+lesson: 12-intro-to-jax
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/12-intro-to-jax/docs/en.md
+exercises:
+  - index: 1
+    slug: add_dropout_mlp_jax
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add dropout to the MLP. In JAX, dropout requires a PRNG key -- thread a key through the forward pass and split it for each dropout layer. Compare test accuracy with and without.
+    zh: |
+      為這個 MLP 加上 dropout。在 JAX 裡，dropout 需要一把 PRNG 金鑰 —— 把金鑰一路穿過前向傳播，並為每一層 dropout 分裂出一把。比較有 dropout 與沒有 dropout 的測試準確率。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: jax_vmap_compute_per
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Use `jax.vmap` to compute per-example gradients for a batch of 32 MNIST images. Compute the gradient norm for each example. Which examples have the largest gradients, and why?
+    zh: |
+      用 `jax.vmap` 為一個 32 張 MNIST 圖片的批次算出逐樣本梯度。算出每筆樣本的梯度範數。哪些樣本的梯度最大，為什麼？
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: replace_manual_forward_function
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the manual forward function with a generic `mlp_forward(params, x)` that works for any number of layers. Use `jax.tree.leaves` to determine the depth automatically.
+    zh: |
+      把手寫的 forward 函式換成一個通用的 `mlp_forward(params, x)`，讓它對任意層數都能用。用 `jax.tree.leaves` 自動判斷深度。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: benchmark_training_step_without
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark the training step with and without `@jax.jit`. Time 100 steps of each. How large is the speedup on your hardware? What is the compilation overhead on the first call?
+    zh: |
+      為訓練步驟做基準測試，比較有 `@jax.jit` 與沒有的差別。各跑 100 步計時。在你的硬體上加速多少倍？第一次呼叫的編譯開銷是多少？
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: implement_gradient_clipping_composing
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement gradient clipping by composing `optax.chain(optax.clip_by_global_norm(1.0), optax.adam(1e-3))`. Train with and without clipping. Plot the gradient norm over training to see the effect.
+    zh: |
+      用 `optax.chain(optax.clip_by_global_norm(1.0), optax.adam(1e-3))` 組合出梯度裁剪。分別在有裁剪與沒裁剪的情況下訓練。把訓練過程中的梯度範數畫出來，看看效果。
+    verifies: TODO state the threshold this solution asserts

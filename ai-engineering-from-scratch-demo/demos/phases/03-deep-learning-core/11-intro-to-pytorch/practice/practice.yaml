@@ -1,0 +1,54 @@
+lesson: 11-intro-to-pytorch
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/11-intro-to-pytorch/docs/en.md
+exercises:
+  - index: 1
+    slug: add_batch_normalization_insert
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Add batch normalization.** Insert `nn.BatchNorm1d` after each linear layer (before the activation). Compare test accuracy and training speed vs the dropout-only version. Batch norm should reach 98%+ in fewer epochs.
+    zh: |
+      **加上 batch normalization。** 在每個線性層之後（激活之前）插入 `nn.BatchNorm1d`。比較它與只用 dropout 的版本在測試準確率和訓練速度上的差別。batch norm 應該用更少的 epoch 就達到 98% 以上。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: implement_learning_rate_finder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement a learning rate finder.** Train for one epoch with exponentially increasing learning rate (from 1e-7 to 1.0). Plot loss vs LR. The optimal LR is just before the loss starts climbing. Use this to pick a better LR for the MNIST model.
+    zh: |
+      **實作一個學習率搜尋器。** 用指數遞增的學習率（從 1e-7 到 1.0）訓練一個 epoch。畫出損失對 LR 的圖。最佳 LR 就在損失開始往上爬之前。用這個方法為 MNIST 模型挑一個更好的 LR。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: port_gpu_mixed_precision
+    kind: code
+    tier: T3
+    deps_group: llm
+    en: |
+      **Port to GPU with mixed precision.** Add `torch.amp.autocast` and `GradScaler` to the training loop. Measure throughput (samples/second) with and without mixed precision on GPU. On an A100, expect ~2x speedup.
+    zh: |
+      **移植到 GPU 並加上混合精度。** 在訓練迴圈裡加上 `torch.amp.autocast` 與 `GradScaler`。在 GPU 上量測有無混合精度的吞吐量（樣本／秒）。在 A100 上預期約 2 倍加速。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: build_custom_dataset_download
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a custom Dataset.** Download Fashion-MNIST (same format as MNIST but with clothing items). Implement a `FashionMNISTDataset(Dataset)` class with `__getitem__` and `__len__`. Train the same MLP and compare accuracy. Fashion-MNIST is harder -- expect ~88% vs ~98%.
+    zh: |
+      **打造一個自訂的 Dataset。** 下載 Fashion-MNIST（格式與 MNIST 相同，但內容是衣物）。實作一個帶 `__getitem__` 與 `__len__` 的 `FashionMNISTDataset(Dataset)` 類別。訓練同樣的 MLP 並比較準確率。Fashion-MNIST 比較難——預期約 88%，對比約 98%。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: replace_adam_sgd_momentum
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Replace Adam with SGD + momentum.** Train with `SGD(params, lr=0.01, momentum=0.9)`. Compare convergence curves. Then add a `CosineAnnealingLR` scheduler and see if SGD catches up to Adam by epoch 10.
+    zh: |
+      **把 Adam 換成 SGD + momentum。** 用 `SGD(params, lr=0.01, momentum=0.9)` 訓練。比較收斂曲線。然後加上 `CosineAnnealingLR` 排程器，看 SGD 到第 10 個 epoch 有沒有追上 Adam。
+    verifies: TODO state the threshold this solution asserts

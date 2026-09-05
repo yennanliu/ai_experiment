@@ -1,0 +1,54 @@
+lesson: 10-mini-framework
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/10-mini-framework/docs/en.md
+exercises:
+  - index: 1
+    slug: add_softmaxcrossentropyloss_class_multi
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `SoftmaxCrossEntropyLoss` class for multi-class classification. Softmax the predictions, compute cross-entropy loss, and handle the combined backward pass. Test it on a 3-class spiral dataset.
+    zh: |
+      加一個 `SoftmaxCrossEntropyLoss` 類別做多類別分類。對預測值取 softmax、算交叉熵損失，並處理合併後的反向傳遞。用一組 3 類別的螺旋資料集測試它。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: implement_learning_rate_scheduling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement learning rate scheduling in the optimizer: add a `set_lr()` method and wire in the cosine schedule from Lesson 09. Train the circle classifier with warmup + cosine and compare to constant LR.
+    zh: |
+      在最佳化器裡實作學習率排程：加一個 `set_lr()` 方法，把單元 09 的餘弦排程接進來。用 warmup + 餘弦訓練圓形分類器，跟固定學習率比較。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: add_save_load_method
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `save()` and `load()` method to Sequential that serializes all weights to a JSON file and loads them back. Verify that a loaded model produces the same predictions as the original.
+    zh: |
+      為 Sequential 加上 `save()` 與 `load()` 方法，把所有權重序列化成 JSON 檔案，再讀回來。驗證讀回來的模型能產生跟原本一樣的預測。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: implement_weight_decay_l2
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement weight decay (L2 regularization) in the Adam optimizer. Add a `weight_decay` parameter that shrinks weights toward zero each step. Compare training with decay=0 vs decay=0.01.
+    zh: |
+      在 Adam 最佳化器裡實作權重衰減（L2 正則化）。加一個 `weight_decay` 參數，每一步都把權重往零收縮。比較 decay=0 與 decay=0.01 的訓練結果。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: replace_per_sample_training
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Replace the per-sample training loop with proper mini-batch gradient accumulation: accumulate gradients across all samples in a batch, then divide by batch size and take one optimizer step. Measure whether this changes convergence speed.
+    zh: |
+      把逐樣本的訓練迴圈換成正規的小批次梯度累積：把一個批次裡所有樣本的梯度累積起來，再除以批次大小，然後做一次最佳化器更新。量測這樣會不會改變收斂速度。
+    verifies: TODO state the threshold this solution asserts

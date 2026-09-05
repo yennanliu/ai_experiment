@@ -1,0 +1,54 @@
+lesson: 08-weight-initialization
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/08-weight-initialization/docs/en.md
+exercises:
+  - index: 1
+    slug: add_lecun_initialization_var
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add LeCun initialization (Var = 1/fan_in, designed for SELU activation). Run the 50-layer experiment with LeCun init + tanh and compare to Xavier + tanh.
+    zh: |
+      加上 LeCun 初始化（Var = 1/fan_in，為 SELU 激活函式設計的）。用 LeCun 初始化配 tanh 跑一次 50 層實驗，並跟 Xavier 配 tanh 比較。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: implement_gpt_2_residual
+    kind: code
+    tier: T2
+    deps_group: llm
+    en: |
+      Implement the GPT-2 residual scaling: multiply the output of each layer by 1/sqrt(2*N) before adding to the residual stream. Run 50 layers with and without scaling, measure how fast the residual magnitude grows.
+    zh: |
+      實作 GPT-2 的殘差縮放：在把每一層的輸出加進殘差流之前，先乘上 1/sqrt(2*N)。跑 50 層，比較有做跟沒做縮放的差別，量測殘差的大小成長得多快。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: create_init_health_check
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create an "init health check" function that takes a network's layer dimensions and activation type, then recommends the correct initialization and warns if the current init will cause problems.
+    zh: |
+      做一個「初始化健檢」函式，吃進一個網路的各層維度與激活函式類型，然後推薦正確的初始化，並在目前的初始化會出問題時發出警告。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: run_experiment_fan_16
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the experiment with fan_in = 16 vs fan_in = 1024. Xavier and Kaiming adapt to fan_in, but random init doesn't. Show how the gap between "works" and "breaks" widens with larger layers.
+    zh: |
+      用 fan_in = 16 和 fan_in = 1024 各跑一次實驗。Xavier 與 Kaiming 會隨 fan_in 調整，隨機初始化不會。呈現「能用」與「壞掉」之間的落差如何隨著層變寬而拉大。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: implement_orthogonal_initialization_gene
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement orthogonal initialization (generate a random matrix, compute its SVD, use the orthogonal matrix U). Compare to Kaiming for ReLU networks at 50 layers.
+    zh: |
+      實作 orthogonal 初始化（產生一個隨機矩陣、算它的 SVD、取那個正交矩陣 U）。在 50 層的 ReLU 網路上跟 Kaiming 比較。
+    verifies: TODO state the threshold this solution asserts

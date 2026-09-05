@@ -1,0 +1,54 @@
+lesson: 05-loss-functions
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/05-loss-functions/docs/en.md
+exercises:
+  - index: 1
+    slug: implement_huber_loss_smooth
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Huber loss (smooth L1 loss), which is MSE for small errors and MAE for large errors. Train a regression network predicting y = sin(x) with MSE vs Huber when 5% of training targets have random noise added (outliers). Compare final test error.
+    zh: |
+      實作 Huber 損失（smooth L1 loss）：小誤差時像 MSE，大誤差時像平均絕對誤差（MAE）。訓練一個預測 y = sin(x) 的迴歸網路，並在 5% 的訓練目標被加上隨機雜訊（離群值）的情況下比較 MSE 與 Huber。比較最終的測試誤差。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: add_focal_loss_binary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add focal loss to the binary classification training loop. Create an imbalanced dataset (90% class 0, 10% class 1). Compare standard BCE vs focal loss (gamma=2) on the minority class recall after 200 epochs.
+    zh: |
+      在二元分類的訓練迴圈裡加上 Focal Loss。造一個不平衡的資料集（90% 類別 0、10% 類別 1）。跑 200 個 epoch 之後，比較標準 BCE 與 Focal Loss（gamma=2）在少數類別上的召回率。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: implement_triplet_loss_semi
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement triplet loss with semi-hard negative mining. Generate 2D embedding data for 5 classes. For each anchor, find the hardest negative that is still farther than the positive (semi-hard). Compare convergence to random triplet selection.
+    zh: |
+      實作帶半困難負樣本挖掘（semi-hard negative mining）的三元組損失。為 5 個類別產生 2D 嵌入資料。對每個 anchor，找出仍然比 positive 更遠的最困難負樣本（semi-hard）。把收斂情況和隨機挑三元組的做法比較。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: run_mse_vs_cross
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run the MSE vs cross-entropy comparison but track gradient magnitudes at each layer during training. Plot the average gradient norm per epoch. Verify that cross-entropy produces larger gradients in early epochs when the model is most uncertain.
+    zh: |
+      跑一次 MSE vs 交叉熵的比較，但在訓練過程中追蹤每一層的梯度大小。畫出每個 epoch 的平均梯度範數。驗證在模型最不確定的早期 epoch 裡，交叉熵確實產生較大的梯度。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: implement_kl_divergence_loss
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement KL divergence loss and verify that minimizing KL(true || predicted) gives the same gradients as cross-entropy when the true distribution is one-hot. Then try soft targets (like knowledge distillation) where the "true" distribution comes from a teacher model's softmax output.
+    zh: |
+      實作 KL 散度損失，並驗證當真實分布是 one-hot 時，最小化 KL(true || predicted) 給出的梯度與交叉熵相同。接著試試軟目標（像知識蒸餾那樣），此時的「真實」分布來自教師模型的 softmax 輸出。
+    verifies: TODO state the threshold this solution asserts

@@ -1,0 +1,54 @@
+lesson: 06-optimizers
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/06-optimizers/docs/en.md
+exercises:
+  - index: 1
+    slug: implement_nesterov_momentum_where
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement Nesterov momentum, where you compute the gradient at the "lookahead" position (w - lr * beta * v) instead of the current position. Compare convergence to standard momentum on the circle dataset.
+    zh: |
+      實作 Nesterov 動量：梯度在「前瞻」位置（w - lr * beta * v）上計算，而不是在當前位置上。在圓形資料集上和標準動量比較收斂情形。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: implement_learning_rate_warmup
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a learning rate warmup schedule: linear ramp from 0 to max_lr over the first 10% of training steps, then cosine decay to 0. Train with Adam + warmup vs Adam without warmup. Measure how many epochs it takes to reach 90% accuracy on the circle dataset.
+    zh: |
+      實作學習率 warmup 排程：在前 10% 的訓練步數裡從 0 線性上升到 max_lr，之後 cosine 衰減到 0。分別用「Adam 加 warmup」和「Adam 不加 warmup」訓練。量測在圓形資料集上各要幾個 epoch 才能達到 90% 準確率。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: track_effective_learning_rate
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Track the effective learning rate for each parameter during Adam training. The effective rate is lr * m_hat / (sqrt(v_hat) + eps). Plot the distribution of effective rates after 10, 50, and 200 steps. Are all parameters being updated at the same speed?
+    zh: |
+      追蹤 Adam 訓練過程中每個參數的有效學習率。有效學習率是 lr * m_hat / (sqrt(v_hat) + eps)。把第 10、50 與 200 步之後的有效學習率分布畫出來。所有參數都是以同樣的速度在更新嗎？
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: implement_gradient_clipping_clip
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement gradient clipping (clip by global norm). Set the max gradient norm to 1.0. Train with and without clipping using a high learning rate (lr=0.01 for Adam). Count how many runs diverge (loss goes to NaN) with and without clipping over 10 random seeds.
+    zh: |
+      實作梯度裁剪（按全域範數裁剪）。把梯度範數上限設為 1.0。用一個偏大的學習率（Adam 用 lr=0.01），分別在有裁剪與沒裁剪的情況下訓練。在 10 個隨機種子上，數一數有裁剪與沒裁剪各有幾次跑到發散（損失變成 NaN）。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: compare_adam_vs_adamw
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Compare Adam vs AdamW on a network with large weights. Initialize all weights to random values in [-5, 5] (much larger than normal). Train for 200 epochs with weight_decay=0.1. Plot the L2 norm of weights over training for both optimizers. AdamW should show faster weight shrinkage.
+    zh: |
+      在一個權重很大的網路上比較 Adam 與 AdamW。把所有權重初始化成 [-5, 5] 之間的隨機值（比正常大得多）。用 weight_decay=0.1 訓練 200 個 epoch。把兩個最佳化器在訓練過程中的權重 L2 範數畫出來。AdamW 應該會顯示出更快的權重縮減。
+    verifies: TODO state the threshold this solution asserts

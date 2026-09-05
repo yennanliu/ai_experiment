@@ -1,0 +1,54 @@
+lesson: 04-activation-functions
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/04-activation-functions/docs/en.md
+exercises:
+  - index: 1
+    slug: implement_parametric_relu_prelu
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Parametric ReLU (PReLU) where the negative slope alpha is a learnable parameter. Train it on the circle dataset and compare to fixed Leaky ReLU.
+    zh: |
+      實作 Parametric ReLU（PReLU），讓負半邊的斜率 alpha 變成可學習的參數。在圓形資料集上訓練它，並跟固定的 Leaky ReLU 比較。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: run_vanishing_gradient_experiment
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run the vanishing gradient experiment with 50 layers instead of 10. Plot the magnitude at each layer for sigmoid, tanh, ReLU, and GELU. At which layer does each activation's signal effectively reach zero?
+    zh: |
+      把梯度消失實驗改成 50 層而不是 10 層。把 sigmoid、tanh、ReLU 與 GELU 在每一層的大小畫出來。每種激活函式的訊號分別在第幾層實際上歸零？
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: implement_elu_exponential_linear
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the ELU (Exponential Linear Unit): elu(x) = x if x > 0, alpha * (e^x - 1) if x <= 0. Compare its dead neuron rate to ReLU on the same network.
+    zh: |
+      實作 ELU（Exponential Linear Unit）：elu(x) = x if x > 0, alpha * (e^x - 1) if x <= 0。在同一個網路上比較它與 ReLU 的死亡神經元比例。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: build_gradient_health_monitor
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a "gradient health monitor" that runs during training: at each epoch, compute the average gradient magnitude at each layer. Print a warning when any layer's gradient drops below 0.001 or exceeds 100.
+    zh: |
+      做一個「梯度健康監測器」，在訓練過程中跑：每個 epoch 算出每一層的平均梯度大小。任何一層的梯度掉到 0.001 以下或超過 100 時就印出警告。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: modify_training_comparison_xor
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the training comparison to use the XOR dataset from Lesson 01 instead of circles. Which activation converges fastest on XOR? Why does this differ from the circle results?
+    zh: |
+      把訓練比較改用單元 01 的 XOR 資料集，而不是圓形資料集。哪個激活函式在 XOR 上收斂最快？為什麼這跟圓形資料集的結果不同？
+    cites: TODO name the lesson section this answer draws on

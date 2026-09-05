@@ -1,0 +1,54 @@
+lesson: 13-debugging-neural-networks
+phase: 03-deep-learning-core
+source: phases/03-deep-learning-core/13-debugging-neural-networks/docs/en.md
+exercises:
+  - index: 1
+    slug: add_exploding_gradient_detector
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Add an exploding gradient detector.** Modify the `NetworkDebugger` to detect when gradients exceed a threshold and automatically suggest a gradient clipping value. Test it on a 20-layer network with no normalization.
+    zh: |
+      **加上梯度爆炸偵測器。** 修改 `NetworkDebugger`，讓它在梯度超過某個門檻時偵測到，並自動建議一個梯度裁剪值。拿一個 20 層、完全沒有正規化的網路來測試。
+    verifies: TODO state the threshold this solution asserts
+  - index: 2
+    slug: build_dead_neuron_resurrector
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a dead neuron resurrector.** Write a function that identifies dead ReLU neurons (always outputting 0) and reinitializes their incoming weights with Kaiming initialization. Show that this recovers a network where >70% of neurons are dead.
+    zh: |
+      **打造一個死神經元復活器。** 寫一個函式，找出死掉的 ReLU 神經元（永遠輸出 0），並用 Kaiming 初始化重設它們的輸入權重。證明這能救回一個超過 70% 神經元都死掉的網路。
+    verifies: TODO state the threshold this solution asserts
+  - index: 3
+    slug: implement_learning_rate_finder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement the learning rate finder with plotting.** Extend `find_learning_rate` to save results as a CSV and write a separate script that reads the CSV and displays the LR vs loss curve using matplotlib. Identify the optimal LR for ResNet-18 on CIFAR-10.
+    zh: |
+      **實作帶繪圖的學習率搜尋器。** 擴充 `find_learning_rate`，把結果存成 CSV，再另外寫一個腳本讀取這份 CSV，用 matplotlib 顯示 LR 對損失的曲線。找出 ResNet-18 在 CIFAR-10 上的最佳 LR。
+    verifies: TODO state the threshold this solution asserts
+  - index: 4
+    slug: create_data_pipeline_validator
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Create a data pipeline validator.** Write a function that checks for: duplicate samples across train/test splits, label distribution imbalance (>10:1 ratio), input normalization (mean near 0, std near 1), and NaN/Inf values in the data. Run it on a deliberately corrupted dataset.
+    zh: |
+      **做一個資料流程驗證器。** 寫一個函式，檢查以下項目：訓練／測試切分之間有沒有重複樣本、標籤分布是否失衡（比例超過 10:1）、輸入是否正規化（平均值接近 0、標準差接近 1），以及資料裡有沒有 NaN/Inf 值。拿一份刻意弄壞的資料集跑一遍。
+    verifies: TODO state the threshold this solution asserts
+  - index: 5
+    slug: debug_real_failure_take
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Debug a real failure.** Take the mini-framework from Lesson 10, introduce a subtle bug (e.g., transpose the weight matrix in backward), and use gradient checking to locate exactly which parameter has incorrect gradients. Document the debugging process.
+    zh: |
+      **除掉一個真實的失敗。** 拿單元 10 的迷你框架，塞進一個不明顯的 bug（例如在反向傳遞裡把權重矩陣轉置），再用梯度檢查精準定位是哪個參數的梯度不對。把整個除錯過程記錄下來。
+    verifies: TODO state the threshold this solution asserts
