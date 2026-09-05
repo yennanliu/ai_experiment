@@ -15,11 +15,11 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Add batch normalization. Insert `nn.BatchNorm1d` after each linear layer (before the activati… | code | T0 | `ex01_batch_norm_layers.py` |
-| 2 | Implement a learning rate finder. Train for one epoch with exponentially increasing learning… | code | T0 | `ex02_lr_range_finder.py` |
+| 1 | Add batch normalization. Insert `nn.BatchNorm1d` after each linear layer (before the activati… | code | T1 | `ex01_batch_norm_layers.py` |
+| 2 | Implement a learning rate finder. Train for one epoch with exponentially increasing learning… | code | T1 | `ex02_lr_range_finder.py` |
 | 3 | Port to GPU with mixed precision. Add `torch.amp.autocast` and `GradScaler` to the training l… | code | T3 | `ex03_gpu_mixed_precision.py` |
-| 4 | Build a custom Dataset. Download Fashion-MNIST (same format as MNIST but with clothing items)… | code | T0 | `ex04_custom_dataset.py` |
-| 5 | Replace Adam with SGD + momentum. Train with `SGD(params, lr=0.01, momentum=0.9)`. Compare co… | code | T0 | `ex05_sgd_momentum_cosine.py` |
+| 4 | Build a custom Dataset. Download Fashion-MNIST (same format as MNIST but with clothing items)… | code | T1 | `ex04_custom_dataset.py` |
+| 5 | Replace Adam with SGD + momentum. Train with `SGD(params, lr=0.01, momentum=0.9)`. Compare co… | code | T1 | `ex05_sgd_momentum_cosine.py` |
 <!-- generated:end -->
 
 ## Answers

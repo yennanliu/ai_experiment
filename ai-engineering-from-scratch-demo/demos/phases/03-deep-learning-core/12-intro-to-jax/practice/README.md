@@ -15,11 +15,11 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Add dropout to the MLP. In JAX, dropout requires a PRNG key -- thread a key through the forwa… | code | T0 | `ex01_dropout_keys.py` |
-| 2 | Use `jax.vmap` to compute per-example gradients for a batch of 32 MNIST images. Compute the g… | code | T0 | `ex02_per_example_grads.py` |
-| 3 | Replace the manual forward function with a generic `mlp_forward(params, x)` that works for an… | code | T0 | `ex03_generic_forward.py` |
-| 4 | Benchmark the training step with and without `@jax.jit`. Time 100 steps of each. How large is… | code | T0 | `ex04_jit_benchmark.py` |
-| 5 | Implement gradient clipping by composing `optax.chain(optax.clip_by_global_norm(1.0), optax.a… | code | T0 | `ex05_clip_by_global_norm.py` |
+| 1 | Add dropout to the MLP. In JAX, dropout requires a PRNG key -- thread a key through the forwa… | code | T1 | `ex01_dropout_keys.py` |
+| 2 | Use `jax.vmap` to compute per-example gradients for a batch of 32 MNIST images. Compute the g… | code | T1 | `ex02_per_example_grads.py` |
+| 3 | Replace the manual forward function with a generic `mlp_forward(params, x)` that works for an… | code | T1 | `ex03_generic_forward.py` |
+| 4 | Benchmark the training step with and without `@jax.jit`. Time 100 steps of each. How large is… | code | T1 | `ex04_jit_benchmark.py` |
+| 5 | Implement gradient clipping by composing `optax.chain(optax.clip_by_global_norm(1.0), optax.a… | code | T1 | `ex05_clip_by_global_norm.py` |
 <!-- generated:end -->
 
 ## Answers

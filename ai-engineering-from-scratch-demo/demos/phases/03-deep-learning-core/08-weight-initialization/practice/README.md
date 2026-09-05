@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Add LeCun initialization (Var = 1/fan_in, designed for SELU activation). Run the 50-layer exp… | code | T0 | `ex01_lecun_vs_xavier.py` |
-| 2 | Implement the GPT-2 residual scaling: multiply the output of each layer by 1/sqrt(2*N) before… | code | T2 | `ex02_residual_scaling.py` |
+| 2 | Implement the GPT-2 residual scaling: multiply the output of each layer by 1/sqrt(2*N) before… | code | T0 | `ex02_residual_scaling.py` |
 | 3 | Create an "init health check" function that takes a network's layer dimensions and activation… | code | T0 | `ex03_init_health_check.py` |
 | 4 | Run the experiment with fan_in = 16 vs fan_in = 1024. Xavier and Kaiming adapt to fan_in, but… | code | T0 | `ex04_fan_in_16_vs_1024.py` |
 | 5 | Implement orthogonal initialization (generate a random matrix, compute its SVD, use the ortho… | code | T0 | `ex05_orthogonal_vs_kaiming.py` |

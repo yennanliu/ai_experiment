@@ -5,7 +5,7 @@ exercises:
   - index: 1
     slug: batch_norm_layers
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       **Add batch normalization.** Insert `nn.BatchNorm1d` after each linear layer (before the activation). Compare test accuracy and training speed vs the dropout-only version. Batch norm should reach 98%+ in fewer epochs.
@@ -21,7 +21,7 @@ exercises:
   - index: 2
     slug: lr_range_finder
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       **Implement a learning rate finder.** Train for one epoch with exponentially increasing learning rate (from 1e-7 to 1.0). Plot loss vs LR. The optimal LR is just before the loss starts climbing. Use this to pick a better LR for the MNIST model.
@@ -51,7 +51,7 @@ exercises:
   - index: 4
     slug: custom_dataset
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       **Build a custom Dataset.** Download Fashion-MNIST (same format as MNIST but with clothing items). Implement a `FashionMNISTDataset(Dataset)` class with `__getitem__` and `__len__`. Train the same MLP and compare accuracy. Fashion-MNIST is harder -- expect ~88% vs ~98%.
@@ -66,7 +66,7 @@ exercises:
   - index: 5
     slug: sgd_momentum_cosine
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       **Replace Adam with SGD + momentum.** Train with `SGD(params, lr=0.01, momentum=0.9)`. Compare convergence curves. Then add a `CosineAnnealingLR` scheduler and see if SGD catches up to Adam by epoch 10.

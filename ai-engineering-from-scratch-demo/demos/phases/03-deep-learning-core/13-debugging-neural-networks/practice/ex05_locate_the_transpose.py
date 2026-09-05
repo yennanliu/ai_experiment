@@ -19,6 +19,11 @@ import random
 
 from harness import parity, practice
 
+try:
+    import torch                                  # noqa: F401 - check 1 imports this lesson
+except ImportError as exc:                        # pragma: no cover - which needs torch itself
+    raise practice.Skip(f"needs torch: uv sync --extra llm ({exc})") from None
+
 PHASE, LESSON = "03-deep-learning-core", "13-debugging-neural-networks"
 SIZES, EPS, TOL, SAMPLED, LATE = (4, 16, 16, 1), 1e-5, 1e-5, 5, 100
 ROW = [0.5, -0.3, 0.9, 0.1]
@@ -48,14 +53,14 @@ def build(mf, bug=None, seed=0):
 
 def slot(entry) -> tuple:
     container, i, j, grads = entry
-    return ((container[i], grads[i], j) if j is not None else (container, grads, i))
+    return (container[i], grads[i], j) if j is not None else (container, grads, i)
 
 
 def analytic(mf, model, target) -> list:
+    """One backward pass from a cleared state — the gradients the framework claims."""
     crit = mf.BCELoss()
     for entry in model.parameters():
-        _w, grads, index = slot(entry)
-        grads[index] = 0.0
+        slot(entry)[1][slot(entry)[2]] = 0.0
     crit(model.forward(ROW), target)
     model.backward(crit.backward())
     return [slot(e)[1][slot(e)[2]] for e in model.parameters()]
@@ -68,11 +73,10 @@ def relative(mf, model, target) -> list:
         weights, _g, index = slot(entry)
         start = weights[index]
         weights[index] = start + EPS
-        plus = crit(model.forward(ROW), target)
+        mine = crit(model.forward(ROW), target)
         weights[index] = start - EPS
-        minus = crit(model.forward(ROW), target)
+        mine = (mine - crit(model.forward(ROW), target)) / (2 * EPS)
         weights[index] = start
-        mine = (plus - minus) / (2 * EPS)
         out.append(abs(mine - theirs) / max(abs(mine), abs(theirs), 1e-8))
     return out
 
@@ -121,40 +125,36 @@ def verify(result):
     return [
         practice.Check("FINDING: the exercise's two halves do not compose",
                        "double" in result["checker"] or "named_parameters" in result["checker"],
-                       f"this lesson's `gradient_check` on the lesson-10 framework: "
-                       f"AttributeError {result['checker']!r}. It calls `x.double()` and "
-                       f"`model.named_parameters()`; lesson 10 has Python lists and a "
-                       f"`parameters()` of its own, so the checker below is written to the same "
-                       f"formula over all {result['n']} parameters"),
+                       f"this lesson's `gradient_check` on the lesson-10 framework raises "
+                       f"AttributeError {result['checker']!r} — it calls `x.double()` and "
+                       f"`model.named_parameters()`, and lesson 10 has neither. The checker below "
+                       f"is the same formula over all {result['n']} parameters"),
         practice.Check("ANSWER: the check separates the two models by eight orders of magnitude",
                        worst["clean"] < TOL < worst["bugged"],
                        f"worst relative difference over all {result['n']} parameters: "
-                       f"{worst['clean']:.3e} on the clean model against {worst['bugged']:.3e} "
-                       f"with one line of module {result['square']}'s backward transposed. The "
-                       f"lesson's own 1e-5 threshold calls the first OK and the second a "
-                       f"MISMATCH"),
+                       f"{worst['clean']:.3e} clean against {worst['bugged']:.3e} with one line of "
+                       f"module {result['square']}'s backward transposed — the lesson's own 1e-5 "
+                       f"threshold calls the first OK and the second a MISMATCH"),
         practice.Check("FINDING: it names the layer before the bug, not the layer with it",
                        bugged[result["square"]][0] < TOL < bugged[0][0],
-                       f"per module, worst relative difference: "
+                       "per module, worst relative difference: "
                        + ", ".join(f"module {i} {v[0]:.2e}" for i, v in bugged.items())
                        + f". The transpose is in module {result['square']}, whose *own* weight "
                        f"gradients are still right — it corrupts `input_grad`, the next layer "
                        f"down's error. Gradient checking localises the symptom, not the cause"),
         practice.Check("MECHANISM: the bug is only insertable where the layer is square",
                        "range" in result["raised"] or "index" in result["raised"],
-                       f"`self.weights[j][i]` needs a row j, so on the "
-                       f"{SIZES[0]}->{SIZES[1]} layer it raises {result['raised']!r} on the first "
-                       f"backward pass. Only the {SIZES[1]}->{SIZES[2]} layer accepts it in "
-                       f"silence — which is what 'subtle' means here: a transpose is a no-op on "
-                       f"shape exactly where it is undetectable by shape"),
+                       f"`self.weights[j][i]` needs a row j, so on the {SIZES[0]}->{SIZES[1]} "
+                       f"layer it raises {result['raised']!r} on the first backward pass. Only "
+                       f"the {SIZES[1]}->{SIZES[2]} layer accepts it in silence — a transpose is "
+                       f"a no-op on shape exactly where it is undetectable by shape"),
         practice.Check("CONTROL: the lesson's own sampling rule would have missed it",
                        max(bugged[0][1][:SAMPLED]) > TOL and late > TOL and clean[0][0] < TOL,
                        f"`gradient_check` tests `min({SAMPLED}, param.numel())` entries per "
-                       f"parameter, in flat order. Here the first {SAMPLED} of module 0 already "
-                       f"disagree ({max(bugged[0][1][:SAMPLED]):.2e}), so it is caught — but the "
+                       f"parameter, in flat order. The first {SAMPLED} of module 0 already "
+                       f"disagree ({max(bugged[0][1][:SAMPLED]):.2e}) so it is caught — but the "
                        f"entries at {SAMPLED}..{LATE} disagree just as much ({late:.2e}), and a "
-                       f"bug confined to those would have been reported OK. Five of "
-                       f"{len(bugged[0][1])} is 6% of one layer"),
+                       f"bug confined to those reports OK: {SAMPLED} of {len(bugged[0][1])}"),
     ]
 
 

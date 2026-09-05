@@ -5,7 +5,7 @@ exercises:
   - index: 1
     slug: dropout_keys
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       Add dropout to the MLP. In JAX, dropout requires a PRNG key -- thread a key through the forward pass and split it for each dropout layer. Compare test accuracy with and without.
@@ -20,7 +20,7 @@ exercises:
   - index: 2
     slug: per_example_grads
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       Use `jax.vmap` to compute per-example gradients for a batch of 32 MNIST images. Compute the gradient norm for each example. Which examples have the largest gradients, and why?
@@ -36,7 +36,7 @@ exercises:
   - index: 3
     slug: generic_forward
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       Replace the manual forward function with a generic `mlp_forward(params, x)` that works for any number of layers. Use `jax.tree.leaves` to determine the depth automatically.
@@ -50,7 +50,7 @@ exercises:
   - index: 4
     slug: jit_benchmark
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       Benchmark the training step with and without `@jax.jit`. Time 100 steps of each. How large is the speedup on your hardware? What is the compilation overhead on the first call?
@@ -64,7 +64,7 @@ exercises:
   - index: 5
     slug: clip_by_global_norm
     kind: code
-    tier: T0
+    tier: T1
     deps_group: llm
     en: |
       Implement gradient clipping by composing `optax.chain(optax.clip_by_global_norm(1.0), optax.adam(1e-3))`. Train with and without clipping. Plot the gradient norm over training to see the effect.

@@ -19,8 +19,8 @@ exercises:
   - index: 2
     slug: residual_scaling
     kind: code
-    tier: T2
-    deps_group: llm
+    tier: T0
+    deps_group: none
     en: |
       Implement the GPT-2 residual scaling: multiply the output of each layer by 1/sqrt(2*N) before adding to the residual stream. Run 50 layers with and without scaling, measure how fast the residual magnitude grows.
     zh: |

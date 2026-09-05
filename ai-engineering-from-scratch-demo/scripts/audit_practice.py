@@ -52,9 +52,9 @@ def docstring_lines(tree) -> int:
     return 0
 
 
-def audit_solution(path: pathlib.Path, exercise) -> tuple:
-    """Returns (problems, warnings) — D14 fails over 150 lines and only reports over 120."""
-    problems, warnings = [], []
+def audit_solution(path: pathlib.Path, exercise, warnings=None) -> list:
+    """Returns the problems. D14's soft ceiling lands in `warnings` when one is passed."""
+    problems, warnings = [], [] if warnings is None else warnings
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
     tree = ast.parse(text)
@@ -79,7 +79,7 @@ def audit_solution(path: pathlib.Path, exercise) -> tuple:
              if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)}
     if "PRACTICE_IMPL" not in names:
         problems.append("no PRACTICE_IMPL (D13)")
-    return problems, warnings
+    return problems
 
 
 def audit_explain(exercise, readme, headings) -> list:
@@ -110,10 +110,11 @@ def _reference_headings(pack):
             if line.startswith("#")}
 
 
-def audit_lesson(man_path: pathlib.Path) -> tuple:
+def audit_lesson(man_path: pathlib.Path, warnings=None) -> list:
+    """Returns the problems that fail the gate; soft findings go to `warnings` if given."""
     pack = manifest.load_practice(man_path)
     directory = man_path.parent
-    problems, warnings = [], []
+    problems, warnings = [], [] if warnings is None else warnings
     readme = directory / "README.md"
     if not readme.is_file():
         problems.append(f"{directory}: no README.md")
@@ -127,9 +128,9 @@ def audit_lesson(man_path: pathlib.Path) -> tuple:
         if not path.is_file():
             problems.append(f"ex{ex.index:02d}: missing {ex.filename} (D10)")
             continue
-        found, warned = audit_solution(path, ex)
-        problems += [f"{ex.filename}: {p}" for p in found]
-        warnings += [f"{ex.filename}: {w}" for w in warned]
+        soft = []
+        problems += [f"{ex.filename}: {p}" for p in audit_solution(path, ex, soft)]
+        warnings += [f"{ex.filename}: {w}" for w in soft]
         for fixture in ex.fixtures:
             if not (directory / fixture).is_file():
                 problems.append(f"ex{ex.index:02d}: fixture {fixture} missing")
@@ -139,7 +140,7 @@ def audit_lesson(man_path: pathlib.Path) -> tuple:
     n_tests = len(list(tests.glob("test_*.py"))) if tests.is_dir() else 0
     if n_tests < 1:
         problems.append(f"{directory}: no tests/test_*.py")
-    return problems, warnings
+    return problems
 
 
 def main(argv=None) -> int:
@@ -149,7 +150,8 @@ def main(argv=None) -> int:
         return 1
     failed = 0
     for path in paths:
-        problems, warnings = audit_lesson(path)
+        warnings = []
+        problems = audit_lesson(path, warnings)
         label = path.parent.parent.name
         failed += bool(problems)
         print(f"{'FAIL' if problems else 'warn' if warnings else 'ok  '} {label}")

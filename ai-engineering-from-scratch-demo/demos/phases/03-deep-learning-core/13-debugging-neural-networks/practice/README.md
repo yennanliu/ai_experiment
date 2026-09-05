@@ -15,11 +15,11 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Add an exploding gradient detector. Modify the `NetworkDebugger` to detect when gradients exc… | code | T0 | `ex01_exploding_gradient_detector.py` |
-| 2 | Build a dead neuron resurrector. Write a function that identifies dead ReLU neurons (always o… | code | T0 | `ex02_dead_neuron_resurrector.py` |
-| 3 | Implement the learning rate finder with plotting. Extend `find_learning_rate` to save results… | code | T0 | `ex03_lr_finder_csv.py` |
-| 4 | Create a data pipeline validator. Write a function that checks for: duplicate samples across… | code | T0 | `ex04_data_pipeline_validator.py` |
-| 5 | Debug a real failure. Take the mini-framework from Lesson 10, introduce a subtle bug (e.g., t… | code | T0 | `ex05_locate_the_transpose.py` |
+| 1 | Add an exploding gradient detector. Modify the `NetworkDebugger` to detect when gradients exc… | code | T1 | `ex01_exploding_gradient_detector.py` |
+| 2 | Build a dead neuron resurrector. Write a function that identifies dead ReLU neurons (always o… | code | T1 | `ex02_dead_neuron_resurrector.py` |
+| 3 | Implement the learning rate finder with plotting. Extend `find_learning_rate` to save results… | code | T1 | `ex03_lr_finder_csv.py` |
+| 4 | Create a data pipeline validator. Write a function that checks for: duplicate samples across… | code | T1 | `ex04_data_pipeline_validator.py` |
+| 5 | Debug a real failure. Take the mini-framework from Lesson 10, introduce a subtle bug (e.g., t… | code | T1 | `ex05_locate_the_transpose.py` |
 <!-- generated:end -->
 
 ## Answers
