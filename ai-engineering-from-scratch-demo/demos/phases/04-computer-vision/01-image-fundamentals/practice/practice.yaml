@@ -1,0 +1,50 @@
+lesson: 01-image-fundamentals
+phase: 04-computer-vision
+source: phases/04-computer-vision/01-image-fundamentals/docs/en.md
+exercises:
+  - index: 1
+    slug: hwc_chw_round_trip
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **(Easy)** Create a 2x2 RGB `uint8` array with four distinct colors. Convert HWC to CHW and back, print both shapes, and prove the round trip preserves every value.
+    zh: |
+      **（簡單）** 用 OpenCV（`cv2.imread`）和 Pillow 各載入一張 JPEG。把兩者的形狀以及 `(0, 0)` 位置的像素印出來。說明通道順序的差異，然後寫一行轉換，讓 OpenCV 那個陣列跟 Pillow 那個一模一樣。
+    verifies: ANSWER the round trip preserves every value and the shapes are the ones asked for - a four-colour 2x2 image goes (2, 2, 3) -> (3, 2, 2) -> (2, 2, 3) and all 12 values compare equal; MECHANISM it cannot fail, because `hwc_to_chw` is `transpose`, a permutation of strides rather than a move of data - the CHW array does not own its buffer (OWNDATA False), its `.base` is the HWC input, and the round-tripped array still shares memory with it, so nothing is copied, cast or rounded anywhere in the path and there is no arithmetic for the proof to catch; FINDING the two arrays alias, so 'convert' is the wrong word - writing 7 into the CHW array's [0, 0, 0] changes the HWC original from 255 to 7, so a reader who treats the call as a conversion and then edits the result has edited the input; FINDING what the transpose does cost is contiguity, which the exercise never mentions - C_CONTIGUOUS is True for HWC and False for CHW, so every consumer wanting a flat buffer (a framework tensor, `.tobytes()`, a memcpy to the GPU) pays for `ascontiguousarray`, and that copy rather than the transpose is the cost of the layout change; FINDING the lesson asks two different questions in its two languages - the English builds a 2x2 array in memory while the Chinese loads a JPEG with OpenCV and Pillow and reconciles their channel order, sharing 0 words over three letters; exercises 2 and 3 match and this one does not, so the manifest carries both verbatim
+    uses_reference:
+      - hwc_to_chw
+      - chw_to_hwc
+  - index: 2
+    slug: standardize_round_trip
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **(Medium)** Write `standardize(img, mean, std)` and its inverse that together pass a `roundtrip_max_diff <= 1` test on any uint8 image. Your functions must work on a single image in HWC and on a batch in NCHW with the same call.
+    zh: |
+      **（中等）** 寫出 `standardize(img, mean, std)` 以及它的逆函式，兩者合起來要能在任何 uint8 影像上通過 `roundtrip_max_diff <= 1` 的測試。你的函式必須用同一種呼叫方式，同時處理 HWC 的單張影像與 NCHW 的一個批次。
+    verifies: ANSWER a correct pair round-trips exactly rather than merely within 1 - over a ramp carrying all 256 uint8 values (768 samples) `destandardize(standardize(x))` differs from x by at most 0, where the exercise allows 1; FINDING the lesson's own pair scores that 1 on 18% of values - `deprocess_imagenet(preprocess_imagenet(x))` on the same ramp is off by 1 on 137 of 768 samples, so it passes the exercise's bar and the bar is set exactly where its defect is; MECHANISM the defect is one truncating cast and not float32 - `deprocess_imagenet` ends in `clip(x * 255.0, 0, 255).astype(uint8)`, which turns 0.9999 into 0, and rounding the lesson's own CHW output through the inverse instead takes the error to 0 on every one of the 768 samples; MECHANISM 'the same call' for HWC and NCHW is a broadcasting problem rather than a signature problem - the naive `(x - mean) / std` with mean of shape (3,) returns (1, 256, 3) on HWC, raises ValueError on a (2, 3, 8, 8) batch, and *silently returns* (2, 3, 8, 3) on a batch whose width happens to be 3, because NumPy aligns from the right; CONTROL picking the channel axis by shape makes the two layouts agree - the same call returns (1, 256, 3) and (2, 3, 1, 256) with per-channel means identical at 0.0655, 0.1964, 0.4178
+    uses_reference:
+      - preprocess_imagenet
+      - deprocess_imagenet
+      - hwc_to_chw
+      - IMAGENET_MEAN
+      - IMAGENET_STD
+  - index: 3
+    slug: one_by_one_conv
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Hard)** Take a 3-channel ImageNet-standardized tensor and run it through a 1x1 conv that learns a weighted mixture of RGB into a single grayscale channel. Initialize the weights to `[0.299, 0.587, 0.114]`, freeze them, and verify the output matches your manual `rgb_to_grayscale` to within floating-point error. What other classical color-space transforms can be written as 1x1 convolutions?
+    zh: |
+      **（困難）** 拿一個 3 通道、已做 ImageNet 標準化的張量，讓它通過一個 1x1 卷積，這個卷積學的是把 RGB 加權混合成單一個灰階通道。把權重初始化成 `[0.299, 0.587, 0.114]`、凍結它們，然後驗證輸出跟你手寫的 `rgb_to_grayscale` 在浮點誤差範圍內一致。還有哪些傳統的色彩空間轉換可以寫成 1x1 卷積？
+    verifies: ANSWER the frozen 1x1 conv is the weighted mixture to float32 epsilon - weights set to (0.299, 0.587, 0.114) with `requires_grad_(False)` leaves 0 trainable parameters and the output matches the exact sum `img @ w` to 1.53e-05 over 1536 pixels of values up to 255; FINDING it does not match the lesson's own `rgb_to_grayscale`, which truncates - the gap reaches 0.99998 because that function ends in `.astype(np.uint8)`, a truncation rather than a round, so 775 of 1536 pixels come out one level low, and 'within floating-point error' holds against the float sum while failing against the function the exercise names; FINDING on a *standardized* tensor these weights are not grayscale at all - standardizing divides each channel by a different number so the effective mixture is w/std = [1.3057, 2.6205, 0.5067], no longer proportional to the named weights, and the best affine function of true grayscale still leaves 0.0183 of residual, since standardize-then-mix and mix-then-standardize commute only when std is equal across channels; ANSWER every *linear* colour transform is a 1x1 conv - the 3x3 YCbCr matrix loaded as three 1x1 filters reproduces the manual tensordot to exactly 0.0, because a 1x1 conv is a per-pixel matrix multiply, so RGB to YIQ, RGB to XYZ, channel swaps and grayscale are one operation with different constants; CONTROL and HSV provably is not one - a linear map obeys f(a + b) = f(a) + f(b) and the lesson's own `rgb_to_hsv` misses that by 204.0 on one pair of colours, since it takes a max, a min and a divide by their difference
+    uses_reference:
+      - synthetic_image
+      - hwc_to_chw
+      - preprocess_imagenet
+      - rgb_to_grayscale
+      - rgb_to_hsv
+      - IMAGENET_STD

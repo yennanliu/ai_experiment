@@ -1,0 +1,34 @@
+lesson: 03-cnns-lenet-to-resnet
+phase: 04-computer-vision
+source: phases/04-computer-vision/03-cnns-lenet-to-resnet/docs/en.md
+exercises:
+  - index: 1
+    slug: param_budget_by_layer
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Easy)** Count parameters by hand for `TinyResNet` layer by layer. Compare against `sum(p.numel() for p in net.parameters())`. Where does the majority of the parameter budget go — convs, BN, or the classifier head?
+    zh: |
+      **（簡單）** 手算 `TinyResNet` 逐層的參數量。跟 `sum(p.numel() for p in net.parameters())` 對照。參數預算的大部分花在哪裡——卷積、BN，還是分類頭？
+    verifies: the hand-written per-group formula matches sum(p.numel()) exactly for all six children (2,797,610 total, zero difference per group); convs hold 99.74% of the budget against BatchNorm's 0.17% and the head's 0.09%, layer4 alone is 75.1%; layer1 -> layer4 is 57x the parameters at 0.89x the multiply-accumulates; LeNet-5 inverts the answer at 95.8% fully-connected; 4,820 BatchNorm buffers sit outside any parameter count
+  - index: 2
+    slug: bottleneck_resnet50
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Medium)** Implement the Bottleneck block (1x1 -> 3x3 -> 1x1 with skip) and use it to build a ResNet-50-style network for CIFAR. Compare params against `TinyResNet`.
+    zh: |
+      **（中等）** 實作 Bottleneck 區塊（1x1 -> 3x3 -> 1x1 加跳接），用它為 CIFAR 打造一個 ResNet-50 風格的網路。跟 `TinyResNet` 比較參數量。
+    verifies: a [3, 4, 6, 3] bottleneck net on a CIFAR stem has 23,520,842 parameters, 8.41x TinyResNet's 2,797,610, over 53 conv layers against 20; zeroing the block's last BatchNorm collapses it onto relu(shortcut(x)) to exactly 0.0; Bottleneck(256 -> 64 -> 256) costs 70,400 against BasicBlock(256 -> 256)'s 1,180,672 (16.8x less), its lone 3x3 being 36,864 rather than 589,824; widths divided by 3 give 0.93x TinyResNet's budget with all 53 convs
+  - index: 3
+    slug: plain_vs_residual_deep
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **(Hard)** Remove the skip connection from `BasicBlock`, train a 34-block "plain" network and a 34-block ResNet on CIFAR-10 for 10 epochs each. Plot training loss vs epoch for both. Reproduce the He et al. Figure 1 result where the plain deep network converges to higher loss than its shallower twin.
+    zh: |
+      **（困難）** 把 `BasicBlock` 的跳接拿掉，在 CIFAR-10 上各訓練 10 個 epoch：一個 34 區塊的「plain」網路，和一個 34 區塊的 ResNet。把兩者的訓練損失對 epoch 畫出來。重現 He 等人 Figure 1 的結果——那個沒有跳接的深層網路收斂到的損失，比它較淺的雙胞胎還高。
+    verifies: on a deterministic 384-image teacher-labelled set at 12x12, 16 epochs of SGD: the 34-block plain net ends at 2.275 training loss against the 4-block plain net's 0.77 (Figure 1's degradation), having moved 0.043 over the whole run; the same net with the skip restored ends at 1.766, recovering 34% of the gap; at init the plain-34 stem/head gradient-norm ratio is 3.1e4 against 0.25 with the skip; and plain-4 grafted into a 34-block plain net with 30 identity blocks reproduces its loss to 2.1e-06, so the failure is optimisation, not capacity
