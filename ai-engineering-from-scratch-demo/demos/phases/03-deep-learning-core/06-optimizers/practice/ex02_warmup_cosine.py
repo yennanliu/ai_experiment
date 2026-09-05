@@ -66,13 +66,19 @@ def solve():
             "half": train(ref, data, mean, False)}
 
 
+def digest(result) -> tuple:
+    """The per-arm summaries `verify` compares, so that stays a list of comparisons."""
+    sweep = result["sweep"]
+    named = [("plain", sweep[MAX_LR][0]), ("warm", sweep[MAX_LR][1]), ("half", result["half"])]
+    return ({n: f"{h[-1][1]:.1f}%" for n, h in named},
+            [(lr, reached(a), reached(b)) for lr, (a, b) in sorted(sweep.items())],
+            {lr: (reached(sweep[lr][1], 100.0), reached(sweep[lr][0], 100.0)) for lr in sweep})
+
+
 def verify(result):
-    sweep, mean, half = result["sweep"], result["mean"], result["half"]
-    plain, warm = sweep[MAX_LR]
-    tail = {n: f"{h[-1][1]:.1f}%" for n, h in
-            [("plain", plain), ("warm", warm), ("half", half)]}
-    late = [(lr, reached(a), reached(b)) for lr, (a, b) in sorted(sweep.items())]
-    fast = {lr: (reached(sweep[lr][1], 100.0), reached(sweep[lr][0], 100.0)) for lr in sweep}
+    sweep, mean = result["sweep"], result["mean"]
+    plain, warm, half = *sweep[MAX_LR], result["half"]
+    tail, late, fast = digest(result)
     return [
         practice.Check("ANSWER: warmup + cosine needs 54 epochs to 90%, constant Adam 39",
                        reached(warm) == 54 and reached(plain) == 39,

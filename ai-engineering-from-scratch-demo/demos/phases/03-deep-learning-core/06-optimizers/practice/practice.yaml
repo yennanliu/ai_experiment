@@ -3,7 +3,7 @@ phase: 03-deep-learning-core
 source: phases/03-deep-learning-core/06-optimizers/docs/en.md
 exercises:
   - index: 1
-    slug: implement_nesterov_momentum_where
+    slug: nesterov_lookahead
     kind: code
     tier: T0
     deps_group: math
@@ -11,9 +11,14 @@ exercises:
       Implement Nesterov momentum, where you compute the gradient at the "lookahead" position (w - lr * beta * v) instead of the current position. Compare convergence to standard momentum on the circle dataset.
     zh: |
       實作 Nesterov 動量：梯度在「前瞻」位置（w - lr * beta * v）上計算，而不是在當前位置上。在圓形資料集上和標準動量比較收斂情形。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER the lookahead does converge faster at the lesson's own lr = 0.05 - 90% accuracy at epoch 3 against 6, and after 300 epochs 0.0647 / 97.5% against 0.2069 / 93.0%, with standard momentum never reaching 95% (best 94.0%) where Nesterov does at epoch 16; MECHANISM the two are one factor apart - on f(x) = (x-3)^2 from x = 10 at lr = 0.1 momentum obeys e[t+1] = 1.70*e[t] - 0.90*e[t-1] and Nesterov 0.8*(1.90*e[t] - 0.90*e[t-1]), worst residual 1.78e-15 over 40 steps, so (1 - 2*lr) factors out of both coefficients; FINDING on that quadratic plain SGD beats both - per-step contraction 0.8000 for SGD (exactly 7*0.8^t, worst deviation 1.3e-15) against 0.8485 Nesterov and 0.9487 = sqrt(beta) momentum, |e40| = 9.30e-04, 8.56e-03, 8.12e-01, momentum 873x behind, because a 1-D bowl has no narrow valley to smooth; CONTROL the circle-data win is a step-size effect and not a free lunch - standard momentum at lr = 0.01 ends 0.0041 / 100.0%, better than Nesterov at lr = 0.05, so 0.05 is past momentum's stability edge and the lookahead damps rather than accelerates
+    uses_reference:
+      - SGD
+      - SGDMomentum
+      - OptimizerTestNetwork
+      - make_circle_data
   - index: 2
-    slug: implement_learning_rate_warmup
+    slug: warmup_cosine
     kind: code
     tier: T0
     deps_group: none
@@ -21,9 +26,13 @@ exercises:
       Implement a learning rate warmup schedule: linear ramp from 0 to max_lr over the first 10% of training steps, then cosine decay to 0. Train with Adam + warmup vs Adam without warmup. Measure how many epochs it takes to reach 90% accuracy on the circle dataset.
     zh: |
       實作學習率 warmup 排程：在前 10% 的訓練步數裡從 0 線性上升到 max_lr，之後 cosine 衰減到 0。分別用「Adam 加 warmup」和「Adam 不加 warmup」訓練。量測在圓形資料集上各要幾個 epoch 才能達到 90% 準確率。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER warmup + cosine takes 54 epochs to reach 90% against constant Adam's 39, at the lesson's default max_lr = 0.001 over 300 epochs = 60000 steps with a 6000-step ramp, ending 99.0% against 99.5%; FINDING the schedule is slower at every max_lr tried, by 15, 15 and 11 epochs (0.001: 39 vs 54, 0.003: 13 vs 28, 0.01: 5 vs 16) - warmup is insurance against early instability and a 33-parameter net trained one sample at a time has none to insure against; MECHANISM the schedule spends exactly half the learning-rate budget - mean lr over the run is 0.000500 = max_lr/2 to six places, so it integrates to 30.0 lr-steps against constant's 60.0, both halves costing the same since the ramp averages max_lr/2 and so does the cosine tail; CONTROL halving alone does not explain the delay, the shape helps - a constant lr = 0.00050, the schedule's own mean, reaches 90% at epoch 76, 22 epochs later than the schedule, and lands on the same 99.0% endpoint, so shape buys speed while budget sets the finish; CONTROL the decay half does earn its keep once max_lr is aggressive - at max_lr = 0.01 the scheduled run reaches 100% training accuracy at epoch 157 and the constant run never does (best 99.5%), so annealing to 0 is what the cosine tail is for and the ramp is the part this problem does not need
+    uses_reference:
+      - Adam
+      - OptimizerTestNetwork
+      - make_circle_data
   - index: 3
-    slug: track_effective_learning_rate
+    slug: effective_lr_spread
     kind: code
     tier: T0
     deps_group: math
@@ -31,9 +40,13 @@ exercises:
       Track the effective learning rate for each parameter during Adam training. The effective rate is lr * m_hat / (sqrt(v_hat) + eps). Plot the distribution of effective rates after 10, 50, and 200 steps. Are all parameters being updated at the same speed?
     zh: |
       追蹤 Adam 訓練過程中每個參數的有效學習率。有效學習率是 lr * m_hat / (sqrt(v_hat) + eps)。把第 10、50 與 200 步之後的有效學習率分布畫出來。所有參數都是以同樣的速度在更新嗎？
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER no, the fastest parameter outruns the slowest by 20x or more - |lr * m_hat / (sqrt(v_hat) + eps)| / lr as min/median/max over the 33 parameters is 0.0316/0.4379/0.6924 at step 10 (21.9x spread), 0.0042/0.3860/0.6365 at 50 (152.9x) and 0.0068/0.0637/0.4106 at 200 (60.2x), the median itself falling 6.9x from step 10 to 200; FINDING most parameters have a gradient of exactly 0 and are updated anyway - 24 of 33 gradients are exactly zero at step 50 and 18 of those still move by over 0.1 lr, because ReLU zeroes any unit with z <= 0 while Adam steps from the momentum buffer m; MECHANISM the ratio measures agreement and not gradient size - a constant gradient gives m_hat/sqrt(v_hat) = 1 exactly, so its rate is lr for 10 steps running (worst gap 4.0e-09, the epsilon), a sign-flipping gradient of the same size gives (1-beta1)/(1+beta1) = 1/19 = 0.052632 as measured, and once dead a rate decays by 0.9032 per step towards beta1/sqrt(beta2) = 0.9005, taking 46 steps to fall to 0.01 lr; FINDING lr is not a ceiling on Adam's step - the largest |effective rate| over 4000 steps is 1.2102 lr against a Cauchy-Schwarz bound of (1-beta1)/sqrt((1-beta2)(1-beta1^2/beta2)) = 7.27 lr; CONTROL the tracked quantity is the update itself and not a parallel model - recomputing it from the optimiser's own m, v and t matches the parameter delta to 1.1e-16 over 4000 steps
+    uses_reference:
+      - Adam
+      - OptimizerTestNetwork
+      - make_circle_data
   - index: 4
-    slug: implement_gradient_clipping_clip
+    slug: clip_by_global_norm
     kind: code
     tier: T0
     deps_group: math
@@ -41,9 +54,14 @@ exercises:
       Implement gradient clipping (clip by global norm). Set the max gradient norm to 1.0. Train with and without clipping using a high learning rate (lr=0.01 for Adam). Count how many runs diverge (loss goes to NaN) with and without clipping over 10 random seeds.
     zh: |
       實作梯度裁剪（按全域範數裁剪）。把梯度範數上限設為 1.0。用一個偏大的學習率（Adam 用 lr=0.01），分別在有裁剪與沒裁剪的情況下訓練。在 10 個隨機種子上，數一數有裁剪與沒裁剪各有幾次跑到發散（損失變成 NaN）。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER 0 of 10 runs diverge with clipping and 0 of 10 without, so the exercise's metric cannot separate the arms - Adam at lr = 0.01 for 40 epochs over seeds 0-9 gives mean final loss 0.0555 clipped against 0.0523 plain and accuracy 97.7% against 98.2%, with 14.8% of steps clipped, and only the data varies because the network calls random.seed(0) in its own constructor so all ten start from identical weights; FINDING NaN is unreachable in this lesson at all - SGD at lr = 1e30 ends with a weight of 6.79e+29 and a final loss of 10.188939036499, bit-identical to the same run at lr = 100, because sigmoid() clamps its input to [-500, 500] before exp and the loss clamps p; MECHANISM an 8x cut in the gradient moves Adam's largest step under 20% - the unclipped global norm reaches 8.12, 8.1x the clip, yet the largest parameter move is 1.73 lr unclipped against 1.58 lr clipped, since Adam divides by sqrt(v_hat) and the gradient's size is already gone from the step; CONTROL Adam is invariant to a global gradient rescale - scaling every gradient by 1000 for 20 epochs reproduces all 33 parameters to 1.2e-07 absolute (3.3e-08 relative, the epsilon), so a clip acts only through which steps it selects; CONTROL the same clip is decisive for SGD, whose step is the gradient - at lr = 5.0 over the same 10 seeds the largest move is 345.1 unclipped against 5.00 clipped and mean final loss 14.20 against 0.91, and still 0 NaNs because there are none to be had
+    uses_reference:
+      - Adam
+      - SGD
+      - OptimizerTestNetwork
+      - make_circle_data
   - index: 5
-    slug: compare_adam_vs_adamw
+    slug: adam_vs_adamw
     kind: code
     tier: T0
     deps_group: math
@@ -51,4 +69,9 @@ exercises:
       Compare Adam vs AdamW on a network with large weights. Initialize all weights to random values in [-5, 5] (much larger than normal). Train for 200 epochs with weight_decay=0.1. Plot the L2 norm of weights over training for both optimizers. AdamW should show faster weight shrinkage.
     zh: |
       在一個權重很大的網路上比較 Adam 與 AdamW。把所有權重初始化成 [-5, 5] 之間的隨機值（比正常大得多）。用 weight_decay=0.1 訓練 200 個 epoch。把兩個最佳化器在訓練過程中的權重 L2 範數畫出來。AdamW 應該會顯示出更快的權重縮減。
-    verifies: TODO state the threshold this solution asserts
+    verifies: ANSWER against Adam as the lesson ships it AdamW does shrink faster - weight L2 norm from a uniform[-5, 5] start (15.62, 17.51, 17.25 at epoch 0, seeds 0/1/42) reaches 16.49, 18.21, 16.17 under Adam and 4.02, 4.68, 4.14 under AdamW at epoch 200, but only because the lesson's Adam takes no weight_decay argument at all, so its arm is decay-free; FINDING give Adam the same weight_decay and the ordering reverses - folding wd * w into the gradient before Adam.step, the pre-AdamW reading of 'Adam with weight decay', ends at 0.80, 0.77, 0.88 against AdamW's 4.02, 4.68, 4.14 on every seed, so 'AdamW should show faster weight shrinkage' is false at a matched weight_decay; MECHANISM decoupled decay is proportional and coupled decay is normalised - with zero gradients the lesson's AdamW multiplies every weight by (1 - lr * wd) per step, landing on n0 * (1 - lr*wd)^100 to 1.8e-16 relative, a pull of 5e-04 at |w| = 5.0 that vanishes with w, while the coupled term enters the numerator and is divided by sqrt(v_hat), surviving as a pull of order lr = 0.001 however small w gets; CONTROL the extra shrinkage is bought by destroying the classifier - final training accuracy is 71.50 on all three seeds for the coupled arm against AdamW's 89.50-93.50 and Adam's 95.50-99.50, and 71.5% is exactly the majority-class rate of the circle data, with class 1 predicted for 0 of 200 points; FINDING the lesson's own STEP 4 reports the wrong ratio - its 100-step demo shrinks the norm by 0.0117 under Adam and 0.1117 under AdamW, a factor of 9.6, but what it prints is norm_adam / norm_adamw = 1.0x, a ratio of endpoints
+    uses_reference:
+      - Adam
+      - AdamW
+      - OptimizerTestNetwork
+      - make_circle_data
