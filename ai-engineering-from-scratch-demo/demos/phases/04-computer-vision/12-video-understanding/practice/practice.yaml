@@ -1,0 +1,34 @@
+lesson: 12-video-understanding
+phase: 04-computer-vision
+source: phases/04-computer-vision/12-video-understanding/docs/en.md
+exercises:
+  - index: 1
+    slug: inflated_flop_ratio
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Compute FLOPs (approximate) for FramePool with T=8 vs an I3D-style 3D ResNet with T=8. Justify why 2D+pool is 3-5x cheaper.
+    zh: |
+      **（簡單）** 估算 T=8 的 FramePool 與 T=8 的 I3D 風格 3D ResNet 各自的 FLOPs（近似即可）。說明為什麼 2D + 池化便宜 3 到 5 倍。
+    verifies: FramePool at T=8 costs 1.184 GMAC at 64x64 and 14.508 GMAC at 224x224 in its convolutions (double for the mul+add FLOP convention), and the lesson's own inflate_2d_to_3d applied to all 20 Conv2d costs 3.553 / 43.525 GMAC -- a ratio of exactly 3.0000 at both sizes, not a '3-5x' range: inflate_2d_to_3d hardcodes temporal stride 1 and padding kt//2 so T_out == T_in == 8 at every layer and the ratio is the temporal kernel alone (kt=5 measures exactly 5.0000), independent of T, H, W, depth and width, so the band the exercise quotes is kt in {3, 4, 5}; a real 3D ResNet-18 -- torchvision r3d_18(weights=None), nothing downloaded -- instead costs 6.644 / 81.393 GMAC, 5.6100x and 5.6100x, above that band, and the excess is spatial rather than temporal: restoring ResNet-18's stem MaxPool takes r3d_18 from 5.610x to 1.549x (a factor 3.62 for layer1's resolution alone) and un-striding its three stride-2 time steps then raises it to 2.979x, back onto the pure inflation's 3.000x; measured wall clock for one 224x224 T=8 clip on 2 threads is 115 ms against 503 ms, 4.36x and machine-dependent, inside the exercise's band for reasons of memory traffic rather than arithmetic; and capacity moves by the same factor -- FramePool's 11,166,912 convolution parameters times kt gives 33,500,736, against r3d_18's 33,371,472
+  - index: 2
+    slug: pooled_motion_ceiling
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Generate a synthetic video dataset: random balls moving in random directions, labelled by direction of motion ("left-to-right", "right-to-left", "diagonal-up"). Train FramePool on it. Show that it achieves near-chance accuracy, proving appearance alone is insufficient for motion tasks.
+    zh: |
+      **（中等）** 生成一份合成的影片資料集：隨機的球往隨機方向移動，標籤是運動方向（「left-to-right」、「right-to-left」、「diagonal-up」）。在上面訓練 FramePool。證明它的準確率接近亂猜，也就證明了單靠外觀不足以應付運動類任務。
+    verifies: on the exercise's own three classes FramePool reaches 0.625 and 0.667 on seeds 0 and 1 -- 8 epochs of Adam(lr=0.001) on 72 16x16 T=4 clips, scored on 72 held-out clips from a second seed -- against a chance of 0.333, so 'near-chance' is false as written; the honest ceiling is 2/3 because only two of the three classes are order-defined, with per-class recall 0.917/0.083/0.875 and 0.542/0.458/1.000 and the two horizontal classes' recalls summing to exactly 1.000 on both seeds; their confusion rows are element-wise identical ([22, 2, 0] and [13, 11, 0]) because each right-to-left clip is generated as the bit-exact time-reversal of its left-to-right partner -- sorted pixel multisets differ by exactly 0.0 over 73,728 values -- and FramePool's mean over time is permutation-invariant: a clip and its reversal score within 1.9e-06/9.5e-07 at logit scales 10.16/11.92 after training and 1.49e-08 at scale 0.082 (relative 1.8e-07) on an untrained FramePool(pretrained=False), so the invariance is architectural and unlearnable; and a zero-parameter read-out of the intensity centroid's displacement labels the same 72 test clips at 1.000, so the label is fully present in the data and only invisible to the architecture
+  - index: 3
+    slug: r2plus1d_stride_repair
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Build an R(2+1)D-18 by replacing every Conv2d in a ResNet-18 with `Conv2Plus1D`. Inflate the first conv's weights from an ImageNet-pretrained ResNet-18. Train on the motion dataset from exercise 2 and beat FramePool.
+    zh: |
+      **（困難）** 把 ResNet-18 裡每個 Conv2d 換成 `Conv2Plus1D`，做出一個 R(2+1)D-18。第一個卷積的權重從 ImageNet 預訓練的 ResNet-18 膨脹過來。在練習 2 的運動資料集上訓練，並贏過 FramePool。
+    verifies: the repaired R(2+1)D-18 reaches 0.972 and 1.000 on seeds 0 and 1 against FramePool's 0.639 at an identical budget -- 6 epochs of Adam(lr=0.001) on exercise 2's own 72 16x16 T=4 clips -- clearing the 0.667 ceiling that order-blind pooling cannot, both arms from random init with nothing downloaded; the ImageNet inflation the exercise asks for is impossible in principle, since the lesson's mid_c formula makes conv1 a 3 -> 110 -> 64 sandwich so ResNet-18's conv1 weight (64, 3, 7, 7) (9,408 values) fits neither the spatial (110, 3, 1, 7, 7) (16,170) nor the temporal (64, 110, 7, 1, 1) (49,280), and inflate_2d_to_3d makes it (64, 3, 3, 7, 7) (28,224), a third shape fitting neither; taken literally the replacement also deletes the stride of all 7 strided convs because Conv2Plus1D takes no stride argument -- it still runs, since the 3 downsample 1x1s lose theirs too and the residual adds line up, but the map reaching avgpool is (1, 512, 4, 8, 8) instead of (1, 512, 4, 1, 1) and a clip costs 8.547 GMAC instead of 0.194, 43.9x, repaired in place by re-setting spatial.stride; the win is temporal sensitivity -- reversing a clip moves the trained R(2+1)D's logits by 11.19/8.71 at scales 7.65/5.41, relative 1.46/1.61, while the same reversal moves FramePool's by 1.9e-06 at scale 13.62; and (2+1)D buys no parameters back at 33,217,329 against ResNet-18's 11,178,051 (2.972x, matching exercise 1's exact 3.0000x inflation), while at Kinetics settings (16 frames, 112x112) it measures 25.0 GMAC per clip, so 240,000 clips x 45 epochs x 3 is 1.62 EFLOP -- an estimated 9 GPU-hours at an assumed 50 TFLOP/s, an optimistic floor
