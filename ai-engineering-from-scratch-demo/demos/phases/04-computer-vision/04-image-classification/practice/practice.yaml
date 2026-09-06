@@ -1,0 +1,34 @@
+lesson: 04-image-classification
+phase: 04-computer-vision
+source: phases/04-computer-vision/04-image-classification/docs/en.md
+exercises:
+  - index: 1
+    slug: mixup_loss_floors
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train the same model with and without mixup for five epochs on the synthetic dataset. Plot train and val loss for both. Explain why train loss with mixup is higher yet val accuracy is similar or better.
+    zh: |
+      **（簡單）** 在合成資料集上，分別用 mixup 與不用 mixup 訓練同一個模型五個週期。把兩者的訓練與驗證損失畫出來。說明為什麼用了 mixup 的訓練損失比較高，驗證準確率卻相近甚至更好。
+    verifies: five epochs of the lesson's own train_one_epoch with and without mixup: final train loss 0.561 against 0.546, so the premise holds by 0.015 -- but the two arms minimise different functionals, with irreducible floors 0.205 (E[H(lambda)] under Beta(0.2, 0.2) over 200,000 draws, times the 0.9 chance the mixed pair crosses classes) and 0.5003 (label_smoothing=0.1 in closed form), so above its own floor mixup sits 7.8x further out; the same weights score 0.031 at accuracy 1.000 on clean training images; the reference's mixup train accuracy averages 0.554, the coin flip of which mixed label dominates; both arms end at val accuracy 1.000, so this dataset cannot test the exercise's second clause
+  - index: 2
+    slug: cutout_ablation
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Implement Cutout — zero out a random 8x8 square in each training image — and run an ablation vs no augmentation, hflip+crop, hflip+crop+cutout, hflip+crop+mixup. Report val accuracy for each.
+    zh: |
+      **（中等）** 實作 Cutout —— 在每張訓練影像裡把一個隨機的 8x8 方塊歸零 —— 然後做一組消融實驗：完全不增強、hflip+crop、hflip+crop+cutout、hflip+crop+mixup。回報每一種的驗證準確率。
+    verifies: four arms x five epochs on the lesson's 2,000-image set: val accuracy ties at 1.000 for all four, while final val loss falls in augmentation order 0.078 > 0.067 > 0.057 > 0.032, a span 72x the 0.001 that a second seed moves the cutout arm; cutout composed after standardize zeroes exactly 192 = 8x8x3 entries at 177 distinct corners over 200 draws; composed before standardize the hole becomes -2.0 rather than the mean; composed before random_crop it survives at 192 entries only 62% of the time, ranging 60 to 324
+  - index: 3
+    slug: cifar100_resnet34_sweep
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Build a CIFAR-100 pipeline (100 classes, same input size) and reproduce a ResNet-34 training run to within 1% of published accuracy. Extras: sweep three learning rates and two weight decays, log to a local CSV, produce the final confusion-matrix-top-confusions table.
+    zh: |
+      **（困難）** 打造一條 CIFAR-100 的流程（100 個類別，輸入尺寸相同），並重現一次 ResNet-34 的訓練，達到與已發表準確率相差 1% 以內。加分項：掃三個學習率與兩個權重衰減值、記錄到本地 CSV，並產出最終的「混淆矩陣最常混淆組合」表格。
+    verifies: ResNet-34's [3, 4, 6, 3] BasicBlocks at widths (64, 128, 256, 512) on a CIFAR stem give 21,328,292 parameters mapping (2, 3, 32, 32) -> (2, 100); a 3x2 learning-rate x weight-decay sweep is written to a CSV and read back identically, best lr 0.2 / wd 5e-4 at 0.8738 on 800 held-out images; the two knobs interact -- accuracy climbs 0.233 -> 0.526 -> 0.874 with lr at wd 5e-4 and falls 0.193 -> 0.031 -> 0.004 at wd 5e-2; errors sit a mean 2.84 classes apart against 33.67 for a uniform scatter; and reseeding the best configuration moves accuracy by 0.0687, seven times the 1% tolerance the exercise names

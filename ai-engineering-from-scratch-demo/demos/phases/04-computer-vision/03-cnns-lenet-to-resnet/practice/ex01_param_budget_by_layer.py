@@ -72,7 +72,7 @@ def solve():
         import torch
         import torch.nn as nn
     except ImportError as exc:                      # pragma: no cover - T1 needs torch
-        raise practice.Skip(f"needs torch: uv sync --extra llm ({exc})") from None
+        raise practice.Skip(f"needs torch: uv sync --extra vision ({exc})") from None
     ref = parity.load_reference(PHASE, LESSON, "main")
     torch.manual_seed(0)
     net, lenet = ref.TinyResNet(), ref.LeNet5()

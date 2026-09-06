@@ -47,6 +47,7 @@ vision = [
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pillow" },
     { name = "scikit-learn" },
+    { name = "torch" },
 ]
 
 [package.metadata]
@@ -62,6 +63,7 @@ requires-dist = [
     { name = "scikit-learn", marker = "extra == 'math'", specifier = ">=1.4" },
     { name = "scikit-learn", marker = "extra == 'vision'", specifier = ">=1.4" },
     { name = "torch", marker = "extra == 'llm'", specifier = ">=2.2" },
+    { name = "torch", marker = "extra == 'vision'", specifier = ">=2.2" },
 ]
 provides-extras = ["math", "vision", "audio", "llm", "agents", "infra", "dev"]
 

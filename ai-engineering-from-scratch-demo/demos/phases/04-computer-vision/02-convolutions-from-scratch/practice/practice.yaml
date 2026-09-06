@@ -6,7 +6,7 @@ exercises:
     slug: sizes_and_receptive_field
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Easy)** Given a 128x128 grayscale input and a stack of `[Conv3x3(s=1,p=1), Conv3x3(s=2,p=1), Conv3x3(s=1,p=1), Conv3x3(s=2,p=1)]`, compute the output spatial size and the receptive field at each layer by hand. Verify with a PyTorch `nn.Sequential` of dummy convs.
     zh: |
@@ -19,7 +19,7 @@ exercises:
     slug: grouped_and_depthwise
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Medium)** Extend `conv2d_naive` and `conv2d_im2col` to accept a `groups` argument. Show that `groups=C_in=C_out` reproduces a depthwise convolution and that its parameter count is `C * K * K` instead of `C * C * K * K`.
     zh: |
@@ -32,7 +32,7 @@ exercises:
     slug: im2col_backward
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Hard)** Implement the backward pass of `conv2d_im2col` by hand: given the gradient of the output, compute the gradient of `x` and `w`. Verify against `torch.autograd.grad` on the same inputs and weights. The trick: the gradient of im2col is `col2im`, and it has to accumulate overlapping windows.
     zh: |

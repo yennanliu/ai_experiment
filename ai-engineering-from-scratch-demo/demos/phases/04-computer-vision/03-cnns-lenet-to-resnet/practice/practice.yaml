@@ -6,7 +6,7 @@ exercises:
     slug: param_budget_by_layer
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Easy)** Count parameters by hand for `TinyResNet` layer by layer. Compare against `sum(p.numel() for p in net.parameters())`. Where does the majority of the parameter budget go — convs, BN, or the classifier head?
     zh: |
@@ -16,7 +16,7 @@ exercises:
     slug: bottleneck_resnet50
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Medium)** Implement the Bottleneck block (1x1 -> 3x3 -> 1x1 with skip) and use it to build a ResNet-50-style network for CIFAR. Compare params against `TinyResNet`.
     zh: |
@@ -26,7 +26,7 @@ exercises:
     slug: plain_vs_residual_deep
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Hard)** Remove the skip connection from `BasicBlock`, train a 34-block "plain" network and a 34-block ResNet on CIFAR-10 for 10 epochs each. Plot training loss vs epoch for both. Reproduce the He et al. Figure 1 result where the plain deep network converges to higher loss than its shallower twin.
     zh: |

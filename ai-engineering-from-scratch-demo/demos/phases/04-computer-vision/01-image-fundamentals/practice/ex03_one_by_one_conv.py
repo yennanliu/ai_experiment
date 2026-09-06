@@ -21,7 +21,7 @@ from harness import parity, practice
 try:
     import torch
 except ImportError as exc:                       # pragma: no cover - env guard
-    raise practice.Skip(f"needs torch: uv sync --extra llm ({exc})") from None
+    raise practice.Skip(f"needs torch: uv sync --extra vision ({exc})") from None
 torch.set_num_threads(1)
 
 PHASE, LESSON = "04-computer-vision", "01-image-fundamentals"

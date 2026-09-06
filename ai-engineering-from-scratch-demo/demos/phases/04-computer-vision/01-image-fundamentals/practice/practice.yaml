@@ -35,7 +35,7 @@ exercises:
     slug: one_by_one_conv
     kind: code
     tier: T1
-    deps_group: llm
+    deps_group: vision
     en: |
       **(Hard)** Take a 3-channel ImageNet-standardized tensor and run it through a 1x1 conv that learns a weighted mixture of RGB into a single grayscale channel. Initialize the weights to `[0.299, 0.587, 0.114]`, freeze them, and verify the output matches your manual `rgb_to_grayscale` to within floating-point error. What other classical color-space transforms can be written as 1x1 convolutions?
     zh: |

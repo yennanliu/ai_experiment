@@ -101,7 +101,7 @@ def solve():
         import torch.nn as nn
         import torch.nn.functional as functional
     except ImportError as exc:                      # pragma: no cover - T1 needs torch
-        raise practice.Skip(f"needs torch: uv sync --extra llm ({exc})") from None
+        raise practice.Skip(f"needs torch: uv sync --extra vision ({exc})") from None
     ref = parity.load_reference(PHASE, LESSON, "main")   # BasicBlock, unmodified (D5)
     torch.set_num_threads(2)
     x, y = dataset(torch, functional)
