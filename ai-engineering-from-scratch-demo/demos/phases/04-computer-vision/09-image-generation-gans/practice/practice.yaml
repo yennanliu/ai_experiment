@@ -1,0 +1,34 @@
+lesson: 09-image-generation-gans
+phase: 04-computer-vision
+source: phases/04-computer-vision/09-image-generation-gans/docs/en.md
+exercises:
+  - index: 1
+    slug: circularity_by_epoch
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train the DCGAN above on the synthetic circle dataset and save a grid of 16 samples at the end of each epoch. By which epoch do the generated circles become clearly circular?
+    zh: |
+      **（簡單）** 用上面的 DCGAN 訓練那份合成圓形資料集，每個 epoch 結束存下一張 16 個樣本的網格圖。生成的圓形大約在第幾個 epoch 開始明顯變圓？
+    verifies: Trains the lesson's own main() configuration (feat=32, 400 synthetic circles, batch 32, Adam 2e-4/(0.5, 0.999), spectral-norm D) for 26 epochs, saving a 4x4 PNG grid of 16 samples after each one, and scores every epoch's samples two ways: the fraction of the 32x32 frame above the background, and the IoU between that foreground and the equal-area disc at its centroid. Asserts that once the blob stops filling the frame its disc-IoU never exceeds 0.85x the real circles' 0.993 (peak 0.727, final 0.727 here); that after the lesson's fifth epoch the generator still paints over 85% of the frame (99.0%, against 19.8% for the data) and epoch 0 paints over 90% (100.0%); that the painted area first falls below half the frame between epochs 5 and 22 (epoch 13; seeds 1 and 2 give 10 and 11) and ends within 30% of epoch 0's distance from the real area (0.082 against 0.802); that a wholly-foreground frame already scores above 0.85 disc-IoU and within 0.15 of the real value (0.910, gap 0.083), which is why area is reported alongside; that the last epoch's per-pixel sample spread is below 0.85x the data's (0.150 against 0.217); and that 26 PNGs were written and the first and last re-open at 128x128.
+  - index: 2
+    slug: spectral_norm_vs_batchnorm
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Replace the discriminator's batch norm with spectral norm. Train both versions side by side. Which one converges faster? Which one has lower variance across three seeds?
+    zh: |
+      **（中等）** 把判別器的批次正規化換成譜正規化。兩個版本並排訓練。哪一個收斂比較快？哪一個在三個隨機種子之間的變異比較小？
+    verifies: Runs the lesson's Discriminator with use_sn=False and use_sn=True, three seeds each (feat=16, 256 images, batch 32, 20 epochs), and reads the last three epochs of each run. Asserts that spectral norm's mean tail G loss is at least 0.75 below batch norm's (2.11 against 4.08) and its mean tail D loss more than 2x higher (0.30 against 0.06, 5.0x); that every batch-norm seed ends with D loss under 0.15 (0.08/0.06/0.04), G loss over 3.0 (3.80/4.18/4.26) and samples still covering over 90% of the frame (96%+ against the data's 20.5%); that the batch-norm arm's seed-to-seed standard deviation in painted area is less than half the spectral-norm arm's (0.0096 against 0.0668, 7x); that the batch-norm arm's three seeds span under 0.10 in painted area (0.022) while spectral norm's best seed lands at least 0.02 below batch norm's best (0.784 against 0.964); that the two discriminators differ by under 1% in parameters (42,961 against 42,769, 0.45%); and that the best of all six runs still paints more than 3x the real area (78.4% against 20.5%). Re-checked on seeds 3-5, where all six checks hold.
+  - index: 3
+    slug: label_conditioning_signal
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Implement a conditional DCGAN: feed the class label into both G and D (concat one-hot to the noise in G, concat a class embedding channel in D). Train on the synthetic "circles vs squares" dataset from lesson 7 and show that class conditioning works by sampling with specific labels.
+    zh: |
+      **（困難）** 實作一個條件式 DCGAN：把類別標籤同時餵進 G 和 D（在 G 裡把 one-hot 串接到雜訊上，在 D 裡串接一個類別嵌入通道）。用第 7 單元那份「圓形 vs 方形」的合成資料集訓練，然後用指定的標籤取樣，證明類別條件化真的有效。
+    verifies: Builds a conditional DCGAN from the lesson's own modules -- Generator(z_dim=66) fed cat([z, one-hot]) and Discriminator(img_channels=5, use_sn=True) fed the image plus two label planes -- and trains it 45 epochs on lesson 7's circles-vs-squares data pooled to 32x32. The measurement is mean(R) - mean(B) on one fixed batch of 48 noise vectors decoded under each label. Asserts the wiring is exactly (66, 5); that the tail-10-epoch class gap is above 20% of the real 0.147 class gap and positive in all ten epochs (+0.070, 47%, smallest +0.006) against +0.00001 untrained; that swapping a real image's label plane moves D's logit in one direction per class on at least 80% of that class's images (100% here) with an image-by-label interaction above 0.2 logits (0.89, against a 1.38-logit flat plane preference); that the gap averages under 0.01 over epochs 1-10 (+0.0015) and first clears 0.05 between epochs 10 and 35 (epoch 21); that the per-epoch gap straddles the real one, peaking above it (+0.541, 3.7x) while still dropping below it inside the last ten epochs (+0.006); and that samples under both labels score below the real squares' 0.834 disc-IoU (0.044 and 0.121, real circles 0.994) -- what is conditioned is colour, not geometry. Seeds 1 and 2 pass all five with tail gaps of 0.190 and 0.189.
