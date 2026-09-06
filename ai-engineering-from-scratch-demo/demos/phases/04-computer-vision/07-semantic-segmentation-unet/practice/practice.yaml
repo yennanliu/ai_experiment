@@ -1,0 +1,34 @@
+lesson: 07-semantic-segmentation-unet
+phase: 04-computer-vision
+source: phases/04-computer-vision/07-semantic-segmentation-unet/docs/en.md
+exercises:
+  - index: 1
+    slug: bce_dice_convergence_speed
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Implement `bce_dice_loss` for a binary segmentation task (foreground vs background). Verify on a synthetic two-class dataset that the combined loss converges faster than BCE alone when the foreground is 5% of pixels.
+    zh: |
+      **（簡單）** 為二元分割任務（前景對背景）實作 `bce_dice_loss`。在一個合成的兩類別資料集上驗證：當前景只占 5% 的像素時，組合損失比單用 BCE 收斂得更快。
+    verifies: Implements bce_dice_loss as binary cross-entropy plus one minus the per-image soft Dice, and asserts its Dice term reproduces the lesson's own two-class dice_loss to |difference| < 1e-6 (measured 0.0). Uses the lesson's synthetic_segmentation at size 86, where the foreground is a measured 0.0519 of pixels; trains a base-8 U-Net on 48 images for 7 epochs at batch 8 under two seeds, scoring held-out foreground IoU per epoch. Asserts that under SGD (lr 0.05, momentum 0.9) the combined loss gains more than 0.10 mean IoU over BCE alone (measured 0.317 -> 0.520) and reaches IoU 0.5 in fewer epochs (5.5 -> 4.0). Asserts, over a 241-point constant-logit sweep on the real masks, that BCE's minimum sits below 0.35x its value at p=0.5 (0.2040 vs 0.6931, 71% of the descent) at p = 0.0522, and that the Dice term there is strictly larger than at p=0.5 (0.9492 vs 0.9067). Asserts by autograd at exactly p = the foreground rate that |d(BCE)/d(logit)| < 0.01 x |d(Dice)/d(logit)| and the Dice slope is negative (+4.07e-10 against -0.02407). Asserts as a control that under Adam at 1e-3, the lesson's own optimiser, the combined loss's advantage falls below 0.4x the SGD advantage (-0.030 against +0.203) and both arms first reach IoU 0.5 in the same epochs, and that per-image foreground spans more than 2.5x (0.0261 to 0.0715 around the 0.0519 mean).
+  - index: 2
+    slug: transposed_conv_checkerboard
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Replace the `nn.Upsample + conv` up-block with a `nn.ConvTranspose2d` up-block. Train both on the synthetic dataset and compare mIoU. Observe where checkerboard artifacts appear in the transposed-conv version.
+    zh: |
+      **（中等）** 把 `nn.Upsample + conv` 的上行區塊換成 `nn.ConvTranspose2d` 的上行區塊。兩者都在合成資料集上訓練並比較 mIoU。觀察棋盤格瑕疵在轉置卷積版本裡出現在什麼地方。
+    verifies: Replaces the lesson's four Up modules with a ConvTranspose2d(c, c, k, stride=2, padding=(k-1)//2, output_padding=k%2) block at kernels 2, 3 and 4, and asserts all four variants still map to (12, 3, 64, 64) while k=2 costs more parameters (491,891 -> 579,171, +17.7%). Trains each variant for 8 epochs on 48 images under two seeds with the lesson's own combined_loss and Adam at 1e-3, and asserts the within-variant seed spread of mIoU (0.244) exceeds the spread between the four variant means (0.143), so mIoU cannot rank the up-blocks. Measures the Nyquist (period-2) component of the held-out logits and asserts the share of it that is a constant offset rather than image content exceeds 0.15 for every transposed run (min 0.233) and stays below 0.15 for every bilinear run (max 0.028), with mean amplitude over the logits' own standard deviation rising 0.0083 -> 0.1304 at k=2. Asserts the artifact sits on flat regions: the ratio of Nyquist amplitude on 2x2 blocks straddling a class boundary to blocks that do not is below 1.5 for k=2 (0.778, 0.717) and above 2.5 for bilinear (3.888, 5.752). Asserts the uniform-weight interior overlap is exactly 4.0 at k=3 and exactly 1.0 at k=2 and k=4, and, as a control on Odena's rule, that k=2 -- with even overlap -- still ends with the largest fixed grid of the four (mean locked share 0.895 > 0.6, above k=3's 0.330 and bilinear's 0.020).
+  - index: 3
+    slug: trimap_per_class_dice_gain
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Take a real segmentation dataset (Oxford-IIIT Pets, Cityscapes mini split, or a medical subset) and train the U-Net to within 2 IoU points of the `smp.Unet` reference. Report per-class IoU and identify which classes benefit most from adding Dice to the loss.
+    zh: |
+      **（困難）** 拿一個真實的分割資料集（Oxford-IIIT Pets、Cityscapes 的迷你切分，或某個醫療子集），把這個 U-Net 訓練到與 `smp.Unet` 參考模型相差 2 個 IoU 點以內。回報逐類別的 IoU，並指出哪些類別從損失裡加入 Dice 獲益最多。
+    verifies: Builds an Oxford-Pets-shaped three-class trimap -- background, interior, and a 5-wide dilate-minus-erode border ring -- over real photographic backgrounds cropped from the two images scikit-learn ships, and asserts the held-out class frequencies are background 0.878 > 0.8 with both other classes under 0.10 and the border (0.075) outnumbering the interior (0.048), and that the background's colour standard deviation is more than 10x the lesson's flat green (0.336 vs 0.020, 17x). Trains the lesson's own U-Net with its own combined_loss at lam=0 and lam=1, three seeds each, 10 epochs on 48 images, and asserts every mean per-class IoU exceeds 0.5 with the border the worst class under both losses (cross-entropy alone 0.960 / 0.807 / 0.606; plus Dice 0.956 / 0.848 / 0.616). Asserts that at uniform logits cross-entropy's gradient share per true class equals the pixel frequency to within 1e-4 (measured 6.0e-08), and that the lesson's dice_loss multiplies the interior's and border's gradient share by more than 2.0 (2.76 and 2.52) while cutting background's below 1.0 (0.78). Asserts as a control that mIoU across the six runs spans 0.1917, more than 4x the 0.02 tolerance the exercise names (10x), and that every per-class IoU change from adding Dice (0.003, 0.041, 0.010) is smaller than that spread.
