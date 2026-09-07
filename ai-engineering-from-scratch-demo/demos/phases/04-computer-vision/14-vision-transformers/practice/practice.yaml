@@ -1,0 +1,34 @@
+lesson: 14-vision-transformers
+phase: 04-computer-vision
+source: phases/04-computer-vision/14-vision-transformers/docs/en.md
+exercises:
+  - index: 1
+    slug: vit_token_shape_ledger
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Print the shapes of every intermediate tensor for a forward pass through the tiny ViT above. Confirm: input `(N, 3, 64, 64)` -> patches `(N, 16, 192)` -> with CLS `(N, 17, 192)` -> classifier input `(N, 192)` -> output `(N, num_classes)`.
+    zh: |
+      **（簡單）** 把上面那個迷你 ViT 前向傳播過程中每一個中間張量的形狀印出來。確認：輸入 `(N, 3, 64, 64)` -> 影像區塊 `(N, 16, 192)` -> 加上 CLS `(N, 17, 192)` -> 分類器輸入 `(N, 192)` -> 輸出 `(N, num_classes)`。
+    verifies: every shape the exercise lists is confirmed on the lesson's own ViT at N in (1, 2, 3, 8) -- (N, 3, 64, 64) -> patches (N, 16, 192) -> with CLS (N, 17, 192) -> classifier input (N, 192) -> logits (N, 10), with 16 = (64 // 16)**2 and 2,822,602 parameters matching the docs' 'About 2.8M'; the patch embedding is exactly a per-patch linear map, F.unfold(x, 16, stride=16) times proj.weight.reshape(192, -1).T plus bias reproducing vit.patch(x) to 1.1e-06, which is why that block is 147,648 = 192*(768+1) parameters; position is carried by pos_embed alone -- shuffling the 16 patch tokens with it zeroed moves the CLS logits under 1e-06 against a logit std of 0.460, and only 0.0218 (4.7% of that spread) with the real table, because trunc_normal_(std=0.02) starts positions at std 0.0201; the ledger is welded to 64x64, a 32x32 image raising RuntimeError: The size of tensor a (5) must match the size of tensor b (17), while bicubic-resizing the 4x4 position grid to 2x2 with the CLS row kept aside restores (2, 4, 192) -> (2, 192) -> (2, 10) and resizing 4x4 to itself is the identity to 0.0; and .eval() is not load-bearing here -- train and eval differ by exactly 0.0 because Block defaults to dropout=0.0 and there is no BatchNorm, with 2,669,184 of the parameters in the 6 blocks and only 3,456 in the CLS token and position table together
+  - index: 2
+    slug: vit_vs_resnet_small_data
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Fine-tune a pretrained `timm` ViT-S/16 on the synthetic-CIFAR dataset from Lesson 4. Compare against ResNet-18 fine-tuning on the same data. Report training time and final accuracy.
+    zh: |
+      **（中等）** 在第 4 單元的合成 CIFAR 資料集上微調一個預訓練的 `timm` ViT-S/16。用同一份資料跟微調 ResNet-18 做比較。回報訓練時間與最終準確率。
+    verifies: timm is in no dependency group and no weights may be downloaded, so 'pretrained' is unavailable -- import timm gives ModuleNotFoundError: No module named 'timm' and both arms are random init, ResNet-18 built with weights=None; over 32 AdamW steps (lr 3e-4, batch 48) on 480 of Lesson 4's synthetic_cifar images scored against 120 held out, the lesson's own ViT at image_size=32/patch_size=8 (2,712,010 params) takes 1.13s / 1.10s of optimiser time against ResNet-18's (11,181,642 params) 7.39s / 7.37s over two seeds, at least 6.6x the wall clock; final accuracy cannot rank them, all four runs ending at 1.000 for a spread of 0.000, and the obvious fallback flips sign between seeds -- first step at 1.000 is ViT 12 / 20 against ResNet-18 20 / 8, on non-monotone curves; wall clock does not follow parameter count either, ResNet-18 carrying 4.1x the parameters and costing 6.6x the time as 20 sequentially dependent convolutions against 19 nn.Linear modules over 17 tokens of width 192; and the control shows no network is under test at all, a multinomial logistic regression on the 3072 un-featurised pixels scoring 1.000 on the same split
+  - index: 3
+    slug: mae_masking_linear_probe
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Implement MAE pretraining for the tiny ViT: mask 75% of patches, train the encoder + a small decoder to reconstruct the masked patches. Evaluate linear-probe accuracy on the synthetic data before and after pretraining.
+    zh: |
+      **（困難）** 為這個迷你 ViT 實作 MAE 預訓練：遮住 75% 的影像區塊，訓練編碼器加一個小型解碼器去重建被遮住的區塊。量測預訓練前後在合成資料上的 linear-probe 準確率。
+    verifies: no MAE exists in code/main.py or docs/en.md, so one is built by subclassing the lesson's own ViT (its patch, cls_token, pos_embed, blocks and ln are the encoder unchanged, its head unused) plus a 96-wide one-block decoder fed a shared mask token, loss on the hidden patches only; the requested before/after linear probe cannot move -- frozen-CLS logistic probe fitted on 480 images and scored on 120 held out gives exactly 1.000 before and 1.000 after on all three seeds, and the control shows why: the same regression on the 3072 raw pixels also scores 1.000, because synthetic_cifar writes class c as the spatial frequency 2 + c; the pretraining it was meant to grade did happen, 200 AdamW steps at lr 1.5e-3 taking masked-patch MSE from 2.354-2.606 to 0.185-0.217, at least 6.2x below the 1.3375 cost of predicting the training set's mean patch (pixel std 1.401); masking 75% of 16 patches keeps 4, so the encoder runs 5 tokens rather than 17 and the argsort mask hides exactly 12 every time, with overwriting all 12 hidden patches with Gaussian noise moving the latent 0.0e+00 at a latent scale of 3.28; and only the hidden patches are supervised -- the identical forward pass scored on the 4 patches the encoder was handed gives 1.888-1.943 against 0.185-0.217, at least 8.7x worse, so a decoder that copied its input could not cheat the objective
