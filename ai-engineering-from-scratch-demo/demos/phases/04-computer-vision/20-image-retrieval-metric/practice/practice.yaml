@@ -1,0 +1,34 @@
+lesson: 20-image-retrieval-metric
+phase: 04-computer-vision
+source: phases/04-computer-vision/20-image-retrieval-metric/docs/en.md
+exercises:
+  - index: 1
+    slug: pca_before_after_margin
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Run the toy example above. Plot the embeddings with PCA before and after training to see the six clusters form.
+    zh: |
+      **（簡單）** 跑一遍上面的玩具範例。用 PCA 把訓練前後的嵌入畫出來，看那六個聚落如何成形。
+    verifies: the two plots differ by margin, not by clusters: between-class over within-class variance goes 0.230 -> 14.339 (62x) and recall@1 0.700 -> 1.000, while the raw 128-d inputs already retrieve at recall@1 1.000 on a ratio of 0.312 -- the untrained Encoder is a random projection that *loses* separability the input had; six centroids span exactly five dimensions, explained variance 0.2482/0.2137/0.2023/0.1746/0.1548 then a 92x collapse to 0.0017, so a two-axis plot keeps 46.2% of a five-dimensional object though recall from that projection alone is still 1.000; and the run is mostly dead -- the triplet loss first hits exactly 0.0 at step 16 and is zero on 132 of 200 steps, with the semi-hard window empty for a mean 45.3 of 48 anchors so the fallback to the hardest negative chooses for 94% of them
+  - index: 2
+    slug: proxynca_vs_triplet_speed
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Add a ProxyNCA loss implementation: one learned "proxy" per class, standard cross-entropy on cosine similarity. Compare convergence speed vs triplet loss on the toy data.
+    zh: |
+      **（中等）** 加上 ProxyNCA 損失的實作：每個類別一個學出來的「代理向量」，在餘弦相似度上做標準交叉熵。在玩具資料上比較它與三元組損失的收斂速度。
+    verifies: convergence speed cannot be read off retrieval -- all four runs reach recall@1 = 1.000 by step 10 -- so it is measured on the margin behind it: triplet reaches a variance ratio of 5.0 at step 20 against ProxyNCA's 30 on both seeds, and ends at 14.20 against 7.79. ProxyNCA scores 48x6 = 288 similarities per step against triplet's 48x48 = 2,304-entry distance matrix, 8x fewer and with no mining rule to get wrong; its 6x64 = 384 proxy parameters are 1.55% on top of the encoder's 24,768 and are discarded at inference. The triplet hinge is exactly zero on 132 and 131 of 200 steps against ProxyNCA's 0, so its gradient is sparse in time yet still carries the larger final margin
+  - index: 3
+    slug: recall_index_not_model
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Take 1,000 ImageNet validation images, embed with DINOv2 via HuggingFace, build a FAISS flat index, and report recall@{1, 5, 10} against the same images as queries (should be 1.0) and against a held-out split with ImageNet labels as ground truth.
+    zh: |
+      **（困難）** 取 1,000 張 ImageNet 驗證影像，透過 HuggingFace 用 DINOv2 產生嵌入，建一個 FAISS flat 索引，然後報告 recall@{1, 5, 10}：先用同一批影像當查詢（應該是 1.0），再用一個保留切分、以 ImageNet 標籤當標準答案。
+    verifies: transformers, faiss and datasets all raise ModuleNotFoundError, so retrieval is rebuilt on the lesson's own Encoder and recall_at_k over an exact inner-product search -- what a FAISS flat index computes. Self-query recall@{1,5,10} is 1.0000 as the exercise predicts and 1.0000 for a randomly initialised encoder too, because a normalised vector is its own nearest neighbour; only collapse breaks it, and a collapsed encoder scores 0.1500/0.6780/0.8440. The baseline the exercise omits is closed-form: sum_c f_c(1-(1-f_c)^k) gives 0.1674/0.5993/0.8387, which random unit vectors match to 0.0037 -- so recall@10 of 0.84 is the null model. On held-out queries only k=1 separates trained (1.0000) from untrained (0.8150); the gap closes to 0.0000 by k=10
