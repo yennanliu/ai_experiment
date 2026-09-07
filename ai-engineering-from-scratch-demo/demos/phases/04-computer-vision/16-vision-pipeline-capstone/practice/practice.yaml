@@ -1,0 +1,34 @@
+lesson: 16-vision-pipeline-capstone
+phase: 04-computer-vision
+source: phases/04-computer-vision/16-vision-pipeline-capstone/docs/en.md
+exercises:
+  - index: 1
+    slug: stage_time_budget
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Run the pipeline on 10 images from any open dataset. Report the average time per stage and the distribution of detection counts per image.
+    zh: |
+      **（簡單）** 拿任何一個公開資料集裡的 10 張影像跑這條管線。回報每個階段的平均耗時，以及每張影像偵測數量的分布。
+    verifies: ten crops of the two photographs sklearn keeps on disk, 20 timed passes each: the exercise's second half is unanswerable as posed, because StubDetector builds its boxes from H, W alone and every image returns exactly 3 detections -- what moves is the classification count, and only through min_crop=16 (square frames 16/32/50/64/96/128 give 0, 0, 1, 3, 3, 3 labels); the four stage medians show crop+resize as the largest stage at 44-49% of the pipeline and ~3x the classifier forward, yet it has no bucket in the lesson's benchmark(), which bills it to classify and so overstates the model's cost ~4x; the re-inlined crop loop returns exactly the crops run() classified on 10/10 frames; AdaptiveAvgPool2d(1) makes that work nearly free of consequence, one crop scored at 4/8/16/32/64/128/256 moving the logits under 5e-2 and picking one class throughout; and benchmark's int(len(times)*0.95) indexes the last element for num_runs 10 and 20, so its printed p95 is the maximum
+  - index: 2
+    slug: mask_rle_payload_size
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Add a mask output field to `Detection` and encode it as RLE. Verify the JSON stays under 1MB even for a 10-object image.
+    zh: |
+      **（中等）** 在 `Detection` 裡加一個遮罩輸出欄位，並用 RLE 編碼。驗證即使是一張有 10 個物件的影像，JSON 也維持在 1MB 以下。
+    verifies: the field already exists -- Detection.model_fields is ['box', 'score', 'class_id', 'mask_rle'] in code/main.py and run() never writes it, emitting 3/3 nulls in a 613-byte payload -- so what is added here is the COCO-style column-major encoder; ten objects at the lesson's own 400x600 demo size cost 15,271B solid, 15,071B ellipse and 367,188B dithered, all under the 1,000,000B budget with 65x headroom for coherent masks, but the clause names the wrong variable: the same ten objects at 720x1280 cost 1,398,888B dithered against 31,509B as ellipses, over budget by 1.4x; run count is exactly 2*columns+1 for a solid box at all three frame sizes (361, 769, 1153) and independent of the 36,000 pixels covered; all 30 masks survive encode -> model_dump_json -> model_validate_json -> decode bit-exact; and box tuples built from ints parse back as floats because the annotation is Tuple[float, float, float, float]
+  - index: 3
+    slug: microbatch_window_yield
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Add a micro-batcher in front of the classifier: collect crops for up to 10 ms, classify them all in one GPU call, return results per request. Measure the throughput gain at 5 concurrent requests per second and the latency added.
+    zh: |
+      **（困難）** 在分類器前面加一個 micro-batcher：最多收集 10 ms 的裁切區，用一次 GPU 呼叫全部分類完，再依請求把結果分回去。量測在每秒 5 個並行請求下的吞吐量增益，以及多出來的延遲。
+    verifies: 20,000 seeded exponential arrivals at the exercise's own 5 req/s through its own 10 ms window form 19,077 batches of sizes {1: 18180, 2: 872, 3: 24, 4: 1}, mean 1.0484, so 95.3% of batches hold one request: priced with measured pipe.classify calls that is ~1.04x on the classify stage and ~1.00x end to end, bought with 9.77 ms of mean added wait, ~25x the whole pipeline's own latency; the batcher itself is sound -- ten requests in one call cost ~5x less per request than ten separate calls -- and the shortfall is arithmetic, E[batch] = 1 + rate x window holding within 5% at 5, 50, 100 and 500 req/s, so a mean of 2 needs 100 req/s, 20x the stated load; Amdahl caps it anyway, classify being ~10% of pipe.run against a crop-and-resize stage >3x larger that this design does not batch; and there is no GPU call -- VisionPipeline defaults to device='cpu', so 5 req/s is ~0.2% of the measured ~2,700 req/s capacity
