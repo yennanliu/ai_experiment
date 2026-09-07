@@ -1,0 +1,34 @@
+lesson: 22-3d-gaussian-splatting
+phase: 04-computer-vision
+source: phases/04-computer-vision/22-3d-gaussian-splatting/docs/en.md
+exercises:
+  - index: 1
+    slug: splat_count_diminishing_returns
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Run the 2D splat trainer above on a different synthetic image. Vary `num_splats` in `[16, 64, 256]` and plot MSE vs step for each. Identify the point of diminishing returns.
+    zh: |
+      **（簡單）** 拿上面的 2D 潑濺訓練器，換一張合成影像來跑。把 `num_splats` 在 `[16, 64, 256]` 之間變化，各畫出 MSE 對步數的曲線。找出報酬遞減的轉折點。
+    verifies: the exercise's own axis has no knee. Best MSE over 300 steps is 0.04182/0.03477 at 16 splats, 0.00717/0.00775 at 64 and 0.00098/0.00067 at 256 across two seeds, so every 4x in num_splats divides MSE by 5.8x then 7.3x (seed 0) and 4.5x then 11.5x (seed 1) -- super-linear, never diminishing. The knee is on the compute axis and sits near 12,800 splat-steps: at 4,800 the 64-splat arm leads 0.01559/0.01378 against 256's 0.04115/0.03872, at 12,800 they tie (0.00851/0.00874 vs 0.00858/0.00745), and by 19,200 256 leads 0.00413/0.00366 against 0.00717/0.00775. That axis is the honest one because a step is not a unit of work -- rasterise_2d composites in a sequential Python for loop, so 300 steps cost 0.47s at 16 splats, 2.08s at 64 and 13.15s at 256. Half the six runs never reach step 300 usable: one ends NaN and the two 256-splat runs end at 0.00276 and 0.00330 against bests of 0.00098 and 0.00067, so ranking by final MSE picks a different winner from ranking by best. And rasterise_2d accumulates into torch.zeros with no background term, leaving 24.5%/37.4%/34.7% of pixels below half a unit of weight at 16/64/256 splats -- against 0.273 for an all-black image and 0.126 for the best constant one
+  - index: 2
+    slug: view_angle_harmonic_rank
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Extend the 2D rasteriser to support per-Gaussian RGB colours that depend on a scalar "view angle" through a degree-2 harmonic. Train on a pair of target images and verify the model reconstructs both.
+    zh: |
+      **（中等）** 擴充這個 2D 光柵化器，讓每個高斯的 RGB 顏色能透過一個 2 階調和函數，隨一個純量「視角」變化。用一對目標影像訓練，並驗證模型能同時重建出兩張。
+    verifies: a scalar view angle restricts the lesson's own sh_degree_3_basis to a great circle, where the nine degree-<=2 functions have rank exactly 5: singular values 6.7703/6.1804/6.1804/5.5279/5.5279 then four at 0.0000, a 2e+06 collapse. Columns 2, 5 and 7 have peak magnitude 0.0e+00 (each carries a z factor) and column 6 is -sqrt(5)/2 times column 0 to 6.0e-08, one float32 eps; all 16 degree-3 columns span only 7. Trained on a pair of targets at 0 and pi/2 through the lesson's own eval_sh_degree_3 and rasterise_2d, the degree-2 arm reconstructs both at 0.00167/0.00176 -- 123x below the 0.21714 that separates the targets and 31x below the view-independent arm, which scores 0.05534/0.05544 and sits within 1.02x of the closed-form mean-image floor 0.05429, so it is bounded rather than under-trained. The rank deficit reappears as dead parameters: slots 2, 5 and 7 accumulate a gradient of exactly 0.0 over 200 steps and slot 4 only 5.6e-17 because sin 2t vanishes at both sampled angles -- 480 of 1080 SH parameters. And the exercise's own criterion cannot rank the harmonic orders: degree 1 scores 0.00178/0.00187, a ratio of 1.06x, while at the never-trained angle pi/4 the two arms disagree by max 0.163 per channel, MSE 0.00125
+  - index: 3
+    slug: absent_stack_render_invariants
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Clone `nerfstudio` and train `splatfacto` on a 20-photo capture of any scene you have (desk, plant, face, room). Export to glTF `KHR_gaussian_splatting` and open it in a viewer (Three.js `GaussianSplats3D`, SuperSplat, Babylon.js V9). Report training time, number of Gaussians, and rendered fps.
+    zh: |
+      **（困難）** clone `nerfstudio`，對你手邊任何場景（書桌、盆栽、人臉、房間）的 20 張照片訓練 `splatfacto`。匯出成 glTF `KHR_gaussian_splatting`，並在檢視器裡打開（Three.js `GaussianSplats3D`、SuperSplat、Babylon.js V9）。回報訓練時間、高斯數量與渲染 fps。
+    verifies: nerfstudio, gsplat and pycolmap all raise ModuleNotFoundError, so no training time, Gaussian count or fps can be reported; the lesson's own rasteriser renders 48 splats at 48x48 in 1.83 ms (548 fps, 60.6M splat-pixels/s), which puts the 6,000,000 splats it says an RTX 3080 Ti draws at 147 fps at 57 hours per 1080p frame here. The identities that stack rests on are asserted at float32 tolerance rather than fitted: over 2304 pixels max|sum_i T_i a_i - (1 - T_final)| = 3.9e-07 and max|T_final - prod_i (1 - a_i)| = 2.4e-07, both inside the 1e-6 a 48-term accumulation earns; reversing the compositing order moves that transmittance 3.0e-07 but the image 0.103 per channel, and reversing the input order changes no bit (0.0e+00) because argsort re-sorts first. covs() is symmetric to 1.5e-05 on entries reaching 320 with eigenvalues matching exp(2*log_scale) to 3.1e-05 -- 5e-08 and 1e-07 relative, inside one ulp -- yet det(Sigma), fixed at exactly 1.0 by that same algebra, comes back 0 at condition 5e+08 where Sigma @ inv(Sigma) misses the identity by 10, which is the mechanism behind exercise 1's NaN. Degree-0 harmonics spread exactly 0.0 over 500 random directions against 7.84 for all 16 slots. And Splats2D.depth is dead weight: its .grad is None rather than zero, so an Adam.step() moves it by exactly 0.0 -- 48 of the model's 480 parameters
