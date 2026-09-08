@@ -1,0 +1,34 @@
+lesson: 28-world-models-video-diffusion
+phase: 04-computer-vision
+source: phases/04-computer-vision/28-world-models-video-diffusion/docs/en.md
+exercises:
+  - index: 1
+    slug: token_count_memory_wall
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Compute the token count for a 5-second 360p video at patch-t=2, patch-h=8, patch-w=8. Reason about memory for attention at this size.
+    zh: |
+      **（簡單）** 算出一段 5 秒 360p 影片在 patch-t=2、patch-h=8、patch-w=8 之下的詞元數量。推敲這個規模下注意力所需的記憶體。
+    verifies: 150 frames at patch (2, 8, 8) over 480x360 gives 75 x 2,700 = 202,500 tokens, so joint attention is 41,006,250,000 pairs = 164.0 GB at float32 for one matrix in one head of one layer; '5-second 360p' fixes neither the frame rate nor the width, and the standard 16:9 reading 640x360 gives 270,000 tokens (+33%) but 291.6 GB (+78%) because memory is quadratic where the count is linear; the lesson's own divided arithmetic costs 561,937,500 pairs, 73x fewer; TinyVideoDiT hardcodes patch (2, 2, 2) rather than count_tokens' (2, 8, 8), which for the same clip is 3,240,000 tokens, 16x the printed number; the patch grid is exact integer division, (8, 16, 16) -> (4, 8, 8) = 256 tokens; and halving each spatial side divides memory by 16.7x rather than 16 because 180 // 8 truncates 22.5 to 22
+  - index: 2
+    slug: joint_attention_costs_less
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Swap the divided attention block above for a full joint attention block and measure the shape and parameter count. Explain why divided attention is necessary for real video models.
+    zh: |
+      **（中等）** 把上面的分離式注意力區塊換成完全聯合注意力區塊，量測形狀與參數量。解釋為什麼真正的影片模型必須用分離式注意力。
+    verifies: swapping the divided block for one joint attention over the flattened sequence leaves the output shape (1, 256, 64) unchanged and *removes* 16,768 parameters -- 66,752 against 49,984, 25% -- which is exactly one nn.MultiheadAttention (16,640) plus the third LayerNorm (128) that fed it, so divided attention costs parameters rather than saving them and the necessity lives on the other axis: on exercise 1's clip joint attention is 41,006,250,000 entries (164.0 GB) against divided's 561,937,500 (2.2 GB), 73x fewer. The two blocks are different functions, differing by 1.4971 on the same tokens. At the lesson's own demo grid (4, 8, 8) the joint matrix is only 65,536 entries (262 KB) and merely 3.8x the divided cost, 625,706x smaller than the real clip, so main() cannot exhibit the constraint it explains; and DividedAttentionBlock normalises the same tensor three times per attention
+  - index: 3
+    slug: action_separates_frames
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Build a minimal latent-action video model: take a dataset of (frame_t, action_t, frame_{t+1}) triples (any simple 2D game), train a tiny video DiT conditioned on action embeddings, and show that different actions produce different next frames.
+    zh: |
+      **（困難）** 打造一個最小的潛在動作影片模型：拿一組 (frame_t, action_t, frame_{t+1}) 三元組資料（任何簡單的 2D 遊戲都行），訓練一個以動作嵌入為條件的迷你影片 DiT，並展示不同的動作會產生不同的下一影格。
+    verifies: the four action-conditioned predictions sit a mean 0.469 apart against a ground-truth separation of 2.828 (17%), while the identical architecture with the action removed separates them by exactly 0.0 -- but the demonstration means nothing, because the dot is four lit pixels of 256 so an all-zero frame scores MSE 0.015625 and both arms end within 0.0003 of it (0.01571 conditioned, 0.01538 blind). It is not undertraining: at 3000 steps instead of 300 the loss is still 0.01538 and the separation *falls* to 0.284, so training drives both arms onto the trivial predictor and the visible difference is largest when the model knows least. Zeroing the trained 128-parameter embedding drops the spread to exactly 0.0; patch_t=1 on one frame leaves the time attention 64 self-pairs against space's 4,096, so half the block cannot move information; and TinyVideoDiT.forward is declared ['self', 'x'], taking no action argument, so it cannot be conditioned as shipped
