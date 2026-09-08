@@ -1,0 +1,71 @@
+lesson: 25-vision-language-models
+phase: 04-computer-vision
+source: phases/04-computer-vision/25-vision-language-models/docs/en.md
+exercises:
+  - index: 1
+    slug: cmer_conf_gate_never_fires
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Run three prompts ("what is this?", "count the objects", "describe the scene") through any open VLM on five images. Score each answer as correct / partially correct / hallucinated by hand. Compute a first-pass CMER-like rate.
+    zh: |
+      **（簡單）** 在五張影像上，用任一個開源 VLM 跑三個提示詞（「這是什麼？」、「數一下有幾個物件」、「描述這個場景」）。手動把每個答案評為正確／部分正確／幻覺。算出一個初版的類 CMER 比率。
+    verifies: >-
+      no open VLM is installable -- transformers, llava, qwen_vl_utils, peft, timm and openai all
+      raise ModuleNotFoundError -- and the lesson would not take a prompt if one were: handing the
+      exercise's own three prompt strings to cross_modal_error_rate, deepstack_features and
+      ToyVLM.forward raises AttributeError, TypeError, TypeError. On a 3x5 grid of answers graded by
+      exact construction (5 at cosine 0.95, 5 at 0.45, 5 random, worst deviation 1.07e-07) the
+      lesson's CMER reads 0.2667 (4/15) where the hand score is 0.3333 (5/15), because one random
+      caption landed at cosine 0.3072. CMER cannot express 'partially correct': sweeping the partial
+      cosine gives 0.6000 (9/15) everywhere below the 0.25 gate and 0.2667 everywhere above it,
+      nothing between. Its confidence term never fires -- forcing all confidences to
+      0.0/0.5/0.8/0.81/1.0 gives 0.0000/0.0000/0.0000/0.2667/0.2667, and the demo's own confidences
+      are 0.85-0.95. And 0.25 is width-dependent: on 4,000 all-hallucinated random unit pairs CMER
+      reads 0.9180 at d=32, 0.9985 at d=128 and 1.0000 at d=512, so the lesson's own 32-d fixture
+      passes 8.2% of its hallucinations as grounded
+  - index: 2
+    slug: val_split_is_one_class
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Fine-tune Qwen2.5-VL-3B or LLaVA-1.6-7B with LoRA (rank 16) on 500 images of a target domain with captions. Compare zero-shot vs fine-tuned MMBench-style accuracy.
+    zh: |
+      **（中等）** 用 LoRA（rank 16）在目標領域的 500 張附圖說影像上微調 Qwen2.5-VL-3B 或 LLaVA-1.6-7B。比較零樣本與微調後的 MMBench 式準確率。
+    verifies: >-
+      no checkpoint is reachable -- transformers, llava, peft, accelerate, bitsandbytes and datasets
+      all raise ModuleNotFoundError -- so the arms run on ToyVLM's 6,597 parameters (6,272 of them the
+      projector). The lesson's own split is broken: synthetic_vision_class_data emits 5 classes x 40
+      in order and main() slices at int(0.85*200)=170, giving a validation label histogram of [0, 0,
+      0, 0, 30] against [6, 6, 6, 6, 6] for a stratified split of the same size, so a constant 'always
+      4' predictor scores 1.000 -- the lesson's own printed number. The untrained model therefore
+      scores 0.000 there and 0.200 stratified, purely because its random head answers class 2 for all
+      30. Accuracy saturates and ranks nothing: every arm ends at 1.000, first reaching it at step
+      3/3/1/3 of 150, on pooled tokens whose between-over-within variance ratio is 1401.8 with the
+      closest centres 6.708 apart and 0.1*randn noise measured at 0.0970 per patch averaging to 0.0246
+      over 16. LoRA rank 16 is no reduction at this width -- 3,584 adapter parameters against the
+      projector's 6,272, 57% -- and still reaches 1.000 with base and head frozen
+  - index: 3
+    slug: mean_pool_discards_position
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Replace the VLM's image encoder with DINOv3 instead of its default SigLIP/CLIP. Re-train only the projector (frozen LLM + frozen DINOv3). Measure whether dense-prediction tasks (counting, spatial reasoning) improve.
+    zh: |
+      **（困難）** 把 VLM 的影像編碼器從預設的 SigLIP／CLIP 換成 DINOv3。只重新訓練投影層（凍結 LLM + 凍結 DINOv3）。量測稠密預測任務（計數、空間推理）有沒有變好。
+    verifies: >-
+      DINOv3 is unreachable -- timm, transformers, open_clip and dinov2 all raise ModuleNotFoundError
+      -- and the swap is not a drop-in even in principle: Projector opens with Linear(in_features=32)
+      and the lesson's own deepstack_features concatenates 3 ViT levels to 96 channels, raising 'mat1
+      and mat2 shapes cannot be multiplied (64x96 and 32x64)'. Staged with three frozen 32x32
+      stand-ins over the lesson's own tokens (ranks 32/2/2, class-direction retention
+      1.000/1.000/0.000), counting scores 0.867/0.817/0.100 against a 0.217 majority and 0.125 uniform
+      baseline: dropping 30 of 32 dimensions costs 0.050 while removing the one class direction at the
+      same rank costs everything, so rank is not the axis. Spatial reasoning improves by exactly 0.000
+      for every encoder -- all three score 0.600, the validation majority rate, all predicting a
+      constant [60, 0] -- because ToyVLM.forward mean-pools over patches and is permutation-invariant
+      to 3.73e-08. The signal is in the features: a plain Linear(16*32, c) that keeps the patch axis
+      scores 1.000 on both tasks

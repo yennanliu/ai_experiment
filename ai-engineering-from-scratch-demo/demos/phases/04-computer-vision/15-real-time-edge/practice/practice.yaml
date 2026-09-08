@@ -1,0 +1,34 @@
+lesson: 15-real-time-edge
+phase: 04-computer-vision
+source: phases/04-computer-vision/15-real-time-edge/docs/en.md
+exercises:
+  - index: 1
+    slug: flops_latency_divergence
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Measure p50 latency for `resnet18`, `mobilenet_v3_small`, `efficientnet_v2_s`, and `convnext_tiny` at 224x224 on CPU. Report the table and identify which architecture has the best accuracy-per-ms.
+    zh: |
+      **（簡單）** 在 CPU 上以 224x224 量測 `resnet18`、`mobilenet_v3_small`、`efficientnet_v2_s` 與 `convnext_tiny` 的 p50 延遲。列出表格，並指出哪個架構的「每毫秒準確率」最好。
+    verifies: convnext_tiny is last on published-top-1-per-measured-ms and trails the winner by >5x; GFLOPs delivered per ms spreads >5x across the four backbones; the position-corrected FLOP count reproduces torchvision's `_ops` to <1% while the lesson's `flops_estimate` runs >10x low on convnext_tiny; two of the four random-init models predict one class for all 32 probe images; p95 == p99 at the reference's default iters=20; and no thread count makes mobilenet_v3_small 10x faster than resnet18
+  - index: 2
+    slug: int8_ptq_signal_floor
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Apply post-training static quantisation to `mobilenet_v3_small`. Report FP32 vs INT8 latency and accuracy loss on a held-out subset of CIFAR-10 or similar.
+    zh: |
+      **（中等）** 對 `mobilenet_v3_small` 施加訓練後靜態量化。報告 FP32 與 INT8 的延遲，以及在 CIFAR-10 或類似資料集的保留子集上的準確率損失。
+    verifies: static INT8 PTQ shrinks the state dict >3.5x at top-1 agreement 1.000 and SQNR >20 dB once BatchNorm holds real statistics; on the model as built the same pipeline gives <1 dB and agreement <0.5 from logits below 1e-8; all 34 BatchNorm layers are at their default statistics and activation magnitude survives at <1e-5 across the 13 feature stages with a measured Hardswish gain in (0.4, 0.6); the first packed weight rebuilds from int_repr, scale and zero-point with exactly zero float32 error over <=256 levels inside [-128, 127]; dynamic quantisation stays >2x larger than static and no more than 2x faster than FP32
+  - index: 3
+    slug: graph_fusion_without_onnx
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Export `convnext_tiny` to ONNX, run it through `onnxruntime` with the `CPUExecutionProvider`, and compare latency to the PyTorch eager baseline. Identify the first layer where ONNX Runtime is faster and explain why.
+    zh: |
+      **（困難）** 把 `convnext_tiny` 匯出成 ONNX，用 `onnxruntime` 搭配 `CPUExecutionProvider` 執行，並與 PyTorch eager 基準比較延遲。找出 ONNX Runtime 第一個變快的層，並解釋原因。
+    verifies: neither `torch.onnx.export` path exports and `onnxruntime` has no importable spec; torch's own freezer cuts the traced graph below 75% of its nodes and turns every `aten::linear` into an `aten::matmul`, while reproducing convnext_tiny's logits to <1e-5 at under 2x the eager p50; convnext_tiny holds zero BatchNorm2d and more Permute modules than Conv2d; resnet18's Conv-BN pairs all fold with output change <1e-5 and no BatchNorm left; and every compute-op count in PARTS is identical before and after freezing

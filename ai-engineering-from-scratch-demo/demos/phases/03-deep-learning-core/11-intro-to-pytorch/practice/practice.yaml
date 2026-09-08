@@ -11,7 +11,20 @@ exercises:
       **Add batch normalization.** Insert `nn.BatchNorm1d` after each linear layer (before the activation). Compare test accuracy and training speed vs the dropout-only version. Batch norm should reach 98%+ in fewer epochs.
     zh: |
       **加上 batch normalization。** 在每個線性層之後（激活之前）插入 `nn.BatchNorm1d`。比較它與只用 dropout 的版本在測試準確率和訓練速度上的差別。batch norm 應該用更少的 epoch 就達到 98% 以上。
-    verifies: ANSWER batch norm costs accuracy and roughly matches the epoch cost - peak over 12 epochs on 1280/2000 rows at a Bayes rate of 0.9990: dropout 0.9890 at 11.9 ms/epoch, +batch norm 0.9845 at 13.5 ms (1.14x), and the lesson's own model 0.9800 at 11.7 ms once its dropout is removed; FINDING batch norm reaches 98% later rather than sooner - epochs to 98% are 3 for dropout, 5 for +batch norm and 11 for the lesson's model, so 'fewer epochs' holds only for epoch 1, where batch norm leads 0.8940 to 0.8550; FINDING parameters() undercounts the batch-norm checkpoint by 770 - the dropout model's 235,146 parameters are 235,146 state_dict numbers, while batch norm reports 235,914 against 236,684, the +768 being 2*(256+128) scales and shifts and the other 770 the running statistics, buffers that parameters() misses and torch.save writes; FINDING a size-1 last batch kills batch norm inside train_one_epoch - 1281 rows at batch_size=64 ends on a batch of 1 and raises ValueError 'Expected more than 1 value per channel when training, got input size torch.Size([1, 256])', where the dropout model runs the same loader fine; 60000 % 64 = 32, so MNIST hides it and the missing drop_last in create_loaders stays a landmine
+    verifies: >-
+      ANSWER batch norm costs accuracy and roughly matches the epoch cost - peak over 12 epochs on
+      1280/2000 rows at a Bayes rate of 0.9990: dropout 0.9890 at 11.9 ms/epoch, +batch norm 0.9845 at
+      13.5 ms (1.14x), and the lesson's own model 0.9800 at 11.7 ms once its dropout is removed;
+      FINDING batch norm reaches 98% later rather than sooner - epochs to 98% are 3 for dropout, 5 for
+      +batch norm and 11 for the lesson's model, so 'fewer epochs' holds only for epoch 1, where batch
+      norm leads 0.8940 to 0.8550; FINDING parameters() undercounts the batch-norm checkpoint by 770 -
+      the dropout model's 235,146 parameters are 235,146 state_dict numbers, while batch norm reports
+      235,914 against 236,684, the +768 being 2*(256+128) scales and shifts and the other 770 the
+      running statistics, buffers that parameters() misses and torch.save writes; FINDING a size-1
+      last batch kills batch norm inside train_one_epoch - 1281 rows at batch_size=64 ends on a batch
+      of 1 and raises ValueError 'Expected more than 1 value per channel when training, got input size
+      torch.Size([1, 256])', where the dropout model runs the same loader fine; 60000 % 64 = 32, so
+      MNIST hides it and the missing drop_last in create_loaders stays a landmine
     uses_reference:
       - MNISTModel
       - MNISTModelWithBatchNorm

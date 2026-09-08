@@ -1,0 +1,81 @@
+lesson: 11-stable-diffusion
+phase: 04-computer-vision
+source: phases/04-computer-vision/11-stable-diffusion/docs/en.md
+exercises:
+  - index: 1
+    slug: cfg_scale_artefact_onset
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Generate the same prompt with `guidance_scale` in `[1, 3, 5, 7.5, 10, 15]`. Describe how the image changes. At what guidance value do artefacts appear?
+    zh: |
+      **（簡單）** 用同一個提示詞，把 `guidance_scale` 依序設成 `[1, 3, 5, 7.5, 10, 15]` 生成。描述影像怎麼變。瑕疵是在哪個引導值開始出現的？
+    verifies: >-
+      the lesson cannot generate an image here -- its own has_diffusers() is False,
+      torch.cuda.is_available() is False and text_to_image_stub returns None -- so the sweep runs an
+      exact Gaussian surrogate (prompt e ~ N(0, 0.15^2), latent x0|e ~ N(e, 0.45^2)) through lesson
+      10's own sample_ddim at the 25 steps the stub itself passes: artefacts, measured as sample
+      values outside the data's own range |x| > 2.125, have no onset at all -- 0 of 49,152 at w=1
+      (peak 1.858), 4 at w=3 (peak 2.204), then 0.31%, 2.34%, 5.72% and 12.93% at 5/7.5/10/15 -- so
+      naming one scale reads noise, and cfg_sweep_demo calls 5 and 7.5 both 'standard' while the rate
+      rises 8x inside that label; the lesson's own cfg_sweep_demo mislabels w=1 'unconditional' when
+      w=1 cancels eps_uncond exactly, measured cosine to the prompt -0.0021 at w=0 against +0.3495 at
+      w=1 and the data's own 0.3100; the affine eps collapses the whole chain to x_0 = G x_T + H e,
+      with G falling 0.398 -> 0.169 as H climbs 0.997 -> 9.276 and sqrt(G^2 + H^2 M^2) reproducing the
+      measured std 0.425/0.548/0.723/0.936/1.121/1.401 to 6.8e-04; oversaturation is CFG not sampling
+      the density it names -- p_cond^w p_uncond^(1-w) has std shrinking 0.450 -> 0.290 while the
+      samples grow to 1.401, 4.8x wider; and adherence saturates first, gaining only +0.0356 from
+      w=7.5 to w=15 while the out-of-gamut rate goes 2.34% -> 12.93%, with both x_T seeds agreeing to
+      0.0015 in std and 0.0030 in adherence
+  - index: 2
+    slug: img2img_strength_signal_floor
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Take any real photograph, run it through `StableDiffusionImg2ImgPipeline` at `strength` in `[0.2, 0.4, 0.6, 0.8, 1.0]`. Which strength preserves composition while changing style? Why does 1.0 ignore the input entirely?
+    zh: |
+      **（中等）** 拿任何一張真實照片，用 `StableDiffusionImg2ImgPipeline` 跑 `strength` 為 `[0.2, 0.4, 0.6, 0.8, 1.0]` 的版本。哪個 strength 能保住構圖又換掉風格？為什麼 1.0 會完全忽略輸入？
+    verifies: >-
+      StableDiffusionImg2ImgPipeline is rebuilt from lesson 10's own q_sample and sample_ddim body --
+      one line different, and at strength 1.0 the two agree to 0.0093 -- over a two-band Gaussian
+      latent whose variance splits between 4x4-block structure (SL=1.2) and detail (SH=0.35), at the
+      guidance_scale 7.5 the lesson's own img2img snippet passes: strength 1.0 ignores the photograph
+      because q_sample scales it by sqrt(alpha_bar_999) = 0.006353, so swapping in a different
+      photograph at the same noise moves the output at most 0.0121 while changing the noise moves it
+      2.387, 198x more; of the exercise's five strengths only 0.2 keeps composition, the coarse-band
+      regression coefficient running 0.814/0.453/0.158/0.027/-0.008 against style
+      0.835/0.910/0.929/0.932/0.932, their product peaking at 0.2 on both noise seeds where style
+      already reaches 90% of its ceiling -- and docs/en.md's '0.5-0.7 is the standard range for style
+      transfer' retains only 0.158 to 0.027 of it; the reverse chain loses no composition at all, the
+      coarse gain tracking sqrt(alpha_bar) at the entry step (0.812/0.442/0.161/0.039/0.006) to 0.0146
+      while the detail band is a further 3.7x to 6.1x down; strength is also the compute knob at
+      5/10/15/20/25 of 25 denoiser calls; and guidance halves the raw cosine to the input (0.625 ->
+      0.342 at strength 0.2) without changing the coarse gain (0.829 vs 0.814), so scoring composition
+      by raw similarity would blame strength for what guidance did
+  - index: 3
+    slug: lora_rank_step_budget
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Train a LoRA on 10-20 images of a single subject (a pet, a logo, a character) and generate novel scenes with that subject in them. Report the LoRA rank and training steps that produced the best identity preservation without overfitting to the input images.
+    zh: |
+      **（困難）** 用同一個主體（一隻寵物、一個標誌、一個角色）的 10 到 20 張影像訓練一個 LoRA，並生成有該主體出現的新場景。回報在不過度擬合輸入影像的前提下，哪個 LoRA rank 與訓練步數保住了最好的身分特徵。
+    verifies: >-
+      lesson 10's own TinyUNet (37,395 parameters) trained by its own train_step for 60 epochs is the
+      frozen base, and the adapter is the real construction -- a rank-r down-projection into every
+      nn.Conv2d plus a zero-initialised 1x1 up-projection, verified an exact no-op at 0.0 before the
+      first step, 942 to 7,536 parameters against SD 1.5's 10-50 MB on an 860M U-Net: identity is
+      scored as eps-MSE improvement on 12 held-out images of the repainted subject, and all 12 grid
+      cells improve it (11.1% to 33.7%), so identity alone would just pick the biggest,
+      longest-trained adapter; gain and forgetting both climb with steps at every rank and neither
+      plateaus (forgetting 5.5%/9.5%/13.7% at rank 1 up to 7.5%/18.7%/38.6% at rank 8), and their
+      ratio crosses 1 only at high rank AND high steps -- 0.50/0.59/0.56/0.49 at 100 steps against
+      0.77/1.21/1.19/1.14 at 1200, with rank 1 peaking at 0.77 and never crossing; scoring a setting
+      affordable when it forgets less than it gains makes the answer rank 8 at 400 steps (gain 0.243,
+      1 of 9 affordable in 12) where raw identity would pick rank 8 at 1200 (gain 0.337,
+      unaffordable); and the exercise's own 'overfitting to the input images' is the wrong quantity --
+      the train-minus-held-out gap peaks at 0.007 across the whole grid while forgetting spans 5.5% to
+      38.6%, and 8x the rank costs only 1.35x the forgetting where 12x the steps costs 2.48x

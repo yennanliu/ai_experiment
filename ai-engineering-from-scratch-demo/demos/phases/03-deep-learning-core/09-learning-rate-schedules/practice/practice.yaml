@@ -72,7 +72,16 @@ exercises:
       Build a "schedule surgeon" that monitors training loss and automatically switches from warmup to cosine when the loss stabilizes, and reduces lr if the loss plateaus for too long.
     zh: |
       做一個「排程外科醫生」：監控訓練損失，在損失穩定下來時自動從暖身切換到餘弦，並在損失停滯太久時降低學習率。
-    verifies: ANSWER the controller fires both triggers - handoff at epoch 28/21/19 over seeds (42, 7, 99) and plateau cuts at epochs 51-59 - beats cosine at every seed and loses to a plain constant rate at every seed; FINDING there is no handoff point to detect: end loss against a FIXED handoff epoch is strictly decreasing over 4..52 at all three seeds, so the best switch point is the latest one tried, while the loss trigger fires 9 epochs apart depending only on the data seed; and every plateau cut lands in the last third of the run below 9% of peak, where the schedule it supervises has already stalled; CONTROL a constant rate spending the same integral reproduces the surgeon within 8% at every seed, and the closed loop is only expressible at all because train_with_schedule is bit-deterministic under replay
+    verifies: >-
+      ANSWER the controller fires both triggers - handoff at epoch 28/21/19 over seeds (42, 7, 99) and
+      plateau cuts at epochs 51-59 - beats cosine at every seed and loses to a plain constant rate at
+      every seed; FINDING there is no handoff point to detect: end loss against a FIXED handoff epoch
+      is strictly decreasing over 4..52 at all three seeds, so the best switch point is the latest one
+      tried, while the loss trigger fires 9 epochs apart depending only on the data seed; and every
+      plateau cut lands in the last third of the run below 9% of peak, where the schedule it
+      supervises has already stalled; CONTROL a constant rate spending the same integral reproduces
+      the surgeon within 8% at every seed, and the closed loop is only expressible at all because
+      train_with_schedule is bit-deterministic under replay
     uses_reference:
       - cosine_schedule
       - constant_schedule

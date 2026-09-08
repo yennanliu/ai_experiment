@@ -11,7 +11,25 @@ exercises:
       Add dropout to the MLP. In JAX, dropout requires a PRNG key -- thread a key through the forward pass and split it for each dropout layer. Compare test accuracy with and without.
     zh: |
       為這個 MLP 加上 dropout。在 JAX 裡，dropout 需要一把 PRNG 金鑰 —— 把金鑰一路穿過前向傳播，並為每一層 dropout 分裂出一把。比較有 dropout 與沒有 dropout 的測試準確率。
-    verifies: ANSWER dropout does not buy test accuracy on this fixture - 600 steps each at p = 0.0 / 0.2 / 0.5 gives train 0.9536 / 0.9502 / 0.3354 and test 0.3018 / 0.2988 / 0.1475, so p=0.2 moves held-out accuracy -0.29 points and p=0.5 costs 15.4 by stopping the net fitting at all, while the train/test gap dropout was meant to close survives untouched at 0.6519 against 0.6514 because the labels carry noise the net memorises; FINDING leaving dropout on at eval costs more than dropout ever wins - the same p=0.2 parameters score 0.2988 with dropout off and 0.2324 with it on, 6.6 points, 20x the effect the exercise asks about, and the key being a required argument is what makes it easy: the eval path must pass one, and passing one keeps dropout live; MECHANISM one key reused is not two masks, the second is a prefix of the first - `bernoulli(k, .8, (256,))[:128]` and `bernoulli(k, .8, (128,))` agree on 100% of positions, because the counter PRNG indexes by position and a new shape does not decorrelate a key, which is exactly why the exercise says 'split it for each dropout layer'; MECHANISM split is a pure function of its key, so it repeats exactly - splitting PRNGKey(1234) twice gives bit-identical subkeys, the two siblings of one split differ, and PRNGKey(1235) differs again, so reproducibility is a property of the value passed in and no interleaved draw shifts it; CONTROL inverted dropout preserves the mean and p=0 is the identity - 20000 ones at p=0.5 return mean 0.99840 against 0.49920 without the 1/(1-p) rescale, and at p=0.0 this forward is bit-identical to the lesson's own
+    verifies: >-
+      ANSWER dropout does not buy test accuracy on this fixture - 600 steps each at p = 0.0 / 0.2 /
+      0.5 gives train 0.9536 / 0.9502 / 0.3354 and test 0.3018 / 0.2988 / 0.1475, so p=0.2 moves
+      held-out accuracy -0.29 points and p=0.5 costs 15.4 by stopping the net fitting at all, while
+      the train/test gap dropout was meant to close survives untouched at 0.6519 against 0.6514
+      because the labels carry noise the net memorises; FINDING leaving dropout on at eval costs more
+      than dropout ever wins - the same p=0.2 parameters score 0.2988 with dropout off and 0.2324 with
+      it on, 6.6 points, 20x the effect the exercise asks about, and the key being a required argument
+      is what makes it easy: the eval path must pass one, and passing one keeps dropout live;
+      MECHANISM one key reused is not two masks, the second is a prefix of the first - `bernoulli(k,
+      .8, (256,))[:128]` and `bernoulli(k, .8, (128,))` agree on 100% of positions, because the
+      counter PRNG indexes by position and a new shape does not decorrelate a key, which is exactly
+      why the exercise says 'split it for each dropout layer'; MECHANISM split is a pure function of
+      its key, so it repeats exactly - splitting PRNGKey(1234) twice gives bit-identical subkeys, the
+      two siblings of one split differ, and PRNGKey(1235) differs again, so reproducibility is a
+      property of the value passed in and no interleaved draw shifts it; CONTROL inverted dropout
+      preserves the mean and p=0 is the identity - 20000 ones at p=0.5 return mean 0.99840 against
+      0.49920 without the 1/(1-p) rescale, and at p=0.0 this forward is bit-identical to the lesson's
+      own
     uses_reference:
       - init_params
       - forward

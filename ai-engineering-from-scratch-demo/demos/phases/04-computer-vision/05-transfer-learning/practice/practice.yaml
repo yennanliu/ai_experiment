@@ -1,0 +1,77 @@
+lesson: 05-transfer-learning
+phase: 04-computer-vision
+source: phases/04-computer-vision/05-transfer-learning/docs/en.md
+exercises:
+  - index: 1
+    slug: probe_vs_finetune_gap
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train a `ResNet18` as a linear probe (backbone frozen) and as a full fine-tune on the same synthetic-CIFAR dataset. Report both accuracies side by side. Explain which gap tells you the features transfer well and which tells you they do not.
+    zh: |
+      **（簡單）** 在同一份合成 CIFAR 資料集上，把一個 `ResNet18` 分別當成線性探測（主幹網路凍結）和完整微調各訓練一次。把兩個準確率並排列出來。說明哪一段落差告訴你特徵遷移得好，哪一段告訴你它遷移得不好。
+    verifies: >-
+      three epochs of the lesson's own train_and_eval on 300 synthetic-CIFAR images at 32x32, 100 held
+      out, against torchvision's real ResNet-18 built with weights=None because the ImageNet
+      checkpoint is a 46 MB fetch a hermetic test cannot make: the linear probe (base_lr 0.03, 5,130
+      trainable) and the full fine-tune (base_lr 0.001, 11,181,642 trainable, 2,180x more) both score
+      1.000, asserted as both above 0.95 and within 0.02 of each other, so neither direction of the
+      gap the exercise asks about is measurable and neither could speak about transfer anyway; the
+      graph is asserted to carry exactly 11,689,512 parameters at 1,000 classes; requires_grad=False
+      holds the backbone parameters to exactly 0.0 relative L2 movement while its 9,600 BatchNorm
+      running statistics move 0.880 and the head 1.598, and pinning those statistics with the lesson's
+      own freeze_bn_stats holds them at 0.0 while the arm still scores 1.000 with its head moving
+      2.123, so the adaptation channel is real but this task does not need it;
+      discriminative_param_groups gives the stem exactly 0.3^5 = 0.00243 of the head's LR, and over
+      the run the head moves 0.271 against the backbone's 2.70e-03, asserted as over 20x; and a
+      logistic regression on the three per-channel means alone scores 0.850, asserted above 0.7
+  - index: 2
+    slug: stage_lr_divergence
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Introduce a bug on purpose: set `base_lr = 1e-1` on the backbone stage instead of the head. Show the training loss explode, then recover by applying the `discriminative_param_groups` helper. Record the LR at which each stage starts diverging.
+    zh: |
+      **（中等）** 刻意製造一個 bug：把 `base_lr = 1e-1` 設在主幹網路那個 stage 上，而不是設在頭上。展示訓練損失爆掉，再用 `discriminative_param_groups` 這個輔助函式救回來。記錄每個 stage 開始發散時的學習率。
+    verifies: >-
+      sixteen-step bursts on 200 images at 24x24 with the lesson's own SGD settings and torchvision's
+      ResNet-18 at weights=None: the bug as written -- the six groups with the ladder reversed,
+      conv1_bn1 at 1e-1 and fc at 2.43e-04 -- takes the loss 2.76 -> 0.61 with its peak equal to its
+      first step, asserted as ending below the first step and peaking under 2x it, so the exercise's
+      premise is false for this architecture; discriminative_param_groups at base_lr 1e-1 peaks at
+      26.6, 10x its first step, asserted above 5x, while the same helper at the lesson's own 1e-3 ends
+      at 0.82, asserted below 0.6x, so the recovery is the base_lr rather than the grouping; on the
+      grid 1e-2, 1e-1, 1, 10 with divergence defined as a peak above 3x the first step and one stage
+      in the optimiser at a time for six steps, fc is asserted to diverge at exactly 1e-1 and each of
+      the five backbone groups at none of them; at LR 10 the worst backbone peak is 2.88 against fc's
+      1213.4, asserted under 5 percent, and fc's peak rises 10.7x then 10.0x per decade, asserted
+      between 4x and 25x; and at LR 10 the worst of layer2, layer3 and layer4 still ends at 1.23,
+      asserted below 0.8x the 2.76 it started from
+  - index: 3
+    slug: pretrain_regimes_crossover
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Take a medical imaging dataset (e.g. CheXpert-small, PatchCamelyon, or HAM10000) and compare three regimes: (a) ImageNet-pretrained frozen backbone + linear head; (b) ImageNet-pretrained fine-tune end-to-end; (c) scratch training. Report accuracy and compute cost for each. At what dataset size does scratch training become competitive?
+    zh: |
+      **（困難）** 拿一個醫學影像資料集（例如 CheXpert-small、PatchCamelyon 或 HAM10000），比較三種模式：(a) ImageNet 預訓練、主幹網路凍結加一個線性頭；(b) ImageNet 預訓練、端到端微調；(c) 從零訓練。分別回報準確率與算力成本。資料集要多大，從零訓練才開始有競爭力？
+    verifies: >-
+      two epochs per arm on scikit-learn's 8x8 digits upsampled to 24x24 RGB, 128 held out, with
+      torchvision's ResNet-18 at weights=None pretrained on the lesson's own synthetic_dataset as the
+      stand-in for the ImageNet checkpoint: the frozen probe scores 0.352, 0.727, 0.750 at n=60, 240,
+      480, the pretrained fine-tune 0.383, 0.836, 0.906 and scratch 0.289, 0.812, 0.883, with every
+      regime asserted to gain more than 0.3 from n=60 to n=480 (worst gain +0.398); taking competitive
+      to mean a gap under 0.05, the pretrained-minus-scratch gap is asserted above 0.05 at n=60
+      (+0.094) and below 0.05 at both n=240 and n=480 (+0.023 each, three of the 128 held-out images
+      at a resolution of 0.008 per image), so the crossover sits below n=240 rather than above it; the
+      frozen probe is asserted to gain under 0.1 over the last doubling (+0.023) and to be overtaken
+      by scratch by more than 0.05 (+0.133); the source checkpoint is asserted above 0.9 source
+      validation accuracy (1.000) while being worth only +0.094 at n=60 and +0.023 after, since
+      torchvision's Kaiming init already supplies the conditioning a domain-far checkpoint would
+      otherwise bring; and every regime is asserted to run the same 8, 30 and 60 steps at its size,
+      the graph to carry exactly 11,689,512 parameters, and the priced real run -- HAM10000's 10,015
+      images for 20 epochs at about 25 images/s measured at 224x224 on 2 CPU threads -- to exceed half
+      a CPU-hour, measuring about 2.2

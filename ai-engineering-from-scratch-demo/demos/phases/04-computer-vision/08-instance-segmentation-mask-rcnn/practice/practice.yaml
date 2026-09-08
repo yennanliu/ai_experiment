@@ -1,0 +1,60 @@
+lesson: 08-instance-segmentation-mask-rcnn
+phase: 04-computer-vision
+source: phases/04-computer-vision/08-instance-segmentation-mask-rcnn/docs/en.md
+exercises:
+  - index: 1
+    slug: roialign_parity_and_roipool_drift
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Verify your RoIAlign against `torchvision.ops.roi_align` on 100 random boxes. Report the max absolute difference. Also run RoIPool (pre-2017 behaviour) and show it diverges by ~1-2 feature-map pixels on boxes near the border.
+    zh: |
+      **（簡單）** 拿 100 個隨機框，把你的 RoIAlign 跟 `torchvision.ops.roi_align` 對照，回報最大絕對差。另外也跑一次 RoIPool（2017 年之前的行為），呈現它在靠邊界的框上會偏離約 1 到 2 個特徵圖像素。
+    verifies: Asserts that the lesson's `roi_align_single`, checked against `torchvision.ops.roi_align` (sampling_ratio=1, aligned=True) on 100 seeded random boxes over a 50x50 stride-4 feature map, has a max absolute difference above 1e-3 (measured 0.2509, mean 0.0100) while the boxes that do not disagree agree to better than 1e-4 (measured 2.5e-05) -- so the lesson's promised 1e-5 does not hold. Asserts that the 7 boxes exceeding 1e-4 are exactly the 7 whose sampling grid leaves [0, 49], and that at the worst cell (row 6, col 6, overhanging 0.0861 px in x and 0.0462 in y) the from-scratch value equals ref*(1-fx)*(1-fy) to within 1e-3 (1.7042 measured against a 1.7042 prediction and torchvision's 1.9551), which is grid_sample zero-padding where torchvision replicates. Asserts the same box slid 12 image px inward falls below 1e-4 (2.15e-05), and that all five other (aligned, sampling_ratio) combinations exceed 1.0 (2.30-3.30). Finally asserts the RoIPool-minus-RoIAlign displacement on a coordinate ramp, swept over 41 sub-pixel offsets, has peak-to-peak between 0.85 and 1.15 feature pixels (0.950) and that the mid-map and edge sweeps differ by less than 0.02 (both 0.950, constant part 1.524 both).
+  - index: 2
+    slug: frozen_backbone_finetune_mask_ap
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Fine-tune `maskrcnn_resnet50_fpn_v2` on a 50-image custom dataset (any two classes: balloons, fish, pothole, logos). Freeze the backbone, train for 20 epochs, report mask AP@0.5.
+    zh: |
+      **（中等）** 在一個 50 張影像的自訂資料集上微調 `maskrcnn_resnet50_fpn_v2`（任選兩個類別：氣球、魚、路面坑洞、商標）。凍住主幹網路，訓練 20 個 epoch，回報遮罩 AP@0.5。
+    verifies: >-
+      Asserts that a randomly initialised `maskrcnn_resnet50_fpn_v2` (num_classes=3, no checkpoint
+      fetch) after `freeze_backbone` emits 3 box-classifier logits and leaves the backbone at 0
+      trainable parameters while the RPN stays trainable -- 19,031,329 of 45,885,793 (41.5%): backbone
+      0/26,854,464, rpn 1,184,015/1,184,015, roi_heads 17,847,314/17,847,314. Asserts that after 16
+      SGD(lr=0.01) steps on 8 96x96 images the held-out mask AP@0.5 stays under 0.2 (measured 0.000,
+      and 0.000 at 0.75 and 0.90) while the summed loss falls to under half its start (3.54 -> 0.87,
+      4.1x) across exactly 5 loss keys. Asserts the best IoU any stock anchor shape reaches on any
+      ground-truth box is under the RPN's 0.7 positive threshold (0.56) and that
+      allow_low_quality_matches is True, so the anchors are rescaled 4x. Asserts every backbone weight
+      is bit-identical after training (0.0) while the BatchNorm running statistics move by more than
+      0.1 (29.89) across its 61 real `nn.BatchNorm2d` layers. Asserts the AP implementation returns
+      above 0.999 on the ground truth itself at IoU 0.90 (1.000).
+  - index: 3
+    slug: mask_head_56_vs_28_ceiling
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Replace Mask R-CNN's mask head with one that predicts at 56x56 instead of 28x28. Measure mAP@IoU=0.75 before and after. Explain why the gain (or lack of one) matches the expected boundary-precision / memory trade-off.
+    zh: |
+      **（困難）** 把 Mask R-CNN 的遮罩頭換成在 56x56 而非 28x28 上做預測。量測前後的 mAP@IoU=0.75。解釋為什麼這個增益（或為什麼沒有增益）符合預期中邊界精度與記憶體之間的取捨。
+    verifies: >-
+      Asserts that adding one 2x `ConvTranspose2d` in front of the stock `MaskRCNNPredictor` turns the
+      14x14 RoIAlign patch (produced by the lesson's own `roi_align_single`, at mask_roi_pool's
+      output_size (14, 14)) from (1, 3, 28, 28) logits into (1, 3, 56, 56), growing the predictor
+      263,171 -> 525,571 parameters (2.0x) and 100 proposals of logits 0.94 -> 3.76 MB (4x). Asserts
+      the 28x28 representation ceiling -- a ground-truth mask encoded at RxR and pasted back at the
+      object's pixel size, averaged over a disk, a diamond and a 5-lobed star -- stays above 0.95 IoU
+      at every box size tested (1.0000 at 24px, 0.9804 at 64, 0.9634 at 128, 0.9607 at 256), so mask
+      resolution never puts an instance under IoU 0.75 -- an oracle ceiling on a perfect mask, so it
+      bounds where a change could come from rather than showing mAP@0.75 cannot move. Asserts the two
+      resolutions are identical at 24px (both 1.0000) and that at 256px the residual error falls by
+      more than 1.8x (0.0393 -> 0.0194), and that the 56x56 ceiling (0.9806) sits above and the 28x28
+      ceiling (0.9607) below their midpoint 0.97 -- the only threshold band where the swap is visible.
+      Asserts the alternative route, RoIAlign at 28x28 with the stock single deconv, costs exactly 4x
+      the mask-head activations (80.3 -> 321.1 MB for 100 proposals).

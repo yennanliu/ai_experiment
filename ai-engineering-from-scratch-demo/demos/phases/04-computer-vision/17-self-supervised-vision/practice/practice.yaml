@@ -1,0 +1,57 @@
+lesson: 17-self-supervised-vision
+phase: 04-computer-vision
+source: phases/04-computer-vision/17-self-supervised-vision/docs/en.md
+exercises:
+  - index: 1
+    slug: infonce_temperature_sweep
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Verify that InfoNCE loss drops when you decrease temperature for well-aligned embeddings and rises when you decrease temperature for random embeddings. Produce a plot `tau in [0.05, 0.1, 0.2, 0.5]` vs loss.
+    zh: |
+      **（簡單）** 驗證：對於對齊良好的嵌入，調低溫度參數時 InfoNCE 損失會下降；對於隨機嵌入，調低溫度參數時損失會上升。畫出 `tau in [0.05, 0.1, 0.2, 0.5]` 對損失的圖。
+    verifies: >-
+      The lesson's own info_nce over tau (0.05, 0.1, 0.2, 0.5) at N=16, D=32: identical views fall
+      monotonically as tau falls in 4/4 seeds and independent views rise in 4/4. The claim reverses
+      once views are less aligned -- monotone in 4/4 seeds at eps<=0.3 and 0/4 at eps>=0.5, splitting
+      2/4 at eps=0.4. A rank-one batch reads log(2N-1) = 3.4339872 at every tau, spread exactly 0.0,
+      so the loss is blind to collapse. Reproducing main.py own draw gives 5.229 for random pairs
+      against the 3.434 its comment quotes, and |loss - log(2N-1)| shrinks 0.0633 > 0.0104 > 0.0025 >
+      0.0005 as tau goes 1 -> 100.
+  - index: 2
+    slug: dino_centring_prevents_collapse
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Implement a DINO-style centre buffer. Show that without the centring, the student collapses to a constant vector within a few epochs.
+    zh: |
+      **（中等）** 實作一個 DINO 風格的中心化緩衝區。證明少了中心化，學生網路會在幾個 epoch 內崩潰成一個常數向量。
+    verifies: >-
+      Self-distilling the lesson's DinoHead for 40 epochs over 4 seeds: with update_centre never
+      called the effective rank of the 16-d student output ends at 1.00-1.01 in 4/4 seeds using 1-2 of
+      16 argmax modes; calling it as main.py does holds the rank at 1.96-3.16 in 4/4 with 5-8 modes, a
+      gap of 0.96 with no seed overlap. Collapse arrives at epoch 1, 3, 3 and 25 across seeds, so
+      within a few epochs holds for three of four. With centring off, a teacher at temp 0.2 does not
+      collapse at all (rank 10.27-10.85, 16/16 modes) while temp 0.1 gives 1.02-1.98. centre is a
+      buffer (requires_grad False, in state_dict, all 1040 head parameters in proj), and feeding
+      update_centre probabilities rather than logits also prevents collapse (2.15-4.62).
+  - index: 3
+    slug: mae_probe_versus_pretext_floor
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Train MAE on CIFAR-100 using the TinyUNet from Lesson 10 as the backbone. Report linear-probe accuracy at 10, 50, and 200 epochs. Show that a MAE-pretrained linear probe beats a from-scratch supervised linear probe on the same 1,000-image subset.
+    zh: |
+      **（困難）** 用第 10 單元的 TinyUNet 當主幹，在 CIFAR-100 上訓練 MAE。回報第 10、50、200 個 epoch 的線性探測準確率。證明在同一個 1,000 張影像的子集上，MAE 預訓練過的線性探測會贏過從零開始的監督式線性探測。
+    verifies: >-
+      MAE pretraining of lesson 10 TinyUNet (base=8, t pinned to 0) on 1,000 synthetic 16x16 gratings,
+      75% of 64 patches masked by the lesson's own random_mask_indices: a logistic probe on the frozen
+      256-d bottleneck scores 1.000 on 500 held-out images against 0.100 for the same head trained
+      from scratch on raw pixels (1.000 on its own train split) and 0.120 for an untrained backbone,
+      chance 0.100. The 10/50/200 ledger the exercise asks for is saturated at 1.000/1.000/1.000 and
+      ranks nothing; the masked-patch MSE still discriminates, 0.4744 -> 0.3522 -> 0.3148 against a
+      trivial zero-predictor at 0.7496 and an analytic noise floor of 0.250, having closed 87.0% of
+      the reducible gap and sitting at 1.26x the floor.

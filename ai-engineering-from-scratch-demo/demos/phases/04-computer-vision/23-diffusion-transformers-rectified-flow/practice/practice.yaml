@@ -1,0 +1,56 @@
+lesson: 23-diffusion-transformers-rectified-flow
+phase: 04-computer-vision
+source: phases/04-computer-vision/23-diffusion-transformers-rectified-flow/docs/en.md
+exercises:
+  - index: 1
+    slug: euler_step_count_error_curve
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train the TinyDiT above on the synthetic blob dataset for 500 steps. Compare samples produced with 10, 20, and 50 Euler steps.
+    zh: |
+      **（簡單）** 把上面的 TinyDiT 在合成色塊資料集上訓練 500 步。比較用 10、20 與 50 個 Euler 取樣步數產生的樣本。
+    verifies: >-
+      the three step counts the exercise names land a few percent apart: against a converged 400-step
+      solve from the same starting noise, 10/20/50 steps sit 3.9%/2.1%/0.8% of the 25.38 travelled,
+      error falling ~2x per doubling (1.32x, 1.53x, 1.87x), while the `samples range [min, max]`
+      main() prints moves only 0.043/0.080 across those three and so ranks nothing. The interpolant's
+      velocity is exactly t-independent -- recovered from x_t alone as (x_t - x_0)/t it returns eps -
+      x_0 to 1.1e-15 in float64 -- and on a one-point dataset the exact marginal field is constant, so
+      the lesson's own sampler is exact in ONE step to 9e-07 (float32 rounding); a two-point dataset
+      is 17.9% off at 1 step, 4.1% at 2, exact again from 4. The closed-form marginal field of the
+      same 128 blobs gives 16.3%/12.7%/6.6%/4.4% at 1/2/4/10 steps against the trained net's
+      16.3%/12.4%/8.1%/3.9%, agreeing to 1.5%, so the residual is curvature and not a short run, and
+      the trained field deviates 29.1%/15.9%/9.6%/12.5%/15.8% from its own chord
+  - index: 2
+    slug: class_conditioning_colour_match
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Add text conditioning by concatenating a learned class embedding to the time embedding (10 blob "classes" by colour). Sample with class 0, 5, and 9 and verify colours match.
+    zh: |
+      **（中等）** 把一個學出來的類別嵌入串接到時間步嵌入上，加入文字條件控制（依顏色分成 10 個色塊「類別」）。用類別 0、5、9 取樣，並驗證顏色相符。
+    verifies: classes 0, 5 and 9 each score 1.00 and all ten average 0.983 against a 0.100 chance rate, judged by the hue of a sample's 8 brightest pixels against the 10-colour palette; the palette's mean colour over the training set has norm 0.0081 so an unconditional model has nothing to prefer, while the same classifier reads the data's own labels at 1.000. 'Concatenating' cannot be done as written -- TinyDiT hardcodes DiTBlock(dim, heads, cond_dim=dim) -- so the 2*64 concat is projected back at 8,256 parameters over add's 170,508, and it buys 0.983 against plain addition's 0.258 on near-equal losses (0.2005 vs 0.2187). adaLN-Zero makes every block exactly the identity at init (block output minus input 0.0, output bit-identical for t=0 vs 1 and for class 0 vs 9), so one rectified_flow_train_step leaves 124,928 of 178,764 parameters -- 23 of 36 tensors, including the class embedding just added -- at gradient exactly 0.0, and inside self.mlp(cond).chunk(3) only the gate third is alive (0.0, 0.0, 9.025e-03)
+  - index: 3
+    slug: frechet_rf_vs_ddpm_convergence
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Compute the Fréchet distance (FID proxy) between generated samples from rectified-flow and DDPM versions of the same-size network trained on the same data for the same number of steps. Report which converges faster.
+    zh: |
+      **（困難）** 對同樣大小的網路分別做出修正流版與 DDPM 版，用同一份資料訓練同樣的步數，再計算兩者生成樣本之間的 Fréchet 距離（FID 的代理指標）。報告哪一個收斂得比較快。
+    verifies: >-
+      one TinyDiT of 171,660 parameters, one dataset, one optimiser, one seed and 600 steps: the
+      Fréchet distance to the data at 200/400/600 steps is 0.678/0.567/0.561 under rectified flow and
+      1.22e+03/706/581 under lesson 10's DDPM objective, so RF's first checkpoint beats DDPM's last by
+      857x against a floor of 0.1175 measured between two halves of the real data. The distance the
+      exercise literally asks for -- between the two generators -- is 584, within 0.4% of DDPM's own
+      distance to the data, and ranks nothing. sample_ddim's 1/sqrt(alpha_bar) reaches 157.4 at t=999
+      and DDPM samples come out at std 10.258 against the data's 0.196 where RF lands at 0.205; over
+      1/2/4/10/20 sampling steps RF reads 0.653/0.634/0.585/0.564/0.561 while DDIM reads
+      788/606/504/550/581, non-monotone and worse past its optimum. Lesson 10's own TinyUNet under the
+      same objective and budget scores 176, 1,495x the floor, so the architecture is not what is being
+      measured

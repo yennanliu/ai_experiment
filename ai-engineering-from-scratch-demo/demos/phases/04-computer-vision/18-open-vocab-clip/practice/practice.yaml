@@ -1,0 +1,93 @@
+lesson: 18-open-vocab-clip
+phase: 04-computer-vision
+source: phases/04-computer-vision/18-open-vocab-clip/docs/en.md
+exercises:
+  - index: 1
+    slug: openclip_zero_shot_chance_floor
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Use a pretrained OpenCLIP ViT-B/32 and do zero-shot classification on CIFAR-10 with the 80-template prompt set. Report top-1 accuracy; it should be around 85-90%.
+    zh: |
+      **（簡單）** 用預訓練的 OpenCLIP ViT-B/32，搭配那組 80 個模板的提示詞，在 CIFAR-10 上做零樣本分類。回報 top-1 準確率；應該會落在 85 到 90% 左右。
+    verifies: >-
+      open_clip, clip and transformers are in no dependency group and no download is permitted, so
+      'pretrained OpenCLIP ViT-B/32 on CIFAR-10' cannot be run at all -- each import gives
+      ModuleNotFoundError: No module named '<pkg>' and torchvision.datasets.CIFAR10(download=False)
+      gives RuntimeError: Dataset not found or corrupted, with the 85-90% band reported for LAION-2B
+      ViT-B/32 and not measured here; against a CIFAR-10-shaped stand-in (10 classes of Lesson 4's
+      synthetic_cifar through a frozen random projection to the lesson's 128-d image features, one
+      64-d unit prompt per class) the lesson's own zero_shot_classify at random init scores top-1
+      0.085, 0.065, 0.005, 0.155, 0.095, 0.120, 0.115, 0.110 over 8 seeds on 200 held-out images, mean
+      0.094 against the 1/10 = 0.100 floor with 4 of 8 *under* chance because those inits ever name
+      only 5, 4, 6, 7, 4, 7, 4, 6 of the 10 classes; trained on the lesson's own clip_loss top-1
+      saturates at 1.000 by step 10 on all 8 seeds for a spread of 0.000 (0.085 -> 0.760 -> 1.000 at
+      0, 2, 5 steps on seed 0), so the discriminating quantity is the top-1-minus-runner-up cosine
+      margin, which climbs from 0.019-0.041 to 0.574-0.608 by step 100; top-1 is exactly invariant to
+      the temperature, all 200 predictions bit-identical across scales 0.01, 1.0, 14.285 and 100.0
+      because a positive scalar cannot reorder a row, with logit_scale reaching accuracy only through
+      the loss (final 1.886-2.037); and the chance floor is confirmed at 0.10075 against 1/10 =
+      0.10000 by relabelling the trained head's predictions through 2,000 random permutations of the
+      prompts
+  - index: 2
+    slug: template_averaging_gap
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Compare single-template ("a photo of a {}") vs 80-template averaged embeddings on the same CIFAR-10 task. Quantify the gap and explain why templates help.
+    zh: |
+      **（中等）** 在同一個 CIFAR-10 任務上，比較單一模板（"a photo of a {}"）與 80 個模板平均後的嵌入。量化兩者的差距，並解釋模板為什麼有幫助。
+    verifies: >-
+      open_clip is absent (ModuleNotFoundError: No module named 'open_clip'), so "a photo of a {}"
+      cannot be tokenised or embedded and a template is modelled in feature space instead: a
+      per-template direction shared across classes (style 0.4) plus per-(class, template) content
+      noise (0.3) added to the class prototype before L2-normalising; over 3 template banks and 200
+      held-out images the single-template arm scores 0.705-0.905 against 1.000 for the 80-template
+      averaged table, a gap of 0.095-0.295, while OpenAI's 1-3% top-1 for the real 80 on ImageNet is
+      reported and not measured here; the accuracy gap closes at K=4 on all 3 banks so 76 of the 80
+      templates buy nothing measurable, and only the margin still ranks them, ending at 0.324-0.332
+      against 0.637 for a single noiseless prompt -- all of the accuracy, about half of the margin;
+      the mechanism is exactly 1/sqrt(K) variance reduction, per-dimension RMS of the mean of K noise
+      draws measuring 0.30651, 0.21800, 0.15095, 0.10923, 0.06742, 0.03475 against the predicted
+      0.30000, 0.21213, 0.15000, 0.10607, 0.06708, 0.03354 at K = 1, 2, 4, 8, 20, 80, every ratio
+      within 3.6% and the nuisance term cut 8.9x; the gain is per-class noise cancellation and not
+      style removal -- with noise off and a style direction of 1.2, three times the main arm's, the
+      single-template arm still scores 0.935-0.995 for a cost of at most 0.065 against the 0.295 that
+      noise costs, and at style and noise both 0 the 80 bank rows are bitwise identical and the K=1 to
+      K=80 gap is exactly 0.000 at 1.000 top-1; and averaging embeddings (CLIP's recipe) is not
+      averaging features, the two class tables only 0.9155-0.9623 cosine apart per class because
+      text_proj is a ReLU MLP, both scoring 1.000 top-1 so accuracy cannot rank them while their
+      margins differ, 0.332 after the tower against 0.378 before
+  - index: 3
+    slug: retrieval_recall_at_k_null
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Build a zero-shot image retrieval index: embed 1,000 images with CLIP, build a FAISS index, query with a natural language description. Report retrieval recall@5 for 20 held-out queries you write by hand.
+    zh: |
+      **（困難）** 建一個零樣本影像檢索索引：用 CLIP 嵌入 1,000 張影像、建一個 FAISS 索引，再用自然語言描述查詢。針對你手寫的 20 個保留查詢，回報檢索的 recall@5。
+    verifies: >-
+      faiss and open_clip are both absent (ModuleNotFoundError: No module named 'faiss' /
+      'open_clip'), so there is no index library, no checkpoint and no way to write a query by hand; a
+      FAISS IndexFlatIP over L2-normalised vectors is exhaustive inner-product search, and topk(5) on
+      one matmul reproduces the full argsort prefix bitwise with every embedding at norm
+      0.9999999-1.0000001, so nothing is lost there; over 3 towers trained on the lesson's own
+      clip_loss (final 1.918-1.970), 20 caption queries against a 1,000-image gallery give instance
+      recall@5 of 0.05, 0.00, 0.05, mean 0.0333 -- 0 or 1 query of 20 finds its own image; that is the
+      metric's fault and not the tower's, since the same retrieval puts the query's class in the top 5
+      for 20 of 20 queries on all 3 seeds while the paired image sits at median rank 56-63 of 1,000,
+      crowded out by the 99 gallery images that share its class and therefore its caption, and 20
+      queries quantise recall@5 to multiples of 0.050; the null model is exact, 200 draws of 1,000
+      random unit vectors and 20 random queries (4,000 queries) giving recall@k of 0.00125, 0.00600,
+      0.01000, 0.04950 at k = 1, 5, 10, 50 against k/N = 0.00100, 0.00500, 0.01000, 0.05000, worst
+      deviation 0.00100, so the trained mean is 7x the floor and still 96.7% misses; the temperature
+      scales logits exactly and moves no retrieval result, top-5 bit-identical across scales 0.01,
+      1.0, 14.285, 100.0, softmax rows summing to 0.9999998-1.0000005 and swapping the towers
+      transposing the matrix to exactly 0.0 so clip_loss agrees both ways at 1.010219; and the docs'
+      claim that the initial loss should be close to log(N) holds only at temperature 1 -- at the
+      lesson's own logit_scale of e^2.6592 the untrained loss is 3.167, 4.011, 4.974, 6.480 at N = 8,
+      32, 64, 256 against log(N) of 2.079, 3.466, 4.159, 5.545, running 1.16-1.52x high, while the
+      same embeddings at scale 1.0 give 2.110, 3.456, 4.157, 5.547, matching log(N) to 0.031

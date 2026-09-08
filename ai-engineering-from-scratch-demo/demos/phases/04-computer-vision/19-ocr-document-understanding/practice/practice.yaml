@@ -1,0 +1,61 @@
+lesson: 19-ocr-document-understanding
+phase: 04-computer-vision
+source: phases/04-computer-vision/19-ocr-document-understanding/docs/en.md
+exercises:
+  - index: 1
+    slug: digit_cer_renderer_collision
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train the TinyCRNN on 5-digit random numeric strings for 500 steps. Report CER on a held-out set.
+    zh: |
+      **（簡單）** 拿 5 位數的隨機數字字串訓練 TinyCRNN 500 步。在一組保留資料上回報 CER。
+    verifies: >-
+      500 Adam steps at lr=1e-3, batch 8, on 5-digit random numeric strings gives held-out CER exactly
+      1.0000 -- all 50 lines decode to the empty string, 0/50 exact, 1 distinct output -- and the
+      reason is not undertraining: synthetic_line sets shade = 0.0 if c.isalnum() else 0.5, so all 36
+      alnum symbols of the 37-symbol VOCAB render to 1 distinct bitmap and the 2560-pixel tensors for
+      '12345' and '67890' are bit-identical; the target then carries 5*log(10) = 11.5129 nats the
+      image does not, fixing an exact floor of log(10) = 2.3026 nats/char that the run approaches from
+      above (11.412 at step 0 to 2.6252 over the last 50 steps, 14% clear of the floor); CER 1.0 is
+      worse than the best constant guess at 0.8560, because CTC breaks the tie by collapsing to blank;
+      the same loop with one shade per digit and nothing else changed reaches CER 0.0680 with 35/50
+      exact and plateau 0.2066, so model, loss and decoder are all correct; and the 0.5 shade branch
+      is dead code -- build_batch(['a b']) raises ValueError from VOCAB.index, leaving exactly two
+      reachable shades, 0.0 ink and 1.0 padding
+  - index: 2
+    slug: beam_search_cer_delta
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Replace greedy decoding with beam search (beam_width=5). Report CER delta. On which inputs does beam search win?
+    zh: |
+      **（中等）** 把貪婪解碼換成 beam search（beam_width=5）。回報 CER 的變化量。beam search 在哪一類輸入上會贏？
+    verifies: >-
+      prefix beam search at width 5 over the lesson's own main() run (200 Adam steps, its own
+      abc0..abc9 / xy01..xy910 strings, its seeds) moves CER from 0.6790 to 0.6667, a delta of -0.0123
+      or 1.8% relative, and it wins on exactly 1 of the 20 lines: 'xy910', greedy 'x910' -> beam
+      'xy910', which is the only length-5 string in a set of lengths [4, 5] and so the only image not
+      bit-identical to the other 19 (greedy collapses all 20 lines to 2 distinct outputs); the
+      mechanism is exact against the lesson's own ctc_loss with its reduction='mean' division undone
+      -- P('xy910') = 0.052094 beats P('x910') = 0.048992 by 1.0633x while the best of the 37**20
+      paths scores 0.037392 and spells 'x910', so greedy maximises over paths and beam over labelings;
+      on a hand-built 3-step distribution of (0.45, 0.35, 0.20) over (blank, '0', '1') the greedy path
+      takes blank three times for 0.45**3 = 0.091125 while the 27 paths marginalised by ctc_loss put
+      0.365750 on '0', 4.0137x more, and beam-5 returns that to 1.0e-07 nats; and width 5 is
+      over-provisioned and lossy -- width 1 reproduces greedy_ctc_decode on 20/20 lines, CER saturates
+      at width 3 (0.6790, 0.6790, 0.6667, 0.6667, 0.6667, 0.6667 at widths 1/2/3/5/10/25), and the
+      5-wide beam accounts for only 78.9% of the winner's real mass at a cost of 3,552 prefix
+      expansions against 740 argmax comparisons
+  - index: 3
+    slug: receipt_pair_f1_vs_cer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **(Hard)** Use PaddleOCR on a set of 20 receipts, extract line items, and compute F1 against hand-labelled ground truth for {item_name, price} pairs.
+    zh: |
+      **（困難）** 對 20 張收據跑 PaddleOCR，抽出品項明細，並針對 {item_name, price} 這組配對，跟手工標註的標準答案算 F1。
+    verifies: the engine the exercise names is absent and recorded rather than routed around -- importlib.import_module raises ModuleNotFoundError for paddleocr, pytesseract, easyocr and transformers alike, the lesson tree holds 0 image or PDF files, and code/main.py mentions an engine or receipt 0 times -- so the scorer runs against a hand-labelled 20-receipt corpus built here; corrupted by the classic confusions {o:0, l:1, i:1, s:5, b:8, z:2} at a 50% per-character rate on seed 19 the same 20 lines score pair F1 0.2000 (4/20 exact pairs), CER 0.1350 (86.5% of characters correct) and WER 0.4000, 3.0x the CER, and WER is unbounded above 1.0 where F1 is not -- 'milk' split into 4 characters scores WER 4.0000; exact-match pair F1 is the AND of its fields, so with price F1 pinned at 1.0000 (prices are digits and every confusion class maps a letter to a digit) pair F1 equals name F1 exactly, and the rate ladder discriminates 30%->0.4000, 50%->0.2000, 60%->0.1500, while the hand-worked line ('soda 1.50', '50da 1.5o') scores CER 3/9 = 0.3333 against WER 2/2 = 1.0000; the confusion fold is idempotent on all 40 corpus strings but not injective, collapsing 36 symbols to 30 classes and making 14 ordered symbol pairs equal, which makes it a legitimate scoring equivalence at pair F1 1.0000 and an illegitimate post-processor at 0.0000, taking the 4 already-correct pairs down to 0; and the distance underneath all of it is a metric -- 0 of 6,840 ordered triples violate the triangle inequality and every name has edit(a,a) == 0

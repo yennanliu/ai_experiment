@@ -50,7 +50,12 @@ exercises:
       **Build a 2-layer message passing network.** Apply message passing twice with different weight matrices. Show that after 2 rounds, each node has information from its 2-hop neighborhood.
     zh: |
       **做一個兩層的訊息傳遞網路。** 用不同的權重矩陣做兩次訊息傳遞。證明兩輪之後，每個節點都拿到了它 2 跳鄰域內的資訊。
-    verifies: tested by intervention rather than inspection: perturbing node 0 moves only its 1-hop neighbour after one round and its 2-hop neighbour after two, while nodes 3 and 4 hops away stay EXACTLY zero; and influence is shown to alternate by parity - node 1 moves after one round and exactly 0.0 after two - because message_passing normalises A without adding I, so a node never aggregates its own features
+    verifies: >-
+      tested by intervention rather than inspection: perturbing node 0 moves only its 1-hop neighbour
+      after one round and its 2-hop neighbour after two, while nodes 3 and 4 hops away stay EXACTLY
+      zero; and influence is shown to alternate by parity - node 1 moves after one round and exactly
+      0.0 after two - because message_passing normalises A without adding I, so a node never
+      aggregates its own features
     uses_reference:
       - Graph
       - message_passing

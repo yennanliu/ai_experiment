@@ -35,6 +35,10 @@ exercises:
       Take a dataset with 50 features where only 5 are informative (generate one with `sklearn.datasets.make_classification`). Apply PCA and check whether the explained variance curve correctly identifies that the data is effectively 5-dimensional.
     zh: |
       找一份有 50 個特徵、但只有 5 個帶資訊的資料集（用 `sklearn.datasets.make_classification` 生一份）。套用 PCA，檢查解釋變異量曲線是否正確指出這份資料實際上只有 5 維。
-    verifies: the exercise's question is answered NO: on make_classification with 5 informative of 50 features, 90% of variance needs 42 components and the top 5 carry only 23.6%, with the largest component just 5.1x the median; the same curve then nails a genuinely rank-5 dataset at elbow 5, 99.998% in the top 5 and a 199450x drop, showing the failure is the data not the method
+    verifies: >-
+      the exercise's question is answered NO: on make_classification with 5 informative of 50
+      features, 90% of variance needs 42 components and the top 5 carry only 23.6%, with the largest
+      component just 5.1x the median; the same curve then nails a genuinely rank-5 dataset at elbow 5,
+      99.998% in the top 5 and a 199450x drop, showing the failure is the data not the method
     uses_reference:
       - PCA

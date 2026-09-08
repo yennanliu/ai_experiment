@@ -64,7 +64,11 @@ exercises:
       **Rotation matrix equivalence.** For 10 random angles and 10 random points, verify that complex multiplication gives the same result as matrix-vector multiplication with the 2x2 rotation matrix. Print the maximum numerical difference.
     zh: |
       **旋轉矩陣等價性。** 取 10 個隨機角度與 10 個隨機點，驗證複數乘法與 2x2 旋轉矩陣的矩陣─向量乘法給出相同結果。印出最大的數值差異。
-    verifies: all 100 angle-point pairs agree bit-exactly (difference exactly 0.0), because the two routes compute the same four products - so the check is an identity rather than evidence; the structural claims are tested instead: composing two rotations equals multiplying the rotors to 6.7e-16, length is preserved, and the rotors commute, which is where the 3D analogy fails
+    verifies: >-
+      all 100 angle-point pairs agree bit-exactly (difference exactly 0.0), because the two routes
+      compute the same four products - so the check is an identity rather than evidence; the
+      structural claims are tested instead: composing two rotations equals multiplying the rotors to
+      6.7e-16, length is preserved, and the rotors commute, which is where the 3D analogy fails
     uses_reference:
       - Complex
       - euler

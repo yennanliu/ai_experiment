@@ -1,0 +1,62 @@
+lesson: 24-sam3-open-vocab-segmentation
+phase: 04-computer-vision
+source: phases/04-computer-vision/24-sam3-open-vocab-segmentation/docs/en.md
+exercises:
+  - index: 1
+    slug: stub_reads_neither_input
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **(Easy)** Run SAM 3 on 10 images with concept prompts you choose. Compare against SAM 2 + Grounding DINO 1.5 on the same images. Report which concepts each model missed.
+    zh: |
+      **（簡單）** 用你自己挑的概念提示，在 10 張影像上跑 SAM 3。在同樣的影像上跟 SAM 2 + Grounding DINO 1.5 比較。回報各個模型分別漏掉了哪些概念。
+    verifies: >-
+      sam2, segment_anything, groundingdino and transformers all raise ModuleNotFoundError, so the
+      comparison the exercise asks for has one arm: the lesson's own StubOpenVocabSeg. That stub
+      cannot miss a concept because it reads neither input -- 6 unrelated prompts including the empty
+      string return 1 distinct byte-identical mask pair, the concept field is a pure echo, the scores
+      are the constants 0.89 and 0.74, and 10 independently drawn random 64x80 frames also give 1
+      distinct pair, with only image.shape[:2] moving it. Rebuilding the masks from detect()'s own
+      fractions reproduces both exactly; a ground-truth object planted clear of them scores IoU 0.0
+      against each; and the returned pair has IoU exactly 0.0, so no de-duplication step is exercised
+      by this fixture
+  - index: 2
+    slug: instance_ids_collide
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **(Medium)** Build a "click-to-include / click-to-exclude" UI on top of SAM 3: a text prompt returns candidate instances; user clicks keep which ones count as positive. Output the final concept set as JSON.
+    zh: |
+      **（中等）** 在 SAM 3 上面做一個「點選納入／點選排除」的 UI：一段文字提示回傳候選實例，使用者點選決定哪些算正例。把最終的概念集合輸出成 JSON。
+    verifies: >-
+      the click-to-include selection works keyed on (concept, instance_id), which is unique across all
+      6 candidates, whereas instance_id alone is not: run_multi_concept calls detect once per concept
+      and each call numbers from zero, so 'cat and dog and bird' returns ids [0, 1, 0, 1, 0, 1] and
+      clicking 'instance 0' would select 3 objects rather than 1. split_concepts cuts inside ordinary
+      noun phrases -- 'salt and pepper shaker' becomes ['salt', 'pepper shaker'] and 'AT&T logo'
+      becomes ['AT', 'T logo'] -- while 'black-and-white cat' survives, so which prompts break is a
+      matter of typography. An empty utterance yields [''] rather than an empty list, so the pipeline
+      queries the empty concept and returns 2 anonymous detections. And the JSON output the exercise
+      asks for does not round-trip: box leaves as a tuple and returns as a list, so the restored
+      detections compare unequal to the originals under the dataclass's generated __eq__
+  - index: 3
+    slug: nothing_to_finetune
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **(Hard)** Fine-tune SAM 3 on a custom concept set (e.g. 5 types of electronic components) with 20 labelled images each. Compare to zero-shot SAM 3 on the same test set; measure mask IoU improvement.
+    zh: |
+      **（困難）** 在一組自訂概念集合上微調 SAM 3（例如 5 種電子元件），每種各 20 張標註影像。在同一份測試集上跟零樣本的 SAM 3 比較；量測遮罩 IoU 的改善幅度。
+    verifies: >-
+      there is nothing to fine-tune: StubOpenVocabSeg carries 0 attributes of instance state and two
+      separately constructed copies agree byte for byte, so 'fine-tuned against zero-shot' has one arm
+      and an improvement of exactly 0.000 by construction. On the 5 x 20 = 100 labelled frames the
+      exercise specifies, zero-shot mean mask IoU is 0.2052 ranging 0.0000 to 0.4809, while an oracle
+      returning the label scores 1.0000 -- and all 100 predictions are the same single mask pair, so
+      that spread is produced entirely by where the labels landed. A label placed exactly on the
+      hardcoded rectangle scores 1.0 from the same model, which makes the metric a rectangle-overlap
+      identity rather than a capability. The lesson's rle_encode compresses these rectangular labels
+      27x (187 bytes against 5,120 pixels) and expands a dithered mask of identical size to 1.98x raw
