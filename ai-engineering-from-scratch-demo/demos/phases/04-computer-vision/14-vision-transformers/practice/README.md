@@ -103,8 +103,9 @@ scored against 120 held out, two seeds each:
 | ViT (`image_size=32, patch_size=8`) | 2,712,010 | **1.14s / 1.13s** | 1.000 / 1.000 | 12 / 20 |
 | ResNet-18 (`weights=None`) | 11,181,642 | **7.53s / 7.43s** | 1.000 / 1.000 | 20 / 8 |
 
-Wall-clock figures are from one machine and will move; the ratio, at least
-**6.5×**, is what the check asserts.
+Wall-clock figures are from one machine and will move, so the **6.5×** above is
+reported rather than required: the check asserts only that the ratio exceeds
+**2×**, which is the widest bound that still carries the finding.
 
 **FINDING: "final accuracy" ranks nothing.** All four runs end at 1.000, a spread
 of **0.000**. `synthetic_cifar` gives class `c` the spatial frequency `2 + c` on a

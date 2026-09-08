@@ -117,7 +117,7 @@ def verify(result):
     ratio = min(r["seconds"] for r in res) / max(v["seconds"] for v in vit)
     return [
         practice.Check(
-            "ANSWER: both reach the same final accuracy, and the ViT gets there 6x faster",
+            "ANSWER: both reach the same final accuracy, and the ViT trains at least 2x faster",
             min(finals) > 0.95 and ratio > 2.0,
             f"{STEPS} AdamW steps (lr {LR}, batch {BATCH}) on {SPLIT} training images scored against "
             f"{vit[0]['val']} held out, both from random init. ViT {vit[0]['params']:,} params, "

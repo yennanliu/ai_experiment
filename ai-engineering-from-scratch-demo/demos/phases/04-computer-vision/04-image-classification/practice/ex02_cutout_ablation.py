@@ -7,9 +7,9 @@
 Reading of the exercise: the four arms are run at the lesson's own settings on
 the lesson's own dataset, and val accuracy is reported as asked. It does not
 separate them -- all four reach 1.000 -- so the report is completed with the
-measurement that says why that is not a tie to be broken: one arm re-run under a
-second seed moves its final val loss further than the four arms differ from each
-other, which means no ranking read off this ablation would be real. "Zero out a
+measurement that says what the tie is hiding: the four arms' final val losses
+differ by far more than one arm moves when only its seed changes, so val loss
+orders them where val accuracy cannot. The order is the augmentation order. "Zero out a
 random 8x8 square" is then made precise, because two readings of it differ: a
 hole composed after `standardize` is filled with the dataset mean, one composed
 before is filled with -2.0 in normalised units, and one composed before

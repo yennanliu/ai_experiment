@@ -124,12 +124,14 @@ def verify(result):
             f"and {PROPOSALS} proposals of logits grow {byte_count[0] / 1e6:.2f} -> "
             f"{byte_count[1] / 1e6:.2f} MB ({byte_count[1] // byte_count[0]}x)"),
         practice.Check(
-            "ANSWER: mAP@0.75 has no room to move -- the 28x28 ceiling is 0.96 at worst",
+            "ANSWER: the grid is not what holds mAP@0.75 back -- its ceiling is 0.96 at worst",
             min(low.values()) > 0.95,
             f"pushing a ground-truth mask through an RxR grid and pasting it back is the encode/decode any RxR "
             f"head is bounded by. Mean IoU surviving at 28x28: {table(result['ceiling'][28])}. The worst of "
-            f"those clears IoU 0.75 by {min(low.values()) - 0.75:.2f}, so no instance is lost to mask "
-            f"resolution at the threshold the exercise picked, before or after the swap. {REAL_RUN}"),
+            f"those clears IoU 0.75 by {min(low.values()) - 0.75:.2f}, so mask resolution never puts an "
+            f"instance under the threshold the exercise picked. This bounds a *perfect* mask, so it does not "
+            f"say mAP cannot move -- it says any movement comes from what the head predicts, not from the "
+            f"grid it predicts on, which is the claim the exercise's 'why' is really about. {REAL_RUN}"),
         practice.Check(
             "MECHANISM: the two resolutions separate only on objects bigger than the grid",
             min(low[tiny], high[tiny]) > 0.999 and (1 - low[biggest]) > 1.8 * (1 - high[biggest]),

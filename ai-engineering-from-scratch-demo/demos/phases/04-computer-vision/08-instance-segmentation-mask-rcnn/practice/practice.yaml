@@ -43,4 +43,18 @@ exercises:
       **(Hard)** Replace Mask R-CNN's mask head with one that predicts at 56x56 instead of 28x28. Measure mAP@IoU=0.75 before and after. Explain why the gain (or lack of one) matches the expected boundary-precision / memory trade-off.
     zh: |
       **（困難）** 把 Mask R-CNN 的遮罩頭換成在 56x56 而非 28x28 上做預測。量測前後的 mAP@IoU=0.75。解釋為什麼這個增益（或為什麼沒有增益）符合預期中邊界精度與記憶體之間的取捨。
-    verifies: Asserts that adding one 2x `ConvTranspose2d` in front of the stock `MaskRCNNPredictor` turns the 14x14 RoIAlign patch (produced by the lesson's own `roi_align_single`, at mask_roi_pool's output_size (14, 14)) from (1, 3, 28, 28) logits into (1, 3, 56, 56), growing the predictor 263,171 -> 525,571 parameters (2.0x) and 100 proposals of logits 0.94 -> 3.76 MB (4x). Asserts the 28x28 representation ceiling -- a ground-truth mask encoded at RxR and pasted back at the object's pixel size, averaged over a disk, a diamond and a 5-lobed star -- stays above 0.95 IoU at every box size tested (1.0000 at 24px, 0.9804 at 64, 0.9634 at 128, 0.9607 at 256), so nothing is lost to mask resolution at IoU 0.75 and mAP@0.75 cannot move. Asserts the two resolutions are identical at 24px (both 1.0000) and that at 256px the residual error falls by more than 1.8x (0.0393 -> 0.0194), and that the 56x56 ceiling (0.9806) sits above and the 28x28 ceiling (0.9607) below their midpoint 0.97 -- the only threshold band where the swap is visible. Asserts the alternative route, RoIAlign at 28x28 with the stock single deconv, costs exactly 4x the mask-head activations (80.3 -> 321.1 MB for 100 proposals).
+    verifies: >-
+      Asserts that adding one 2x `ConvTranspose2d` in front of the stock `MaskRCNNPredictor` turns the
+      14x14 RoIAlign patch (produced by the lesson's own `roi_align_single`, at mask_roi_pool's
+      output_size (14, 14)) from (1, 3, 28, 28) logits into (1, 3, 56, 56), growing the predictor
+      263,171 -> 525,571 parameters (2.0x) and 100 proposals of logits 0.94 -> 3.76 MB (4x). Asserts
+      the 28x28 representation ceiling -- a ground-truth mask encoded at RxR and pasted back at the
+      object's pixel size, averaged over a disk, a diamond and a 5-lobed star -- stays above 0.95 IoU
+      at every box size tested (1.0000 at 24px, 0.9804 at 64, 0.9634 at 128, 0.9607 at 256), so mask
+      resolution never puts an instance under IoU 0.75 -- an oracle ceiling on a perfect mask, so it
+      bounds where a change could come from rather than showing mAP@0.75 cannot move. Asserts the two
+      resolutions are identical at 24px (both 1.0000) and that at 256px the residual error falls by
+      more than 1.8x (0.0393 -> 0.0194), and that the 56x56 ceiling (0.9806) sits above and the 28x28
+      ceiling (0.9607) below their midpoint 0.97 -- the only threshold band where the swap is visible.
+      Asserts the alternative route, RoIAlign at 28x28 with the stock single deconv, costs exactly 4x
+      the mask-head activations (80.3 -> 321.1 MB for 100 proposals).

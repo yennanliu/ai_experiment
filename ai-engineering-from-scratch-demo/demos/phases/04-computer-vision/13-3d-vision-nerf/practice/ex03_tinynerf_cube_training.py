@@ -174,7 +174,7 @@ def verify(result):
             f"is black and ReLU's zero derivative closes the only path back: {result['dead']}/{DEAD_SEEDS} seeds sit "
             f"at gradient norm exactly 0.0 on an all-zero image, pinned at mean square {result['black']:.4f}"),
         practice.Check(
-            "MECHANISM: 6 of the 10 encoding bands are below Nyquist at the spacing this render samples",
+            "MECHANISM: 6 of the 10 encoding bands sit above the Nyquist limit for this render's spacing",
             len(ALIASED) == 6 and abs(result["overlap"] - OVERLAP) < 1e-4,
             f"{SAMPLES} samples over [{NEAR}, {FAR}] is a step of {STEP:.5f}, so band l advances 2^l*pi*{STEP:.4f} "
             f"rad per step and bands {list(ALIASED)} exceed pi -- the top turns {band(9) / (2 * math.pi):.1f} cycles "

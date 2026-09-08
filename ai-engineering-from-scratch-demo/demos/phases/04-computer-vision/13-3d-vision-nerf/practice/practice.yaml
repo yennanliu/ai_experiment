@@ -79,6 +79,6 @@ exercises:
       total weight at 1.000000 whenever sigma > 0 so there is no background term and a zero density
       renders pure black, which is why torch.relu(self.sigma(h)) leaves 5 of 10 seeds at a
       bitwise-zero gradient pinned at the target's mean square 0.6912; and 6 of the 10
-      positional-encoding bands are below Nyquist at the 0.08065 sample spacing, the top turning 20.6
-      cycles per step, the measured encoding dot product one step apart -0.98894 matching 3*sum_l
-      cos(2^l pi d) to 1.3e-06
+      positional-encoding bands sit above the Nyquist limit for the 0.08065 sample spacing, the top
+      turning 20.6 cycles per step, the measured encoding dot product one step apart -0.98894 matching
+      3*sum_l cos(2^l pi d) to 1.3e-06

@@ -12,7 +12,12 @@ file supplies the COCO-style encoder (column-major run lengths, alternating and
 starting from background) and populates the lesson's own model with it. The
 verification clause then names the wrong variable. Object count barely moves the
 payload; mask *boundary complexity* moves it by orders of magnitude, and the two
-are independent. Ten solid boxes and ten dithered boxes cover identical pixels
+are independent. The dither covers about half its box, so it is not the solid
+box's control -- `half`, the left half of the same box, is: equal foreground area,
+one run per row instead of many. Ten solid boxes and ten dithered boxes cover
+different areas, which is why the comparison that carries the finding is half
+against dither and both areas are measured and reported. The older wording here
+claimed identical pixels for solid against dither, which was simply wrong
 and differ 24x in bytes. So "under 1MB even for a 10-object image" is true at
 the lesson's own 400x600 demo size for any mask and false at 720p for fragmented
 ones -- the same ten objects. The budget is read as 1,000,000 bytes; at 1 MiB
@@ -39,7 +44,7 @@ PHASE, LESSON = "04-computer-vision", "16-vision-pipeline-capstone"
 
 CLASSES, OBJECTS, BUDGET = 10, 10, 1_000_000
 SHAPES = ((400, 600), (720, 1280), (1080, 1920))    # the lesson's demo size, then 720p and 1080p
-KINDS = ("solid", "ellipse", "dither")
+KINDS = ("solid", "ellipse", "half", "dither")
 
 kib = lambda n: f"{n:,}B ({n / BUDGET:.1%})"                             # noqa: E731 - a formatter
 sizes = lambda row: "  ".join(f"{k}={kib(v['bytes'])}" for k, v in row.items())      # noqa: E731
@@ -83,8 +88,11 @@ def make_mask(np, kind, box, shape):
         rows, cols = np.ogrid[:shape[0], :shape[1]]
         return (((rows - (y1 + y2) / 2) / ((y2 - y1) / 2)) ** 2
                 + ((cols - (x1 + x2) / 2) / ((x2 - x1) / 2)) ** 2) <= 1.0
-    mask[y1:y2, x1:x2] = (np.random.default_rng(x1).random((y2 - y1, x2 - x1)) < 0.5
-                          if kind == "dither" else True)
+    if kind == "half":                              # left half: dither's area, one run per row
+        mask[y1:y2, x1:(x1 + x2) // 2] = True
+    else:
+        mask[y1:y2, x1:x2] = (np.random.default_rng(x1).random((y2 - y1, x2 - x1)) < 0.5
+                              if kind == "dither" else True)
     return mask
 
 
@@ -97,7 +105,7 @@ def payload(np, ref, shape, kind) -> dict:
                               inference_ms=1.0).model_dump_json()
     restored = ref.PipelineResult.model_validate_json(text).detections
     return {"bytes": len(text.encode()), "runs": len(detections[0].mask_rle.split()),
-            "columns": boxes[0][2] - boxes[0][0],
+            "columns": boxes[0][2] - boxes[0][0], "pixels": int(sum(m.sum() for m in masks)),
             "lossless": all((rle_decode(np, d.mask_rle, shape) == m).all()
                             for d, m in zip(restored, masks)) if shape == SHAPES[0] else None}
 
@@ -139,10 +147,12 @@ def verify(result):
         practice.Check(
             "FINDING: object count is the wrong variable — the same 10 objects break the budget at 720p",
             hd["dither"]["bytes"] > BUDGET and hd["ellipse"]["bytes"] < BUDGET,
-            f"solid and dithered masks cover identical pixels yet differ "
-            f"{demo['dither']['bytes'] / demo['solid']['bytes']:.0f}x in bytes at {SHAPES[0]}, and scaling "
-            f"the frame lets boundary complexity win outright -- {SHAPES[1]}: {sizes(hd)}, {SHAPES[2]}: "
-            f"{sizes(table[SHAPES[2]])}; ten objects throughout"),
+            f"at equal foreground area -- `half` and `dither` cover {demo['half']['pixels']:,} and "
+            f"{demo['dither']['pixels']:,} pixels, within "
+            f"{abs(demo['dither']['pixels'] / demo['half']['pixels'] - 1):.1%} -- the dithered masks cost "
+            f"{demo['dither']['bytes'] / demo['half']['bytes']:.0f}x the bytes at {SHAPES[0]}, so it is "
+            f"boundary complexity and not area. Scaling the frame lets it win outright -- {SHAPES[1]}: "
+            f"{sizes(hd)}, {SHAPES[2]}: {sizes(table[SHAPES[2]])}; ten objects throughout"),
         practice.Check(
             "MECHANISM: RLE length counts boundary crossings down the scan, not covered pixels",
             exact(table),

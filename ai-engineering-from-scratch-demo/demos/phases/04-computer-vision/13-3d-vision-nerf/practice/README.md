@@ -198,7 +198,7 @@ render is black, and ReLU's zero derivative closes the only path back:
 image, pinned forever at the target's mean square **0.6912**. Half of this
 lesson's initialisations cannot be trained at all.
 
-**MECHANISM: 6 of the 10 encoding bands are below Nyquist at the spacing this
+**MECHANISM: 6 of the 10 encoding bands sit above the Nyquist limit for the spacing this
 render samples.** 32 samples over `[1.8, 4.3]` is a step of **0.08065**, so band
 `l` advances `2^l·pi·0.0806` rad per step:
 

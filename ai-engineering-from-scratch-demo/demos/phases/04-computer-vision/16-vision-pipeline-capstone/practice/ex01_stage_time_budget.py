@@ -19,9 +19,11 @@ crop-and-resize loop is inlined in both `run()` and `benchmark()` with no method
 to call, so it is billed to whichever bucket surrounds it, and the lesson puts
 it inside `classify`. `crop_stage` below re-inlines those six lines so they can
 be timed on their own; that it produces exactly the crops the lesson's `run()`
-went on to classify, on all ten images, is checked rather than assumed. Medians
-are reported rather than means, because a mean over 200 sub-millisecond samples
-is dominated by whichever pass the OS descheduled.
+went on to classify, on all ten images, is checked rather than assumed. The
+exercise asks for the average, so the mean is what the answer reports; the median
+is reported beside it and is what the conditions assert, because a mean over 200
+sub-millisecond samples is dominated by whichever pass the OS descheduled, and a
+threshold resting on that is not reproducible.
 
 Structure: `sample_images` cuts ten frames out of the two bundled photographs;
 `crop_stage` is the lesson's own inlined crop-and-resize loop, isolated so it can
@@ -99,6 +101,7 @@ def walk_frames(np, torch, pipe, frames) -> dict:
                 samples[name].append((stop - start) * 1000.0)
         matched += len(crops) == len(result.classifications)
     return {"stages": {n: statistics.median(v) for n, v in samples.items()}, "matched": matched,
+            "means": {n: statistics.fmean(v) for n, v in samples.items()},
             "boxes": dict(boxes), "labels": dict(labels), "frames": len(frames),
             "sweep": {s: len(pipe.run(np.ascontiguousarray(frames[0][:s, :s])).classifications) for s in SIZES}}
 
@@ -135,10 +138,12 @@ def verify(result):
     total, folded = sum(stage.values()), stage["crop"] + stage["classify"]
     return [
         practice.Check(
-            "ANSWER: four stage medians over 10 photographs x 20 passes, and a degenerate count",
+            "ANSWER: mean time per stage over 10 photographs x 20 passes, and a degenerate count",
             result["boxes"] == {3: result["frames"]} and result["frames"] == 10,
-            f"ten crops, 200x260 to 360x460, of the two photographs `load_sample_images` keeps on disk: "
-            f"{row(stage)}, total {total:.4f}ms. Detections {result['boxes']}; labels {result['labels']}"),
+            f"ten crops, 200x260 to 360x460, of the two photographs `load_sample_images` keeps on disk. "
+            f"Mean ms per stage {row(result['means'])}, total {sum(result['means'].values()):.4f}ms; "
+            f"median {row(stage)}, total {total:.4f}ms -- the medians are what the checks below assert. "
+            f"Detections {result['boxes']}; labels {result['labels']}"),
         practice.Check(
             "FINDING: the detector never reads the image, so the asked-for distribution is a point mass",
             len(result["boxes"]) == 1 and sweep[32] == 0 and sweep[64] == 3,

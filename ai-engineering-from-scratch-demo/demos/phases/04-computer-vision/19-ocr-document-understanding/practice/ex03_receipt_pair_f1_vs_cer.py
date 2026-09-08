@@ -61,8 +61,8 @@ RECEIPTS = [("soda", "1.50"), ("bread", "3.25"), ("milk", "2.10"), ("soap", "4.9
             ("zucchini", "3.60"), ("lime", "0.55"), ("onion", "1.20"), ("basil", "2.75"),
             ("olives", "5.10"), ("sugar", "1.95"), ("butter", "4.20"), ("lentils", "3.05"),
             ("spice", "6.50"), ("iodine", "8.15"), ("biscuit", "2.60"), ("zest", "0.75")]
-f1 = lambda pred, truth: sum((collections.Counter(pred)             # noqa: E731 - exact-match F1
-                              & collections.Counter(truth)).values()) / len(truth)
+overlap = lambda pred, truth: sum((collections.Counter(pred) & collections.Counter(truth)).values())  # noqa: E731
+f1 = lambda pred, truth: 2 * overlap(pred, truth) / (len(pred) + len(truth)) if pred or truth else 1.0  # noqa: E731
 fold = lambda text: "".join(CONFUSE.get(char, char) for char in text)           # noqa: E731
 lines = lambda rows: [f"{name} {price}" for name, price in rows]                # noqa: E731
 names = lambda rows: [name for name, _ in rows]                                 # noqa: E731

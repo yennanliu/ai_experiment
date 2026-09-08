@@ -118,7 +118,7 @@ def verify(result):
             "before either loss has finished moving, so convergence speed measured on recall is a "
             "tie by construction rather than a finding"),
         practice.Check(
-            "ANSWER: on the margin behind it, triplet converges 1.7x sooner and ends 1.8x higher",
+            "ANSWER: on the margin behind it, triplet converges 1.5x sooner and ends 1.8x higher",
             sooner(hit) and mean(ends["triplet"]) > 1.5 * mean(ends["proxynca"]),
             f"steps to a variance ratio of {TARGET}: triplet {per_seed(hit, 'triplet')} against "
             f"proxynca {per_seed(hit, 'proxynca')}; final ratio {mean(ends['triplet']):.2f} against "

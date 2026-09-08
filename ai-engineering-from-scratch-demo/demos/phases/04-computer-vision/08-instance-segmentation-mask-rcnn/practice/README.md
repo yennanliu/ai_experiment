@@ -191,9 +191,12 @@ a 5-lobed star:
 | 128 px | 0.9634 | 0.9852 |
 | 256 px | **0.9607** | **0.9806** |
 
-The worst 28×28 number clears IoU 0.75 by **0.21**. Not one instance is lost to
-mask resolution at that threshold, before or after the swap, so mAP@0.75 is
-mathematically unable to register the change.
+The worst 28×28 number clears IoU 0.75 by **0.21**, so mask resolution never puts
+an instance under that threshold, before or after the swap. This is an *oracle*
+ceiling — it bounds a perfect predicted mask — so it does not show that mAP@0.75
+cannot move. It shows that any movement would come from what the head predicts,
+not from the grid it predicts on, which is what the exercise's "explain why" is
+actually asking about.
 
 **MECHANISM: the two resolutions separate only on objects bigger than the grid.**
 At 24 px both are exactly 1.0000 — a 28×28 grid already over-samples a 24-pixel
