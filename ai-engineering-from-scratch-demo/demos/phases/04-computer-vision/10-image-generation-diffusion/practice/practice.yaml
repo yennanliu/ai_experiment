@@ -21,7 +21,17 @@ exercises:
       **(Medium)** Train the TinyUNet on the synthetic-circles dataset for 20 epochs and sample 16 circles. Compare DDPM (1000 steps) and DDIM (50 steps) sampling — do they produce similar images from the same noise seed?
     zh: |
       **（中等）** 在合成圓形資料集上訓練 TinyUNet 20 個 epoch，再取樣 16 個圓。比較 DDPM（1000 步）與 DDIM（50 步）的取樣 —— 從同一個雜訊種子出發，它們產生的圖片相似嗎？
-    verifies: 20 epochs of the lesson's own train_step (final MSE 0.1838) then both samplers from a bit-identical x_T (reseeding to 7 before each gives x_T differing by exactly 0.0): DDPM-1000 and DDIM-50 correlate 0.460 pooled and 0.306 to 0.695 per image, so the answer is no; neither output is a circle -- against data in [-1, 1] with std 0.572, DDPM samples are std 8.06 in [-75.7, 103.1] with 21.9% of pixels in range and DDIM std 13.53 in [-115.9, 156.0] with 9.4%, matching what the lesson's own main() shows at T=200; the mechanism is a closed-form gain, prod_t 1/sqrt(alpha_t) = 157.4105 = 1/sqrt(alpha_bar_999) to 9.2e-05 for DDPM and prod sqrt(a_prev/a_t) = 157.4025 = sqrt(a_0/a_999) for DDIM at eta=0; and at 100 epochs (MSE 0.1196) DDPM recovers to std 0.672 with 63.4% in range while DDIM stays at std 3.75 with 37.3%, dropping the correlation to 0.126, so the 20-epoch answer is not a property of the two samplers
+    verifies: >-
+      20 epochs of the lesson's own train_step (final MSE 0.1838) then both samplers from a
+      bit-identical x_T (reseeding to 7 before each gives x_T differing by exactly 0.0): DDPM-1000 and
+      DDIM-50 correlate 0.460 pooled and 0.306 to 0.695 per image, so the answer is no; neither output
+      is a circle -- against data in [-1, 1] with std 0.572, DDPM samples are std 8.06 in [-75.7,
+      103.1] with 21.9% of pixels in range and DDIM std 13.53 in [-115.9, 156.0] with 9.4%, matching
+      what the lesson's own main() shows at T=200; the mechanism is a closed-form gain, prod_t
+      1/sqrt(alpha_t) = 157.4105 = 1/sqrt(alpha_bar_999) to 9.2e-05 for DDPM and prod sqrt(a_prev/a_t)
+      = 157.4025 = sqrt(a_0/a_999) for DDIM at eta=0; and at 100 epochs (MSE 0.1196) DDPM recovers to
+      std 0.672 with 63.4% in range while DDIM stays at std 3.75 with 37.3%, dropping the correlation
+      to 0.126, so the 20-epoch answer is not a property of the two samplers
   - index: 3
     slug: cosine_schedule_low_steps
     kind: code
@@ -31,4 +41,18 @@ exercises:
       **(Hard)** Implement a cosine noise schedule (Nichol & Dhariwal, 2021): `alpha_bar_t = cos^2((t/T + s) / (1 + s) * pi / 2)`. Train the same model with linear and cosine schedules and show that cosine gives better samples at low step counts.
     zh: |
       **（困難）** 實作餘弦雜訊排程（Nichol & Dhariwal, 2021）：`alpha_bar_t = cos^2((t/T + s) / (1 + s) * pi / 2)`。用線性與餘弦排程訓練同一個模型，並展示在低步數下餘弦排程給出更好的樣本。
-    verifies: the cosine schedule is built the paper's way -- a_bar(t) = cos^2((t/T+0.008)/1.008 * pi/2) normalised by a_bar(0) (unnormalised it would start at 0.99984), betas from 1 - a_bar(t)/a_bar(t-1) clipped at 0.999 (binding on exactly 1 step) -- and round-trips through the lesson's precompute_schedule to within 3.3e-07; run literally it is 200x worse, not better: DDIM Wasserstein-1 to the data's pixel distribution at 10/20/50 steps is 2144/1866/1593 against linear's 10.4/9.4/8.8, because the 0.999 clip leaves alpha_bar_T at 2.43e-09 so exercise 2's reverse gain 1/sqrt(alpha_bar_T) is 20,291 against linear's 157.4; clip beta at 0.1 instead (alpha_bar_T 1.18e-04, gain 91.9, shape unchanged) and the exercise's claim holds on 6/6 step-count x seed points, by up to 16% (9.56/8.40/7.36 vs 10.44/9.36/8.75 at seed 0, 10.16/8.95/7.94 vs 11.19/10.05/9.43 at seed 1); the shape reason is that linear's alpha_bar crosses 0.5 at t=259 and spends 29.8% of the chain below log-SNR -5 where x_t carries no image, while cosine crosses at t=496 (closed form T*(1-s)/2) and spends 5.3%; and cosine's worse training MSE (0.2622 vs 0.1838) is that same artefact -- scored at matched log-SNR rather than matched t the two models agree to 0.063, with cosine the better at log-SNR +4 (0.729 vs 0.792)
+    verifies: >-
+      the cosine schedule is built the paper's way -- a_bar(t) = cos^2((t/T+0.008)/1.008 * pi/2)
+      normalised by a_bar(0) (unnormalised it would start at 0.99984), betas from 1 -
+      a_bar(t)/a_bar(t-1) clipped at 0.999 (binding on exactly 1 step) -- and round-trips through the
+      lesson's precompute_schedule to within 3.3e-07; run literally it is 200x worse, not better: DDIM
+      Wasserstein-1 to the data's pixel distribution at 10/20/50 steps is 2144/1866/1593 against
+      linear's 10.4/9.4/8.8, because the 0.999 clip leaves alpha_bar_T at 2.43e-09 so exercise 2's
+      reverse gain 1/sqrt(alpha_bar_T) is 20,291 against linear's 157.4; clip beta at 0.1 instead
+      (alpha_bar_T 1.18e-04, gain 91.9, shape unchanged) and the exercise's claim holds on 6/6
+      step-count x seed points, by up to 16% (9.56/8.40/7.36 vs 10.44/9.36/8.75 at seed 0,
+      10.16/8.95/7.94 vs 11.19/10.05/9.43 at seed 1); the shape reason is that linear's alpha_bar
+      crosses 0.5 at t=259 and spends 29.8% of the chain below log-SNR -5 where x_t carries no image,
+      while cosine crosses at t=496 (closed form T*(1-s)/2) and spends 5.3%; and cosine's worse
+      training MSE (0.2622 vs 0.1838) is that same artefact -- scored at matched log-SNR rather than
+      matched t the two models agree to 0.063, with cosine the better at log-SNR +4 (0.729 vs 0.792)

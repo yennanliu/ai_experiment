@@ -21,7 +21,22 @@ exercises:
       **(Medium)** Replace the `nn.Upsample + conv` up-block with a `nn.ConvTranspose2d` up-block. Train both on the synthetic dataset and compare mIoU. Observe where checkerboard artifacts appear in the transposed-conv version.
     zh: |
       **（中等）** 把 `nn.Upsample + conv` 的上行區塊換成 `nn.ConvTranspose2d` 的上行區塊。兩者都在合成資料集上訓練並比較 mIoU。觀察棋盤格瑕疵在轉置卷積版本裡出現在什麼地方。
-    verifies: Replaces the lesson's four Up modules with a ConvTranspose2d(c, c, k, stride=2, padding=(k-1)//2, output_padding=k%2) block at kernels 2, 3 and 4, and asserts all four variants still map to (12, 3, 64, 64) while k=2 costs more parameters (491,891 -> 579,171, +17.7%). Trains each variant for 8 epochs on 48 images under two seeds with the lesson's own combined_loss and Adam at 1e-3, and asserts the within-variant seed spread of mIoU (0.244) exceeds the spread between the four variant means (0.143), so mIoU cannot rank the up-blocks. Measures the Nyquist (period-2) component of the held-out logits and asserts the share of it that is a constant offset rather than image content exceeds 0.15 for every transposed run (min 0.233) and stays below 0.15 for every bilinear run (max 0.028), with mean amplitude over the logits' own standard deviation rising 0.0083 -> 0.1304 at k=2. Asserts the artifact sits on flat regions: the ratio of Nyquist amplitude on 2x2 blocks straddling a class boundary to blocks that do not is below 1.5 for k=2 (0.778, 0.717) and above 2.5 for bilinear (3.888, 5.752). Asserts the uniform-weight interior overlap is exactly 4.0 at k=3 and exactly 1.0 at k=2 and k=4, and, as a control on Odena's rule, that k=2 -- with even overlap -- still ends with the largest fixed grid of the four (mean locked share 0.895 > 0.6, above k=3's 0.330 and bilinear's 0.020).
+    verifies: >-
+      Replaces the lesson's four Up modules with a ConvTranspose2d(c, c, k, stride=2,
+      padding=(k-1)//2, output_padding=k%2) block at kernels 2, 3 and 4, and asserts all four variants
+      still map to (12, 3, 64, 64) while k=2 costs more parameters (491,891 -> 579,171, +17.7%).
+      Trains each variant for 8 epochs on 48 images under two seeds with the lesson's own
+      combined_loss and Adam at 1e-3, and asserts the within-variant seed spread of mIoU (0.244)
+      exceeds the spread between the four variant means (0.143), so mIoU cannot rank the up-blocks.
+      Measures the Nyquist (period-2) component of the held-out logits and asserts the share of it
+      that is a constant offset rather than image content exceeds 0.15 for every transposed run (min
+      0.233) and stays below 0.15 for every bilinear run (max 0.028), with mean amplitude over the
+      logits' own standard deviation rising 0.0083 -> 0.1304 at k=2. Asserts the artifact sits on flat
+      regions: the ratio of Nyquist amplitude on 2x2 blocks straddling a class boundary to blocks that
+      do not is below 1.5 for k=2 (0.778, 0.717) and above 2.5 for bilinear (3.888, 5.752). Asserts
+      the uniform-weight interior overlap is exactly 4.0 at k=3 and exactly 1.0 at k=2 and k=4, and,
+      as a control on Odena's rule, that k=2 -- with even overlap -- still ends with the largest fixed
+      grid of the four (mean locked share 0.895 > 0.6, above k=3's 0.330 and bilinear's 0.020).
   - index: 3
     slug: trimap_per_class_dice_gain
     kind: code

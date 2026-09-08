@@ -26,7 +26,21 @@ exercises:
       Implement a learning rate warmup schedule: linear ramp from 0 to max_lr over the first 10% of training steps, then cosine decay to 0. Train with Adam + warmup vs Adam without warmup. Measure how many epochs it takes to reach 90% accuracy on the circle dataset.
     zh: |
       實作學習率 warmup 排程：在前 10% 的訓練步數裡從 0 線性上升到 max_lr，之後 cosine 衰減到 0。分別用「Adam 加 warmup」和「Adam 不加 warmup」訓練。量測在圓形資料集上各要幾個 epoch 才能達到 90% 準確率。
-    verifies: ANSWER warmup + cosine takes 54 epochs to reach 90% against constant Adam's 39, at the lesson's default max_lr = 0.001 over 300 epochs = 60000 steps with a 6000-step ramp, ending 99.0% against 99.5%; FINDING the schedule is slower at every max_lr tried, by 15, 15 and 11 epochs (0.001: 39 vs 54, 0.003: 13 vs 28, 0.01: 5 vs 16) - warmup is insurance against early instability and a 33-parameter net trained one sample at a time has none to insure against; MECHANISM the schedule spends exactly half the learning-rate budget - mean lr over the run is 0.000500 = max_lr/2 to six places, so it integrates to 30.0 lr-steps against constant's 60.0, both halves costing the same since the ramp averages max_lr/2 and so does the cosine tail; CONTROL halving alone does not explain the delay, the shape helps - a constant lr = 0.00050, the schedule's own mean, reaches 90% at epoch 76, 22 epochs later than the schedule, and lands on the same 99.0% endpoint, so shape buys speed while budget sets the finish; CONTROL the decay half does earn its keep once max_lr is aggressive - at max_lr = 0.01 the scheduled run reaches 100% training accuracy at epoch 157 and the constant run never does (best 99.5%), so annealing to 0 is what the cosine tail is for and the ramp is the part this problem does not need
+    verifies: >-
+      ANSWER warmup + cosine takes 54 epochs to reach 90% against constant Adam's 39, at the lesson's
+      default max_lr = 0.001 over 300 epochs = 60000 steps with a 6000-step ramp, ending 99.0% against
+      99.5%; FINDING the schedule is slower at every max_lr tried, by 15, 15 and 11 epochs (0.001: 39
+      vs 54, 0.003: 13 vs 28, 0.01: 5 vs 16) - warmup is insurance against early instability and a
+      33-parameter net trained one sample at a time has none to insure against; MECHANISM the schedule
+      spends exactly half the learning-rate budget - mean lr over the run is 0.000500 = max_lr/2 to
+      six places, so it integrates to 30.0 lr-steps against constant's 60.0, both halves costing the
+      same since the ramp averages max_lr/2 and so does the cosine tail; CONTROL halving alone does
+      not explain the delay, the shape helps - a constant lr = 0.00050, the schedule's own mean,
+      reaches 90% at epoch 76, 22 epochs later than the schedule, and lands on the same 99.0%
+      endpoint, so shape buys speed while budget sets the finish; CONTROL the decay half does earn its
+      keep once max_lr is aggressive - at max_lr = 0.01 the scheduled run reaches 100% training
+      accuracy at epoch 157 and the constant run never does (best 99.5%), so annealing to 0 is what
+      the cosine tail is for and the ramp is the part this problem does not need
     uses_reference:
       - Adam
       - OptimizerTestNetwork

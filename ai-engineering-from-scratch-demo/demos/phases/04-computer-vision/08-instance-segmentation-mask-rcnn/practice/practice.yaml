@@ -21,7 +21,19 @@ exercises:
       **(Medium)** Fine-tune `maskrcnn_resnet50_fpn_v2` on a 50-image custom dataset (any two classes: balloons, fish, pothole, logos). Freeze the backbone, train for 20 epochs, report mask AP@0.5.
     zh: |
       **（中等）** 在一個 50 張影像的自訂資料集上微調 `maskrcnn_resnet50_fpn_v2`（任選兩個類別：氣球、魚、路面坑洞、商標）。凍住主幹網路，訓練 20 個 epoch，回報遮罩 AP@0.5。
-    verifies: Asserts that a randomly initialised `maskrcnn_resnet50_fpn_v2` (num_classes=3, no checkpoint fetch) after `freeze_backbone` emits 3 box-classifier logits and leaves the backbone at 0 trainable parameters while the RPN stays trainable -- 19,031,329 of 45,885,793 (41.5%): backbone 0/26,854,464, rpn 1,184,015/1,184,015, roi_heads 17,847,314/17,847,314. Asserts that after 16 SGD(lr=0.01) steps on 8 96x96 images the held-out mask AP@0.5 stays under 0.2 (measured 0.000, and 0.000 at 0.75 and 0.90) while the summed loss falls to under half its start (3.54 -> 0.87, 4.1x) across exactly 5 loss keys. Asserts the best IoU any stock anchor shape reaches on any ground-truth box is under the RPN's 0.7 positive threshold (0.56) and that allow_low_quality_matches is True, so the anchors are rescaled 4x. Asserts every backbone weight is bit-identical after training (0.0) while the BatchNorm running statistics move by more than 0.1 (29.89) across its 61 real `nn.BatchNorm2d` layers. Asserts the AP implementation returns above 0.999 on the ground truth itself at IoU 0.90 (1.000).
+    verifies: >-
+      Asserts that a randomly initialised `maskrcnn_resnet50_fpn_v2` (num_classes=3, no checkpoint
+      fetch) after `freeze_backbone` emits 3 box-classifier logits and leaves the backbone at 0
+      trainable parameters while the RPN stays trainable -- 19,031,329 of 45,885,793 (41.5%): backbone
+      0/26,854,464, rpn 1,184,015/1,184,015, roi_heads 17,847,314/17,847,314. Asserts that after 16
+      SGD(lr=0.01) steps on 8 96x96 images the held-out mask AP@0.5 stays under 0.2 (measured 0.000,
+      and 0.000 at 0.75 and 0.90) while the summed loss falls to under half its start (3.54 -> 0.87,
+      4.1x) across exactly 5 loss keys. Asserts the best IoU any stock anchor shape reaches on any
+      ground-truth box is under the RPN's 0.7 positive threshold (0.56) and that
+      allow_low_quality_matches is True, so the anchors are rescaled 4x. Asserts every backbone weight
+      is bit-identical after training (0.0) while the BatchNorm running statistics move by more than
+      0.1 (29.89) across its 61 real `nn.BatchNorm2d` layers. Asserts the AP implementation returns
+      above 0.999 on the ground truth itself at IoU 0.90 (1.000).
   - index: 3
     slug: mask_head_56_vs_28_ceiling
     kind: code

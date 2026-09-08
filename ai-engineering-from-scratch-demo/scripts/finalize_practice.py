@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import textwrap
 
 SIMPLE = ("slug", "tier", "deps_group", "kind")
 DEMOS = pathlib.Path(__file__).resolve().parent.parent / "demos" / "phases"
@@ -39,21 +40,39 @@ def _literal(text: str):
     return lambda _match: text
 
 
+FOLD_WIDTH = 96
+
+
+def _fold(key: str, text: str) -> str:
+    """`verifies` as a `>-` folded block scalar.
+
+    Prose about thresholds routinely contains ": " -- "the destructive step: per-image
+    min-max" -- and a plain YAML scalar may not. Written flat, 33 of these manifests
+    parsed under `harness/yamlite` and failed every strict YAML reader with "mapping
+    values are not allowed here". `>-` is the one form both agree on, and it drops the
+    trailing newline `>` would add, so the value is byte-identical either way.
+    """
+    body = " ".join(str(text).split())
+    lines = textwrap.wrap(body, width=FOLD_WIDTH, break_long_words=False, break_on_hyphens=False)
+    return f"    {key}: >-\n" + "\n".join(f"      {line}" for line in lines) + "\n"
+
+
+def _drop(body: str, key: str) -> str:
+    """Remove `key` and its continuation lines, whether flat or a block scalar."""
+    return re.sub(rf"(?m)^    {key}:(?: .*)?\n(?:      .*\n)*", "", body)
+
+
 def _apply(body: str, update: dict) -> str:
     for key in SIMPLE:
         if key in update:
             body = re.sub(rf"(?m)^    {key}: .*$", _literal(f"    {key}: {update[key]}"), body)
     if update.get("kind") == "code" or "verifies" in update:
-        body = re.sub(r"(?m)^    cites: .*\n", "", body)
+        body = _drop(body, "cites")
     if update.get("kind") == "explain":
-        body = re.sub(r"(?m)^    verifies: .*\n", "", body)
+        body = _drop(body, "verifies")
     for key in ("verifies", "cites"):
         if key in update:
-            if re.search(rf"(?m)^    {key}: ", body):
-                body = re.sub(rf"(?m)^    {key}: .*$",
-                              _literal(f"    {key}: {update[key]}"), body)
-            else:
-                body = body.rstrip("\n") + f"\n    {key}: {update[key]}\n"
+            body = _drop(body, key).rstrip("\n") + "\n" + _fold(key, update[key])
     if "uses_reference" in update:
         body = re.sub(r"(?m)^    uses_reference:\n(?:      - .*\n)*", "", body)
         if update["uses_reference"]:

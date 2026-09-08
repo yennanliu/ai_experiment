@@ -11,7 +11,20 @@ exercises:
       **(Easy)** Train the DCGAN above on the synthetic circle dataset and save a grid of 16 samples at the end of each epoch. By which epoch do the generated circles become clearly circular?
     zh: |
       **（簡單）** 用上面的 DCGAN 訓練那份合成圓形資料集，每個 epoch 結束存下一張 16 個樣本的網格圖。生成的圓形大約在第幾個 epoch 開始明顯變圓？
-    verifies: Trains the lesson's own main() configuration (feat=32, 400 synthetic circles, batch 32, Adam 2e-4/(0.5, 0.999), spectral-norm D) for 26 epochs, saving a 4x4 PNG grid of 16 samples after each one, and scores every epoch's samples two ways: the fraction of the 32x32 frame above the background, and the IoU between that foreground and the equal-area disc at its centroid. Asserts that once the blob stops filling the frame its disc-IoU never exceeds 0.85x the real circles' 0.993 (peak 0.727, final 0.727 here); that after the lesson's fifth epoch the generator still paints over 85% of the frame (99.0%, against 19.8% for the data) and epoch 0 paints over 90% (100.0%); that the painted area first falls below half the frame between epochs 5 and 22 (epoch 13; seeds 1 and 2 give 10 and 11) and ends within 30% of epoch 0's distance from the real area (0.082 against 0.802); that a wholly-foreground frame already scores above 0.85 disc-IoU and within 0.15 of the real value (0.910, gap 0.083), which is why area is reported alongside; that the last epoch's per-pixel sample spread is below 0.85x the data's (0.150 against 0.217); and that 26 PNGs were written and the first and last re-open at 128x128.
+    verifies: >-
+      Trains the lesson's own main() configuration (feat=32, 400 synthetic circles, batch 32, Adam
+      2e-4/(0.5, 0.999), spectral-norm D) for 26 epochs, saving a 4x4 PNG grid of 16 samples after
+      each one, and scores every epoch's samples two ways: the fraction of the 32x32 frame above the
+      background, and the IoU between that foreground and the equal-area disc at its centroid. Asserts
+      that once the blob stops filling the frame its disc-IoU never exceeds 0.85x the real circles'
+      0.993 (peak 0.727, final 0.727 here); that after the lesson's fifth epoch the generator still
+      paints over 85% of the frame (99.0%, against 19.8% for the data) and epoch 0 paints over 90%
+      (100.0%); that the painted area first falls below half the frame between epochs 5 and 22 (epoch
+      13; seeds 1 and 2 give 10 and 11) and ends within 30% of epoch 0's distance from the real area
+      (0.082 against 0.802); that a wholly-foreground frame already scores above 0.85 disc-IoU and
+      within 0.15 of the real value (0.910, gap 0.083), which is why area is reported alongside; that
+      the last epoch's per-pixel sample spread is below 0.85x the data's (0.150 against 0.217); and
+      that 26 PNGs were written and the first and last re-open at 128x128.
   - index: 2
     slug: spectral_norm_vs_batchnorm
     kind: code

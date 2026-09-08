@@ -11,7 +11,23 @@ exercises:
       **(Easy)** Show that PointNet is permutation-invariant: run the same cloud through twice, once with points shuffled. Verify outputs are identical up to floating-point noise.
     zh: |
       **（簡單）** 證明 PointNet 具備排列不變性：把同一個點雲跑兩次，其中一次把點打亂。驗證兩次輸出在浮點誤差範圍內完全相同。
-    verifies: the exercise's float tolerance is never spent -- over 20 clouds (4 seeds x sizes 333/512/1000/1024/2049, three of them not powers of two) the lesson's own PointNet in .eval() returns max|logit diff| 0.00e+00 and is bitwise identical on 20/20, the same 0.00e+00 its own permutation_invariance_check prints; that is structural, since Conv1d(kernel_size=1) reduces over channels only (per-point features match after re-indexing to 0.00e+00) and torch.max(x, dim=-1) selects rather than accumulates (pooled feature 0.00e+00), so no float cancellation is involved and a tolerance is the wrong test; max-pool buys far more than permutation -- the critical set that wins at least one of the 1,024 channels is 114/512 (22.3%), 144/1024 (14.1%) and 157/4096 (3.8%), and feeding only those points reproduces all ten logits bitwise, so the model is invariant to deleting most of its input; two controls name how a naive test misfires -- left in train() mode the head's Dropout(0.3) makes two forwards of the identical cloud differ by 1.086 while a shuffle still gives 0.00e+00 once dropout is off, train-mode BatchNorm couples a cloud to its batch mates (0.673 change from re-batching), and a single cloud raises ValueError: Expected more than 1 value per channel when training; and the lesson's docs/en.md claim of 'About 1.6M parameters' is 2.0x the 807,626 the model actually has, 660,234 of them in the head alone
+    verifies: >-
+      the exercise's float tolerance is never spent -- over 20 clouds (4 seeds x sizes
+      333/512/1000/1024/2049, three of them not powers of two) the lesson's own PointNet in .eval()
+      returns max|logit diff| 0.00e+00 and is bitwise identical on 20/20, the same 0.00e+00 its own
+      permutation_invariance_check prints; that is structural, since Conv1d(kernel_size=1) reduces
+      over channels only (per-point features match after re-indexing to 0.00e+00) and torch.max(x,
+      dim=-1) selects rather than accumulates (pooled feature 0.00e+00), so no float cancellation is
+      involved and a tolerance is the wrong test; max-pool buys far more than permutation -- the
+      critical set that wins at least one of the 1,024 channels is 114/512 (22.3%), 144/1024 (14.1%)
+      and 157/4096 (3.8%), and feeding only those points reproduces all ten logits bitwise, so the
+      model is invariant to deleting most of its input; two controls name how a naive test misfires --
+      left in train() mode the head's Dropout(0.3) makes two forwards of the identical cloud differ by
+      1.086 while a shuffle still gives 0.00e+00 once dropout is off, train-mode BatchNorm couples a
+      cloud to its batch mates (0.673 change from re-batching), and a single cloud raises ValueError:
+      Expected more than 1 value per channel when training; and the lesson's docs/en.md claim of
+      'About 1.6M parameters' is 2.0x the 807,626 the model actually has, 660,234 of them in the head
+      alone
   - index: 2
     slug: camera_ray_generation
     kind: code
@@ -21,7 +37,22 @@ exercises:
       **(Medium)** Implement a minimal ray-generation function that, given camera intrinsics and pose, produces ray origins and directions for every pixel of an H x W image.
     zh: |
       **（中等）** 實作一個最精簡的光線生成函式：給定相機內參與相機姿態，為一張 H x W 影像的每個像素產生光線起點與方向。
-    verifies: neither code/main.py nor docs/en.md defines a ray generator, so get_rays is written here in NeRF's OpenGL/blender frame ((u-cx)/fx, -(v-cy)/fy, -1) and checked as a closed-form identity: all 768 rays of a 24x32 image at f=40 reproject onto their own pixel centre to 1.9e-05 px at t = 0.5/2.0/7.5, and every origin is the camera centre to exactly 0.0; the pose acts only on directions -- rays from a pose turned 1.1 rad match the originals premultiplied by R = R_b R_a^T to 1.8e-07; NeRF's own get_rays writes (i - W*.5) and so indexes pixel corners, shifting every ray by exactly -0.500006 to -0.499996 px in both axes; directions are deliberately not unit, |d| = 1/cos(theta) measuring [1.000156, 1.110321] against the true-corner closed form sqrt(1+(W/2f)^2+(H/2f)^2) = 1.118034 (the measured max is smaller because the corner pixel centre sits half a pixel inside), field of view 43.6 x 33.4 deg; and normalising silently changes what the lesson's own volumetric_render reports -- one fronto-parallel wall at camera depth 4.0 over 128 samples gives every pixel the same depth 3.92031 (std 4.8e-07) un-normalised because t is depth along -z, but bows from 3.92092 to 4.34941 normalised because t is then Euclidean range, the two depth maps differing by exactly |d| pixel by pixel to 8.7e-04 at the 0.0315 sample spacing while both carry the same weight mass (min 0.9998)
+    verifies: >-
+      neither code/main.py nor docs/en.md defines a ray generator, so get_rays is written here in
+      NeRF's OpenGL/blender frame ((u-cx)/fx, -(v-cy)/fy, -1) and checked as a closed-form identity:
+      all 768 rays of a 24x32 image at f=40 reproject onto their own pixel centre to 1.9e-05 px at t =
+      0.5/2.0/7.5, and every origin is the camera centre to exactly 0.0; the pose acts only on
+      directions -- rays from a pose turned 1.1 rad match the originals premultiplied by R = R_b R_a^T
+      to 1.8e-07; NeRF's own get_rays writes (i - W*.5) and so indexes pixel corners, shifting every
+      ray by exactly -0.500006 to -0.499996 px in both axes; directions are deliberately not unit, |d|
+      = 1/cos(theta) measuring [1.000156, 1.110321] against the true-corner closed form
+      sqrt(1+(W/2f)^2+(H/2f)^2) = 1.118034 (the measured max is smaller because the corner pixel
+      centre sits half a pixel inside), field of view 43.6 x 33.4 deg; and normalising silently
+      changes what the lesson's own volumetric_render reports -- one fronto-parallel wall at camera
+      depth 4.0 over 128 samples gives every pixel the same depth 3.92031 (std 4.8e-07) un-normalised
+      because t is depth along -z, but bows from 3.92092 to 4.34941 normalised because t is then
+      Euclidean range, the two depth maps differing by exactly |d| pixel by pixel to 8.7e-04 at the
+      0.0315 sample spacing while both carry the same weight mass (min 0.9998)
   - index: 3
     slug: tinynerf_cube_training
     kind: code
@@ -31,4 +62,23 @@ exercises:
       **(Hard)** Train a TinyNeRF on a synthetic dataset of rendered views of a coloured cube (generated via differentiable rendering or a simple ray tracer). Report rendering loss at epoch 1, 10, and 100. At what epoch does the model produce recognisable views?
     zh: |
       **（困難）** 在一個合成資料集上訓練 TinyNeRF，資料是一個彩色立方體的渲染視角（用可微渲染或簡單的光線追蹤器產生）。回報第 1、10、100 個 epoch 的渲染損失。到第幾個 epoch 模型才產生得出可辨認的視角？
-    verifies: a coloured cube is ray-traced analytically (slab method, six faces, white ground) at 12x12 from 24 ring poses -- nothing downloaded -- and trained through the lesson's own TinyNeRF and volumetric_render at defaults with Adam lr 5e-3 and one shared 32-sample grid: train MSE 0.20065 / 0.04939 / 0.00165 at epochs 1/10/100; 'recognisable' is pinned to the best single colour for the scene (9.98 dB on three held-out poses at the training ring's midpoints) plus 3 dB = 12.98, which novel-view PSNR (10.22/13.01/15.57/16.02/15.60/15.65 at 1/10/20/35/50/100) first clears at epoch 10; the requested statistic then stops tracking the question -- from epoch 20 to 100 train MSE drops 6.4x while novel PSNR moves +0.08 dB and the training-camera PSNR it implies, -10log10(MSE), climbs 19.8 to 27.8 dB; the eight-view control shows the binding variable is view count, not epoch, reaching train MSE 0.00017 (37.7 dB on its own cameras, 10x below the 24-view arm) while its novel views run 9.09 to 10.28 dB and never clear their own 9.97 + 3 dB floor; and two closed forms explain the shape -- the quadrature telescopes to 1 - cumprod(1-alpha) at every prefix, not merely in total, to 6.0e-08 over 64 random rays, with the 1e10 final delta pinning total weight at 1.000000 whenever sigma > 0 so there is no background term and a zero density renders pure black, which is why torch.relu(self.sigma(h)) leaves 5 of 10 seeds at a bitwise-zero gradient pinned at the target's mean square 0.6912; and 6 of the 10 positional-encoding bands are below Nyquist at the 0.08065 sample spacing, the top turning 20.6 cycles per step, the measured encoding dot product one step apart -0.98894 matching 3*sum_l cos(2^l pi d) to 1.3e-06
+    verifies: >-
+      a coloured cube is ray-traced analytically (slab method, six faces, white ground) at 12x12 from
+      24 ring poses -- nothing downloaded -- and trained through the lesson's own TinyNeRF and
+      volumetric_render at defaults with Adam lr 5e-3 and one shared 32-sample grid: train MSE 0.20065
+      / 0.04939 / 0.00165 at epochs 1/10/100; 'recognisable' is pinned to the best single colour for
+      the scene (9.98 dB on three held-out poses at the training ring's midpoints) plus 3 dB = 12.98,
+      which novel-view PSNR (10.22/13.01/15.57/16.02/15.60/15.65 at 1/10/20/35/50/100) first clears at
+      epoch 10; the requested statistic then stops tracking the question -- from epoch 20 to 100 train
+      MSE drops 6.4x while novel PSNR moves +0.08 dB and the training-camera PSNR it implies,
+      -10log10(MSE), climbs 19.8 to 27.8 dB; the eight-view control shows the binding variable is view
+      count, not epoch, reaching train MSE 0.00017 (37.7 dB on its own cameras, 10x below the 24-view
+      arm) while its novel views run 9.09 to 10.28 dB and never clear their own 9.97 + 3 dB floor; and
+      two closed forms explain the shape -- the quadrature telescopes to 1 - cumprod(1-alpha) at every
+      prefix, not merely in total, to 6.0e-08 over 64 random rays, with the 1e10 final delta pinning
+      total weight at 1.000000 whenever sigma > 0 so there is no background term and a zero density
+      renders pure black, which is why torch.relu(self.sigma(h)) leaves 5 of 10 seeds at a
+      bitwise-zero gradient pinned at the target's mean square 0.6912; and 6 of the 10
+      positional-encoding bands are below Nyquist at the 0.08065 sample spacing, the top turning 20.6
+      cycles per step, the measured encoding dot product one step apart -0.98894 matching 3*sum_l
+      cos(2^l pi d) to 1.3e-06

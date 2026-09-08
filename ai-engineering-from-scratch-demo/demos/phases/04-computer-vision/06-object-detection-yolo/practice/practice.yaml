@@ -11,7 +11,21 @@ exercises:
       **(Easy)** Implement `box_iou` and run it against `torchvision.ops.box_iou` on 1,000 random box pairs. Verify max absolute difference is below `1e-6`.
     zh: |
       **（簡單）** 實作 `box_iou`，拿 1,000 組隨機框對跟 `torchvision.ops.box_iou` 對照。確認最大絕對誤差低於 `1e-6`。
-    verifies: Scores the lesson's own box_iou against torchvision.ops.box_iou (compared whenever the vision extra provides it, skipped without failing when it does not) and against three oracles that share none of its algebra. Asserts: max |lesson - scalar Python-float loop| over 1,000 random xyxy pairs < 1e-12 and the torchvision difference, when available, also < 1e-12 (both measured 0.0, against the exercise's 1e-6), with IoU spanning 0.000-0.778 and 479 of the 1,000 pairs overlapping; max |lesson - rasterised cell count| over 200 integer pairs in a 64x64 grid < 1e-12 (measured 0.0); a 200,000-point Monte-Carlo estimate agreeing only to between 1e-5 and 5e-3 (measured 1.46e-3); the same boxes at 4,000-px coordinates in float32 landing between 1e-9 and 1e-6 against the float64 oracle (measured 1.51e-7, inside the tolerance by only 7x where float64 clears it by 0.0); the PASCAL VOC +1 convention moving IoU by more than 1e-2 at its maximum and more than 100x the tolerance on average over the overlapping pairs (measured max 0.109, mean 0.0099); and degenerate input (zero-area box against itself, against a real box, and an inverted box) returning exactly [0.0, 0.0, 0.0] while the 1000x1000 pairwise call's diagonal matches the 1,000 single-pair calls to < 1e-12 (measured 0.0).
+    verifies: >-
+      Scores the lesson's own box_iou against torchvision.ops.box_iou (compared whenever the vision
+      extra provides it, skipped without failing when it does not) and against three oracles that
+      share none of its algebra. Asserts: max |lesson - scalar Python-float loop| over 1,000 random
+      xyxy pairs < 1e-12 and the torchvision difference, when available, also < 1e-12 (both measured
+      0.0, against the exercise's 1e-6), with IoU spanning 0.000-0.778 and 479 of the 1,000 pairs
+      overlapping; max |lesson - rasterised cell count| over 200 integer pairs in a 64x64 grid < 1e-12
+      (measured 0.0); a 200,000-point Monte-Carlo estimate agreeing only to between 1e-5 and 5e-3
+      (measured 1.46e-3); the same boxes at 4,000-px coordinates in float32 landing between 1e-9 and
+      1e-6 against the float64 oracle (measured 1.51e-7, inside the tolerance by only 7x where float64
+      clears it by 0.0); the PASCAL VOC +1 convention moving IoU by more than 1e-2 at its maximum and
+      more than 100x the tolerance on average over the overlapping pairs (measured max 0.109, mean
+      0.0099); and degenerate input (zero-area box against itself, against a real box, and an inverted
+      box) returning exactly [0.0, 0.0, 0.0] while the 1000x1000 pairwise call's diagonal matches the
+      1,000 single-pair calls to < 1e-12 (measured 0.0).
   - index: 2
     slug: ciou_vs_mse_box_loss
     kind: code
@@ -21,7 +35,20 @@ exercises:
       **(Medium)** Port `yolo_loss` to a version that uses `CIoU` box loss instead of MSE. Show on a 100-image synthetic dataset that CIoU converges to a better final mAP@0.5:0.95 than MSE in the same number of epochs.
     zh: |
       **（中等）** 把 `yolo_loss` 改寫成用 `CIoU` 邊界框損失取代 MSE 的版本。在一份 100 張影像的合成資料集上證明：相同 epoch 數之下，CIoU 收斂到的最終 mAP@0.5:0.95 比 MSE 更好。
-    verifies: Ports yolo_loss by calling the lesson's own function with lambda_coord=0.0 and adding a CIoU term at the same lambda=5, then trains both arms for 30 epochs on 100 synthetic 128-px images (8x8 grid, stride 16, three anchors, three classes) over seeds (0, 1, 2), scoring COCO mAP@0.5:0.95 on a fresh 120-image held-out set at checkpoints 10 and 30. Asserts: at epoch 10 the per-seed mAP lift is > 0.02 on every seed and the AP@0.5 lift > 0.05 on every seed (measured mAP 0.081 -> 0.233, lifts +0.143/+0.173/+0.140; AP@0.5 0.230 -> 0.721, lifts +0.489/+0.477/+0.508, against AP@0.75 lifts of +0.001/+0.073/+0.020); from epoch 10 to 30 the MSE arm's mean gain exceeds twice the CIoU arm's and the epoch-10 lead exceeds three times the epoch-30 lead, with the epoch-30 per-seed lifts ranging wider than twice their own mean (measured gains +0.206 vs +0.073, lead +0.152 -> +0.020, per-seed -0.044/+0.065/+0.038 spanning 0.110 against the MSE arm's own seed spread of 0.047); and lambda_coord=0.0 removes the lesson's reported 5.0 x box part to within 1e-3 (measured 5.5416 vs 5.5416) while CIoU of a box against itself is < 1e-6 (measured 0.0).
+    verifies: >-
+      Ports yolo_loss by calling the lesson's own function with lambda_coord=0.0 and adding a CIoU
+      term at the same lambda=5, then trains both arms for 30 epochs on 100 synthetic 128-px images
+      (8x8 grid, stride 16, three anchors, three classes) over seeds (0, 1, 2), scoring COCO
+      mAP@0.5:0.95 on a fresh 120-image held-out set at checkpoints 10 and 30. Asserts: at epoch 10
+      the per-seed mAP lift is > 0.02 on every seed and the AP@0.5 lift > 0.05 on every seed (measured
+      mAP 0.081 -> 0.233, lifts +0.143/+0.173/+0.140; AP@0.5 0.230 -> 0.721, lifts
+      +0.489/+0.477/+0.508, against AP@0.75 lifts of +0.001/+0.073/+0.020); from epoch 10 to 30 the
+      MSE arm's mean gain exceeds twice the CIoU arm's and the epoch-10 lead exceeds three times the
+      epoch-30 lead, with the epoch-30 per-seed lifts ranging wider than twice their own mean
+      (measured gains +0.206 vs +0.073, lead +0.152 -> +0.020, per-seed -0.044/+0.065/+0.038 spanning
+      0.110 against the MSE arm's own seed spread of 0.047); and lambda_coord=0.0 removes the lesson's
+      reported 5.0 x box part to within 1e-3 (measured 5.5416 vs 5.5416) while CIoU of a box against
+      itself is < 1e-6 (measured 0.0).
   - index: 3
     slug: multi_scale_inference_lift
     kind: code
@@ -31,4 +58,20 @@ exercises:
       **(Hard)** Implement multi-scale inference: feed the same image at three resolutions through the model, union the box predictions, and run a single NMS at the end. Measure the mAP lift vs single-scale inference on a held-out set.
     zh: |
       **（困難）** 實作多尺度推論：把同一張影像以三種解析度送進模型，把邊界框預測聯集起來，最後只做一次 NMS。在保留集上量測它相對於單尺度推論的 mAP 提升。
-    verifies: Trains one detector per seed (0, 1, 2) for 30 epochs on 100 synthetic 128-px images with the lesson's own yolo_loss, then runs multi-scale inference by decoding each resolution through ref.postprocess with iou_threshold=1.0 (its NMS a no-op), rescaling boxes to 128-px coordinates, unioning them and running one ref.nms at 0.45 over the union, scored as COCO mAP@0.5:0.95 on 120 held-out images. Asserts: the 112/128/144 ladder lifts AP@0.5 by more than 0.03 on every seed and mAP by more than 0.015 on the mean (measured AP@0.5 0.751 -> 0.868, lifts +0.110/+0.116/+0.125; mAP 0.286 -> 0.326, lifts +0.084/-0.000/+0.034, on 137 -> 213 kept boxes); the 96/128/160 ladder has a negative mean lift while the near ladder's is positive and the two differ by more than 0.03 (measured -0.037 vs +0.039 mAP, -0.032 vs +0.117 AP@0.5, mAP 0.286 -> 0.249 on 286 boxes); every off-scale resolution alone scores below the native one (measured 96px 0.124, 112px 0.258, 144px 0.265, 160px 0.171 against 0.286) while the top box read at 144 px and mapped back moves more than 2 px or changes area by more than 5% (measured 7.80 px and 0.843x); the far union's mean best-matched IoU exceeds single-scale while keeping more than twice as many boxes (measured 0.691 vs 0.630 on 286 vs 137); and ref.nms at threshold 1.0 returns all 4 of 4 overlapping test boxes in score order while 0.45 returns 2, so the end-of-pipeline NMS really is the only one.
+    verifies: >-
+      Trains one detector per seed (0, 1, 2) for 30 epochs on 100 synthetic 128-px images with the
+      lesson's own yolo_loss, then runs multi-scale inference by decoding each resolution through
+      ref.postprocess with iou_threshold=1.0 (its NMS a no-op), rescaling boxes to 128-px coordinates,
+      unioning them and running one ref.nms at 0.45 over the union, scored as COCO mAP@0.5:0.95 on 120
+      held-out images. Asserts: the 112/128/144 ladder lifts AP@0.5 by more than 0.03 on every seed
+      and mAP by more than 0.015 on the mean (measured AP@0.5 0.751 -> 0.868, lifts
+      +0.110/+0.116/+0.125; mAP 0.286 -> 0.326, lifts +0.084/-0.000/+0.034, on 137 -> 213 kept boxes);
+      the 96/128/160 ladder has a negative mean lift while the near ladder's is positive and the two
+      differ by more than 0.03 (measured -0.037 vs +0.039 mAP, -0.032 vs +0.117 AP@0.5, mAP 0.286 ->
+      0.249 on 286 boxes); every off-scale resolution alone scores below the native one (measured 96px
+      0.124, 112px 0.258, 144px 0.265, 160px 0.171 against 0.286) while the top box read at 144 px and
+      mapped back moves more than 2 px or changes area by more than 5% (measured 7.80 px and 0.843x);
+      the far union's mean best-matched IoU exceeds single-scale while keeping more than twice as many
+      boxes (measured 0.691 vs 0.630 on 286 vs 137); and ref.nms at threshold 1.0 returns all 4 of 4
+      overlapping test boxes in score order while 0.45 returns 2, so the end-of-pipeline NMS really is
+      the only one.

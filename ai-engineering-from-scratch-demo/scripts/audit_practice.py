@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
@@ -110,6 +111,23 @@ def _reference_headings(pack):
             if line.startswith("#")}
 
 
+def plain_scalars_with_colons(man_path: pathlib.Path) -> list:
+    """Prose keys holding a colon-space in a *plain* scalar are not YAML.
+
+    `harness/yamlite` reads them happily; every strict YAML parser stops with
+    "mapping values are not allowed here". Since a manifest is a data file other
+    tools are entitled to read, a `verifies` or `cites` that contains ": " has to be
+    a block scalar. `finalize_practice` writes `>-` for exactly this reason.
+    """
+    offenders = []
+    for number, line in enumerate(man_path.read_text(encoding="utf-8").splitlines(), 1):
+        match = re.match(r"^    (verifies|cites): (?![|>])(.*)$", line)
+        if match and ": " in match.group(2):
+            offenders.append(f"line {number}: {match.group(1)!r} holds ': ' in a plain scalar, "
+                             "which no strict YAML parser accepts (use '>-')")
+    return offenders
+
+
 def audit_lesson(man_path: pathlib.Path, warnings=None) -> list:
     """Returns the problems that fail the gate; soft findings go to `warnings` if given."""
     pack = manifest.load_practice(man_path)
@@ -118,6 +136,7 @@ def audit_lesson(man_path: pathlib.Path, warnings=None) -> list:
     readme = directory / "README.md"
     if not readme.is_file():
         problems.append(f"{directory}: no README.md")
+    problems += plain_scalars_with_colons(man_path)
     headings = _reference_headings(pack) if any(
         e.kind == "explain" for e in pack.exercises) else None
     for ex in pack.exercises:

@@ -197,4 +197,24 @@ def test_finalize_keeps_backslashes_out_of_re_sub(lesson, monkeypatch):
     finalize_practice.finalize(lesson.parent.parent.name, lesson.parent.name,
                                {1: {"verifies": r"\kappa(A) grows as \sigma_1/\sigma_n"}})
     body = (lesson / "practice.yaml").read_text(encoding="utf-8")
-    assert r"verifies: \kappa(A) grows as \sigma_1/\sigma_n" in body
+    assert r"\kappa(A) grows as \sigma_1/\sigma_n" in body
+    # the value itself is what matters, and it survives the `>-` block scalar intact
+    written = manifest.load_practice(lesson / "practice.yaml").by_index(1)
+    assert written.verifies == r"\kappa(A) grows as \sigma_1/\sigma_n"
+
+
+def test_prose_keys_are_block_scalars_so_the_manifests_are_real_yaml():
+    """A ': ' inside a plain scalar parses under `yamlite` and under nothing else.
+
+    33 shipped manifests once did exactly that, so the audit now rejects it and
+    `finalize_practice` writes `>-`. This guards the rule without adding a YAML
+    dependency the harness is not allowed to have (`DESIGN` section 4).
+    """
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import audit_practice
+
+    offenders = []
+    for man in sorted((ROOT / "demos" / "phases").glob("*/*/practice/practice.yaml")):
+        offenders += [f"{man.parent.parent.name}: {problem}"
+                      for problem in audit_practice.plain_scalars_with_colons(man)]
+    assert offenders == []

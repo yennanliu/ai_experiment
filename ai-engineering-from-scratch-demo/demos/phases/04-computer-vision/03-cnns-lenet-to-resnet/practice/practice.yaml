@@ -31,4 +31,10 @@ exercises:
       **(Hard)** Remove the skip connection from `BasicBlock`, train a 34-block "plain" network and a 34-block ResNet on CIFAR-10 for 10 epochs each. Plot training loss vs epoch for both. Reproduce the He et al. Figure 1 result where the plain deep network converges to higher loss than its shallower twin.
     zh: |
       **（困難）** 把 `BasicBlock` 的跳接拿掉，在 CIFAR-10 上各訓練 10 個 epoch：一個 34 區塊的「plain」網路，和一個 34 區塊的 ResNet。把兩者的訓練損失對 epoch 畫出來。重現 He 等人 Figure 1 的結果——那個沒有跳接的深層網路收斂到的損失，比它較淺的雙胞胎還高。
-    verifies: on a deterministic 384-image teacher-labelled set at 12x12, 16 epochs of SGD: the 34-block plain net ends at 2.275 training loss against the 4-block plain net's 0.77 (Figure 1's degradation), having moved 0.043 over the whole run; the same net with the skip restored ends at 1.766, recovering 34% of the gap; at init the plain-34 stem/head gradient-norm ratio is 3.1e4 against 0.25 with the skip; and plain-4 grafted into a 34-block plain net with 30 identity blocks reproduces its loss to 2.1e-06, so the failure is optimisation, not capacity
+    verifies: >-
+      on a deterministic 384-image teacher-labelled set at 12x12, 16 epochs of SGD: the 34-block plain
+      net ends at 2.275 training loss against the 4-block plain net's 0.77 (Figure 1's degradation),
+      having moved 0.043 over the whole run; the same net with the skip restored ends at 1.766,
+      recovering 34% of the gap; at init the plain-34 stem/head gradient-norm ratio is 3.1e4 against
+      0.25 with the skip; and plain-4 grafted into a 34-block plain net with 30 identity blocks
+      reproduces its loss to 2.1e-06, so the failure is optimisation, not capacity
