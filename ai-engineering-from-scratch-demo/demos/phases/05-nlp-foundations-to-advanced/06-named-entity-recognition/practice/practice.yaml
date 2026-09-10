@@ -1,0 +1,82 @@
+lesson: 06-named-entity-recognition
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/06-named-entity-recognition/docs/en.md
+exercises:
+  - index: 1
+    slug: the_round_trip_that_holds_and_the_one_that_does_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement `bio_to_spans` (the inverse of `spans_to_bio`) and verify round-trip consistency on 10 sentences.
+    zh: |
+      **簡單。** 實作 `bio_to_spans`（`spans_to_bio` 的反向操作），並在 10 個句子上驗證來回轉換的一致性。
+    verifies: >-
+      bio_to_spans already ships in the lesson's code, so the work is the verification, and the two
+      directions behave differently. spans -> BIO -> spans is the identity on all 10 fixture
+      sentences, including three adjacent same-type entities, which BIO2's B- prefix keeps separate.
+      BIO -> spans -> BIO is not the identity: over all 625 length-4 sequences on two entity types
+      exactly 153 are fixed points, and counting well-formed IOB2 sequences by the transition rule
+      independently also gives 153 -- the composition is a projection onto valid IOB2. All 472
+      sequences that change contain an I- tag and every change is a silent deletion,
+      ['O','O','O','I-A'] returning ['O','O','O','O'] with no exception raised. CoNLL-2003, the
+      dataset exercise 2 names, ships in IOB1 where a lone I- opens an entity, and bio_to_spans on
+      ['I-ORG','I-ORG'] returns []. spans_to_bio validates nothing either: a zero-width span (2, 2)
+      comes back (2, 3), a reversed span (3, 1) comes back (3, 4), and two overlapping spans come back
+      with the longer one reduced from three tokens to one
+    uses_reference:
+      - spans_to_bio
+      - bio_to_spans
+  - index: 2
+    slug: token_accuracy_flatters_what_entity_f1_does_not
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Train the sklearn-crfsuite CRF above on the CoNLL-2003 English NER dataset. Report per-entity F1 using `seqeval`. Typical result: ~84 F1.
+    zh: |
+      **中等。** 把上面的 sklearn-crfsuite CRF 拿去 CoNLL-2003 英文 NER 資料集上訓練。用 `seqeval` 回報各實體型別的 F1。典型結果：約 84 F1。
+    verifies: >-
+      sklearn_crfsuite, seqeval, datasets and pycrfsuite are all absent and CoNLL-2003 is not
+      downloadable, so the ~84 F1 is neither confirmed nor denied. On a built corpus of 144 sentences
+      over 24 entities, split so no test entity appears in training, logistic regression over the
+      lesson's own token_features scores token accuracy 0.8302 and entity F1 0.0952 -- the same
+      predictions scored two ways, differing by a factor of 9. Token accuracy is inflated by the O
+      class: answering O everywhere scores 0.7547, so the model is 0.0755 above finding nothing, which
+      is why the exercise specifies seqeval. Multi-token entities score F1 exactly 0.0000, 0 of 24
+      recovered with 54 spurious spans, while single-token entities score 0.2500, so the aggregate is
+      carried entirely by the single-token half; on the multi-token half token accuracy is still
+      0.7931. The model proposes 78 spans against 48 real ones for precision 0.0769 and recall 0.125
+      -- it over-predicts rather than falling silent
+    uses_reference:
+      - spans_to_bio
+      - bio_to_spans
+      - token_features
+      - word_shape
+  - index: 3
+    slug: the_split_is_worth_more_than_the_model
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Fine-tune `distilbert-base-cased` on a domain-specific NER dataset (medical, legal, or financial). Compare against the spaCy small model. Document data leakage checks and write up what surprised you.
+    zh: |
+      **困難。** 在一份特定領域的 NER 資料集（醫療、法律或金融）上微調 `distilbert-base-cased`。跟 spaCy 小模型比較。記錄你做了哪些資料洩漏檢查，並把最讓你意外的地方寫下來。
+    verifies: >-
+      transformers, spacy, torch and datasets are all absent and no domain NER corpus is in the
+      checkout, so the fine-tune and the spaCy comparison are not attempted. The leakage check is, and
+      it is worth more than either. Split the same 144 sentences by sentence and entity F1 is 1.0000
+      with token accuracy 1.0000; split them by entity and the identical model on identical features
+      scores 0.0952 and 0.8302. 23 of the 24 entities appear on both sides of the by-sentence split
+      against 0 for the by-entity split, so the leak is worth 0.9048 F1 with no change to
+      architecture, features or data -- and a by-sentence split is what a default train_test_split
+      gives. The lesson's own rule_based_ner is the same leak in pure form: F1 0.8571 on the half its
+      gazetteer was written around and 0.0000 on the other half, since 8 of 12 ORG names are in
+      ORG_GAZETTEER and none of the held-out four. It is structurally worse too -- every branch
+      appends a B- label and none appends I-, so its span widths are exactly [1], 15 gazetteer words
+      in a row become 15 entities, and it recovers 0 of the 36 multi-token entities at any coverage
+    uses_reference:
+      - rule_based_ner
+      - bio_to_spans
+      - ORG_GAZETTEER
+      - GPE_GAZETTEER
