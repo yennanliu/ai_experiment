@@ -1,0 +1,89 @@
+lesson: 24-coreference-resolution
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/24-coreference-resolution/docs/en.md
+exercises:
+  - index: 1
+    slug: recency_resolves_to_the_leftmost_mention
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run the rule-based resolver in `code/main.py` on 5 hand-crafted paragraphs. Measure mention-link accuracy against ground truth.
+    zh: |
+      **簡單。** 把 `code/main.py` 裡的規則式消解器跑在 5 段自己寫的段落上。對照正確答案量測提及連結的準確率。
+    verifies: >-
+      seven paragraphs, twelve pronouns, one gold antecedent each: resolve gets 8 of 12 right and the
+      four failures are four distinct mechanisms. recency_score is not recency -- sentence distance
+      costs 2.0 per sentence and the within-sentence term is max(0, mention_token - candidate_token) *
+      0.01, clipped at zero, so a sentence-initial pronoun scores -2.0 against a candidate at token 0
+      and -2.0 against one at token 4. All candidates in the nearest sentence tie and max takes the
+      first, so 'Apple sued Google over the patent. It appealed the ruling' links It to Apple.
+      Capitalisation manufactures the competition: extract_mentions treats any capitalised alphabetic
+      token as a named entity and every sentence starts with one, so Analysts and Engineers enter the
+      candidate list and win on recency, taking his from Satya Nadella and it from a device. Gender is
+      a twenty-name lookup -- FEMALE_FIRST and MALE_FIRST hold ten first names each and every other
+      name infers u, which agreement_score treats as compatible with everything, so the same sentence
+      resolves She to Yusuf Demir with unlisted names and to Mary Chen with listed ones. And agreement
+      can rank but never veto: its whole range is 2.0 down to -1.0 against -2.0 per sentence of
+      distance
+    uses_reference:
+      - FEMALE_FIRST
+      - MALE_FIRST
+      - extract_mentions
+      - infer_gender
+      - agreement_score
+      - recency_score
+      - resolve
+  - index: 2
+    slug: the_cluster_metric_is_the_flattering_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Use a pretrained neural coref model on a news article. Compare clusters against your own manual annotation. Where did it fail?
+    zh: |
+      **中等。** 拿一個預訓練的神經指代模型跑一篇新聞報導。把它產生的叢集跟你自己的人工標註比對。它在哪裡失手了？
+    verifies: >-
+      spacy, coreferee, fastcoref, allennlp and transformers are all absent, so the system under
+      comparison is the lesson's own clusters and the manual annotation is exercise 1's gold links
+      extended by string identity. Over 34 mentions it scores B-cubed precision 0.8725, recall 0.8333,
+      F1 0.8525 -- against a mention-link accuracy of 0.6667 on the same output, so the cluster metric
+      is the more flattering of the two. It is flattering because 11 of the 21 gold clusters are
+      singletons, which no system can get wrong: restricted to mentions gold puts in a cluster of two
+      or more, F1 falls to 0.8106 and recall to 0.7536 over 23 mentions. Where it fails is one merged
+      cluster per bad link -- Apple+It, Analysts+his, Engineers+it, Yusuf Demir+She+him -- so a link
+      error is a cluster error for every mention on both sides. It also fails the other way: resolve
+      iterates only pronouns and clusters unions only what it returned, so no two non-pronoun mentions
+      are ever joined, and the Nokia paragraph comes back [Nokia] [the phone] [Nokia, It] against a
+      gold of [Nokia, Nokia, It] [the phone]. The two failures partly cancel in the count, 22
+      predicted clusters against 21 gold. And main() prints only clusters above size one, so the
+      singletons never reach the screen
+    uses_reference:
+      - extract_mentions
+      - resolve
+  - index: 3
+    slug: coverage_can_only_go_up_including_when_it_is_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a coref-enhanced NER pipeline: NER first, then merge via coref clusters. Measure entity-coverage improvement vs NER-only on 100 articles.
+    zh: |
+      **困難。** 做一條指代增強的 NER 管線：先跑 NER，再依指代叢集合併。在 100 篇文章上量測相較於純 NER 的實體覆蓋率提升。
+    verifies: >-
+      the NER layer is extract_mentions' named entities and the merge is the lesson's own clusters.
+      Against 18 gold entity-sentence pairs, NER alone finds 9 and the merged pipeline 16 -- recall
+      0.5000 to 0.8333, two thirds more coverage -- while precision falls from 1.0000 to 0.9375. Of
+      the 7 attributions the merge adds, 6 are right and one is not: Apple picks up the sentence
+      belonging to Google, because It appealed the ruling resolved to the leftmost mention. Every
+      added attribution comes from a pronoun link, so the added coverage can be no better than the
+      0.6667 link accuracy underneath it. The metric cannot see that: merging only ever adds
+      sentences, 0 of the NER-only attributions are lost, so entity coverage rises when the link is
+      right and rises when it is wrong, and reported alone it scores a correct merge and a false one
+      identically. The three gold pairs still missing -- Google, Satya Nadella, Priya Sharma -- come
+      from the same four links. And the NER layer has no types at all: 4 of its 13 entities are months
+      or plural common nouns that began a sentence, so 'NER then merge via coref' merges dates into
+      entity clusters before anything is measured
+    uses_reference:
+      - extract_mentions
+      - resolve
