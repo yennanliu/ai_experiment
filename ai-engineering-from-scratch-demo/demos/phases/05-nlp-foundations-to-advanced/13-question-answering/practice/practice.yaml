@@ -1,0 +1,83 @@
+lesson: 13-question-answering
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/13-question-answering/docs/en.md
+exercises:
+  - index: 1
+    slug: two_answers_made_of_articles_match_exactly
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Set up the SQuAD extractive pipeline above on 10 Wikipedia passages. Hand-craft 10 questions. Measure how often the answer is correct. You should see 7-9 correct if passages and questions are clean.
+    zh: |
+      **簡單。** 用上面的 SQuAD 抽取式流程處理 10 段維基百科段落。自己手寫 10 個問題。量測答案正確的比例。段落與問題都乾淨的話，你應該會看到 7 到 9 題正確。
+    verifies: >-
+      on 10 written passages and 10 hand-crafted questions the extractive pipeline scores exact match
+      8/10 and mean token F1 0.800, inside the 7-9 the exercise predicts. The two failures are the
+      retriever and the span rule, not the metric: one question retrieves the wrong passage because
+      overlap on `year` and a date outweighs one mention of the entity, and one returns a leading noun
+      phrase from the right passage. The metrics have a hole the clean questions never reach.
+      normalize strips a/an/the before it strips punctuation, so anything made only of articles
+      normalises to the empty string -- exact_match('a','the') is 1.0, and so is every pair among a,
+      an, the, The, A, with token_f1 agreeing at 1.0 because it returns 1.0 when both token lists are
+      empty. In the other direction token_f1 is a bag of tokens, so '29 June 2007' against 'June 29,
+      2007' scores exact match 0 and F1 1.000, the same 1.000 the identical string gets: on a
+      permutation the lesson's 'partial credit' is full credit. On the eight it gets right the two
+      metrics agree exactly
+    uses_reference:
+      - toy_retrieve
+      - toy_bm25_score
+      - exact_match
+      - token_f1
+      - normalize
+  - index: 2
+    slug: the_threshold_cannot_separate_overlapping_scores
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add a refusal classifier. When the top retrieval score is below a threshold (say 0.3 cosine), return "I don't know" instead of calling the reader. Tune the threshold on a held-out set.
+    zh: |
+      **中等。** 加上一個拒答分類器。當最高的檢索分數低於某個閾值（例如餘弦相似度 0.3）時，直接回傳「我不知道」，不要呼叫閱讀器。用一組保留資料調校這個閾值。
+    verifies: >-
+      the exercise's 0.3 is a cosine and the score compared against it is not one: toy_bm25_score sums
+      count/(1 + length/10) over matching terms, running 0.0 to 2.4000 on the ten passages, so at 0.3
+      the rule fires only where the score is exactly zero -- a zero-overlap detector described as a
+      confidence threshold. Tuning it is worth one item in sixteen: sweeping every threshold the data
+      distinguishes, the best accuracy over 10 answerable and 6 unanswerable questions is 0.8125 at
+      0.8696 against 0.7500 at 0.3. The ceiling is the overlap -- answerable questions score 0.8696 to
+      2.4000 and unanswerable ones 0.0 to 1.6667, with 2 of the 6 unanswerable above the lowest
+      answerable and 4 of the 10 answerable below the highest unanswerable. Which unanswerable
+      questions get through is the useful part: the three written to share corpus vocabulary score
+      0.8696, 1.3043 and 1.6667 against 0.0, 0.0 and 0.8333 for the three unrelated ones, so the
+      signal the rule reads is overlap rather than answerability and no held-out set changes that
+    uses_reference:
+      - toy_retrieve
+      - toy_bm25_score
+      - refusal_from_score
+  - index: 3
+    slug: rrf_tracks_the_better_arm_and_never_beats_it
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Build a RAG pipeline over a 10,000-document corpus of your choice. Implement hybrid retrieval (BM25 + dense) with RRF fusion (see lesson 14). Measure answer accuracy with and without the hybrid step. Document which question types benefit most.
+    zh: |
+      **困難。** 在你自選的 10,000 份文件語料上建一條 RAG 流程。實作混合檢索（BM25 + 稠密），並用 RRF 融合（見第 14 單元）。比較有沒有混合這一步時的答案正確率。記錄下哪些類型的問題受益最多。
+    verifies: >-
+      there is no 10,000-document corpus and no embedding model, so the corpus is exercise 1's ten
+      passages and the dense arm is TF-IDF reduced by truncated SVD. Top-1 retrieval over the ten
+      questions: at 4 components BM25 9, dense 8, RRF 9; at 8 components BM25 9, dense 10, RRF 10. So
+      'accuracy with and without the hybrid step' is +0 or +1 depending on the SVD width, a
+      hyperparameter of an arm the exercise never mentions -- and at both widths the fused score
+      equals the maximum of its two inputs exactly, never exceeding it. The whole effect is one
+      question: at 8 components the arms pick different top passages on 1 of 10, RRF rescues that one
+      and loses none, and where they agree there is nothing to fuse. The question that benefits is 'In
+      what year did Android launch?', the one BM25 got wrong in exercise 1 because the distractor
+      passage shares `year` and a date -- the failure a lexical retriever is defined to have. At 4
+      components the dense arm is worse than BM25 and rescues nothing, so the benefit is contingent on
+      the dense arm being good rather than on the fusion being clever; RRF loses no question at either
+      width
+    uses_reference:
+      - toy_bm25_score
+      - toy_retrieve
