@@ -1,0 +1,78 @@
+lesson: 12-text-summarization
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/12-text-summarization/docs/en.md
+exercises:
+  - index: 1
+    slug: recall_only_rouge_is_maximised_by_the_article
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run TextRank on 5 news articles. Compare the top-3 sentences to a reference summary. Measure ROUGE-L. You should see 30-45 ROUGE-L on CNN/DailyMail-style articles.
+    zh: |
+      **簡單。** 對 5 篇新聞跑 TextRank。把前三名的句子跟參考摘要比對，量測 ROUGE-L。在 CNN/DailyMail 風格的文章上，你應該會看到 30 到 45 的 ROUGE-L。
+    verifies: >-
+      ROUGE-L is not in the lesson -- code/main.py ships rouge_n only, which is recall against the
+      reference with no precision term, so it rises with every sentence added and is maximised by
+      returning the whole article. Over five written (article, reference) pairs it reads 0.1322,
+      0.2453, 0.3348, 0.4513, 0.5272 at k = 1 to 5 and 0.6584 at k = 7, the article itself. The LCS
+      F-measure the exercise names, implemented here with beta 1.2, does have a precision term and
+      stops paying for length: 0.1674, 0.2410, 0.2941, 0.3418, 0.3577, 0.3589 over the same sweep, so
+      from k=5 to the whole article rouge_n gains 24.9% and ROUGE-L gains 0.3%. Per-article ROUGE-L
+      peaks at k = [4, 4, 7, 7, 7], strictly before the end on 2 of 5, where rouge_n peaks at the
+      article on all 5. And the exercise's own number is a near miss: its specified top-3 scores
+      ROUGE-L 0.2941, just under the 30-45 band it predicts, which opens at k=4 with 0.3418
+    uses_reference:
+      - textrank
+      - rouge_n
+      - sentence_split
+  - index: 2
+    slug: extractive_precision_is_one_by_construction
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement entity-level factuality: extract named entities from source and summary (spaCy), compute recall of source entities in summary and precision of summary entities against source. High precision and low recall mean safe but terse; low precision means hallucinated entities.
+    zh: |
+      **中等。** 實作實體層級的事實查核：從來源與摘要中抽出命名實體（用 spaCy），計算來源實體在摘要中的召回率，以及摘要實體對照來源的精確率。精確率高、召回率低代表安全但過於精簡；精確率低則代表有幻覺出來的實體。
+    verifies: >-
+      half the metric cannot move. textrank returns sentences copied from the source, so the summary's
+      entities are a subset of the source's at every k in 1..7 across all five articles -- checked as
+      set inclusion rather than as an average -- and precision is 1.0000 throughout. The exercise's
+      reading of that number, 'high precision and low recall mean safe but terse', describes the
+      one-sentence summary (precision 1.0, recall 0.0) and the whole article (precision 1.0, recall
+      1.0) identically. Recall is the informative half and it repeats exercise 1's instruction:
+      0.1067, 0.2800, 0.4367, 0.4867, 0.6767, 1.0000, reaching 1 only by copying the article. The
+      signal the exercise describes needs an abstractive system to produce -- swapping three entities
+      takes precision from 1.0000 to 0.0000, separating that summary from every extractive one
+      perfectly -- so entity-level factuality is inapplicable to the system this lesson builds rather
+      than uninformative. spaCy is absent and the extractor is capitalised non-initial tokens plus
+      digits, which does not affect the result, since the subset relation holds for any extractor
+      applied to both sides
+    uses_reference:
+      - textrank
+      - sentence_split
+  - index: 3
+    slug: the_three_numbers_rank_three_different_ways
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Compare BART-large-CNN against an LLM (Claude or GPT-4) on 50 CNN/DailyMail articles. Report ROUGE-L, factuality (by entity F1), and cost per summary. Document where each wins.
+    zh: |
+      **困難。** 在 50 篇 CNN/DailyMail 文章上，把 BART-large-CNN 跟一個 LLM（Claude 或 GPT-4）比一比。報告 ROUGE-L、忠實度（以實體 F1 衡量）以及每份摘要的成本。記錄下各自贏在哪裡。
+    verifies: >-
+      transformers, torch, openai and anthropic are all absent, so the three systems are textrank at
+      k=2, textrank at k=5 and a hand-written abstractive stand-in, scored on the same five articles.
+      The exercise's three numbers give three distinct orderings of the same nine summaries: ROUGE-L
+      ranks abstractive, k=5, k=2 (0.3985, 0.3577, 0.2410); entity F1 ranks k=5, abstractive, k=2;
+      cost in mean output words ranks abstractive, k=2, k=5 (13.2, 19.0, 45.0). Both extractive
+      systems score entity precision 1.0000, so their F1 gap is entirely recall, 0.2800 against 0.6767
+      -- the longer summary wins because it is longer. The abstractive arm invents MIT on the first
+      article, taking mean precision to 0.8000 and F1 to 0.5508, and it is the only system any of
+      these metrics can mark down. The two extractive systems swap places between ROUGE-L and cost,
+      and by first places the tally is k=2: 0, k=5: 1, abstractive: 2 -- no system tops all three axes
+      and one tops none
+    uses_reference:
+      - textrank
+      - sentence_split
