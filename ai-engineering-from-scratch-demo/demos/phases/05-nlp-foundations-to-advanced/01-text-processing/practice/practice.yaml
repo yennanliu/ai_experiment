@@ -1,0 +1,85 @@
+lesson: 01-text-processing
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/01-text-processing/docs/en.md
+exercises:
+  - index: 1
+    slug: alternation_order_beats_the_pattern
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Extend `tokenize` to keep URLs as single tokens. Test: `tokenize("Visit https://example.com today.")` should produce one URL token.
+    zh: |
+      **簡單。** 擴充 `tokenize`，讓 URL 保持成單一個詞元。測試：`tokenize("Visit https://example.com today.")` 應該產生一個 URL 詞元。
+    verifies: >-
+      the probe sentence yields ['Visit', 'https://example.com', 'today', '.'] -- 4 tokens, exactly 1
+      a URL -- where the lesson's WORD_RE gives 10 tokens, 0 URLs, and splits the URL across 7.
+      Placement decides it, not the pattern: appending the same https?://\S+ after the word rule
+      leaves the output byte-identical to the lesson's on all 12 labelled sentences, 0/12 kept whole,
+      because re alternation is ordered and [A-Za-z]+ matches 'https' first. The exercise's own test
+      cannot see the standard bug -- https?://\S+ keeps 5/12, missing sentences [2, 3, 4, 6, 7, 8, 12]
+      and destroying 7 punctuation boundaries, and the probe is not among them because its URL is
+      followed by a space. Refusing a trailing .,;:!?)]}"' reaches 11/12, the miss being
+      'https://example.com/path_(v2', and re-attaching a ')' only when the URL has an unmatched '('
+      reaches 12/12. Character coverage holds for all four arms, so a round-trip test ranks the 0/12
+      and 12/12 arms equally. Sharded, http:// and https:// differ as tokens and are identical as
+      stems and as lemmas: stem_step_1a strips the 's' of 'https' and lemmatize(_, 'NOUN') strips it
+      again
+    uses_reference:
+      - WORD_RE
+      - tokenize
+      - stem_step_1a
+      - lemmatize
+      - preprocess
+  - index: 2
+    slug: the_four_rules_the_wording_omits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement Porter step 1b. If a word contains a vowel and ends in `ed` or `ing`, remove it. Handle the double-consonant rule (`hopping -> hop`, not `hopp`).
+    zh: |
+      **中等。** 實作 Porter 的 step 1b。如果一個詞含有母音、且以 `ed` 或 `ing` 結尾，就把字尾去掉。要處理雙寫子音的規則（`hopping -> hop`，而不是 `hopp`）。
+    verifies: >-
+      step 1b in full reproduces all 16 worked examples Porter published with the rules; the
+      exercise's sentence transcribed reproduces 5, missing feed, agreed, bled, sing, conflated,
+      troubled, sized, falling, hissing, fizzed and filing -- and both cases the wording names
+      (hopping -> hop, the vowel test) pass either way. Four omissions account for the 11. The vowel
+      test is on the stem, not the word, so bled -> bl and sing -> s, and on 'ing' and 'ed' the
+      literal rule returns the empty string. The double-consonant rule's l/s/z exception is dropped,
+      so falling, hissing and fizzed become fal, his, fiz. eed is its own measure-gated rule, so feed
+      and agreed become fe and agre. The AT/BL/IZ and (m=1 and *o) cleanups restore an e, so
+      conflated, troubled, sized and filing become conflat, troubl, siz, fil. The lesson's own
+      stem_step_1a guards 'ss' and a literal step 1b un-guards it: three -ss verb families of 4 forms
+      leave 3 stems under full Porter and 6 under the literal reading. Step 1b is a phase, not a
+      stemmer -- treated -> treate and during -> dure are step-1b-correct -- and on the lesson's own
+      prose, 43 of 586 word types end in ed/ing and the two readings disagree on 15
+    uses_reference:
+      - tokenize
+      - stem_step_1a
+  - index: 3
+    slug: the_fallback_is_the_small_half
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a lemmatizer that uses WordNet as a lookup table but falls back to your Porter stemmer when WordNet has no entry. Measure accuracy on a tagged corpus against plain WordNet and plain Porter.
+    zh: |
+      **困難。** 打造一個詞形還原器，以 WordNet 作為查找表，但在 WordNet 查不到時退回你自己的 Porter 字幹提取器。在一份帶詞性標記的語料上量測準確度，並與純 WordNet、純 Porter 互相比較。
+    verifies: >-
+      nltk and spacy are both absent and the lesson ships no tagged corpus, so the corpus is 48
+      hand-labelled (word, POS, lemma) triples and WordNet is its own published morphy detachment
+      rules over a vocabulary; the vocabulary is the answer key's range, the most favourable
+      dictionary morphy can have, so its score is a ceiling. Accuracies: the lesson's lemmatize 12/48,
+      Porter 14/48, morphy 27/48, the hybrid 31/48. The hybrid's score is a sum by construction --
+      morphy abstains on 20 rows and the stemmer is consulted on exactly those, so 27 + 4 = 31 -- and
+      it cannot change a row WordNet covers. All 4 rescued rows (planned, running, sitting, stopped)
+      are exercise 2's double-consonant rule, and Porter scores 14/48 overall against 4/20 on the
+      abstentions. A 15-entry exception list of the kind real WordNet ships is worth +15 against the
+      fallback's +4. On the 6 nouns that are already lemmas morphy scores 6/6 by checking the word
+      itself first and lemmatize scores 0, returning ga, clas, analysi, new, serie, len. lemmatize
+      scores below the lesson's own stemmer on lemmatization, and disagrees with itself about case:
+      cat, Dog, Walk, walked for Cats, Dogs, Walking, Walked
+    uses_reference:
+      - stem_step_1a
+      - lemmatize
