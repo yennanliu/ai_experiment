@@ -1,0 +1,110 @@
+lesson: 28-long-context-evaluation
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/28-long-context-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_requested_grid_cannot_vary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Build a NIAH with 3 depths (0.25, 0.5, 0.75) × 3 lengths (1k, 4k, 16k). Run on any model. Plot pass rate as a 3×3 heatmap.
+    zh: |
+      **簡單。** 做一套 NIAH，3 個深度（0.25、0.5、0.75）× 3 個長度（1k、4k、16k）。挑任何一個模型跑。把過關率畫成 3×3 熱圖。
+    verifies: >-
+      the exact grid the exercise specifies -- depths 0.25/0.5/0.75 by lengths 1k/4k/16k -- scores 9
+      of 9 on the only model the lesson ships, mock_retrieval_model at the effective capacity of
+      20,000 words that run_niah_grid hard-codes. The pass rate is 1.0 in every cell and the variance
+      across the grid is zero, so the 3x3 heatmap has no surface to plot. The mock retrieves the
+      needle exactly when int(length * depth) <= 20000, and the deepest requested cell puts the needle
+      at word 12,000 of 16,000, 8,000 words inside the cutoff, so no cell in the grid is capable of
+      failing. Binary-searching the boundary per depth, the shortest failing context is 80,004 words
+      at depth 0.25, 40,002 at depth 0.5 and 26,668 at depth 0.75, against an exercise whose longest
+      context is 16,000. 'Run on any model' and 'plot a heatmap' have nothing else to resolve to:
+      openai, anthropic, transformers, torch, tiktoken and matplotlib are 6 of 6 probed modules
+      missing. Widening the length axis produces variation but never the shape the lesson's own
+      Pitfalls section asks for: sweeping depth 0 to 1.0 gives [1,1,1,1,1] at 20k, [1,1,1,0,0] at 30k
+      and [1,1,0,0,0] at 60k, a staircase that only falls, while 'lost in the middle' is a U that a
+      hard positional cutoff cannot express at any length. A predictor that never reads the haystack,
+      int(length * depth) <= 20000, reproduces the mock on 50 of 50 cells over ten lengths and five
+      depths. The mock also ignores its question argument -- asking 'What is the capital of France?'
+      of a pineapple haystack returns pineapple -- and run_niah_grid prints its rows and returns None,
+      so the pass rates the exercise asks you to plot are not values it hands back
+    uses_reference:
+      - make_filler
+      - insert_needle
+      - score_single_needle
+      - mock_retrieval_model
+      - run_niah_grid
+  - index: 2
+    slug: the_multi_needle_score_cannot_fail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add a 3-needle variant. Measure retrieval of all 3 at each length. Compare to single-needle pass rate at the same length.
+    zh: |
+      **中等。** 加上 3 根針的變體。量每個長度下三根針全部撈到的比例。跟同一長度下的單針過關率比一比。
+    verifies: >-
+      the 3-needle variant already ships as run_multi_needle, and swept over eight lengths from 1,000
+      to 200,000 words it returns 1.0 at every one of them: 8 of 8 perfect, with no length at which
+      the score can drop. The cause is one argument -- run_multi_needle calls score_multi_needle with
+      effective_capacity=length, handing the model a budget equal to the whole context, while the
+      single-needle path is scored at a fixed 20,000. The deepest plant sits at word 160,010 of a
+      200,015-word haystack, always about 0.8 * length, so a cutoff set to length can never bind, and
+      the difficulty of the benchmark is set by the fixture's capacity argument rather than by the
+      model. The comparison the exercise asks for therefore comes out backwards: the 3-needle score is
+      at or above the single-needle score at all 8 lengths and strictly above it at 3, every length
+      past 40,002 where the lone needle at depth 0.5 falls out of reach while the three-needle score
+      is still 1.0. Rescored at the matched 20,000-word capacity, the 3-needle number turns out to
+      carry no information beyond the cells it is built from: it equals the mean of the three
+      independent single-needle probes at 7 of the 8 lengths, so multi-needle here is three separate
+      lookups averaged rather than attention being juggled. The eighth length is a five-word artefact:
+      at 40,000 the plants land at words 8,000, 20,005 and 32,010 while the middle needle alone lands
+      at 20,000, exactly on the cutoff, so the shallow needle's own five words -- a 0.0125% shift --
+      move the score from 0.667 to 0.333. And score_multi_needle never consults the model at all: it
+      runs its own regex over the context, so routing the multi-needle question through
+      mock_retrieval_model instead caps at 1 of 3 at every length because the mock returns a single
+      string, and its pattern accepts only the literal 'the magic word is', so needles reworded the
+      way the lesson's own NoLiMa pitfall recommends score 0.333 there while score_single_needle still
+      returns 1
+    uses_reference:
+      - make_filler
+      - insert_needle
+      - run_multi_needle
+      - score_multi_needle
+      - score_single_needle
+      - mock_retrieval_model
+  - index: 3
+    slug: every_model_answers_the_first_assignment
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Construct a variable-tracing task (X1 → X2 → X3, with 3 hops) embedded in 64k of filler. Measure accuracy across 3 frontier models. Report effective reasoning length per model.
+    zh: |
+      **困難。** 造一個變數追蹤任務（X1 → X2 → X3，共 3 跳），埋進 64k 的填充內容裡。量三個前沿模型的準確率。分別回報每個模型的有效推論長度。
+    verifies: >-
+      no frontier-model client is installed -- openai, anthropic and transformers are all absent -- so
+      the three models are three copies of the lesson's mock_retrieval_model at effective capacities
+      of 5,000 / 20,000 / 80,000 words, the one axis the mock has. On the lesson's own three-hop task
+      (X1 = 42, X2 = X1 + 10, X3 = X2 * 2 planted at depths 0.15 / 0.45 / 0.75) swept over six lengths
+      around the specified 64k, three-hop accuracy is 0 of 18 cells and every model's effective
+      reasoning length at the lesson's 0.7 threshold is 0, so the number the exercise asks you to
+      report does not exist. The mock returns the first regex match inside its capacity and never
+      reads the question, so at 64k of filler the answers to 'What is X1?', 'What is X2?' and 'What is
+      X3?' are all 42 -- the third hop is answered with the first hop's right-hand side. Reordering so
+      X3 = X2 * 2 is the shallowest plant does not help either: the pattern captures X3 = X2 and the
+      model returns X2, a variable name rather than a value, and mock_retrieval_model contains no
+      arithmetic, so no hop is representable at any capacity. The retrieval axis does work: asking for
+      X1 separates the three models cleanly at effective retrieval lengths of 32,000 / 128,000 /
+      256,000 words against effective reasoning lengths of 0 / 0 / 0, so the lesson's prescribed pair
+      of spec-sheet numbers ranks models on retrieval and cannot rank them at all on reasoning. At the
+      single length the exercise specifies the three models score 0, 1 and 1 on the retrieval
+      question, and the boundaries at 32,000 and 128,000 appear only once the sweep is widened. And a
+      model that reads nothing beats all three: answering the constant 42 to every question scores 18
+      of 18 on the one-hop task against the mocks' 14 of 18, since they return 'no answer' whenever
+      the plant is out of capacity, and ties them at 0 of 18 on the three-hop task
+    uses_reference:
+      - make_filler
+      - mock_retrieval_model
