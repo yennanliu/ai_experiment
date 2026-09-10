@@ -1,0 +1,79 @@
+lesson: 14-information-retrieval-search
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/14-information-retrieval-search/docs/en.md
+exercises:
+  - index: 1
+    slug: half_the_queries_decide_nothing
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Implement `hybrid_search` above on a 500-document corpus. Test 20 queries. Compare recall at 5 between BM25-only, dense-only, and hybrid.
+    zh: |
+      **簡單。** 在一個 500 份文件的語料庫上實作上面的 `hybrid_search`。測 20 個查詢。比較只用 BM25、只用稠密檢索、以及混合檢索三者在前 5 名的召回率。
+    verifies: >-
+      hybrid_search is not in the lesson -- code/main.py ships BM25, fake_dense_rank and
+      reciprocal_rank_fusion -- so the function to implement is the composition of the last two. On 30
+      documents and 20 queries, ten sharing content words with their answer and ten written as
+      paraphrases with none, all three arms score recall@5 of 1.00 on the lexical half: the comparison
+      the exercise asks for is a three-way tie on half its own test set. Every number that separates
+      them comes from the other half, where BM25 scores 0.30, the lesson's dense arm 0.50 and their
+      RRF fusion 0.40 -- the hybrid below its better arm, since averaging ranks lets a weaker arm pull
+      a stronger one down. The arm the exercise calls dense is lexical: fake_dense_rank is Jaccard
+      overlap plus 0.15 for every pair of four-plus-character tokens where one contains the other,
+      which scores 0.15 for 'sunlight' against 'light energy' -- stemming, not semantics. A real dense
+      arm, TF-IDF reduced by truncated SVD to 8 components, scores 0.40 on the same paraphrases and
+      0.30 when fused with BM25, so no fusion beats the best single ranker: overall recall@5 is 0.65,
+      0.75, 0.70, 0.70, 0.65
+    uses_reference:
+      - BM25
+      - fake_dense_rank
+      - reciprocal_rank_fusion
+      - tokenize
+  - index: 2
+    slug: fusion_costs_three_times_more_mrr_than_recall
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Add MRR calculation. For each test query with a known correct document, find the rank of the correct doc in BM25, dense, and hybrid rankings. Report the MRR for each.
+    zh: |
+      **中等。** 加上 MRR 的計算。對每個已知正確文件的測試查詢，找出正確文件在 BM25、稠密檢索與混合檢索三份排序裡各排第幾名。分別回報三者的 MRR。
+    verifies: >-
+      adding MRR adds a magnitude rather than a second opinion. On the ten paraphrase queries the
+      hybrid gives up 0.1000 of recall@5 and 0.3016 of MRR against the better of its two arms -- three
+      times as much -- because recall asks only whether the answer is inside the top five and MRR asks
+      where it is. The full table reads BM25 0.30/0.2891, fake-dense 0.50/0.4649, hybrid 0.40/0.1633,
+      real dense 0.40/0.3033, BM25+dense 0.30/0.2800: the hybrid is second by recall and last by MRR,
+      below both arms it is made of. The direction is not fixed either -- fusing BM25 with the real
+      dense arm costs 0.1000 of recall and only 0.0233 of MRR, the reverse ratio -- so neither number
+      predicts the other. On the lexical half every arm scores MRR 1.0000, so 'report the MRR for
+      each' yields one informative column and one column of ones, exactly as recall did
+    uses_reference:
+      - BM25
+      - fake_dense_rank
+      - reciprocal_rank_fusion
+  - index: 3
+    slug: the_retriever_has_no_parameters_to_tune
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Fine-tune a dense encoder on your domain using MultipleNegativesRankingLoss (Sentence Transformers). Build a training set from 500 query-document pairs. Compare pre- and post-fine-tune recall.
+    zh: |
+      **困難。** 用 MultipleNegativesRankingLoss（Sentence Transformers）在你自己的領域上微調一個稠密編碼器。從 500 組查詢-文件配對建出訓練集。比較微調前後的召回率。
+    verifies: >-
+      sentence_transformers, torch and transformers are all absent, and the retriever the lesson ships
+      as its dense arm has nothing to fine-tune: fake_dense_rank is Jaccard overlap plus a fixed 0.15
+      substring bonus, and two independent constructions return identical rankings, so 'compare pre-
+      and post-fine-tune recall' is the same 0.50 twice. Substituting a fitted encoder -- TF-IDF
+      reduced by truncated SVD -- makes the comparison run and shows what it would measure: refitting
+      at 2, 4, 8 and 16 components gives paraphrase recall@5 of 0.20, 0.20, 0.40, 0.20, a non-monotone
+      span of 0.2000 with no training at all. The confound is larger on the easy half: the same widths
+      give lexical recall 0.70, 0.90, 1.00, 1.00, a span of 0.3000, so only the two widest
+      configurations get the lexical queries right. The target left is the paraphrase ceiling of
+      0.4000 against a reachable 1.0000. And MultipleNegativesRankingLoss takes the rest of the batch
+      as negatives, so 500 pairs over 10 topics is 50 per topic and about 10% of any batch is a false
+      negative -- fixed by how the pairs were built, before training starts
+    uses_reference:
+      - fake_dense_rank
