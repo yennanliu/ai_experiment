@@ -1,0 +1,86 @@
+lesson: 03-word-embeddings-word2vec
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/03-word-embeddings-word2vec/docs/en.md
+exercises:
+  - index: 1
+    slug: a_nine_in_twelve_check
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Run the training loop on a tiny corpus (20 sentences about cats and dogs). After 200 epochs, verify `nearest(vocab, W, W[vocab["cat"]])` returns `dog` in its top 3. If not, increase epochs or vocabulary.
+    zh: |
+      **簡單。** 在一個很小的語料（20 句關於貓和狗的句子）上跑訓練迴圈。200 個 epoch 之後，驗證 `nearest(vocab, W, W[vocab["cat"]])` 的前 3 名裡出現 `dog`。如果沒有，就把 epoch 數或詞彙量往上加。
+    verifies: >-
+      on 20 sentences (43 word types, 264 skip-gram pairs) the exercise's own check -- dog in cat's
+      top 3 after 200 epochs -- passes on 9 of 12 seeds, so it is a coin stated as a fact. Two of the
+      three failures are the call, not the model: the exercise omits the exclude argument that the
+      lesson's own main() passes, so cat itself takes slot 1 at similarity 1.0 on all 12 runs and only
+      2 of the 3 slots are left. Self-excluded the same runs give 11/12. Doubling to 400 epochs -- the
+      exercise's own remedy -- takes the as-written score from 9 to 11 and leaves the self-excluded
+      score at 11, so more training buys back the wasted slot and does not move the neighbourhood.
+      Across the 12 seeds the nearest word to cat is mouse 7 times and dog 4 at 200 epochs, 6 and 6 at
+      400: skip-gram raises the probability of words that co-occur with cat, and the exercise asks a
+      co-occurrence model for a substitutability judgement. The negative sampler never runs short (0
+      of 20000 draws) but is uniform over types, so 'the' at 14 occurrences is drawn as often as each
+      of 21 hapax words, where word2vec specifies unigram^0.75
+    uses_reference:
+      - tokenize
+      - build_vocab
+      - skipgram_pairs
+      - train
+      - nearest
+  - index: 2
+    slug: the_threshold_leaves_nothing_to_measure
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Add subsampling of frequent words. Words with frequency above `10^-5` are dropped from training pairs with probability proportional to their frequency. Measure the effect on rare-word similarity.
+    zh: |
+      **中等。** 加上高頻詞的子取樣。頻率高於 `10^-5` 的詞，以與其頻率成正比的機率從訓練配對中丟掉。量測這對罕見詞的語意相似度有什麼影響。
+    verifies: >-
+      the corpus is 96 tokens over 43 types and all 43 sit above the 10^-5 the exercise names -- the
+      rarest by a factor of 1042 -- so the clause that reads as a filter selects the whole vocabulary.
+      word2vec's keep probability sqrt(t/f) tops out at 0.0310, leaving 2 of 96 tokens and 0 of 264
+      training pairs, so the exercise's last sentence has nothing to measure. Raised three orders of
+      magnitude the experiment is real: t=0.03 keeps 204 pairs and t=0.01 keeps 94. The effect on
+      rare-word similarity is non-monotone -- a hapax's nearest neighbour is a true co-occurrence
+      0.738 of the time unsubsampled, 0.798 at t=0.03 and 0.638 at t=0.01, below doing nothing --
+      while the obvious proxy, the share of pairs touching a rare word, rises monotonically 0.311,
+      0.382, 0.447. t=0.01 has the best rare-word coverage, the worst rare-word embeddings, and loses
+      one rare word from the vocabulary outright. Dropping tokens is not dropping pairs: at t=0.03
+      token removal mints 10 pair types the corpus never contained by pulling distant words into the
+      window. And 1 - sqrt(t/f) is clipped at zero, so the rarest word is never dropped, where a rule
+      proportional to frequency drops it with probability 0.071
+    uses_reference:
+      - tokenize
+      - skipgram_pairs
+      - train
+      - nearest
+  - index: 3
+    slug: a_probe_without_a_null
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Train a model on the 20 Newsgroups corpus. Compute two bias axes: `he - she` and `doctor - nurse`. Project occupation words onto both axes. Report which occupations have the largest bias gap. This is the kind of probe fairness researchers use.
+    zh: |
+      **困難。** 在 20 Newsgroups 語料上訓練一個模型。算出兩條偏誤軸：`he - she` 與 `doctor - nurse`。把職業詞投影到這兩條軸上，回報哪些職業的偏誤落差最大。這正是公平性研究者在用的那種探測手法。
+    verifies: >-
+      20 Newsgroups needs a download, so two corpora are built: 64 sentences in which every occupation
+      appears with he and with she identically, whose true gender bias is zero by construction, and 32
+      in which four occupations take he 3 times in 4. On the null corpus projections onto he - she
+      still reach 0.539, and the spread between occupation means, 0.036, is a fifth of one
+      occupation's deviation across 5 seeds, which averages 0.283 -- so a ranking read off a single
+      run is reading the initialisation. The top-ranked occupation changes across seeds on both
+      corpora. One level up the probe works: averaging the four he-weighted occupations against the
+      four she-weighted gives -0.022 vs -0.170 on the skewed corpus, a gap of 0.148, against 0.011 on
+      the null, with per-seed deviation falling from 0.283 to 0.044. The two axes are not consistently
+      oriented -- cos(he - she, doctor - nurse) spans 0.666 across seeds on one corpus and changes
+      sign. And the largest projection on the unbiased corpus is 3.6x the entire group gap on the
+      biased one, so no single number is readable as bias without the null run the exercise does not
+      ask for
+    uses_reference:
+      - tokenize
+      - train
