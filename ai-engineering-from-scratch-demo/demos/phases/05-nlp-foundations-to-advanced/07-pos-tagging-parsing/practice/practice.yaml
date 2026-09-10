@@ -1,0 +1,77 @@
+lesson: 07-pos-tagging-parsing
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/07-pos-tagging-parsing/docs/en.md
+exercises:
+  - index: 1
+    slug: the_baseline_measures_the_corpus
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Using the most-frequent-tag baseline on a small tagged corpus (e.g., NLTK's Brown subset), measure accuracy on held-out sentences. Verify the ~85% result.
+    zh: |
+      **簡單。** 在一份小型的帶標記語料上（例如 NLTK 的 Brown 子集）用最高頻標記基線，量測留出句子的準確度。驗證那個約 85% 的結果。
+    verifies: >-
+      NLTK is not installed and Brown is not downloadable, so the corpus is 56 sentences generated
+      from 7 tag templates over 30 word types, 5 of them deliberately ambiguous; the template is the
+      gold tag sequence, so labels are exact. Most-frequent-tag accuracy is 0.8674, 0.9062 and 0.9103
+      at training fractions 0.3, 0.5 and 0.7, so the exercise's ~85% is one point on a curve. Every
+      held-out token falls in exactly one of three groups and the baseline's behaviour on each is
+      fixed: seen-unambiguous 1.0000 over 127 tokens (right by construction, since a word's only
+      training tag is its most frequent one), ambiguous 0.6364 over 44, and out-of-vocabulary 0.2000
+      over 10, all getting the default tag NOUN. Their weighted mean reproduces the 0.8674 headline
+      exactly, so the headline carries no information the three parts do not. The OOV rate falls
+      0.0552, 0.0156, 0.0000 across the splits, which is most of what moves the number
+    uses_reference:
+      - train_mft
+      - predict_mft
+  - index: 2
+    slug: the_hmm_gain_is_exactly_the_hard_tokens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Train the bigram HMM above and report per-tag precision/recall. Which tags does the HMM confuse most?
+    zh: |
+      **中等。** 訓練上面那個 bigram HMM，並回報各標記的精確率／召回率。HMM 最容易混淆哪些標記？
+    verifies: >-
+      on exercise 1's corpus the HMM scores 0.9834 against the baseline's 0.8674 at the 30% split, and
+      the whole difference sits in two of the three token groups: both score exactly 1.0000 on all 127
+      seen-unambiguous tokens, while ambiguous goes 0.6364 -> 0.9773 and out-of-vocabulary 0.2000 ->
+      0.8000. At the 70% split, where nothing is OOV, it is 0.9103 -> 1.0000. Per-tag precision and
+      recall are above 0.96 everywhere except ADV recall at 0.909, and the confusions are one apiece
+      -- NOUN as DET, VERB as NOUN, ADV as VERB -- so 'which tags does it confuse most' has no strong
+      answer at this size. Two decoder findings: train_hmm counts a transition into <EOS> for every
+      sentence and viterbi never reads them, so on the lesson's own TRAIN 'The the the' decodes to DET
+      ADP DET, ending on a tag no training sentence ends on; and viterbi opens with list(tags) on a
+      set whose order Python varies per process, so a two-tag corpus with identical statistics returns
+      X or Y purely by list order -- though on the lesson's own model all 5040 orderings of its seven
+      tags agree
+    uses_reference:
+      - train_mft
+      - predict_mft
+      - train_hmm
+      - viterbi
+      - TRAIN
+  - index: 3
+    slug: passives_do_not_fail_they_reverse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use spaCy's dependency parse to extract subject-verb-object triples from a 1000-sentence sample. Evaluate on 50 manually labeled triples. Document where extraction fails (often passives, coordinations, and elided subjects).
+    zh: |
+      **困難。** 用 spaCy 的依存剖析從 1000 句的樣本中抽出主詞—動詞—受詞三元組。在 50 個人工標註的三元組上做評估。記錄抽取在哪裡失敗（常見於被動語態、並列結構與省略主詞）。
+    verifies: >-
+      spacy, nltk and stanza are all absent and there is no 1000-sentence sample, so the labelled set
+      is 12 sentences carrying 15 triples with gold POS tags, four per failure class the exercise
+      names plus a control class of plain actives. Scored on gold tags, so no tagging error is
+      included, a nearest-noun-each-side-of-the-verb extractor recovers 0.6000 with 5 spurious
+      triples: active 1.0000, passive 0.0000, coordination 0.5000, elided 1.0000. The passive result
+      is not a recall failure -- all 3 passive triples come back with subject and object swapped, so
+      'the dog was chased by the cat' returns (dog, chased, cat), producing exactly as many triples as
+      it should and getting every one backwards. Coordination halves recall by construction, since
+      'nearest noun' returns one noun and a conjoined argument has two. Elided subjects score perfect
+      recall and still cost 2 spurious triples, giving the intransitive 'sat' an object. All 5
+      spurious triples come from the passive and elided classes, so the exercise names the right
+      constructions and the wrong failure: two of the three land in precision, not recall
