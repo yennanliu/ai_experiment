@@ -1,0 +1,75 @@
+lesson: 08-cnns-rnns-for-text
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/08-cnns-rnns-for-text/docs/en.md
+exercises:
+  - index: 1
+    slug: most_of_the_gain_is_filter_count
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Train a TextCNN on a 3-class toy dataset (you invent the data). Verify that filter widths (2, 3, 4) outperform a single width (3) on average F1.
+    zh: |
+      **簡單。** 在一個 3 類的玩具資料集上訓練 TextCNN（資料你自己造）。驗證濾波器寬度 (2, 3, 4) 的平均 F1 勝過單一寬度 (3)。
+    verifies: >-
+      the claim holds and the comparison as posed does not isolate what it names. On 120 sentences
+      over 17 word types, averaged across 12 embedding seeds, widths (2,3,4) at 8 filters each score
+      0.5910 macro-F1 against width 3 at 8 filters scoring 0.4777 -- but that is 24 filters against 8,
+      so it changes two things at once. Held to 24 filters on both sides the gain shrinks from +0.1133
+      to +0.0205: 82% of the effect was capacity, not width. The remainder is real and directional --
+      widths (5,6,7), also 24 filters, score 0.4755, level with width 3 at a third the count, because
+      the classes are separated by a two-token and a three-token pattern that a six-wide window
+      averages away. 'On average' is doing work too: the multi-width set wins on 9 of 12 seeds and the
+      per-seed gap runs -0.1655 to +0.3897, a spread three times the mean effect. torch is absent, so
+      the filters are frozen random projections and only the readout is trained, which isolates filter
+      geometry from optimisation and is why the absolute numbers sit near 0.5 against a 0.333
+      three-class chance level
+    uses_reference:
+      - conv1d_over_embeddings
+      - max_pool
+  - index: 2
+    slug: last_state_forgets_after_two_steps
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Implement max-pool, mean-pool, and last-state pooling for the LSTM classifier. Compare on a small dataset; document which pooling wins and hypothesize why.
+    zh: |
+      **中等。** 為 LSTM 分類器實作最大池化、平均池化與最後狀態池化。在一個小資料集上比較；記錄哪一種池化勝出，並提出你對原因的假設。
+    verifies: >-
+      which pooling wins is decided by where in the sequence the information is. Each sequence is 20
+      filler tokens with one cue planted at a chosen position; the encoder is a frozen tanh recurrence
+      whose spectral radius is scaled to the lesson's own 0.9, and only the readout is trained, so all
+      three poolings read identical hidden states. Max-pool scores 0.7056 to 0.7333 and mean-pool
+      0.6667 to 0.7389 across six cue positions -- spreads of 0.0277 and 0.0722, since neither
+      reduction has a notion of when a step happened. Last-state scores 1.0000 with the cue as the
+      final token, 0.9444 one step back, 0.7389 two back and 0.4833 at three -- chance on a two-class
+      problem -- and stays there at distances 9 and 19. The split is exact: max-pool wins at every
+      position three or more from the end and loses at every position nearer, 3 to 3 with no
+      exception. The lesson's own vanishing_gradient_sim predicts 0.9^3 = 0.729 retained at three
+      steps, where the classifier is already at chance, so the linear model is optimistic -- it does
+      not see tanh saturating or 17 later tokens overwriting a 24-dimensional state
+    uses_reference:
+      - vanishing_gradient_sim
+  - index: 3
+    slug: the_three_numbers_it_asks_for_are_not_defined
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a BiLSTM-CRF NER tagger (combine lesson 06 and this one). Train on CoNLL-2003. Compare to the CRF-alone baseline from lesson 06 and to a BERT fine-tune. Report training time, memory, and F1.
+    zh: |
+      **困難。** 做一個 BiLSTM-CRF 的 NER 標註器（把單元 06 與本單元結合起來）。在 CoNLL-2003 上訓練。與單元 06 的純 CRF 基準線、以及 BERT 微調做比較。回報訓練時間、記憶體用量與 F1。
+    verifies: >-
+      torch, tensorflow, jax and transformers are all absent and CoNLL-2003 is not downloadable, so no
+      training time and no measured F1 are reported. Two of the three requested numbers are
+      closed-form. A BiLSTM stores 2nH activations and a transformer stack L*heads*n^2 attention
+      scores, so at a 256-unit recurrence against 6 layers of 12 heads the ranking inverts at n=8 --
+      shorter than any CoNLL sentence -- and by n=512 the attention side is 72x the recurrent side,
+      18,874,368 against 262,144. The CRF lattice is n*81 and never competes: 41,472 at n=512.
+      Parameters go the other way and are dominated by neither encoder: the recurrent weights are
+      2,099,200 and the transition matrix 81 against an embedding table of 23,040,000, so 91.6% of the
+      25,139,281-parameter 'BiLSTM-CRF' is a vocabulary, and the transformer total of 65,507,328 is
+      only 2.61x because both carry the same table. As for F1, lesson 06 measured 0.9048 of entity F1
+      riding on a by-sentence versus by-entity split with model, features and data held fixed --
+      larger than anything this exercise's architectures are being asked to move
