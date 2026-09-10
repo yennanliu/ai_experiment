@@ -1,0 +1,76 @@
+lesson: 05-sentiment-analysis
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/05-sentiment-analysis/docs/en.md
+exercises:
+  - index: 1
+    slug: the_dead_entry_in_negation_words
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Add `apply_negation` as a preprocessing step in the scikit-learn pipeline and measure the F1 delta on a small sentiment dataset.
+    zh: |
+      **簡單。** 把 `apply_negation` 加進 scikit-learn 流程當作一個前處理步驟，並在一個小型情感資料集上量出 F1 的變化量。
+    verifies: >-
+      on 128 training and 96 test rows generated from 4 frames and a 16-word polarity lexicon, the
+      pipeline scores F1 0.0000 without apply_negation and 0.6667 with it, a delta of +0.6667,
+      accuracy 0.500 to 0.667, vocabulary 29 to 45. The delta is not evenly earned. Training carries
+      each word plain and under spelled-out negation, so without scoping every sentiment word appears
+      equally in both classes and per-form accuracy is 0.5 across plain, spelled and contracted --
+      chance on all three. With the step, plain and spelled go to 1.000 and contracted falls to 0.000.
+      NEGATION_WORDS contains n't, so contractions were meant to be scoped, but TOKEN_RE is
+      [A-Za-z]+(?:'[A-Za-z]+)? and emits wasn't, didn't, isn't and won't whole, never producing n't --
+      the entry is unreachable. So `the ending wasn't good` scopes to itself with `good` intact, and
+      because the step has just made `good` an unambiguous positive feature, contracted negation goes
+      from a coin flip to a confident wrong answer. The single F1 number the exercise asks for
+      averages a gain and a collapse and reports neither
+    uses_reference:
+      - tokenize
+      - apply_negation
+      - NEGATION_WORDS
+  - index: 2
+    slug: balanced_loses_on_the_metric_that_names_it
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Implement class-weighted logistic regression (pass `class_weight="balanced"` to scikit-learn, or derive the gradient yourself). Measure the effect on a synthetic 90-10 class imbalance.
+    zh: |
+      **中等。** 實作類別加權的邏輯迴歸（傳 `class_weight="balanced"` 給 scikit-learn，或自己推導梯度）。在一個人造的 90-10 類別不平衡上量出效果。
+    verifies: >-
+      on a 2000-row make_classification at 90-10, split [1254, 146] train and [538, 62] test,
+      class_weight='balanced' moves accuracy 0.9633 -> 0.8783 and F1 0.7963 -> 0.5876, both down, and
+      recall 0.6935 -> 0.8387, up: 'measure the effect' has three answers that disagree on the sign.
+      The majority-class predictor scores accuracy 0.8967, beating the balanced model, while scoring
+      F1 0.0 and recall 0.0 and never naming the minority class once. The mechanism is explicit: the
+      minority weight is 1400/(2 x 146) = 4.7945, and the model answers positive 115 times where the
+      plain model answered 46, against 62 real positives -- 69 extra guesses buying 9 more true
+      positives and dropping precision 0.9348 -> 0.4522. The imbalance is not pathological either: the
+      unweighted model already beats the baseline at 0.9633 accuracy and 0.7963 F1, so weighting is a
+      choice of operating point, not a rescue
+  - index: 3
+    slug: the_residual_set_is_not_a_sample_of_sarcasm
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Build a sarcasm detector by training a second classifier on the residuals of the sentiment model. Document your experimental setup. Warn the reader when your accuracy is below chance (chance-level on 2-class sarcasm is ~50%, and most first attempts land there).
+    zh: |
+      **困難。** 用情感模型的殘差訓練第二個分類器，做出一個反諷偵測器。把你的實驗設定記錄下來。當你的準確率低於隨機猜測時，要提醒讀者（2 類反諷的隨機水準大約是 50%，而大多數第一次嘗試都落在那裡）。
+    verifies: >-
+      setup: 96 rows from 4 frames and a 16-word lexicon, 64 sincere and 32 sarcastic (positive words,
+      negative sentiment), 16 of the sarcastic rows carrying an `oh sure` cue and 16 byte-identical to
+      a sincere positive; a 70/30 split on a fixed permutation, the lesson's own tokenize +
+      apply_negation as analyzer, logistic regression. The residual-trained sarcasm classifier scores
+      0.6207 on test, exactly the majority-class rate of 0.6207 -- it learned nothing, landing at
+      chance where the exercise warns most first attempts land. The cause is that residuals are not a
+      sample of sarcasm: only 3 of the sentiment model's 10 training errors are sarcastic while 21 of
+      its 67 training rows are, so as a sarcasm detector the residual set has precision 0.300 and
+      recall 0.143. Read literally the exercise fits on 10 rows every one of which is an error, so the
+      target used is 'is an error' over the whole training set. Under all of it is an irreducible
+      floor: 16 rows repeat a sincere positive exactly, so sweeping C over 1, 1e3 and 1e6 leaves the
+      residual count at 10, 11, 11 rather than at zero. Sentiment accuracy is 0.8507 on train against
+      0.6207 on test, so the second stage inherits that gap before it starts
+    uses_reference:
+      - tokenize
+      - apply_negation
