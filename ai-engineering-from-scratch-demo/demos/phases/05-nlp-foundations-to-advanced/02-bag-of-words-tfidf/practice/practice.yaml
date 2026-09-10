@@ -1,0 +1,92 @@
+lesson: 02-bag-of-words-tfidf
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/02-bag-of-words-tfidf/docs/en.md
+exercises:
+  - index: 1
+    slug: identical_documents_rarely_score_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement `cosine_similarity(doc_vec_a, doc_vec_b)` on the L2-normalized TF-IDF output. Verify that identical documents score 1.0 and disjoint-vocabulary documents score 0.0.
+    zh: |
+      **簡單。** 在 L2 正規化過的 TF-IDF 輸出上實作 `cosine_similarity(doc_vec_a, doc_vec_b)`。驗證相同的文件分數是 1.0，詞彙表互不相交的文件分數是 0.0。
+    verifies: >-
+      cosine_similarity already ships in the lesson's code, as a bare dot product. Over 120 corpora
+      drawn from a fixed 10-document pool, each carrying a duplicated document, it returns exactly 1.0
+      on 21 and lands short on 99, by at most 3.33e-16 -- so the exercise's first check must be
+      written as a tolerance or it fails 5 times in 6 on correct code. The dot product is not
+      scale-invariant: on the lesson's own un-normalized tfidf() output it is off by up to 0.723 on an
+      identical pair, where dividing by both norms stays inside 2.22e-16 and is exact on 88/120 rather
+      than 21/120. The second claim is exactly true and true because of the smoothing:
+      log((n+1)/(df+1)) + 1 bottoms out at 1.0, so every weight is positive and all 109 zero pairs
+      across the 120 corpora are token-disjoint, while under the textbook log(n/df) 368 of 477 zero
+      pairs share tokens. Two silent failures remain: a pair of identical empty documents scores 0
+      rather than 1.0, and zip truncates, so width-4 and width-8 vectors from different corpora return
+      0.632456 instead of raising
+    uses_reference:
+      - tokenize
+      - build_vocab
+      - bag_of_words
+      - document_frequency
+      - inverse_document_frequency
+      - tfidf
+      - l2_normalize
+      - cosine_similarity
+  - index: 2
+    slug: the_vocabulary_has_to_change_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add `n-gram` support to `bag_of_words`. Parameter `n` produces counts over `n`-grams. Test that `n=2` on `["the", "cat", "sat"]` produces bigram counts for `["the cat", "cat sat"]`.
+    zh: |
+      **中等。** 為 `bag_of_words` 加上 `n-gram` 支援。參數 `n` 會產生 `n`-gram 的計數。測試 `n=2` 套用在 `["the", "cat", "sat"]` 上會產生 `["the cat", "cat sat"]` 的 bigram 計數。
+    verifies: >-
+      a length-n sliding window passes the named test -- n=2 on ['the','cat','sat'] gives ['the
+      cat','cat sat'] -- and n=1 reproduces the lesson's token list unchanged. But changing
+      bag_of_words alone is one function short: it takes its columns from build_vocab and drops
+      unknown tokens on `if token in vocab`, so bigrams against a unigram vocabulary land 0 counts and
+      the matrix is all zeros with no error. Those zeros survive tfidf, l2_normalize and
+      cosine_similarity, so a document scores 0 against itself -- the exact property exercise 1 was
+      told to verify. Counting n-grams instead of adding them deletes every single-word match: d1 and
+      d2 fall from 0.3078 at n=1 to exactly 0.0 at n=2, sharing `the` and `on` and no bigram. Sweeping
+      n=1..5 on the lesson's three documents, n-grams appearing in more than one document go 5, 4, 2,
+      1, 0 while vocabulary size goes 9, 11, 10, 8, 6 -- the useful part falls faster than the
+      vocabulary. A one-token document windowed at n=2 gives no n-grams and the same all-zero row,
+      reached a different way
+    uses_reference:
+      - tokenize
+      - build_vocab
+      - bag_of_words
+      - document_frequency
+      - tfidf
+      - l2_normalize
+      - cosine_similarity
+  - index: 3
+    slug: the_comparison_is_a_question_about_e
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Build the TF-IDF-weighted-embedding hybrid above using GloVe 100d vectors (download once, cache). Compare classification accuracy against plain TF-IDF and plain mean-pooled embeddings on the 20 Newsgroups dataset. Report which wins where.
+    zh: |
+      **困難。** 用 GloVe 100 維向量打造上面那個 TF-IDF 加權嵌入的混合做法（下載一次，然後快取）。在 20 Newsgroups 資料集上，把它的分類準確率和純 TF-IDF、純平均池化嵌入做比較。回報哪一種在哪裡勝出。
+    verifies: >-
+      gensim raises ModuleNotFoundError and fetch_20newsgroups(download_if_missing=False) raises
+      OSError, so the corpus is 16 two-class documents over a 40-word vocabulary and E is seeded.
+      Leave-one-out nearest centroid by cosine: TF-IDF 1.000, and at d=8 mean-pool 0.544 and hybrid
+      0.572, at d=100 0.731 and 0.841 -- TF-IDF wins outright at every d and every seed. Two
+      structural facts hold for every E. Mean-pooling is the hybrid with idf set to 1, the two
+      agreeing to 5.55e-16, so the exercise contrasts one arm with one term changed. And a fixed E
+      makes both pooled arms a linear map of the TF-IDF matrix, so rank(pooled) is exactly min(d,
+      rank(TF-IDF)): 8 at d=8 and 16 at d=100 against TF-IDF's 16. Which pooled arm wins is decided by
+      E: over 20 seeds at d=8 the hybrid wins 8, ties 7 and loses 5, and mean-pool's range across
+      seeds is 0.125 to 0.812, a spread of 0.688 against a 0.028 mean gap between the arms. Raising d
+      to 100 lifts the hybrid to 0.841 mean and 1.000 best case -- level with TF-IDF, never above it
+    uses_reference:
+      - tokenize
+      - build_vocab
+      - bag_of_words
+      - tfidf
+      - l2_normalize
