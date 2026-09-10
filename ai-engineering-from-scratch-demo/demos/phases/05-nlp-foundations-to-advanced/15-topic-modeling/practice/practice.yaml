@@ -1,0 +1,77 @@
+lesson: 15-topic-modeling
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/15-topic-modeling/docs/en.md
+exercises:
+  - index: 1
+    slug: lda_lands_a_few_points_above_random
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Fit LDA with 5 topics on the 20 Newsgroups dataset. Print top 10 words per topic. Label each topic by hand. Did the algorithm find the real categories?
+    zh: |
+      **簡單。** 在 20 Newsgroups 資料集上用 5 個主題訓練 LDA。印出每個主題排名前 10 的詞。手動替每個主題標上名稱。演算法有找出真正的類別嗎？
+    verifies: >-
+      20 Newsgroups is not downloadable, so the corpus is 24 documents in 4 categories known by
+      construction. Assigning each document to its highest-probability topic and scoring cluster
+      purity, LDA at K=4 averages 0.5156 over 8 seeds against 0.4353 for random assignment of the same
+      documents to the same number of clusters -- three to eight points above chance. The baseline
+      matters: one cluster containing everything scores 0.2500 and the true partition 1.0000, so a
+      purity number is unreadable without the middle value the exercise never asks for. Separately,
+      tokenize drops only tokens of two characters or fewer, so the, for, was and after enter the
+      136-word vocabulary and 7 of the 32 top words across four topics are function words. Removing
+      stopwords makes the first topic read cut, rates, stocks, fed, central -- recognisably finance --
+      while purity falls to 0.4635, closer to the baseline. The word lists improve as the clustering
+      degrades, and only one of those is what 'did it find the real categories' asks about. Across 8
+      seeds purity spans 0.4583 to 0.5417, comparable to the entire margin over random
+    uses_reference:
+      - tokenize
+      - collapsed_gibbs_lda
+  - index: 2
+    slug: both_arms_sit_inside_a_coin_flip_of_random
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Fit BERTopic on the same 20 Newsgroups subset. Compare the number of topics found, top words, and qualitative coherence against LDA. Which surfaces the real categories more cleanly?
+    zh: |
+      **中等。** 在同一份 20 Newsgroups 子集上訓練 BERTopic。把找到的主題數量、前排詞，以及人工判斷的連貫程度拿來和 LDA 比較。哪一個把真正的類別呈現得更乾淨？
+    verifies: >-
+      bertopic, sentence_transformers, umap and hdbscan are all absent, so the stand-in is BERTopic's
+      shape without its encoder: TF-IDF reduced by truncated SVD, clustered by k-means, with each
+      cluster's terms read off its mean TF-IDF vector. Over 4 seeds at K=4 on exercise 1's labelled
+      corpus, LDA averages 0.4375 purity and the clustering arm 0.4792, against a random-assignment
+      baseline of 0.4353 -- both inside four points of chance. The gap between the methods, 0.0417, is
+      smaller than either one's spread across seeds: clustering runs 0.3750 to 0.6250 (width 0.2500)
+      and LDA 0.4167 to 0.5000 (width 0.0833), so 'which surfaces the real categories more cleanly' is
+      answered by the seed. 'Compare the number of topics found' does not apply either: both arms
+      return exactly the 4 they were asked for, where BERTopic discovers its count from embedding
+      density, so the quantity the exercise treats as an output is an input on both sides. Both
+      produce readable top-word lists, which is what they deliver and what does not distinguish them
+    uses_reference:
+      - tokenize
+      - collapsed_gibbs_lda
+  - index: 3
+    slug: coherence_rises_with_topic_count
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Compute c_v coherence for both LDA and BERTopic on your corpus. Run each with 5, 10, 20, 50 topics. Plot coherence vs topic count. Report which method is more stable across topic counts.
+    zh: |
+      **困難。** 在你的語料上分別計算 LDA 與 BERTopic 的 c_v 連貫性。各用 5、10、20、50 個主題跑一次。把連貫性對主題數畫成圖。回報哪一種方法在不同主題數下更穩定。
+    verifies: >-
+      gensim, bertopic and octis are all absent, so c_v is replaced by UMass -- a mean log co-document
+      ratio over each topic's top 8 words, needing no sliding window or reference corpus. Over 24
+      documents and 3 seeds, coherence climbs steeply with topic count on both methods: LDA -0.0990,
+      0.0351, 0.1370, 0.1716, 0.1159 and clustering -0.3177, -0.0144, 0.0825, 0.2451, 0.2967 at K = 2,
+      4, 5, 10, 20. The clustering curve is monotone and peaks at the largest K tried; LDA peaks at
+      K=10 with one step down. More topics means fewer documents per topic, so each topic's top words
+      co-occur in a larger share of the documents that produced them -- the quantity being scored --
+      and reading a maximum off a monotone curve returns wherever the sweep stopped. The stability
+      question does have an answer: LDA spans 0.2706 across the five settings against clustering's
+      0.6144, more than twice as stable -- and it is the worse arm at K=20 and the better one at K=2,
+      so stability and coherence point at different methods
+    uses_reference:
+      - tokenize
+      - collapsed_gibbs_lda
