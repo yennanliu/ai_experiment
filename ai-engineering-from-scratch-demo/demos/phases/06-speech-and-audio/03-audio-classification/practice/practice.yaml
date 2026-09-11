@@ -1,0 +1,94 @@
+lesson: 03-audio-classification
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/03-audio-classification/docs/en.md
+exercises:
+  - index: 1
+    slug: the_matrix_is_the_identity_for_a_decade_of_noise
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It trains the k-NN MFCC baseline on a 4-class synthetic dataset (pure tones at different pitches). Report confusion matrix.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會在一個 4 類別的合成資料集（不同音高的純音）上訓練 MFCC 的 k-NN 基準線。報告混淆矩陣。
+    verifies: >-
+      the confusion matrix is the identity -- every off-diagonal cell zero, 5 of 5 in each of the four
+      classes, accuracy 1.000 -- exactly as main() prints it. What it reports is almost nothing. The
+      same identity comes back over a ten-fold range of noise, from the lesson's sigma=0.05 at +17.0
+      dB SNR down to sigma=0.5 at -3.0 dB, so a measurement that cannot move across a decade of its
+      own nuisance parameter is not measuring the classifier. And the pipeline is strictly dominated
+      by one line: the four classes are 200, 400, 800 and 1600 Hz, octaves apart and single tones, so
+      taking one 1024-point DFT and snapping the argmax bin to the nearest of the four scores 20 of 20
+      as well, ties the k-NN everywhere it survives, and beats it once it stops -- 1.00 against 0.80
+      at sigma=1.0 and 0.85 against 0.40 at sigma=2.0. featurize, summarize, cosine and knn are the
+      lesson's whole machinery and on the lesson's own data they buy a worse decision boundary than an
+      argmax. The test set also cannot express much: 5 clips per class is 20 decisions, so the only
+      reachable accuracies are multiples of 1/20
+    uses_reference:
+      - sine
+      - add_noise
+      - featurize
+      - summarize
+      - knn
+      - dft_mag
+  - index: 2
+    slug: fourteen_frames_do_not_carry_a_fourth_moment
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Replace `summarize` with [mean, var, skew, kurtosis]. Does 4-moment pooling beat mean+var on the same synthetic dataset?
+    zh: |
+      **中等。** 把 `summarize` 換成 [mean, var, skew, kurtosis]。在同一個合成資料集上，四階動差池化有打贏平均 + 變異數嗎？
+    verifies: >-
+      no. On the dataset as shipped both poolings score 1.000 over 20 test clips, so the question has
+      no answer where it is asked. Raising the noise does not produce one either: 0.80 against 0.90 at
+      sigma=1.0 and 0.30 against 0.15 at sigma=4.0, differences of one to three clips in either
+      direction on a test set whose resolution is 1/20. Two of the lesson's own parameters make a
+      better result unreachable. A clip is 14 frames, and at n=14 the standard error of skewness is
+      sqrt(6/n)=0.655 and of excess kurtosis sqrt(24/n)=1.309, the size of the quantities being
+      estimated -- measured within-class relative spread is 0.085 for the means, 0.379 for the
+      variances, 4.13 for the skews and 1.52 for the kurtoses, so the new blocks wander 49x further
+      inside a single class than the mean block does. And cosine is norm-weighted: MFCC means and
+      variances run to tens while standardised third and fourth moments are O(1), so the appended 26
+      dimensions carry 0.1096 of the vector length and can only move a cosine ranking by about that
+      much
+    uses_reference:
+      - sine
+      - add_noise
+      - featurize
+      - knn
+  - index: 3
+    slug: the_time_mask_is_wider_than_the_clip
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Using `torchaudio`, train a 2D CNN on ESC-50 fold 1. Report 5-fold cross-validation accuracy. Add SpecAugment (time mask = 20, freq mask = 10) and report the delta.
+    zh: |
+      **困難。** 用 `torchaudio` 在 ESC-50 的 fold 1 上訓練一個 2D CNN。報告 5 折交叉驗證的準確率。加上 SpecAugment（time mask = 20、freq mask = 10），並報告差值。
+    verifies: >-
+      torch and torchaudio are absent and ESC-50 is not here -- the reference tree holds no audio file
+      of any kind -- so this is the D11 scaled-down run: 10 synthetic classes, 100 clips, the lesson's
+      own STFT and mel filterbank, a multinomial logistic head standing in for the CNN, real 5-fold
+      cross-validation, and SpecAugment implemented exactly as specified. 5-fold accuracy is 0.810
+      without augmentation and 0.790 with T=20, F=10, a delta of -0.020, one clip in fifty against a
+      fold-to-fold spread of 0.35. Two structural facts explain it before the number is read. T=20 is
+      wider than the time axis: at frame_len=256 and hop=128 over 0.25 s a clip is 14 frames, so a
+      20-frame mask covers 143% of every clip and erases all of it, leaving one constant vector shared
+      by all ten classes that a softmax head can only absorb into its intercepts. On ESC-50 the same
+      T=20 covers 4.0% of 498 frames, a 36x change in frame count the exercise carries the number
+      across unchanged. And where the mask is applied decides the sign: the same T=3, F=10 scores
+      0.780 filling with the mean of the log-mel and 0.090 -- below the 0.100 chance rate -- zeroing
+      the linear mel before log_transform, which writes log(1e-10) = -23.026 into each masked cell.
+      For the classifier the lesson actually ships, SpecAugment is a structural no-op: all three k-NN
+      arms return 0.540 fold for fold, because augmented entries only join the bank and are never
+      among a query's three nearest
+    uses_reference:
+      - stft_mag
+      - mel_filterbank
+      - apply_filterbank
+      - log_transform
+      - dct_ii
+      - summarize
+      - knn
