@@ -1,0 +1,79 @@
+lesson: 11-machine-translation
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/11-machine-translation/docs/en.md
+exercises:
+  - index: 1
+    slug: bleu_scores_a_paraphrase_like_a_wrong_language
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Translate a 5-sentence English paragraph to French and back to English using `nllb-200-distilled-600M`. Measure how close the round-trip is to the original. You should see semantic preservation with word-choice drift.
+    zh: |
+      **簡單。** 用 `nllb-200-distilled-600M` 把一段 5 句的英文段落翻成法文，再回譯成英文。量測這趟來回與原文有多接近。你應該會看到語意保留下來，但用詞出現漂移。
+    verifies: >-
+      transformers, torch, sacrebleu and ctranslate2 are all absent and no NLLB checkpoint is
+      downloadable, so the five round trips are written rather than generated, each the original with
+      the word-choice drift the exercise predicts, alongside an unchanged control, an off-target
+      French output and an unrelated sentence. simple_bleu returns 0.0 on 3 of the 5 drifted sentences
+      and on both wrong controls -- five of the eight pairs score exactly 0.0, so the metric gives one
+      number to a correct paraphrase, to a translation into the wrong language, and to a sentence
+      about bananas. chrF, in the same file, separates the groups with no overlap: drift 52.1 to 80.5
+      against off-target 40.9 and unrelated 16.9. The lesson's own simple_bleu_note explains it -- no
+      smoothing, so one zero-precision order takes the geometric mean -- and word-choice drift
+      destroys 4-grams first. The two round trips BLEU does score, 66.1 and 61.0, are both single-word
+      substitutions, so what survives the metric is word order rather than meaning. On an identical
+      round trip both metrics read 100.0
+    uses_reference:
+      - simple_bleu
+      - chrf
+      - simple_bleu_note
+  - index: 2
+    slug: the_guard_is_a_coin_flip_on_short_output
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement a language-ID check on translation outputs using `fasttext lid.176` or `langdetect`. Integrate into the MT call so off-target generations are caught before returning.
+    zh: |
+      **中等。** 用 `fasttext lid.176` 或 `langdetect` 為翻譯輸出實作語言辨識檢查。把它整合進機器翻譯的呼叫裡，讓翻錯語言的輸出在回傳前就被攔下來。
+    verifies: >-
+      fasttext, langdetect, langid and pycld3 are all absent, so the identifier is character trigram
+      profiles over four short language samples scored by mean log probability with a floor. On 20
+      held-out sentences across English, French, Spanish and German it is right 20 times at full
+      length, with a mean margin of 0.8619 over the runner-up. Truncated, it degrades fast: accuracy
+      1.0000 at 32 characters, 0.8000 at 16, 0.5500 at 8 and 0.5000 at 4, against a chance level of
+      0.2500. That matters because a model that has gone off target frequently emits very little, so
+      the outputs most likely to need the guard are the ones it cannot read. The cost is symmetric: at
+      8 characters it is wrong on 9 of 20 sentences and 3 of those are correct English outputs called
+      something else -- 3 of the 5 English sentences in the set. The margin falls from 0.8619 to
+      0.4762 over the same truncation, so the identifier can tell when it is guessing, and 'caught
+      before returning' is a two-way decision where this is a three-way one. On an empty generation,
+      the clearest off-target failure there is, it returns no answer at all
+  - index: 3
+    slug: the_per_sentence_table_is_undefined_for_short_sentences
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Fine-tune `nllb-200-distilled-600M` on a 5,000-pair domain corpus of your choice. Measure BLEU on a held-out set before and after fine-tuning. Report which kinds of sentences improved and which regressed.
+    zh: |
+      **困難。** 在你自選的 5,000 組配對領域語料上微調 `nllb-200-distilled-600M`。在另外保留的測試集上量測微調前後的 BLEU。回報哪些類型的句子變好了、哪些退步了。
+    verifies: >-
+      transformers, torch, datasets and peft are all absent and no 5,000-pair corpus is here, so no
+      fine-tune is run; the checkable part is that 'which kinds of sentences improved and which
+      regressed' needs a per-sentence score the metric does not have. simple_bleu takes an unsmoothed
+      geometric mean of four n-gram precisions, so a sentence with fewer than four tokens has no
+      4-grams, ngram_precision returns 0.0, and the product collapses: scored against itself a
+      two-token reference gets 0.0 where chrF gets 100.0. The threshold is exact and equals max_n --
+      measured by search, the shortest length that can score above zero is 4. Across a 20-sentence
+      corpus spanning 2 to 13 tokens, 4 references score 0.0 at their own ceiling, so 20% of the rows
+      have no before-number and no after-number. Above the threshold the table is still unreadable in
+      places: 3 of exercise 1's 5 round trips score 0.0 while preserving meaning. chrF has no floor --
+      the zeroed sentences all score 100.0 at their ceiling and the drifted round trips 52.1 to 80.5
+      -- so the split is by length and by nothing else, and a before-and-after comparison on this
+      metric covers the long half of the corpus while being reported as though it covered all of it
+    uses_reference:
+      - simple_bleu
+      - chrf
+      - tokenize

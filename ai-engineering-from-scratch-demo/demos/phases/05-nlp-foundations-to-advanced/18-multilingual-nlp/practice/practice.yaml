@@ -1,0 +1,80 @@
+lesson: 18-multilingual-nlp
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/18-multilingual-nlp/docs/en.md
+exercises:
+  - index: 1
+    slug: the_toy_cannot_tell_hindi_from_arabic
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run the zero-shot classification pipeline on 10 sentences per language across English, French, Hindi, and Arabic. Report accuracy on each. You should see strong French, decent Hindi, variable Arabic.
+    zh: |
+      **簡單。** 拿零樣本分類流程，在英文、法文、印地語與阿拉伯語各 10 句上跑一遍。回報各語言的準確率。你應該會看到法文很強、印地語堪用、阿拉伯語不穩定。
+    verifies: >-
+      transformers, torch and sentencepiece are all absent and the lesson ships no classifier -- it
+      exports LANGUAGE_FEATURES, similarity, rank_source_languages and simulate_transfer_accuracy --
+      so no accuracies are measured. What it does provide is a prediction about the exercise's own
+      three languages, and it disagrees: for an English source it gives French similarity 0.6667 and
+      accuracy 0.7500, and Hindi and Arabic both 0.0000 and 0.4500 -- the same number, where the
+      exercise predicts decent Hindi and variable Arabic. Three features admit four similarity values
+      (0.0000, 0.3333, 0.6667, 1.0000) which simulate_transfer_accuracy maps one-to-one onto 0.4500,
+      0.6000, 0.7500, 0.9000, so the second function is the first rescaled. Eleven languages collapse
+      into seven distinct profiles, with five pairs at similarity 1.0 -- english/german,
+      french/spanish, french/italian, spanish/italian, hindi/marathi -- so the table cannot say Hindi
+      and Marathi are different languages. And similarity is symmetric for every pair, where zero-shot
+      transfer is not
+    uses_reference:
+      - LANGUAGE_FEATURES
+      - similarity
+      - simulate_transfer_accuracy
+  - index: 2
+    slug: a_small_lexicon_does_what_the_encoder_would
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Use `paraphrase-multilingual-MiniLM-L12-v2` to build a cross-lingual retriever over a small mixed-language corpus. Query in English, retrieve documents in any language. Measure recall@5.
+    zh: |
+      **中等。** 用 `paraphrase-multilingual-MiniLM-L12-v2` 在一個小型混合語言語料庫上建一個跨語言檢索器。用英文查詢，檢索任何語言的文件。量測 recall@5。
+    verifies: >-
+      sentence_transformers, transformers and torch are all absent, so the corpus is 12 concepts
+      written in French and Spanish -- 24 documents -- queried by their English originals with Jaccard
+      overlap as the retriever. With no cross-lingual resource at all it scores recall@5 of 0.5833
+      against an exact random baseline of 0.3804, since two of 24 documents are relevant to each
+      query. The split says where that comes from and it is total: counting only content words, the 7
+      concepts sharing a token with a translation score 1.0000 and the 5 sharing none score 0.0000,
+      with no middle, at a mean of 0.31 shared content types per parallel pair. Filtering function
+      words is what makes the split visible -- the shared token in several pairs is 'a', the English
+      article and the French verb, so an unfiltered count reports a cognate where there is a
+      coincidence. Expanding each query through a 27-entry lexicon takes recall@5 to 1.0000, including
+      on every concept with no shared content word -- so on this corpus a multilingual encoder and a
+      27-word dictionary produce the same number, and recall@5 over 24 documents saturates before it
+      can separate them. The corpus is ASCII throughout, so the overlap carrying the lexical arm is
+      vocabulary overlap and not a normalisation artefact
+  - index: 3
+    slug: the_answer_is_a_lookup_and_the_ties_decide_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Compare English-source and Hindi-source fine-tuning for a Hindi classification task. Use 500 target-language examples for few-shot fine-tuning under both regimes. Report which source produces better Hindi accuracy and by how much. This is the LANGRANK thesis in miniature.
+    zh: |
+      **困難。** 針對一個印地語分類任務，比較以英文為來源與以印地語為來源的微調。兩種做法都用 500 筆目標語言例子做少樣本微調。回報哪一個來源產出更好的印地語準確率、差多少。這就是 LANGRANK 論點的縮影。
+    verifies: >-
+      the comparison the exercise describes is already answered by the lesson's table: for a Hindi
+      target the best source is Marathi at similarity 1.0000 and accuracy 0.9000 against English at
+      0.0000 and 0.4500, a gap of 0.4500, and simulate_transfer_accuracy takes two arguments --
+      neither of them the 500 examples -- so the number does not move when they are supplied. That is
+      the LANGRANK thesis implemented rather than a shortcut around it. Underneath it the ranking is
+      mostly ties: three features give four levels, so Urdu and Bengali each have a three-way tie at
+      the top and Japanese a four-way one, and rank_source_languages breaks them with a stable sort --
+      reversing the candidate list changes the recommended source for six of the eleven targets with
+      no feature changed. For Hindi the recommendation is stable, but Marathi scoring 1.0000 means the
+      feature set finds no difference between them at all, so 'Marathi is the best source for Hindi'
+      and 'this table cannot tell Hindi from Marathi' are the same statement
+    uses_reference:
+      - LANGUAGE_FEATURES
+      - similarity
+      - rank_source_languages
+      - simulate_transfer_accuracy

@@ -1,0 +1,75 @@
+lesson: 04-glove-fasttext-subword
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/04-glove-fasttext-subword/docs/en.md
+exercises:
+  - index: 1
+    slug: six_grams_of_prefix_whatever_follows
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `char_ngrams("playing")` and `char_ngrams("played")`. Compute the Jaccard overlap of the two n-gram sets. You should see substantial shared pieces (`pla`, `lay`, `play`), which is why FastText transfers well across morphological variants.
+    zh: |
+      **簡單。** 執行 `char_ngrams("playing")` 與 `char_ngrams("played")`，計算兩個 n-gram 集合的 Jaccard 重疊度。你應該會看到相當多共用的部件（`pla`、`lay`、`play`），這就是 FastText 能在形態學變體之間良好遷移的原因。
+    verifies: >-
+      char_ngrams('playing') has 23 grams and char_ngrams('played') 19; they share 6 -- <pl, <pla,
+      <play, lay, pla, play -- over a union of 36, for a Jaccard of 0.1667, and all three pieces the
+      exercise names are among the 6. Against a null the signal is real: walked, banana and xylophone
+      each share 0 with playing. What the measure cannot do is rank. The intersection is fixed by the
+      common prefix, so play, played, player and playful all share exactly 6, scoring an inflection,
+      an agent noun and an adjective identically; Jaccard separates them only through the union,
+      giving 0.2222, 0.1667, 0.1667 and 0.1500 for lengths 4, 6, 6 and 7, so sorting them by Jaccard
+      sorts them shortest first. A shared stem does outscore a shared suffix -- singing and running
+      share 3 at Jaccard 0.0714 and 0.0698 -- which is the boundary markers working. And the
+      whole-word gram is in one set and never the other, so every pair of distinct words pays 1 union
+      it cannot recover
+    uses_reference:
+      - char_ngrams
+  - index: 2
+    slug: the_asymptote_is_the_mean_word_length
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Extend `learn_bpe` to track vocabulary growth. Plot tokens-per-corpus-character as a function of number of merges. You should see rapid compression at first, asymptoting near ~2-3 chars per token.
+    zh: |
+      **中等。** 擴充 `learn_bpe`，讓它追蹤詞彙表的成長。把「每個語料字元的詞元數」對「合併次數」畫成圖。你應該會看到一開始壓縮得很快，之後漸近到每個詞元約 2 到 3 個字元。
+    verifies: >-
+      the quantity the exercise says to plot and the one it says to expect are reciprocals moving
+      opposite ways: tokens per corpus character falls 1.1947 to 0.1947 over 0 to 50 merges while
+      chars per token rises 0.837 to 5.136. The asymptote is exact, not approximate -- learn_bpe
+      breaks when no pair remains, so budgets 20, 30 and 50 all return 18 merges, every word becomes
+      one token, and chars per token is 113/22 = 5.136, the corpus's mean word length. Chars per token
+      is inside [2, 3] only at budgets 8 and 10, reading 2.055 and 2.457, which is where the curve is
+      steepest: the exercise's range is a point the curve passes through, not where it flattens. At
+      zero merges there are more tokens (135) than characters (113) because learn_bpe appends </w> to
+      every word, so the first points of the curve are partly the tokenizer undoing a marker it added.
+      At saturation all 6 corpus words tokenize to themselves
+    uses_reference:
+      - learn_bpe
+      - apply_bpe
+  - index: 3
+    slug: seen_once_is_seen_never
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Train a 1k-merge BPE on Shakespeare's complete works. Compare tokenization of common words vs. rare proper nouns. Measure average tokens per word before and after. Write up what surprised you.
+    zh: |
+      **困難。** 在莎士比亞全集上訓練一個 1k 次合併的 BPE。比較常見詞與罕見專有名詞的分詞結果。量測訓練前後的平均每詞詞元數。把讓你意外的地方寫下來。
+    verifies: >-
+      Shakespeare's complete works are not in the checkout, so the corpus is this phase's 29 lesson
+      documents -- 46423 word tokens over 4879 types, read through parity.doc_text -- and 1000 merges
+      are learned. Mean tokens per word at 1000 merges: common words 1.067, proper nouns occurring
+      once or twice 4.400, proper nouns occurring zero times 4.200. The rare names score worse than
+      the unseen ones: being in the training corpus bought nothing, because BPE merges by frequency
+      and a pair seen once never outranks one seen hundreds of times, so shakespeare (present twice)
+      comes out as sh|a|ke|sp|e|are. The before number is not a fact about BPE either -- at 0 merges
+      tokens per word is 6.933, 8.000 and 8.100 against mean word lengths 5.933, 7.000 and 7.100,
+      exactly one more on all three lists. Common words go 6.933, 3.600, 1.800, 1.067 across budgets
+      0, 100, 300, 1000 while rare names go 8.000, 6.000, 4.800, 4.400, so the last 700 merges move
+      the common list 0.733 and the rare list 0.400. The 1.167 spread in word length at 0 merges
+      becomes a 3.333 spread in tokens at 1000
+    uses_reference:
+      - learn_bpe
+      - apply_bpe

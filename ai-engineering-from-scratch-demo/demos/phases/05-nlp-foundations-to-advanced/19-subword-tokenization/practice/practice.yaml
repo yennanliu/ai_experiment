@@ -1,0 +1,87 @@
+lesson: 19-subword-tokenization
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/19-subword-tokenization/docs/en.md
+exercises:
+  - index: 1
+    slug: no_held_out_word_can_reach_one_token
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Train a 500-merge BPE on `code/main.py`'s tiny corpus. Encode three held-out words. How many produced exactly 1 token vs >1 token?
+    zh: |
+      **簡單。** 在 `code/main.py` 的小語料上訓練一個 500 次合併的 BPE。對三個保留在外的詞做編碼。其中有幾個剛好產生 1 個詞元，幾個產生超過 1 個？
+    verifies: >-
+      the corpus and the held-out words are main()'s own -- four of them, not three -- and the count
+      is 0 at exactly one token against 4 above it. That is forced rather than measured: encode_bpe
+      returns a single symbol only when word + '</w>' is itself a training word, and sweeping every
+      merge count from 0 to 183 finds no count at which any of the four reaches one. The 500 merges
+      the exercise asks for become 183, because train_bpe breaks once pair_counts is empty -- which
+      happens when every training word is a single symbol, so the final vocabulary is exactly the 52
+      distinct corpus words with '</w>' appended and the tokenizer is a word tokenizer. The vocabulary
+      train_bpe reports is not monotonic in the merge count: 27 at zero merges, a peak of 84 at 105,
+      then 52 at convergence, because it returns the symbols left in the final decomposition rather
+      than the alphabet plus the merge list. The vocabulary you would ship is 27 + 183 = 210 and only
+      grows, while the four held-out words fall from 31 pieces to 15 -- so the reported number and the
+      tokenizer's quality move in opposite directions
+    uses_reference:
+      - word_counts
+      - train_bpe
+      - encode_bpe
+  - index: 2
+    slug: the_ratio_it_reports_is_memorisation
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Compare token counts on 100 English Wikipedia sentences between `cl100k_base`, `o200k_base`, and a SentencePiece BPE you train with vocab=32k. Report the compression ratio of each.
+    zh: |
+      **中等。** 拿 100 句英文維基百科的句子，比較 `cl100k_base`、`o200k_base`，以及你自己用 vocab=32k 訓練的 SentencePiece BPE 三者的詞元數。報告各自的壓縮率。
+    verifies: >-
+      tiktoken and sentencepiece are both absent so the two OpenAI arms cannot be measured, and the
+      third arm cannot be built either: vocabulary size is a ceiling the corpus sets, not a parameter
+      you pass. 20 encyclopedic sentences admit 566 merges before pair_counts runs dry, a total
+      vocabulary of 593 against the 32,000 requested, and the ceiling grows about 23 tokens per added
+      sentence -- so 32k needs on the order of 1,400 sentences, not 100. What the exercise would
+      report is memorisation: at the ceiling the tokenizer scores exactly 1.0000 tokens per word on
+      its own training text, because BPE run to exhaustion is a word tokenizer over the corpus
+      vocabulary, against 3.1519 on ten held-out sentences of which 53 of 67 word types are unseen.
+      The two sides start equal at zero merges -- 6.4735 and 6.5316, mean word length plus the '</w>'
+      marker -- and diverge at every step after. And the comparison is unavailable even with the
+      libraries installed, because the two sides do not encode the same string: word_counts matches
+      [a-zA-Z]+ and erases 80 characters including every numeral, so chars-per-token is computed over
+      1341 surviving characters of 1670 while tiktoken is byte-level and lossless
+    uses_reference:
+      - word_counts
+      - train_bpe
+      - encode_bpe
+  - index: 3
+    slug: the_choice_moves_less_than_one_example
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Train the same corpus with BPE, Unigram, and WordPiece. Measure downstream accuracy when using each on a small sentiment classifier. Does the choice move the needle by more than 1 point F1?
+    zh: |
+      **困難。** 用同一份語料分別訓練 BPE、Unigram 與 WordPiece。把三者各自套到一個小型情感分類器上，量測下游準確率。這個選擇能讓 F1 動超過 1 個百分點嗎？
+    verifies: >-
+      the lesson ships BPE only. WordPiece is one changed expression -- score a pair by its frequency
+      over the product of its parts' frequencies -- so it reuses init_vocab, pair_counts and
+      merge_pair untouched, while Unigram shares no step and is not buildable from this code. The
+      answer is no and the margin is not close: over 30 reviews scored by leave-one-out Naive Bayes on
+      bag-of-pieces, character-level, both algorithms at 25, 50, 100 and 200 merges, and the
+      word-level ceiling all land inside 6.67 points of accuracy -- two reviews out of thirty, or 7.11
+      points of F1. At matched merge counts the two algorithms differ by at most one review and the
+      sign flips, WordPiece ahead at 25 and 100 merges and BPE at the ceiling. That is not the
+      algorithms agreeing: their merge lists diverge at index 0 and share 32 merges of 146. And the
+      question is below the experiment's resolution -- with 30 held-out items accuracy moves in steps
+      of 3.33 points, so 'more than 1 point' is not a value the measurement can return, and one point
+      needs at least 100 held-out items to be on the grid. The character tokenizer, which learned
+      nothing, already scores 0.9375 F1 against 0.9677 for the best of the six
+    uses_reference:
+      - word_counts
+      - init_vocab
+      - pair_counts
+      - merge_pair
+      - train_bpe
+      - encode_bpe

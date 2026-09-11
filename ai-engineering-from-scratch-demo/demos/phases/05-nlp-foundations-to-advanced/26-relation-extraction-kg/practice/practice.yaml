@@ -1,0 +1,88 @@
+lesson: 26-relation-extraction-kg
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/26-relation-extraction-kg/docs/en.md
+exercises:
+  - index: 1
+    slug: precision_is_no_higher_than_recall
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run the pattern extractor in `code/main.py` on 5 news-article sentences. Hand-check precision.
+    zh: |
+      **簡單。** 拿 `code/main.py` 裡的模式匹配抽取器跑 5 個新聞句子。手工核對精確率。
+    verifies: >-
+      thirteen news-style sentences hand-labelled with the eleven triples a careful annotator would
+      extract: the extractor predicts ten and five are right, precision 0.5000 and recall 0.4545. The
+      lesson's closing note says 'rule-based RE = high precision, low recall' -- the second half holds
+      and the first does not, with the two numbers within one triple of each other. Four of the five
+      false positives are clauses the sentence denies or hedges: 'The company denied that Carl Reed
+      was born in Ohio' yields (Carl Reed, place of birth, Ohio), and so do the 'it is unclear
+      whether', 'nobody believes' and 'reports suggest' sentences. The fifth false positive is also a
+      false negative -- 'Steve Jobs founded Apple Computer Inc' returns the object Apple, because the
+      object group is ([A-Z][A-Za-z]+(?: Inc)?), which admits Apple Inc but not Apple Computer Inc, so
+      one truncation counts on both sides. The six misses are all syntax the pattern cannot express: a
+      passive, a relative clause, a coordinated subject carrying two triples, a coordinated object,
+      and the truncation. Both directions are the same regex property -- every pattern requires
+      subject, verb and object adjacent, which excludes any paraphrase with material between them and
+      admits any clause containing that adjacency however it is embedded. On main()'s own document the
+      extractor is 8 for 8 with nothing rejected, which is the evidence the note's claim rests on
+    uses_reference:
+      - PATTERNS
+      - extract
+      - verify
+  - index: 2
+    slug: eight_lines_of_regex_beat_the_comparison
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Use REBEL (or a small LLM) on the same sentences. Compare triples. Which extractor has higher precision? Higher recall?
+    zh: |
+      **中等。** 對同樣的句子用 REBEL（或一個小型 LLM）。比較兩邊的三元組。哪個抽取器精確率較高？召回率較高？
+    verifies: >-
+      transformers, torch, openai and anthropic are all absent so REBEL cannot be run, but the
+      question the exercise is really asking -- whether the choice of system sets precision and recall
+      -- is answerable by moving the shipped extractor along its own frontier. A guard that drops any
+      match in a sentence containing a denial or hedge cue, and a relaxation that lets the object run
+      over consecutive capitalised words plus a passive and a relative-clause form, give: as shipped
+      0.5000/0.4545 at F1 0.4762, guard alone 0.8333/0.4545 at 0.5882, relaxation alone 0.6667/0.7273
+      at 0.6957, both 1.0000/0.7273 at 0.8421. The shipped extractor is dominated by a variant built
+      from its own six patterns. The two edits are independent, which the exercise's framing hides:
+      the guard moves precision and leaves recall exactly at 0.4545 because it removes only triples
+      that were wrong, while the relaxation moves recall and drags precision up as a side effect
+      because two new matches replace truncated objects. And there is no operating curve to compare
+      against -- a triple carries evidence, object, relation, span and subject, no confidence and no
+      threshold -- so each variant is a single point and comparing two systems at one unknown
+      operating point each has no answer that survives editing a regex
+    uses_reference:
+      - PATTERNS
+      - extract
+  - index: 3
+    slug: the_verify_step_checks_offsets_not_claims
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build the AEVS pipeline: extract with LLM + verify spans against source. Measure hallucination rate before vs after the verify step on 50 Wikipedia-style sentences.
+    zh: |
+      **困難。** 把 AEVS 管線建起來：用 LLM 抽取 + 把區段驗證回原始文本。在 50 個 Wikipedia 風格的句子上量測驗證步驟前後的幻覺率。
+    verifies: >-
+      no LLM is reachable so the extractor is the lesson's own patterns and the hallucinations are its
+      false positives. Over exercise 1's thirteen sentences extract returns 10 triples and verify
+      keeps 10: the rejection rate is 0.0000, and it is 0.0000 for every possible input. Both of
+      verify's conditions are tautologies for a regex match on the same text -- span comes from
+      m.start(), m.end() and evidence from m.group(0) of that match, so text[s:e] != evidence compares
+      a string against a slice of itself, and subject not in text is a substring test on a group of
+      that same match. Applied to seven hand-written candidates of the kinds a language model produces
+      it catches 2 of the 5 defective ones and wrongly rejects one of the 2 sound ones: it rejects an
+      entity absent from the text and an evidence string not matching its offsets, while accepting a
+      subject given as Tim where the text says Tim Cook, a fabricated relation with real entities and
+      real evidence, and a triple lifted from a clause the sentence denies. The split is exact --
+      offsets are checked to the character, so a span one byte off is rejected although its claim is
+      right, and content is not checked at all. And the step cannot be applied to the source it exists
+      for: verify reads t['span'] and a triple from a language model has no character offsets, so it
+      raises KeyError: 'span'
+    uses_reference:
+      - extract
+      - verify

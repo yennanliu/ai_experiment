@@ -1,0 +1,72 @@
+lesson: 09-sequence-to-sequence
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/09-sequence-to-sequence/docs/en.md
+exercises:
+  - index: 1
+    slug: the_simulation_never_reads_epochs
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Implement the toy copy task. Train a GRU seq2seq on input-output pairs where the target equals the source. Measure accuracy at lengths 5, 10, 20. Reproduce the bottleneck.
+    zh: |
+      **簡單。** 實作那個玩具複製任務。在「目標等於來源」的輸入輸出配對上訓練一個 GRU seq2seq。量測長度 5、10、20 時的準確率。把瓶頸重現出來。
+    verifies: >-
+      simulate_copy_accuracy takes epochs and n_train and mentions neither below its signature: at
+      (200, 300), (1, 1) and (100000, 1000000) it returns 0.89, 0.83, 0.69 at lengths 5, 10, 20 every
+      time, so nothing is fitted. Its metric is a two-alternative comparison -- one true sequence
+      against one random sequence -- so the floor is 0.50 and the lesson's own 0.51 at length 80 is
+      chance, not collapse; exact-match copy accuracy at length 20 over 10 symbols has a chance level
+      of 1e-20. A fittable substitute puts the bottleneck at an exact rank: the one-hot encoding of a
+      length-L sequence has rank L(V-1)+1, predicted and measured as 46, 91 and 181 at L = 5, 10, 20.
+      With a fixed random projection into d dimensions and a least-squares decoder, exact-match
+      reaches 1.000 once d clears that rank and not before -- 1.000 at d=64 for L=5, 1.000 at d=128
+      for L=10, 0.535 at d=128 for L=20 -- and the failure below it is sharp, going 0.01 at d=32 to
+      0.85 at d=64 for L=10. In the lesson's own simulation more context is not reliably better: at
+      length 20, context_dim 16 scores 0.63 against 8's 0.69
+    uses_reference:
+      - simulate_copy_accuracy
+  - index: 2
+    slug: unnormalised_beam_returns_the_shortest_hypothesis
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add beam search decoding with beam width 3. Measure BLEU on a small parallel corpus against greedy. Document where beam search wins (usually last tokens) and where it makes no difference.
+    zh: |
+      **中等。** 加上 beam 寬度 3 的 beam search 解碼。在一個小型平行語料上量測 BLEU，與貪婪解碼比較。記錄 beam search 在哪裡勝出（通常是最後幾個詞元），又在哪裡毫無差別。
+    verifies: >-
+      with the score the exercise implies -- a sum of token log-probabilities -- beam-3 scores BLEU
+      0.0253 against greedy's 0.2507, losing on every sentence rather than winning somewhere and tying
+      elsewhere. Every extra token adds a negative number, so among complete hypotheses the argmax is
+      the shortest one the model will end: beam-3 returns 1 token at every reference length from 3 to
+      7. That is the search succeeding at the stated objective. Divide the score by length and the
+      exercise's claim is exactly right: normalised beam-3 scores 0.2982, above greedy, and differs
+      from greedy at exactly one position on every sentence -- the last one, since the decoder is
+      built around a token whose emission is higher (0.45 against 0.40) and whose continuation is
+      worse, so the trap stops mattering only where nothing follows. Beam width 1 is also not greedy
+      decoding: it returns 1 token where greedy returns n, because beam-1 compares completed
+      hypotheses against live ones at every step and greedy does not. And BLEU's brevity penalty, not
+      its n-gram precisions, is what scores the short outputs at 0.0213 and 0.0253
+  - index: 3
+    slug: ten_examples_is_not_a_measurement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Fine-tune `facebook/bart-base` on a 10k-pair paraphrase dataset. Compare the fine-tuned model's beam-4 output to the base model's on held-out inputs. Report BLEU and pick 10 qualitative examples.
+    zh: |
+      **困難。** 用一個一萬組配對的改寫資料集微調 `facebook/bart-base`。在保留的輸入上，比較微調後模型的 beam-4 輸出與基礎模型的輸出。回報 BLEU，並挑出 10 個定性的例子。
+    verifies: >-
+      transformers, torch, datasets and sacrebleu are all absent and there is no paraphrase corpus, so
+      no fine-tune is run and no BLEU from one is reported. What is checkable is whether the
+      comparison could resolve anything. Bootstrapping exercise 2's decoder outputs over 2000
+      resamples, the 95% interval on corpus BLEU is 0.0985 wide at 10 sentences and 0.0488 at 40,
+      against a greedy-to-beam effect of 0.0475 -- so ten examples carry an interval 2.1 times the
+      effect and forty carry one still as wide as it, with the two systems' intervals overlapping at
+      n=40 ([0.2263, 0.2750] against [0.2691, 0.3271]). Quadrupling the set buys the root-n factor of
+      two, so resolving this effect would take hundreds of sentences. BLEU is also a family rather
+      than a number: the same outputs against the same references score 0.1769 to 0.2507 for greedy
+      and 0.3538 to 0.2982 for beam as the n-gram order goes 1 to 4, a spread of 0.0738 against a
+      between-system difference of 0.0475. Only the sign survives -- beam is at or above greedy at
+      every order

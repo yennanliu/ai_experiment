@@ -1,0 +1,89 @@
+lesson: 23-chunking-strategies-rag
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/23-chunking-strategies-rag/docs/en.md
+exercises:
+  - index: 1
+    slug: one_of_the_three_configurations_does_not_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Chunk one 20-page document with fixed(512, 0), recursive(512, 0), and recursive(512, 100). Compare chunk counts and boundary quality.
+    zh: |
+      **簡單。** 用 fixed(512, 0)、recursive(512, 0) 與 recursive(512, 100) 各切一份 20 頁的文件。比較區塊數量與切點的品質。
+    verifies: >-
+      chunk_recursive(text, size, seps) has no overlap parameter, so recursive(512, 100) binds 100 to
+      seps and the first loop raises TypeError: 'int' object is not iterable -- two of the three
+      configurations exist. recursive(512, 0) does not respect 512 either: the function is not
+      recursive, it splits on the first separator present anywhere and never descends into a part that
+      is still too long, so one 893-character paragraph comes back whole at 512, 300 and 200 alike.
+      size is an upper bound only when the document already satisfies it -- on main()'s own contract,
+      whose paragraphs all fit, nothing exceeds the limit. Boundary quality separates the two arms
+      that run, completely: at 512 characters chunk_fixed produces 0 of 4 chunks that start and end at
+      a sentence and chunk_recursive 3 of 3, with sizes 512, 512, 512, 75 against 440, 274, 893. The
+      chunk counts trade the other way -- fixed returns 4, 6, 9 across 512, 300, 200 and recursive 3,
+      4, 6. And overlap exists only on the arm that needs it: at 200 characters chunk_fixed(size, 100)
+      returns 17 chunks against 9, re-reading half of every chunk to repair cuts it made itself
+    uses_reference:
+      - chunk_fixed
+      - chunk_recursive
+  - index: 2
+    slug: recall_at_five_rewards_making_five_chunks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Build a 30-query eval set over 5 documents. Measure recall@5 for recursive, semantic, and parent-document. Which wins? Does it match the blog posts?
+    zh: |
+      **中等。** 在 5 份文件上做一個 30 題的評估集。分別量遞迴切塊、語意切塊與父子區塊的 recall@5。哪個贏？跟部落格文章講的一樣嗎？
+    verifies: >-
+      the eval set is 30 questions over 5 documents of 6 sections each, scored with the lesson's own
+      hash embedder. Parent-document wins at 1.0000, which does match the blog posts and is not
+      evidence for them: it builds 5 chunks for 5 documents, so at k=5 the retriever returns the
+      entire index and 1.0000 holds for any ranking function. Index sizes are 10, 10, 30, 21, 5 and
+      the share of the index k=5 returns is 0.50, 0.50, 0.17, 0.24, 1.00 -- the metric is reading
+      index size. At k=1, where every arm returns one chunk, the strategies are indistinguishable:
+      0.5000 fixed, 0.5333 recursive, 0.5667 for semantic, sentence and parent-document alike, a
+      spread of two questions in thirty with parent-document tied rather than best. The same strategy
+      is also both best and worst -- chunk_parent_child returns one row per child, so main()'s own
+      index expression holds 15 entries and 5 distinct texts, duplicates fill the top-5 slots, and it
+      scores 0.7333, the lowest of any strategy, against 1.0000 deduplicated. Among the arms whose
+      index is larger than k, recursive wins at 0.8667 against 0.8333 for semantic and fixed. The
+      lesson's own demonstration cannot see any of this: 3 queries over one contract, 3 of 3 for all
+      five strategies including a parent index with one distinct document in it
+    uses_reference:
+      - hash_embed
+      - cosine
+      - chunk_fixed
+      - chunk_recursive
+      - chunk_semantic
+      - chunk_sentence
+      - chunk_parent_child
+  - index: 3
+    slug: the_context_is_shared_so_it_cannot_discriminate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement contextual retrieval. Measure MRR improvement over baseline recursive. Report index cost (LLM calls) vs accuracy gain.
+    zh: |
+      **困難。** 實作上下文化檢索。量它相對於遞迴切塊基準線的 MRR 改善。回報建索引的成本（LLM 呼叫次數）對上準確率的收益。
+    verifies: >-
+      no LLM is reachable, so the context each chunk is prefixed with is written from the document
+      itself -- the shared move a first implementation makes. All three variants make it worse: MRR
+      goes 0.6746 to 0.6624, 0.6585 and 0.6557 for a corpus summary, a document name and a name plus
+      opening line, and recall@1 goes 0.5333 to 0.5000 in every arm, at one LLM call per chunk. The
+      ratio the exercise asks to report has a negative denominator, so there is no cost per point to
+      quote. The mechanism is that the prefix is shared: the corpus summary is one string across all
+      10 chunks and the document name takes 5 values across 5 documents, so it adds a constant to
+      every numerator and re-normalises every denominator -- it can only dilute. And 0 of 30 gold
+      spans appear in more than one document, so the routing a document-level prefix could help with
+      is never needed. Chunks average 231 characters and the corpus summary adds 91, nearly 30% of the
+      embedded string. Anthropic's contextual retrieval writes a chunk-specific sentence per chunk,
+      which is what the LLM call is for; the version measurable without one is the version that cannot
+      work
+    uses_reference:
+      - hash_embed
+      - cosine
+      - chunk_recursive
+      - split_sentences

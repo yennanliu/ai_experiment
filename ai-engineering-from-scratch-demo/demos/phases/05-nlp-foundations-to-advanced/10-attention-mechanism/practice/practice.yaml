@@ -1,0 +1,78 @@
+lesson: 10-attention-mechanism
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/10-attention-mechanism/docs/en.md
+exercises:
+  - index: 1
+    slug: a_fully_masked_row_returns_uniform_weights
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement `softmax` masking so padding tokens in the encoder get attention weight zero. Test on a batch with variable-length sequences.
+    zh: |
+      **簡單。** 實作 `softmax` 遮罩，讓編碼器裡的填充詞元拿到的注意力權重為零。在一批長度不一的序列上測試。
+    verifies: >-
+      a large negative sentinel before the softmax is exactly right on the case the exercise names:
+      with 3 real positions of 5 the padded weights come back 0.0 and the context matches
+      dot_attention over the unpadded prefix to 1.11e-16, where unmasked the same batch sends 26.6% of
+      its attention mass to two all-zero vectors. Two neighbouring cases fail. A row where every
+      position is padding returns uniform weights of 0.2 summing to 1.0, with no error, and its
+      context is exactly the unweighted mean of all five encoder states including the padding -- which
+      is what an empty or over-truncated batch row is. Using -inf instead fixes that case by breaking
+      it differently: partially masked rows are exact, and a fully masked row computes -inf minus -inf
+      and returns nan in every position. The third variant, zeroing weights after the softmax rather
+      than scores before it, leaves them summing to 0.733804, so the context is the right direction
+      scaled by the retained mass -- the ratio is 0.733804 in every dimension, identical, which is why
+      it survives a spot check
+    uses_reference:
+      - softmax
+      - dot
+      - dot_attention
+  - index: 2
+    slug: one_head_matches_exactly_two_do_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add multi-head attention to the Luong `general` form. Split `d_h` into `n_heads` groups, run attention per head, concatenate. Verify the single-head case matches your earlier implementation.
+    zh: |
+      **中等。** 為 Luong 的 `general` 形式加上多頭注意力。把 `d_h` 切成 `n_heads` 組，每個頭各跑一次注意力，再串接起來。驗證單頭的情況與你先前的實作結果相同。
+    verifies: >-
+      the verification the exercise asks for passes bit-for-bit: at one head the context and the
+      weights differ from the single-head implementation by exactly 0.0, since splitting into one
+      group is the identity and every operation runs in the same order. Above one head it is a
+      different function rather than a refactor -- the context moves 0.6436 at 2 heads and 2.1025 at 4
+      -- because one head takes a single softmax over the full inner products while h heads take h
+      softmaxes over disjoint slices, and softmax does not distribute over a sum. At 4 heads the
+      per-head argmaxes are [0, 0, 0, 5], two positions and neither the single head's 2; at 2 heads
+      they agree with it at [2, 2] while still moving the context, so the weight divergence is not
+      guaranteed and the output divergence is. With the projection replaced by the identity, leaving
+      no parameters to differ on, two heads still move the context 0.9323 and the second head peaks at
+      3 where the single head peaks at 1. Eight heads is closer to single-head than four (1.8818
+      against 2.1025), since one dimension per head makes every softmax nearly uniform. The general
+      form is not in code/main.py, which ships dot_attention and additive_attention only
+    uses_reference:
+      - softmax
+      - dot
+      - matvec
+  - index: 3
+    slug: the_width_stops_growing_with_length
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Train a GRU encoder-decoder with Bahdanau attention on the toy copy task from lesson 09. Plot accuracy vs sequence length. Compare against the no-attention baseline. You should see the gap widen as length grows, confirming attention lifts the bottleneck.
+    zh: |
+      **困難。** 在單元 09 的玩具複製任務上，訓練一個帶 Bahdanau 注意力的 GRU 編碼器－解碼器。畫出準確率對序列長度的曲線。與沒有注意力的基準線比較。你應該會看到差距隨長度增長而拉大，這印證了注意力解除了瓶頸。
+    verifies: >-
+      torch is absent, so both arms are fixed random encoders with least-squares decoders and no
+      optimisation to confound the comparison. At d=16 the no-attention arm scores exact-match 1.0000,
+      0.4150, 0.0000, 0.0000, 0.0000, 0.0000 at lengths 2, 4, 8, 16, 32, 64 while the attention arm
+      scores 1.0000 at every one -- the widening gap the exercise predicts. The stronger statement is
+      what the widths do. The no-attention arm is under-provisioned rather than broken: L(V-1)+1 is
+      19, 37 and 73 at lengths 2, 4, 8 and at those widths it scores 1.0000 again, so its requirement
+      grows linearly, reaching 577 dimensions to copy 64 symbols. The attention arm reaches 1.0000 at
+      d=8 for lengths 4, 16 and 64 alike: its requirement is a function of the vocabulary, not the
+      sequence. Below its own threshold it degrades with length too -- 0.625, 0.015, 0.000 at d=4 --
+      because a per-token error rate compounds, so the accuracy-against-length plot moves for two
+      reasons and only one is the bottleneck

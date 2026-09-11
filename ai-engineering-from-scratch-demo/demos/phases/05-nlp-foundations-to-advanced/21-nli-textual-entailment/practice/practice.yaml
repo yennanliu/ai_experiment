@@ -1,0 +1,91 @@
+lesson: 21-nli-textual-entailment
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/21-nli-textual-entailment/docs/en.md
+exercises:
+  - index: 1
+    slug: the_trap_it_names_is_the_one_it_survives
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `facebook/bart-large-mnli` on 20 hand-crafted (premise, hypothesis, label) triples covering all three classes. Measure accuracy. Add adversarial "subsequence heuristic" traps ("I did not eat the cake" vs "I ate the cake") and see if it breaks.
+    zh: |
+      **簡單。** 拿 `facebook/bart-large-mnli` 跑 20 組自己手寫的（前提、假設、標籤）三元組，三個類別都要涵蓋。量測準確率。再加上對抗式的「子序列啟發式」陷阱（"I did not eat the cake" 對 "I ate the cake"），看看它會不會破。
+    verifies: >-
+      transformers, torch and sentencepiece are all absent, so the classifier under test is the
+      lesson's own predict_nli. On 20 triples balanced across the three classes it scores 15/20, and
+      the shape of the five errors is the finding. The subsequence trap the exercise names does not
+      break it: negation is one of the two features predict_nli reads, so 'I did not eat the cake'
+      against 'I ate the cake' is contradiction and six of seven negation triples are correct. What
+      breaks it is word order -- lexical_overlap compares sets of content words, so the prediction is
+      invariant to any permutation of either side, 400 of 400 shuffles unchanged, and all three
+      argument swaps come back as entailment at overlap 1.00. Negation is read as parity rather than
+      scope, so 'Nobody left the building without a badge' and 'Somebody left without a badge' both
+      carry one, the parities match, and two negations cancel into entailment. Two structural limits
+      sit under all of it: neutral is unreachable once overlap reaches 0.5, since both branches above
+      the threshold return entailment or contradiction; and 13 of the 20 labels are recoverable from
+      the hypothesis alone, so 65% of the classifier's 75% needs no premise at all
+    uses_reference:
+      - tokenize
+      - content_words
+      - has_negation
+      - lexical_overlap
+      - predict_nli
+  - index: 2
+    slug: the_swing_is_the_templates_word_count
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Compare the zero-shot template `"This text is about {label}"` against `"The topic is {label}"` and `"{label}"` on 100 AG News headlines. Report accuracy swing.
+    zh: |
+      **中等。** 在 100 條 AG News 標題上，比較零樣本模板 `"This text is about {label}"` 與 `"The topic is {label}"`、`"{label}"` 的差別。回報準確率的擺動幅度。
+    verifies: >-
+      transformers and datasets are absent, so the scorer is the lesson's own predict_nli over 16
+      headlines written to the four AG News classes. The reported swing is 0.000 across all three
+      templates -- because the measurement is degenerate, not because templates do not matter. Every
+      label scores overlap 0.000 against every headline, since the class name never appears literally
+      and lexical overlap is the only evidence, so argmax returns whichever label is first in the list
+      and all three templates score 4/16: the World share of the corpus, which is chance. On five
+      headlines that do contain their class name the templates separate completely -- entailment runs
+      1/5, 4/5, 5/5 from the longest template to the shortest, an 80-point swing with no change to the
+      text. The mechanism is arithmetic: lexical_overlap divides by the hypothesis's content-word
+      count, so a template's ceiling is k/(k+e) for a k-token label and e added content words, giving
+      0.33, 0.50 and 1.00 for a one-token label with predict_nli's threshold at 0.50 between the first
+      two. Label length enters the same denominator, so Sci/Tech reaches 0.50 under 'This text is
+      about {}' and returns entailment where every one-token label maxes at 0.33 and returns neutral.
+      And the swing has no value until the decision rule is named: 0 points under argmax against 80
+      under the entailment threshold, same data, same templates
+    uses_reference:
+      - tokenize
+      - content_words
+      - lexical_overlap
+      - predict_nli
+  - index: 3
+    slug: one_wrong_word_can_never_fail_a_claim
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a RAG faithfulness checker: atomic-claim decomposition + NLI per claim. Evaluate on 50 RAG-generated answers with gold context. Measure false-positive and false-negative rates vs hand labels.
+    zh: |
+      **困難。** 做一個 RAG 忠實度檢查器：原子主張拆解 + 每條主張跑一次 NLI。在 50 筆有黃金上下文的 RAG 生成答案上評估。對照人工標註，量測誤判為真與誤判為假的比率。
+    verifies: >-
+      the NLI model is the lesson's own predict_nli rule and the evaluation set is 6 contexts, each
+      paired with a faithful answer and an unfaithful twin differing by exactly one content word -- 12
+      answers, balanced. Decomposed into atomic claims and checked claim by claim it returns 5 false
+      positives and 1 false negative, accuracy 0.500 on a balanced set, which is chance. Every false
+      positive is a substitution scoring at or above the threshold: 21 for 12 percent at 0.80, Chile
+      for Brazil at 0.50, 1852 for 1843 at 0.50, rejected for approved at 0.67, rose for fell at 0.75.
+      That is arithmetic rather than tuning -- lexical_overlap counts the claim's content words
+      present in the context, so a claim of c content words with one wrong word scores (c-1)/c, at
+      least 0.5 for every c from 2 up, so a single false word cannot fail a claim at any decomposition
+      granularity. Sweeping the threshold, error counts run 6, 4, 4, 3, 3 and never fall below 3:
+      false positives reach zero only at 0.9 and above, where 3 of the 6 faithful answers are
+      rejected. The decomposition the exercise leads with barely participates -- undecomposed accuracy
+      is identical at both ends of the sweep, and at 0.5 the split only trades one false positive for
+      one false negative
+    uses_reference:
+      - tokenize
+      - has_negation
+      - lexical_overlap

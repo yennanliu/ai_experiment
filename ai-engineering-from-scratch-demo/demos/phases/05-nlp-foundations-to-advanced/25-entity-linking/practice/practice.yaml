@@ -1,0 +1,92 @@
+lesson: 25-entity-linking
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/25-entity-linking/docs/en.md
+exercises:
+  - index: 1
+    slug: the_contexts_quote_the_knowledge_base
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement the prior+context disambiguator in `code/main.py` on 10 ambiguous mentions (Paris, Jordan, Apple). Hand-label the correct entity. Measure accuracy.
+    zh: |
+      **簡單。** 在 `code/main.py` 裡對 10 個有歧義的提及（Paris、Jordan、Apple）實作先驗+上下文的消歧器。手工標出正確實體。量測準確率。
+    verifies: >-
+      on main()'s own eleven cases the disambiguator scores 11 of 11 with the prior and 10 of 11
+      without. Hand-labelling a second set of eleven -- same entities, contexts written without
+      reusing the KB's wording -- gives 5 of 11 with the prior and 7 of 11 without. The lesson's
+      contexts quote the knowledge base: 'Paris is the capital of France and home to the Eiffel Tower'
+      shares 6 of the 9 tokens in Q90's description, and across the eleven cases the gold description
+      contributes 1 to 6 matching tokens. The prior's contribution changes sign between the two sets
+      -- it rescues one case on the quoting set and costs two on the paraphrase set -- so whether the
+      prior helps is a property of the eval. The one case it rescues is the one with no context signal
+      at all: 'Jordan scored 45 points against the Lakers' shares exactly one token with each of the
+      four Jordan descriptions, and that token is 'jordan', so all four Jaccard scores tie and the
+      prior returns the most popular entity. That popularity-only baseline scores 4 of 11 on both
+      sets, so on the paraphrase set the full disambiguator is one case above ignoring the context
+      entirely. And use_prior=False is a uniform prior rather than no prior -- it sets every candidate
+      to 1.0, making the score jac + 0.1 -- while an unrecognised mention returns (None, 0.0) with no
+      NIL
+    uses_reference:
+      - ALIAS_INDEX
+      - KB_DESC
+      - PRIORS
+      - tokenize
+      - disambiguate
+  - index: 2
+    slug: no_lexical_scorer_can_do_better_here
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Encode 50 ambiguous mentions with a sentence transformer. Embed each candidate's description. Compare embedding-based disambiguation to Jaccard context overlap.
+    zh: |
+      **中等。** 用 sentence transformer 編碼 50 個有歧義的提及。把每個候選的描述也嵌入。比較基於嵌入的消歧與 Jaccard 上下文重疊。
+    verifies: >-
+      sentence_transformers, transformers and torch are all absent, so the encoder arm cannot be
+      built; the rest of the lexical family can. On exercise 1's quoting set Jaccard, overlap count,
+      Dice and coverage-of-description all return 11 of 11 -- the choice of scoring function is
+      invisible. On the paraphrase set they land within one case of each other: 5 or 6 with the prior,
+      6 or 7 without. They agree because there is nothing to disagree about -- on 8 of the 11
+      paraphrase contexts no candidate description shares a single content token with the context once
+      the mention's own name is removed, so every lexical score is zero, every candidate ties, and the
+      prior decides. That is a bound on the whole family: any function of token overlap returns the
+      same ranking when the overlap is empty for every candidate. On the quoting set only 1 of 11 is
+      in that state. The encoder is the only arm that could differ, and the same eight cases say why
+      -- linking 'the United Center' to Chicago Bulls needs knowledge no token-overlap function has.
+      The KB caps the exercise anyway: ALIAS_INDEX holds 5 aliases over 14 entities, so 50 ambiguous
+      mentions must reuse five distinct disambiguation problems
+    uses_reference:
+      - ALIAS_INDEX
+      - KB_DESC
+      - PRIORS
+      - tokenize
+  - index: 3
+    slug: every_error_is_the_popularity_prior
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a 1k-entity domain KB (e.g. employees + products in your company). Implement NER + EL end-to-end. Measure precision and recall on 100 held-out sentences.
+    zh: |
+      **困難。** 建一個 1k 實體的領域知識庫（例如你公司的員工 + 產品）。端到端實作 NER + EL。在 100 個保留句子上量測精確率與召回率。
+    verifies: >-
+      the lesson ships no NER -- disambiguate(mention, context) requires the mention already found --
+      so end-to-end needs a component that is not in code/main.py, and the substitute is alias-string
+      matching over ALIAS_INDEX. Over 18 held-out sentences carrying 14 gold mentions the pipeline
+      scores precision 0.4000 and recall 0.2857. Recall is capped before linking begins: alias
+      matching finds 10 of 14 gold mentions and Microsoft, Berlin, Java and Amazon have no entry, so
+      0.7143 is the ceiling whatever the disambiguator does. Precision is destroyed by the missing NIL
+      -- disambiguate returns a candidate whenever the alias resolves, so all four mentions whose
+      entity is absent from the KB come back confidently linked. And all six errors on detected
+      mentions are the same answer: Q41421, Q28865, Q41421, Q90, Q312 and Q23 are precisely the
+      argmax-prior entity for their alias, because when the context shares no content token the score
+      is 0 + 0.1 * prior for every candidate. The detector produces 0 spurious mentions, so the recall
+      loss is entirely detection and the precision loss entirely linking -- one pair of numbers about
+      two components. And the requested KB is 71 times the shipped one, with ALIAS_INDEX and PRIORS
+      hand-written at 5 and 14 entries
+    uses_reference:
+      - ALIAS_INDEX
+      - KB_DESC
+      - PRIORS
+      - disambiguate

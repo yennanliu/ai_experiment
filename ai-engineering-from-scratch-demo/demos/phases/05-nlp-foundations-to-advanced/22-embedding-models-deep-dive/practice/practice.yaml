@@ -1,0 +1,92 @@
+lesson: 22-embedding-models-deep-dive
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/22-embedding-models-deep-dive/docs/en.md
+exercises:
+  - index: 1
+    slug: truncating_a_hash_is_not_matryoshka
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Encode 100 sentences with `bge-small-en-v1.5` at full dim (384), then at Matryoshka 128. Measure MRR drop on 10 queries.
+    zh: |
+      **簡單。** 用 `bge-small-en-v1.5` 以完整維度（384）編碼 100 個句子，再用 Matryoshka 128 維編碼一次。在 10 個查詢上量出 MRR 掉了多少。
+    verifies: >-
+      sentence_transformers, transformers and torch are all absent, so the encoder is the lesson's own
+      hash_embed at 256 dimensions over 40 sentences on 10 topics. MRR falls from 0.9500 to 0.6663
+      between 256 and 128 -- a drop of 0.2837, 29.9% relative -- and the number does not mean what the
+      exercise wants. Matryoshka is a training property: a nested loss makes the first k coordinates a
+      usable embedding. hash_embed has interchangeable dimensions, so cutting at k deletes every token
+      whose hash index is at or above k, and 236, 170, 108, 74, 56, 30 of 236 vocabulary types survive
+      at 256, 192, 128, 96, 64, 32. The curve measures bucket loss. Below 128 whole documents go with
+      it -- 0, 0, 2, 4, 6, 14 documents have no surviving token, and truncate_matryoshka returns those
+      un-normalised, so they score cosine 0.0 against every query. rank sorts (score, index) tuples in
+      reverse, so ties break by descending index and that part of the ranking is insertion order read
+      backwards. The full-width baseline is itself lossy: 236 types occupy 151 of 256 buckets, 61
+      buckets hold more than one token and 38 of those hold opposite signs which cancel in the sum.
+      Recall@10 tracks the same curve at 0.8000, 0.6250, 0.4500, 0.3250, 0.3000, 0.2500
+    uses_reference:
+      - tokenize
+      - hash_token
+      - hash_embed
+      - cosine
+      - truncate_matryoshka
+      - rank
+  - index: 2
+    slug: three_modes_are_one_mode_and_rrf_measures_consensus
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Compare BGE-M3 dense, sparse, and colbert on 500 passages from your domain. Which wins on recall@10? Does RRF fusion beat the best single mode?
+    zh: |
+      **中等。** 在你自己領域的 500 個段落上比較 BGE-M3 的稠密、稀疏與 colbert 三種模式。召回率@10 是哪一種贏？RRF 融合有贏過表現最好的單一模式嗎？
+    verifies: >-
+      BGE-M3 is not installed, so the three modes are built from the lesson's own parts -- hash_embed
+      plus cosine for dense, sparse_embed plus sparse_score for sparse, per-token max-similarity for
+      ColBERT -- over 40 passages on 10 topics. ColBERT wins at 0.8250 against 0.8000 for both others,
+      and RRF does not beat it: dense+sparse scores 0.8000 and all three scores 0.8000. The win is one
+      document -- 40 passages with 4 relevant per query means recall@10 moves in steps of 0.025, and
+      the gap is exactly one step. The three modes are also not three modes: hash_embed of a single
+      token is a unit vector on one coordinate, so ColBERT's max-similarity reduces to whether the
+      passage holds a token in the same bucket, and it agrees with sparse on the sign of the score for
+      353 of 400 query-passage pairs. RRF cannot repair that because it discards the scores -- at k=60
+      over 40 documents the weights run 0.01639 to 0.01, a 1.64x range, so a document ranked first by
+      one mode and last by the other scores 0.02639 and loses to one ranked fifth by both at 0.03077.
+      Two smaller things: main() fuses dense_ranked[:5] with sparse_scores[:5], and over truncated
+      lists the fusion scores 0.7500, worse than either input; and rrf_fuse consumes (score, index)
+      while returning (index, score), so feeding its output back reads each score as a document id
+    uses_reference:
+      - tokenize
+      - hash_embed
+      - cosine
+      - sparse_embed
+      - sparse_score
+      - rrf_fuse
+  - index: 3
+    slug: pareto_optimal_names_a_set_or_the_cheapest_model
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Run MTEB on three candidate models across your top-2 domain tasks. Report MTEB score, p99 latency on a 100-query batch, and $/1M queries. Pick the Pareto-optimal one.
+    zh: |
+      **困難。** 拿三個候選模型在你領域最相關的兩個任務上跑 MTEB。回報 MTEB 分數、100 個查詢批次的 p99 延遲，以及每百萬次查詢的成本。挑出柏拉圖最優的那一個。
+    verifies: >-
+      mteb is not installed and neither is any encoder, so the candidates are hash_embed at 256, 128
+      and 64 dimensions and the two domain tasks are MRR and recall@10 over exercise 1's corpus. Pick
+      the Pareto-optimal one has no answer under one task and a surprising answer under the other.
+      Under recall@10 -- 0.8000, 0.7750, 0.7000 -- quality falls monotonically with width while
+      latency and cost fall with it too, so no candidate dominates another and the frontier is all
+      three. Under MRR -- 0.9500, 0.9200, 0.9500 -- 64 dimensions ties 256 at a third of the latency,
+      dominates both others, and the frontier collapses to the cheapest model. The two tasks order the
+      candidates 256 = 64 > 128 and 256 > 128 > 64, because MRR reads only the first relevant hit and
+      recall@10 reads all four, so a mean over 'your top-2 tasks' is decided by which two. Two of the
+      three axes are one axis: dollars per million queries is seconds per query times a price, a
+      positive scalar multiple that reproduces the latency ordering exactly and can never change the
+      Pareto set. And p99 on a 100-query batch is a single order statistic -- the 99th of 100 sorted
+      samples -- moving about 9-11% across repeats, well inside the 200%+ gap between candidates, so
+      the axis separates them because this workload has no tail
+    uses_reference:
+      - hash_embed
+      - rank

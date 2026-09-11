@@ -1,0 +1,80 @@
+lesson: 17-chatbots-rule-to-neural
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/17-chatbots-rule-to-neural/docs/en.md
+exercises:
+  - index: 1
+    slug: the_anchor_costs_four_and_the_order_costs_four
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement the rule-based respond above with 10 patterns for a coffee-shop ordering bot. Test edge cases: double orders, modifications, cancellation, unclear intent.
+    zh: |
+      **簡單。** 把上面的規則式回應實作出來，為一家咖啡店的點餐機器人寫 10 條樣式。測試邊界情況：重複下單、修改訂單、取消、意圖不明。
+    verifies: >-
+      with 10 coffee-shop patterns over 26 labelled utterances covering the four edge cases the
+      exercise names, the lesson's regex.match scores 22 and regex.search scores 26. All four losses
+      are an intent the bot handles preceded by a word -- hi, actually, please, sorry -- and they land
+      on the catch-all or the greeting rather than on a wrong intent, because match anchors at
+      position zero. Switching to search trades the anchoring bug for an ordering one: moving the
+      greeting pattern first gives 25 and putting the single-item order before the two-item one gives
+      22, collapsing every double order to its first item. Under match that same reorder gives 18,
+      below either loss alone, because the two failures fall on different cases. And the lesson's own
+      PATTERNS ends with `.*`, which matches every string including the empty one, so `return "I don't
+      understand."` is unreachable -- no input tried produces it, and the catch-all answers 'Tell me
+      more about that.' instead. Per intent, double orders, unclear intent, price and greeting are all
+      100%
+    uses_reference:
+      - PATTERNS
+      - rule_based_respond
+  - index: 2
+    slug: accuracy_and_refusal_are_one_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Build a hybrid FAQ + LLM fallback. 50 canned FAQ entries for a SaaS product, LLM fallback with retrieval over the docs site. Measure refusal rate and accuracy on 100 real support questions.
+    zh: |
+      **中等。** 做一個「FAQ + LLM 後備」的混合式系統。為一款 SaaS 產品準備 50 條罐頭 FAQ，LLM 後備則在文件網站上做檢索。用 100 個真實客服問題量測拒答率與正確率。
+    verifies: >-
+      on 20 FAQ entries, 20 paraphrases and 10 unanswerable questions, the retriever returns zero
+      wrong canned answers at every threshold from 0.2 to 0.5, so right + refused totals 20 at all of
+      them: accuracy and refusal rate are one quantity read two ways. The threshold slides one into
+      the other -- at 0.2 the system answers 16 of 20 and refuses 5 of 10 unanswerable, at 0.3 it
+      answers 14 and refuses 9 -- and no setting does both, because the score distributions overlap:
+      answerable questions score Jaccard 0.125 to 0.714 and unanswerable ones 0.083 to 0.429. Past 0.3
+      tightening costs 5 correct answers and gains 0 refusals. Before any of that, is_destructive runs
+      first and its substring match on delete/cancel/charge/refund/transfer makes 3 of the 20 canned
+      answers unreachable -- cancel my subscription, request a refund, delete my account. And the arm
+      the refusal rate is measured against is a string: hybrid_respond's third branch returns '(would
+      call LLM agent for: ...)'
+    uses_reference:
+      - FAQ
+      - faq_respond
+      - is_destructive
+      - hybrid_respond
+      - token_set
+  - index: 3
+    slug: the_guard_blocks_every_benign_case_and_no_injection
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement the agent loop above with three tools (search, read-user-data, send-email). Run an evaluation with 50 test scenarios including prompt injection attempts. Report off-task rate, failed task rate, and any injection success.
+    zh: |
+      **困難。** 實作上面的代理迴圈，配三個工具（search、read-user-data、send-email）。用 50 個測試情境跑一次評估，其中要包含提示詞注入的嘗試。回報偏題率、任務失敗率，以及任何注入成功的案例。
+    verifies: >-
+      there is no agent loop and no tools: the lesson defines none of search, read-user-data or
+      send-email, and hybrid_respond's third branch returns the string '(would call LLM agent for:
+      ...)'. What can be evaluated is the one safety control in the file. Over 24 labelled scenarios
+      is_destructive scores precision 0.4545 and recall 0.2778, and by group it blocks 6 of 6 benign
+      scenarios, 5 of 5 plainly worded destructive ones, 0 of 8 reworded destructive ones and 0 of 5
+      prompt injections -- right on exactly one of the four. It is a substring test over five words,
+      so refundable contains refund, cancellation contains cancel, recharge and surcharge contain
+      charge, and undelete contains delete; and close my account, wipe all my data, revoke all api
+      keys and every injection avoid all five. Of the three numbers the exercise asks for, this
+      control speaks only to injection success, and it reports 5 of 5 before any model is involved.
+      The one group it gets right is the one its keyword list was derived from
+    uses_reference:
+      - is_destructive
+      - hybrid_respond

@@ -1,0 +1,109 @@
+lesson: 27-llm-evaluation-frameworks
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/27-llm-evaluation-frameworks/docs/en.md
+exercises:
+  - index: 1
+    slug: faithfulness_catches_none_of_the_ten
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Use RAGAS on 10 RAG examples with known hallucinations. Verify the faithfulness metric catches each one.
+    zh: |
+      **簡單。** 拿 10 個已知有幻覺的 RAG 例子跑 RAGAS。確認忠實度指標每一個都抓到了。
+    verifies: >-
+      ragas is not installed, so the substitute is the lesson's own faithfulness, which docs/en.md
+      Step 5 offers as the stdlib approximation of the RAGAS metric. Ten examples built as a context
+      sentence, a faithful answer, and that answer with one content token replaced by a false one are
+      all scored 1.00 -- hallucinated and faithful alike -- so the metric catches 0 of 10 at the
+      write-up's own CI threshold of 0.85 and no threshold in [0, 1] separates the two sets. The
+      mechanism is the 0.5 in faithfulness: a claim counts as supported when at least half its
+      non-stopword tokens appear in the context, and the corrupted claims share a mean 0.8404 and a
+      minimum 0.8000 of their tokens, clearing the bar by 0.3000 in the worst case while one swapped
+      token moves the ratio by only 0.1596 on average -- two more corruptions away from being flagged.
+      main() prints 'case 1 = hallucinated date -> g-eval drops, faithfulness partial' and case 1's
+      faithfulness is exactly 1.00, so the shipped interpretation contradicts the shipped number. The
+      sign is inverted where it matters: 'Marie Curie did not win the Nobel Prize in Physics in 1903'
+      against a context saying she won scores 1.00 because not is one token of nine and is absent from
+      the stop list, while a true paraphrase in different words scores 0.00. Over all 20 answers the
+      metric takes 1.0 as its only value, so a scorer returning 1.0 without reading anything agrees on
+      every case, and with one-sentence answers its range is the two-point grid {0.0, 1.0} anyway. The
+      doc's Step 1 signature faithfulness(answer, context, llm) with an NLI pipeline does not exist --
+      it raises TypeError: faithfulness() takes 2 positional arguments but 3 were given -- and
+      transformers is not installed either
+    uses_reference:
+      - faithfulness
+      - tokenize
+      - main
+  - index: 2
+    slug: the_judge_measures_brevity_not_correctness
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Hand-label 50 QA answers 0-1 for correctness. Score with G-Eval. Measure Spearman rho between judge and human.
+    zh: |
+      **中等。** 手工把 50 個問答答案的正確性標成 0-1。用 G-Eval 打分。量評審與人工之間的 Spearman rho。
+    verifies: >-
+      deepeval is absent, so GEval cannot be constructed and the substitute is the lesson's own
+      g_eval_correctness. Fifty invented answers built as 10 facts x 5 answer styles -- the gold
+      string alone, a correct full sentence, a correct paraphrase, a wrong value alone, a wrong value
+      in a full sentence, hand-labelled 1/1/1/0/0 for 30 correct against 20 incorrect -- give a
+      Spearman rho between judge and human of 0.0331 at p = 0.8196, against the lesson's own
+      calibration bar of rho > 0.7. Sweeping the threshold across the unit interval never rescues it:
+      the best reachable value is 0.4082 at 0.7 and above, and at 0.1 the correlation is negative at
+      -0.1117, so the shipped default of 0.5 is not the problem. The style means say what is being
+      measured: bare gold strings 1.00, correct sentences 0.30, correct paraphrases 0.00, and
+      one-digit-wrong values presented alone 0.80 -- eight of ten near-miss answers scored fully
+      correct while every true restatement in different words is scored fully wrong. The mechanism is
+      the denominator: g_eval_correctness scores the fraction of the actual answer's tokens found in
+      the expected string, and the expected string is 3 tokens, so adding true relevant words lowers
+      the score and deleting everything but the near-miss value raises it. Judge score correlates with
+      shortness at rho 0.5762, the inverse of the length bias docs/en.md warns about and stronger than
+      its correlation with being right. A baseline the exercise never computes, expected.lower() in
+      actual.lower(), scores rho 0.6667 with no rubric, threshold or model. And the shipped judge
+      never sees the question, though Step 3's GEval passes evaluation_params including INPUT: the
+      signature is g_eval_correctness(actual, expected, threshold=0.5), with no criteria and no
+      evaluation steps
+    uses_reference:
+      - g_eval_correctness
+      - tokenize
+  - index: 3
+    slug: three_of_four_metrics_cannot_see_the_regression
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a pytest CI gate with DeepEval. Intentionally regress the retriever. Verify the gate fails. Add bottom-quantile alerting via threshold check on the lowest 10%.
+    zh: |
+      **困難。** 用 DeepEval 做一個 pytest CI 關卡。故意讓檢索器退化。確認關卡會失敗。再對最低的 10% 加上門檻檢查，做出最低分位的警示。
+    verifies: >-
+      deepeval is absent, so FaithfulnessMetric and ContextualRelevancyMetric cannot be built and the
+      CI gate is the lesson's four metrics at the write-up's own Step 4 thresholds, faithfulness >=
+      0.85 and relevancy >= 0.7. Injecting k = 0..5 irrelevant chunks alongside the gold chunk over
+      three invented QA cases leaves the gate's verdict identical at both ends: it reports
+      ['relevancy'] on the healthy retriever and ['relevancy'] after the regression, because
+      answer-relevance is 0.3810 either way. Verify the gate fails is satisfied by a gate that was
+      already failing before the regression and that the regression never moves. Three of the four
+      metrics are blind by construction: answer_relevance(question, answer) is never handed the
+      retrieved chunks, and faithfulness and context_recall take a set union over the joined chunks,
+      which adding chunks can only grow -- across k = 0..5 faithfulness holds 1.0000, recall 1.0000
+      and relevance 0.3810 while only context_precision falls, 1.0000 to 0.1667. The suite does detect
+      total retrieval failure -- retrieving only distractors gives faithfulness 0.0000 and recall
+      0.0000 -- so it is degradation, the thing a CI gate exists to catch, that it cannot see. A
+      retriever returning the gold chunk three times scores faithfulness, precision and recall all
+      1.0000 and draws the same verdict as the healthy one. And the single responsive metric measures
+      string identity rather than retrieval quality: context_precision tests c in relevant_chunks, so
+      splitting the identical gold sentence into two halves loses no text and scores 0.0000 while
+      faithfulness and recall stay 1.0000. Bottom-decile alerting cannot be written at this size
+      either -- int(0.1 * n) is 0 for every n below 10, so the lowest-10% slice is empty on these
+      three cases and on main()'s three, and there is nothing to rank in any case because faithfulness
+      takes 1.0 as its only value across the suite. The doc's Step 2 signature
+      answer_relevance(question, answer, encoder, llm) raises TypeError: answer_relevance() takes 2
+      positional arguments but 4 were given
+    uses_reference:
+      - faithfulness
+      - answer_relevance
+      - context_precision
+      - context_recall
+      - tokenize
