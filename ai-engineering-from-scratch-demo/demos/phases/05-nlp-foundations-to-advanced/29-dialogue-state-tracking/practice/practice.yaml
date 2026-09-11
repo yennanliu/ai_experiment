@@ -1,0 +1,107 @@
+lesson: 29-dialogue-state-tracking
+phase: 05-nlp-foundations-to-advanced
+source: phases/05-nlp-foundations-to-advanced/29-dialogue-state-tracking/docs/en.md
+exercises:
+  - index: 1
+    slug: main_measures_dialogues_not_turns
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Build the rule-based state tracker in `code/main.py` for 3 slots (cuisine, area, price). Test on 10 hand-crafted dialogues. Measure JGA.
+    zh: |
+      **簡單。** 在 `code/main.py` 裡為 3 個槽位（cuisine、area、price）做出規則式狀態追蹤器。用 10 段手寫對話測試。量測 JGA。
+    verifies: >-
+      on ten invented, hand-labelled dialogues (32 turns) the shipped tracker scores 29/32 turns
+      (0.9062) and 8/10 dialogue-final states over the three slots the exercise names, while main()'s
+      own three dialogues score 3/3. The exercise names three slots but SLOT_EXTRACTORS ships four --
+      cuisine, area, price, people -- and dropping people can only raise an all-or-nothing metric,
+      which it does: 28/32 turns at four slots against 29 at three, the same 8/10 dialogues either
+      way. The shipped metric is not the one the doc defines: the doc calls JGA the fraction of turns
+      where every slot is correct and Step 4 zips per-turn state lists, but main() compares once per
+      dialogue against the final state only, on gold carrying 3 labels for 11 turns, so per-turn JGA
+      is not computable from the lesson's own data. That substitution puts the exercise's number on a
+      grid it cannot land on -- dialogue-final JGA over 10 dialogues moves in steps of 0.10, the doc
+      says to beat MultiWOZ's ~0.83, and the measured 0.80 sits one dialogue below 0.90 (at main()'s
+      n=3 the step is 33.3 points). The second of the doc's three update invariants is never executed
+      by the demo: the clear-on-negation branch fires 0 times across main()'s 11 turns -- in 'Never
+      mind the cuisine, any food is fine' extract_cuisine already returns 'any' and continue skips the
+      branch -- against 2 times across the 32 turns here. And is_correction is defined and never
+      called: update_state's source never mentions it, though 4 of 32 turns match a cue, so
+      corrections survive only because extraction overwrites unconditionally
+    uses_reference:
+      - SLOT_EXTRACTORS
+      - update_state
+      - is_negation
+      - is_correction
+      - main
+  - index: 2
+    slug: regeneration_reverts_the_corrections
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Same dataset with Instructor + Pydantic + a small LLM. Compare JGA. Inspect the hardest turns.
+    zh: |
+      **中等。** 同一份資料集改用 Instructor + Pydantic + 一個小型 LLM。比較 JGA。檢視最難的那幾輪。
+    verifies: >-
+      instructor, pydantic, openai, transformers and torch are all absent (find_spec returns None for
+      every one), so the Instructor + Pydantic arm cannot be built. What can be built is the
+      substitute the doc itself recommends -- 'always let the LLM regenerate the whole state from
+      history rather than incrementally updating, this naturally handles corrections' -- driven by the
+      lesson's own extractors, which is update_state(empty, ' '.join(history)). It scores 20/32 turns
+      and 4/10 dialogues against the incremental loop's 28/32 and 8/10, so the doc's claim is
+      backwards. The mechanism is that the extractors return the first canonical key that appears
+      anywhere in the string rather than the last value the user said: PRICE_WORDS is ordered cheap,
+      moderate, expensive, so on the history of the dialogue that says 'moderate price' and then 'on
+      second thought, make it expensive' extract_price returns 'moderate' against a gold of
+      'expensive'. Every dialogue the two arms disagree on (2, 4, 5, 9) lies inside the set carrying a
+      correction or negation cue (2, 4, 5, 7, 9); the seven the regeneration arm gets right are the
+      ones where nothing was ever taken back. The arm is also not reproducible across processes:
+      AREA_WORDS is a set and extract_area returns its first matching member, so a history naming two
+      areas resolves by iteration order -- pinned ascending the arm scores 20/32, pinned descending
+      22/32, while the incremental loop never sees two areas in one utterance and is unaffected. And
+      the pipeline the doc writes down is not the one it ships: its Step 2, 3 and 4 blocks call
+      is_negated, NEGATION_CLEARS, joint_goal_accuracy and render, and hasattr is False for all four.
+      Its RestaurantState schema declares five slots against SLOT_EXTRACTORS' four, adding day, which
+      no extractor can fill, so 'compare JGA' would compare two different metrics
+    uses_reference:
+      - SLOT_EXTRACTORS
+      - PRICE_WORDS
+      - NEGATION_CUES
+      - AREA_WORDS
+      - update_state
+      - is_correction
+  - index: 3
+    slug: there_is_no_confidence_to_route_on
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Implement both and route: rule-based primary, LLM fallback when rule-based emits <2 slots with confidence. Measure the combined JGA and inference cost per turn.
+    zh: |
+      **困難。** 兩種都實作並做路由：規則式為主，當規則式產出少於 2 個有信心的槽位時退回 LLM。量測合併後的 JGA 以及每輪的推論成本。
+    verifies: >-
+      nothing in code/main.py emits a confidence, so the exercise's trigger cannot be built as
+      written: extract_cuisine('...', confidence=True) raises TypeError: extract_cuisine() got an
+      unexpected keyword argument 'confidence', update_state returns a plain dict of values, and no
+      name in the module contains 'conf' or 'score'. The only readable quantity is the count of
+      non-None slots, and that sentence has two readings with no overlap. Counting the slots this
+      turn's extractors emit, the fallback fires on 21 of 32 turns (0.6562) and an oracle fallback --
+      the upper bound on any model, since none is installed -- lifts turn-JGA from 28/32 to 32/32.
+      Counting the slots the state holds after the turn, it fires on 0 of 32, because every dialogue's
+      opening utterance already fills two, so the combined JGA is the rule-only 28/32 exactly. Under
+      the reading that does fire the trigger is nearly uninformative: 18 of the 21 escalated turns
+      were already correct, a trigger precision of 0.1429, because slot count measures how much the
+      user said and not whether the extractor understood it. Its lowest-confidence bucket makes the
+      point -- of the 5 turns that emit nothing at all only 1 is wrong, the others being 'Sounds
+      good.', 'Yes, that one.' and the two negations, where emitting nothing is the right answer. The
+      combined JGA therefore measures the oracle, and 1 of the four repairs lands on a turn the router
+      never escalated because a repaired state carries forward. On cost only one arm is measurable:
+      update_state runs at roughly 4 microseconds per turn, so the routed cost is that plus 0.6562 of
+      an LLM call and the rule-based primary sheds at most 34.4% of the model traffic under one
+      reading and 100% of it, along with all of the benefit, under the other
+    uses_reference:
+      - SLOT_EXTRACTORS
+      - extract_cuisine
+      - update_state
