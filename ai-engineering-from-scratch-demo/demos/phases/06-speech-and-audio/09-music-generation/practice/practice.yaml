@@ -1,0 +1,90 @@
+lesson: 09-music-generation
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/09-music-generation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tempo_in_the_prompt_is_never_read
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It produces a "generative" chord progression + drum pattern as ASCII symbols — a music-gen cartoon. Play it back via any MIDI renderer if you want.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會用 ASCII 符號產出一段「生成式」和弦進行 + 鼓組節奏型 —— 一個音樂生成的簡筆漫畫。想聽的話可以丟進任何 MIDI 渲染器播放。
+    verifies: >-
+      it runs and makes four pieces of 8 chords and 128 drum steps, and two of the four prompts do not
+      arrive. 'at 128 bpm' and 'at 140 bpm' both come out at 120, because fake_generate scans
+      prompt_lower.split() for a token ending in 'bpm' and splitting on whitespace puts the number in
+      one token and the unit in another, so the matching token is the bare 'bpm', int('') raises
+      ValueError, and the except swallows it; written '128bpm' with no space it parses to 128. The key
+      detector tests f' {k}' as a substring, so a leading space is its only boundary: 'rock anthem at
+      140 bpm' is keyed A on the word 'at', 'an upbeat song' is A on 'an', and 'a slow groove' is G on
+      'groove'. The genre is chosen by dictionary order rather than by the prompt -- it walks pop,
+      ballad, jazz, rock, lofi and returns the first key appearing anywhere in the string, so 'lofi
+      rock ballad' is a ballad. The two tables also disagree: COMMON_PROGRESSIONS has a ballad that
+      DRUM_PATTERNS lacks, which silently falls back to the pop beat, and DRUM_PATTERNS has a trap
+      that no prompt can select, so across all 20 reachable pieces there are 4 distinct drum tracks
+      rather than 5. And nothing generates: fake_generate(prompt, rng=None) builds random.Random(0)
+      and never references it again, so 50 seeds produce 1 distinct output
+    uses_reference:
+      - fake_generate
+      - chord_progression
+      - drum_pattern
+      - COMMON_PROGRESSIONS
+      - DRUM_PATTERNS
+      - MAJOR_KEYS
+  - index: 2
+    slug: fad_on_four_clips_measures_four_clips
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Medium.** Install `audiocraft`, generate 10-second clips across 4 genre prompts with MusicGen-small, measure FAD against a reference genre set.
+    zh: |
+      **中等。** 安裝 `audiocraft`，用 MusicGen-small 針對 4 種曲風提示詞各生成 10 秒的片段，對照一組參考曲風量測 FAD。
+    verifies: >-
+      audiocraft, torch, torchaudio, frechet_audio_distance and laion_clap are all absent, and
+      code/main.py emits chord names and an ASCII drum grid rather than samples, so there is nothing
+      to embed -- but FAD is arithmetic and the arithmetic settles the exercise. FAD fits a Gaussian
+      to each set of VGGish embeddings and returns ||mu1-mu2||^2 + tr(S1 + S2 - 2*(S1 S2)^(1/2));
+      VGGish is 128-dimensional, so at N=4 each covariance has rank 3 of 128 and the matrix square
+      root of their product is degenerate. Drawing both sets from the same distribution, where the
+      true FAD is exactly 0, the estimator returns 269.7 at N=4, 186.6 at 16, 115.0 at 64, 33.2 at
+      256, 8.2 at 1024 and 2.1 at 4096. Against that bias a real difference is invisible: shifting one
+      set's mean by 0.1 in every dimension is a true FAD of 1.28, and at N=1024 it reads 9.7 -- of
+      which 8.2 is bias -- while at N=4 the same pair reads 285.2, inside the spread of two identical
+      distributions. Published FAD uses thousands of clips for this reason, and the exercise also
+      conflates two designs: four prompts with one clip each is four conditions of size one, not one
+      set of four, and FAD is a set statistic with no per-clip value
+    uses_reference:
+      - fake_generate
+  - index: 3
+    slug: timbre_is_not_in_the_input_space
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Using ACE-Step (or MusicGen-melody), generate three variations of the same tune with different timbre prompts. Compute CLAP similarity to the prompt to verify alignment.
+    zh: |
+      **困難。** 用 ACE-Step（或 MusicGen-melody），對同一段旋律搭配不同音色提示詞生成三個版本。計算與提示詞的 CLAP 相似度來驗證對齊程度。
+    verifies: >-
+      acestep, audiocraft, torch, laion_clap and transformers are all absent, so no model runs, but
+      the exercise can be answered against code/main.py because the thing it asks to vary is one the
+      parser does not read. fake_generate extracts a key, a genre and a bpm that never parses, so
+      'warm analog pop in C', 'bright digital pop in C' and 'muted felt pop in C' render to 1 distinct
+      piece, and three prompts differing only in tempo do the same. The whole output space is 20
+      pieces -- 4 keys times 5 genres with the tempo frozen -- carrying 20 chord sequences and 4 drum
+      tracks, so three variations can only ever be three of twenty and only if the prompts disagree
+      about key or genre. The alignment a CLAP score would verify is checkable without CLAP and
+      already broken: the only prompt-to-output relation is prompt -> (key, genre), it holds on all
+      four prompts that name a key, and on prompts that do not the substring matcher keys 'rock anthem
+      at 140 bpm' to A on 'at', 'an upbeat song' to A on 'an' and 'a slow groove' to G on 'groove'. A
+      similarity score would be scoring the parser, and a readable CLAP report is three numbers -- the
+      score, the score against a mismatched prompt, and the spread of both -- where here the
+      mismatched score equals the matched one because the pieces are identical
+    uses_reference:
+      - fake_generate
+      - chord_progression
+      - drum_pattern
+      - MAJOR_KEYS
+      - COMMON_PROGRESSIONS
