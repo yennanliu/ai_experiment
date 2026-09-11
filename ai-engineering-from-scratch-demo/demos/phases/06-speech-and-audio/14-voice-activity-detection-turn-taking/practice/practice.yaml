@@ -1,0 +1,100 @@
+lesson: 14-voice-activity-detection-turn-taking
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/14-voice-activity-detection-turn-taking/docs/en.md
+exercises:
+  - index: 1
+    slug: both_tiers_agree_on_every_chunk
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It simulates a speech + silence + speech + coughs sequence and tests three VAD tiers.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它模擬一段「語音 + 靜音 + 語音 + 咳嗽」的序列，並測試三層 VAD。
+    verifies: >-
+      the run prints two event lists under headings that claim a difference -- 'energy-only VAD turn
+      events (many false positives on cough)' and 'Silero-style VAD turn events (rejects cough)' --
+      and the two lists are identical element for element, both emitting START at 440 ms, END at 1480
+      ms, START at 2040 ms and END at 2800 ms, with the two detectors agreeing on 151 of 151 chunks.
+      There are no false positives in the first list and nothing was rejected in the second. The cough
+      is not rejected by the Silero-style tier at all: fake_silero_vad scores it 0.55, above the 0.5
+      the caller compares against, and the energy gate reads it at -9.1 dBFS, above the -40 dBFS
+      threshold, so both class it as speech. What blocks a START is TurnDetector's min_speech_ms = 250
+      against one 20 ms chunk, and both arms run the same state machine, so the guard the demo credits
+      to the model belongs to the layer underneath it. The confident branch is unreachable: 0.92
+      requires rms > 0.08 and not transient, transient requires duration < 0.03 -- every chunk is 320
+      samples at 16 kHz, 0.0200 s -- and a peak-to-peak span above 0.6, which every loud chunk has,
+      the narrowest speech chunk at 0.954 and the cough at 3.545, so the whole stream takes exactly
+      two probabilities, 0.02 and 0.55. main() also runs two detectors rather than the three tiers the
+      exercise names, no module-level name matching semantic, llm, word, text or transformer exists,
+      and the coughs are a single ('cough', 1) entry, 20 ms of a 3020 ms stream. Finally
+      fake_silero_vad never reads prev_state or its threshold=0.5 parameter -- both appear only in the
+      signature
+    uses_reference:
+      - synth_chunk
+      - energy_vad
+      - fake_silero_vad
+      - TurnDetector
+  - index: 2
+    slug: the_threshold_has_three_settings
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Install `silero-vad`, process a 5-min recording, tune threshold to minimize both first-word clips and false triggers. Report precision/recall.
+    zh: |
+      **中等。** 安裝 `silero-vad`，處理一段 5 分鐘的錄音，調整門檻值讓「第一個字被切掉」與「誤觸發」同時最小化。回報精確率／召回率。
+    verifies: >-
+      silero_vad, torch, torchaudio and onnxruntime are all absent and the reference tree ships no
+      recording of any length, so the tuning runs against fake_silero_vad, whose output takes two
+      values on this stream. Sweeping the threshold in hundredths over [0, 1] -- 101 settings --
+      produces exactly 3 distinct event lists: 0.00-0.02 gives one START and never an END, precision
+      0.000 recall 0.000 F1 0.000; 0.03-0.55 gives START, END, START, END at precision 1.000, recall
+      1.000, F1 1.000; and 0.56-1.00 gives no events at all, F1 0.000. The doc names 0.5 as the
+      default and 0.3 as 'sensitive' and both fall in the same band, so they are one setting, and the
+      'minimize both' the exercise asks for has no interior to search. The parameter is inert
+      regardless: fake_silero_vad never mentions threshold after its signature line and the caller
+      re-implements the comparison as silero_prob >= 0.5. First-word clipping is not on this dial
+      either -- speech begins at 200 ms and START fires at 440 ms, 240 ms clipped, identical at 0.3
+      and 0.5, because the delay is min_speech_ms = 250 -- and pre_roll_ms = 300 is assigned in
+      __init__ and never read in update(), so the demo ships the pitfall its own doc names, 'No
+      pre-roll buffer. First 200-300 ms of user audio lost.' The end-pointing delay is also one chunk
+      short of its setting: silence_hangover_ms is 500 and the measured gap from speech offset to END
+      is 480 ms, because silence_ms is compared after being incremented by 20 ms
+    uses_reference:
+      - synth_chunk
+      - fake_silero_vad
+      - TurnDetector
+  - index: 3
+    slug: you_cannot_beat_one_by_ten_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a mini turn-detector: Silero VAD + a 3-layer MLP on the last 10 words' embeddings (use sentence-transformers). Train on a hand-labeled turn-end dataset. Beat Silero-only by 10% F1.
+    zh: |
+      **困難。** 做一個迷你輪替偵測器：Silero VAD ＋ 一個吃最後 10 個詞嵌入的 3 層 MLP（用 sentence-transformers）。在手工標註的輪替結束資料集上訓練。F1 要比只用 Silero 高 10%。
+    verifies: >-
+      the target is stated relative to a baseline, and on the stream code/main.py ships the baseline
+      is F1 1.000 -- two gold turn ends, two predicted, no false positives -- so 'beat Silero-only by
+      10% F1' has no solution on the exercise's own fixture. A fixture carrying the failures the doc
+      names does have one: over 10880 ms with three hand-labelled turn ends at 900, 8280 and 9980 ms,
+      a clatter of 15 isolated 20 ms transients, and a turn split by a 640 ms pause, Silero-only
+      scores F1 0.750 with 3 true and 2 false positives, and clearing speech_ms on a silent chunk
+      while idle takes it to 0.857 with 1 false positive -- +10.7 points, the gain the exercise asks
+      for, from one line rather than a language model. The mechanism is that min_speech_ms is
+      cumulative rather than consecutive: update never clears speech_ms in the idle state, so 20 ms
+      transients accumulate across any amount of silence and the 13th fires a START at both spacings
+      tried, 14-chunk and 40-chunk gaps alike. The doc calls that guard a rejector of 'speech shorter
+      than 250 ms'; it rejects the first twelve coughs and accepts the thirteenth, and with the fix 40
+      isolated transients fire nothing. The residual error is the one an MLP is actually for -- the
+      640 ms mid-turn pause exceeds the 500 ms hangover so one turn is reported as two, and no counter
+      fixes it; a 700 ms hangover reaches F1 1.000 but the window is narrow, since at 900 ms every
+      predicted end falls outside the +/-700 ms scoring collar and F1 is 0.000. It cannot be solved
+      here in any case: sentence_transformers, torch, silero_vad and transformers are absent, and
+      synth_chunk returns Gaussian noise with no text anywhere in the module, so 'the last 10 words'
+      embeddings' has no input
+    uses_reference:
+      - synth_chunk
+      - fake_silero_vad
+      - TurnDetector
