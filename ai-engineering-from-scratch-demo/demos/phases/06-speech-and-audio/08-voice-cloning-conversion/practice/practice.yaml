@@ -1,0 +1,95 @@
+lesson: 08-voice-cloning-conversion
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/08-voice-cloning-conversion/docs/en.md
+exercises:
+  - index: 1
+    slug: step_three_recomputes_step_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Demonstrates the speaker-embedding swap by computing the cosine between two "speakers" pre and post swap.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會計算兩個「說話人」在交換前後的餘弦相似度，藉此示範聲紋嵌入的交換。
+    verifies: >-
+      Step 3 does not demonstrate a swap: it calls extract_content on Bob's wave, gets back the exact
+      dictionary key it started from, looks the original vector up by that key and passes it to
+      fake_tts(content, alice, 0.5) -- the same call Step 2 already made -- so wav_converted ==
+      wav_cloned element for element and the cosine Step 3 prints is Step 2's. The SECS it prints is a
+      function of mix and the two vector norms alone: fake_tts returns (1-mix)*content + mix*speaker
+      with ||speaker|| = 1.000 and ||content|| = 2.189, so SECS runs 0.1133 to 1.0000 across mix 0.1
+      to 1.0 while the content cosine runs 0.9987 to 0.0631 the other way. The demo prints 0.462 and
+      then quotes 'production ECAPA-TDNN on real clones lands SECS in 0.65 - 0.78', so its own number
+      is below the worst row of its own leaderboard, and matching the top row takes no model at all --
+      mix = 0.721 gives exactly 0.78. The speaker probe also cannot say no: extract_speaker sorts
+      three cosines and returns the largest with no threshold, and bob scores -0.0126 against alice's
+      0.4620 because the speaker vectors are independent Gaussians. And content_vector is SHA-256 of
+      the text, so the content channel has no metric structure: two different sentences score -0.1070
+      and deleting one character scores 0.0873, which is why Step 3 could recover its input exactly
+    uses_reference:
+      - speaker_vector
+      - content_vector
+      - fake_tts
+      - extract_content
+      - extract_speaker
+      - cosine
+  - index: 2
+    slug: one_dial_and_two_metrics_that_pull_apart
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Use OpenVoice v2 to clone your own voice. Measure SECS between reference and clone. Measure CER via Whisper.
+    zh: |
+      **中等。** 用 OpenVoice v2 複製你自己的聲音。量測參考音訊與複製結果之間的 SECS。再透過 Whisper 量測 CER。
+    verifies: >-
+      openvoice, torch, whisper, transformers, soundfile and sounddevice are all absent and there is
+      no microphone or audio file, so neither measurement can be made against a real model; against
+      this module both can be made exactly, and they are one measurement read in two directions.
+      fake_tts has one parameter, mix, and SECS is the cosine to the speaker half while content
+      fidelity is the cosine to the content half, so SECS runs 0.1133 to 1.0000 across mix 0.1 to 1.0
+      while the content cosine runs 0.9987 to 0.0631. There is no trade-off curve to explore because
+      there is no second parameter: at mix 0.9 the clone scores SECS 0.9726, above every row of the
+      lesson's own leaderboard, while its content cosine is 0.2934 and the right text is no longer
+      retrieved from 51 candidates. CER has no definition here at all -- content_vector is SHA-256, a
+      one-way function, so there is no pre-image to decode and no characters to score. Retrieval is
+      the nearest measurable thing and it is a Bernoulli rather than a rate: correct at mix <= 0.85
+      and wrong above, never partly right, because the failure a CER exists to catch -- a clone saying
+      something slightly different -- is exactly the failure a hash cannot have
+    uses_reference:
+      - speaker_vector
+      - content_vector
+      - fake_tts
+      - extract_content
+      - cosine
+  - index: 3
+    slug: there_is_no_audio_to_encode
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Apply SilentCipher watermark to 20 clones, run them through 128 kbps MP3 encode+decode, detect the payload. Report bit-accuracy.
+    zh: |
+      **困難。** 對 20 份複製結果套用 SilentCipher 浮水印，把它們送進 128 kbps 的 MP3 編碼＋解碼，然後偵測酬載。回報位元正確率。
+    verifies: >-
+      silentcipher, audioseal, torch, lameenc, pydub and soundfile are all absent, and that is the
+      smaller obstacle: a clone in this module is a 64-element vector. fake_tts mixes two
+      64-dimensional embeddings and the result has no sample rate, no duration and is never converted
+      to samples anywhere in the file, so an MP3 encoder has nothing to consume and the 32-bit payload
+      is written into 64 numbers, one bit per two samples. The 100% bit accuracy is structural:
+      detect_watermark takes the original wave as an argument and subtracts it, which is exactly what
+      a distributor does not have, so it recovers the payload at strength 0.003 and equally at 1e-15.
+      Once the difference is taken away the real margin appears -- against 16-bit PCM, whose step is
+      1/32767 = 3.05e-05, accuracy is 1.0000 at strength 0.003, 0.9406 at 1e-05 and 0.5766 at 1e-06,
+      and additive noise gives 0.9969 at 40 dB SNR and 0.5875 at 20 dB. The MP3 question answers
+      itself: the payload is a constant DC offset applied to every index sharing a residue mod 32, and
+      removing the mean of each residue class -- the minimum any transform codec does to a constant --
+      gives 0.5203, chance. The scheme could not survive 128 kbps MP3 even if there were audio to
+      encode
+    uses_reference:
+      - fake_tts
+      - content_vector
+      - speaker_vector
+      - watermark
+      - detect_watermark
+      - bit_accuracy
