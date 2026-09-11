@@ -1,0 +1,90 @@
+lesson: 10-audio-language-models
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/10-audio-language-models/docs/en.md
+exercises:
+  - index: 1
+    slug: the_projected_vectors_are_used_for_their_length
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` to see a toy projector pattern + fake LALM routing of (audio-embedding, text-tokens) → output tokens.
+    zh: |
+      **簡單。** 跑 `code/main.py`，看一個玩具版的投影器模式，以及假的 LALM 如何把（音訊嵌入、文字詞元）繞送成輸出詞元。
+    verifies: >-
+      the encoder half is right -- fake_audio_encoder(3.0) returns 150 frames of 1280 at exactly 50
+      frames per second, Whisper-large's encoder rate and width -- and what happens after it is not.
+      main() projects 8 of those 150 frames, 5.33% of the clip, and that is a compute budget rather
+      than a choice: the pure-Python matmul runs at roughly 0.22 s per frame, so the whole 3-second
+      clip would take about 34 s against the 1.8 s the demo spends. The 32768 numbers it computes are
+      then used for exactly one thing, their length: Step 3 calls
+      interleave_with_text(list(range(len(projected))), text_tokens), so every AUDIO payload in the
+      sequence is an int index and the 4096-dimensional vectors are discarded on the line after they
+      are printed -- the one seam the lesson exists to show, projected audio entering the LLM's
+      embedding space, is the seam left unconnected. interleave_with_text also does not interleave: it
+      returns the audio list followed by the text list, so the 13-item sequence changes kind 1 time
+      where an interleaving would change 12. And the shipped projector is 23.8% of the one the doc's
+      own Step 2 prints -- one Linear instead of two, ReLU instead of GELU, no bias, 5.24 M parameters
+      against 22.03 M -- while calling random.seed(1) on the global module, so a caller's own random
+      stream does not survive the call
+    uses_reference:
+      - fake_audio_encoder
+      - projector
+      - interleave_with_text
+      - fake_llm_answer
+  - index: 2
+    slug: a_hundred_items_cannot_reach_the_published_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Score Qwen2.5-Omni-7B on 100 MMAU-Pro speech items. Compare to the paper's reported number.
+    zh: |
+      **中等。** 在 100 題 MMAU-Pro 語音題上為 Qwen2.5-Omni-7B 計分。和論文回報的數字比對。
+    verifies: >-
+      transformers, torch, datasets, torchaudio and accelerate are all absent and MMAU-Pro is not
+      here, so the scoring cannot run; the comparison can, and it settles the exercise before any
+      model is loaded. This is the D11 scaled-down run: an 1800-item pool per model, each reproducing
+      its published rate to within 0.022 pp, sampled 4000 times at n=100. 57.4% is not on the grid --
+      a hundred items move accuracy in steps of exactly 1.00 pp, so the paper's figure is unreachable
+      by construction and the nearest returnable scores are 57 and 58. The interval is wider than the
+      whole table: at p = 0.574 the 95% interval is [47.7, 67.1], 19.4 pp wide, against an overall
+      column spanning 7.8 pp from Gemini 2.5 Pro's ~60% to Qwen2.5-Omni-7B's 52.2%, so the confidence
+      interval is 2.5x the entire spread it would have to resolve. Sampling agrees: over 4000 draws of
+      100 items the five models come back in published order 6.9% of the time, the best model is
+      picked 57.6% of the time, and Qwen's own overall spans 43.0-62.0% across 95% of draws against a
+      published 52.2. From n = 2 z^2 p(1-p) / (p1-p2)^2, separating Qwen2.5-Omni-7B from Gemini 2.5
+      Pro takes 311 items, three times the exercise's hundred, and separating it from GPT-4o Audio 0.3
+      pp away takes 212,951, which is 118x the whole benchmark. The same arithmetic reaches the doc's
+      own headline claim that multi-audio is barely above random: distinguishing the quoted 26.5% from
+      the 25% chance line needs 3,326 items, 1.8x all of MMAU-Pro, so the claim is almost certainly
+      true and MMAU-Pro cannot be what establishes it
+  - index: 3
+    slug: neither_end_of_the_projector_fits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a minimal audio-captioning baseline: BEATs encoder + 2-layer projector + frozen Llama-3.2-1B. Fine-tune only the projector on AudioCaps. Compare to SALMONN on Clotho-AQA.
+    zh: |
+      **困難。** 打造一個最小的音訊字幕描述基準線：BEATs 編碼器 + 2 層投影器 + 凍結的 Llama-3.2-1B。只在 AudioCaps 上微調投影器。在 Clotho-AQA 上和 SALMONN 比較。
+    verifies: >-
+      transformers, torch, peft, datasets and soundfile are all absent, so no fine-tune runs, but the
+      shapes check exactly and they are what the exercise turns on: the projector the lesson hands you
+      does not connect the two components the exercise names, at either end. The doc's Step 2 is
+      Linear(1280, 4096) -> GELU -> Linear(4096, 4096), 22.03 M parameters, while BEATs emits 768
+      dimensions and Llama-3.2-1B's hidden size is 2048, so audio_dim is 1.67x too wide and llm_dim
+      exactly 2x too wide; the projector those two components actually need is 5.77 M, making the
+      doc's specification 3.82x oversized, and code/main.py ships 5.24 M in a single layer where the
+      exercise asks for two. Nothing checks a shape: a 768-wide BEATs frame at the default
+      audio_dim=1280 raises IndexError because the loop indexes f[j] past the end of the frame, while
+      audio_dim=768 works and returns 4096-wide vectors that a 2048-wide Llama cannot consume, with no
+      error at all -- one mismatch crashes and the other is the one that would reach training. The
+      comparison also has no shared metric: the exercise text names AudioCaps, which is audio
+      captioning scored with CIDEr or SPIDEr, and Clotho-AQA, which is audio question answering scored
+      with accuracy, so there is no number both sides produce. What the design does buy is measurable:
+      a correctly shaped projector is 0.4670% of a frozen 1.24 B-parameter Llama-3.2-1B, so fp32 Adam
+      at 12 bytes per trainable parameter is 69.3 MB of optimizer state against 14.8 GB for a full
+      fine-tune
+    uses_reference:
+      - projector
