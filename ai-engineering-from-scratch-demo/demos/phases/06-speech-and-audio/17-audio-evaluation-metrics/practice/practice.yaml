@@ -1,0 +1,96 @@
+lesson: 17-audio-evaluation-metrics
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/17-audio-evaluation-metrics/docs/en.md
+exercises:
+  - index: 1
+    slug: the_one_metric_that_is_not_normalised
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Easy.** Run `code/main.py`. Compute WER / CER / EER / SECS / FAD-ish / MMAU-ish on toy inputs.
+    zh: |
+      **簡單。** 跑 `code/main.py`。在玩具輸入上算 WER／CER／EER／SECS／近似 FAD／近似 MMAU。
+    verifies: >-
+      replaying main()'s random stream in order reproduces every printed figure -- EER 0.10% at
+      threshold 0.661, SECS 0.644, FAD-like 1.748 -- so every divergence below is a divergence from
+      the definition and not from the demo, and four of the six metrics diverge. cer never normalises
+      although wer does and the file's own takeaway says to: on the doc's own Step 1 example, 'Please
+      turn on the lights.' against 'please turn on the light', it scores 0.1154 raw against 0.0400
+      normalised, 2.9x, because the capital P and the trailing full stop are both scored as character
+      errors and the stop is in the denominator too. That same example is quoted with the wrong
+      answer: Step 1 says jiwer returns ~0.17, while one substitution over a five-word reference is
+      0.2000, which is what the lesson's own wer returns. embedding_fad_like is the square root of a
+      diagonal FAD -- it keeps only per-dimension variance, so two blocks matched to 4.6e-17 in
+      per-dimension mean and 1.3e-15 in per-dimension variance and differing only in correlation,
+      0.036 against 0.896 mean absolute off-diagonal, score 0.000000 under it and 6.07 under the
+      published formula, and on main()'s own data it prints 1.748 where the real FAD is 15.608, beside
+      a published 4.5 it is compared with. SECS is pinned by construction below the target printed
+      next to it: the clone is ref + noise at equal variance, so its expected cosine is 1/sqrt(2) =
+      0.7071 against the stated '> 0.75 for recognizable clone', and reaching 0.75 needs the noise at
+      most 0.8819x the signal while more dimensions only tighten the estimate around 0.7071. And 100
+      same against 500 different pairs puts EER on a 0.10 pp grid, on which 2 of the 3 EER figures in
+      the file's own benchmark table -- ECAPA at 0.87% and ASVspoof 5 at 7.23% -- do not land
+    uses_reference:
+      - wer
+      - cer
+      - normalize
+      - eer_from_scores
+      - cosine
+      - embedding_fad_like
+  - index: 2
+    slug: the_ten_per_cent_flag_is_a_length_threshold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Build a TTS round-trip WER harness. Run your Kokoro or F5-TTS output through Whisper. Compute WER over 50 prompts. Flag prompts with WER &gt; 10%.
+    zh: |
+      **中等。** 做一套 TTS 繞一圈的 WER 工具。把你的 Kokoro 或 F5-TTS 輸出丟給 Whisper。在 50 個提示詞上算 WER。把 WER &gt; 10% 的提示詞標記出來。
+    verifies: >-
+      kokoro, f5_tts, whisper, torch, transformers, soundfile and jiwer are all absent and no audio
+      ships anywhere in the reference tree, so the synthesise-and-transcribe arm cannot run; the
+      harness around it can, scored with the lesson's own wer, and the harness is where the exercise
+      decides itself. The 'WER > 10%' flag is not a quality threshold but a length threshold: a prompt
+      of N reference words has WER on the grid 1/N, so the flag fires on a single word error whenever
+      1/N > 0.10, and over 50 prompts of 4 to 12 words 31 of 50 are short enough that 'over 10%' and
+      'not perfect' are the same predicate, while for the other 19 it quietly becomes 'at least two
+      errors'. At a 2% per-word error rate the harness flags 3 prompts while 6 contain an error at
+      all. Two different numbers are also both called 'WER over 50 prompts': pooling edits over all
+      words gives 0.0646 at a 5% per-word rate where averaging the per-prompt rates gives 0.0700, and
+      at 2% they are 0.0167 and 0.0163, because the macro average weights a four-word prompt like a
+      twelve-word one and the exercise does not say which it wants. And 50 prompts is only 418
+      reference words, so at the measured corpus WER the binomial standard deviation is 0.63 pp and
+      the 95% interval is +/-1.23 pp -- two systems a point apart are one sample
+    uses_reference:
+      - wer
+      - normalize
+  - index: 3
+    slug: fifty_items_is_wider_than_the_whole_table
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Score your Lesson 10 LALM choice on MMAU-Pro speech + multi-audio subsets (50 items each). Report per-category accuracy and compare with the published number.
+    zh: |
+      **困難。** 拿你在單元 10 選的音訊語言模型，在 MMAU-Pro 的語音 ＋ 多音訊子集上評分（各 50 題）。回報各類別準確率，並與已發表的數字比較。
+    verifies: >-
+      no LALM is installed and MMAU-Pro is not here, so no model is scored, but 'compare with the
+      published number' is arithmetic and the arithmetic settles the exercise; the published numbers
+      are parsed straight out of Lesson 10's own benchmark table rather than retyped. A 50-item
+      accuracy cannot separate any two rows of it: at the published 52.2% the binomial standard
+      deviation over 50 items is 7.06 pp and the 95% interval is +/-13.85 pp, spanning 38.4% to 66.0%,
+      while the whole table spans 7.8 pp from Gemini 2.5 Pro at 60.0 to Qwen2.5-Omni-7B at 52.2 -- the
+      interval on one sample is 3.6x the entire published spread. Sampling 50 items for each of the
+      five models at their published rates 5000 times, the published order comes back 5.2% of the time
+      against 0.83% for a shuffle, and the best model is picked 47.2% of the time against 20% for a
+      coin. 50 items also puts accuracy on a 2.0 pp grid, and all 11 of the exactly reported figures
+      in Lesson 10's table fall between the rungs -- the only entries that land on it are the four
+      written with a tilde, which were already rounded. Three of the four published multi-audio
+      numbers are below chance as well: the subset is 4-way multiple choice so 25.0% is the floor, and
+      Gemini 2.5 Pro at 22.0, Gemini 2.5 Flash at 21.2 and Qwen2.5-Omni-7B at 20.0 all sit under it.
+      And mmau_accuracy fails silently on a length mismatch, zipping the two lists and dividing by
+      len(predictions), so ten predictions against five golds score 0.5 while five against ten score
+      1.0
+    uses_reference:
+      - mmau_accuracy

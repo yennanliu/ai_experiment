@@ -1,0 +1,96 @@
+lesson: 06-speaker-recognition-verification
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/06-speaker-recognition-verification/docs/en.md
+exercises:
+  - index: 1
+    slug: three_hundred_pairs_not_one_hundred
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Builds synthetic "speakers" (different tone profiles), enrolls, computes EER on a 100-pair trial list.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會建出合成的「說話人」（不同的音色輪廓）、做註冊，並在一份 100 組配對的試驗清單上算 EER。
+    verifies: >-
+      the trial list is 300 pairs, not the 100 the exercise names: five speakers with five utterances
+      each give 5 * C(5,2) = 50 same-speaker and C(5,2) * 25 = 250 different-speaker trials, and the
+      EER is 0.00% at threshold 0.9888. At those counts false rejects move in steps of 1/50 = 2.00 pp
+      and false accepts in 1/250 = 0.40 pp, so the reachable EERs are the multiples of 0.20 pp and not
+      one of the five rows in the lesson's own leaderboard -- 0.39, 0.42, 0.65, 0.87, 3.10 -- lands on
+      that grid. The printed explanation is also not the reason: main() says the speakers are
+      near-orthogonal four lines after printing a different-speaker mean cosine of 0.558, which is 56
+      degrees from orthogonal. What gives 0% is the margin -- lowest same-speaker score 0.9888 against
+      highest different-speaker 0.7732, a gap of 0.2156 -- because a speaker's five utterances are one
+      deterministic waveform plus independent Gaussian noise, with no session or channel variation at
+      all. The means the demo prints do not predict the EER either: at noise 0.2 they converge to
+      0.999 and 0.989, a gap of 0.011 against 0.437 as shipped, and the EER is still 0.00%; at 0.5 it
+      is 11.60%. Dropping MFCC c0 from both halves leaves EER at 0.00% and lowers the
+      different-speaker mean to 0.397, while keeping only c0 gives 49.60%, which is chance
+    uses_reference:
+      - tone_mix
+      - embed_mfcc_stats
+      - cosine
+      - eer
+      - l2_normalize
+  - index: 2
+    slug: plda_has_four_dimensions_to_learn_from
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Use SpeechBrain ECAPA on 30 VoxCeleb1 utterances (5 speakers × 6 each). Compute EER with cosine vs PLDA.
+    zh: |
+      **中等。** 在 30 句 VoxCeleb1 語句（5 位說話人 × 每人 6 句）上使用 SpeechBrain 的 ECAPA。用餘弦相似度與 PLDA 分別算 EER。
+    verifies: >-
+      speechbrain, torch, torchaudio and pyannote are all absent and VoxCeleb1 is not here, so the
+      ECAPA half cannot run; the half that decides the exercise is about the sample size the exercise
+      itself names. PLDA is a two-covariance model, so its within-speaker scatter is built from N - S
+      independent residuals and its between-speaker scatter from S - 1: 30 utterances of 5 speakers
+      give ranks of at most 25 and 4 whatever the embedding is, and scoring needs the within-class
+      matrix inverted. On the lesson's own 26-dimensional embedding the scatter is rank 25, one short,
+      with condition number 6.0e+16; numpy.linalg.inv returns a matrix rather than raising, and the
+      scores it produces give EER 69.67% against cosine's 1.22% -- worse than the 50% a coin would
+      score, failing silently, which is the only way a rank deficiency can fail. For ECAPA's
+      192-dimensional embedding the same arithmetic gives rank 25 in 192 dimensions, 13% of the space.
+      Four times the data fixes the inversion -- at 100 utterances the scatter is full rank 26/26, the
+      condition number falls to 2.2e+03 and PLDA scores 2.12% against cosine's 0.96% -- but
+      rank(between) stays 4 at every sample size, because it counts speakers and not utterances.
+      PLDA's whole model is a speaker subspace, so more recordings cannot help it; only more speakers
+      can, and the exercise fixes that number at five
+    uses_reference:
+      - tone_mix
+      - embed_mfcc_stats
+      - cosine
+      - eer
+  - index: 3
+    slug: the_whole_error_fits_inside_the_collar
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Build the full enroll → diarize → verify pipeline with `pyannote.audio`. Evaluate DER on AMI dev set.
+    zh: |
+      **困難。** 用 `pyannote.audio` 打造完整的註冊 → 語者分段標記 → 說話人驗證管線。在 AMI 開發集上評估 DER。
+    verifies: >-
+      pyannote, torch, torchaudio and speechbrain are absent and AMI is not here, so this is the D11
+      scaled-down run, built to the exercise's own three stages: enroll one clean utterance per voice
+      through embed_mfcc_stats; diarize with an energy VAD and 0.5 s windows slid inside the speech
+      regions only; verify each window against every enrolled speaker with the lesson's cosine. DER is
+      then scored at 10 ms against the NIST definition -- missed speech plus false alarm plus
+      confusion over reference speech time. It works: DER 0.0134, being 0.13% missed plus 1.21% false
+      alarm plus 0.00% confusion, every window verified against the right model. That number is not
+      the answer, because two conventions the exercise does not mention move it further than the
+      pipeline does. Scored with the standard 0.25 s forgiveness collar the same hypothesis scores
+      0.0000: all of the error lies within a quarter-second of a turn boundary, exactly where a
+      sliding window must straddle two speakers, so 'report DER' has two answers, 1.34% and 0.00%, for
+      one segmentation, and the literature quotes AMI both ways. And DER requires an assignment of
+      hypothesis labels to reference speakers: enrolment is what makes these labels named, while a
+      clustering diarizer -- which is what pyannote is -- produces anonymous clusters, and over the
+      six permutations of three labels this same hypothesis scores from 0.0134 to 1.0121, a range
+      wider than the metric itself. Of enroll, diarize and verify, code/main.py ships the last stage:
+      embeddings and a trial list, with no VAD, no change detection, no clustering, no overlap
+      handling and no DER
+    uses_reference:
+      - tone_mix
+      - embed_mfcc_stats
+      - cosine

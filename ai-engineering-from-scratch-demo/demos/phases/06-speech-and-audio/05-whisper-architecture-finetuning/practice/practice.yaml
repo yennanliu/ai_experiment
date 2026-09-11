@@ -1,0 +1,90 @@
+lesson: 05-whisper-architecture-finetuning
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/05-whisper-architecture-finetuning/docs/en.md
+exercises:
+  - index: 1
+    slug: the_frame_count_contradicts_the_line_below_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It tokenizes a Whisper-style prompt, computes decoded shape budgets, and prints the chunk schedule for a 10-minute clip.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會對一段 Whisper 風格的提示詞做分詞、計算解碼後的形狀預算，並印出一段 10 分鐘片段的分塊排程。
+    verifies: >-
+      the three prompts are right and the other two things main() prints are not. Step 2 disagrees
+      with its own next line: encoder_frames(30.0) returns 2998 and the sentence below it says Whisper
+      pads to 3000 frames. The sentence is right -- a centred mel front end gives seconds*sr/hop
+      exactly -- so the un-centred 1 + (samples-400)//hop is two frames short at every duration, 98
+      against 100, 998 against 1000, 2998 against 3000. Two frames is 20 ms, and both numbers are
+      printed four lines apart. Step 4's Turbo row is produced by overwriting the decoder with an
+      encoder: `if name == "Turbo": dec = enc` prints 78.7 M where four decoder layers, which also
+      carry cross-attention, are 104.9 M, and the loop computes the right value one line earlier and
+      discards it. Restoring it moves the total from 778.2 M to 804.4 M against a published 809 M --
+      from 3.8% low to 0.6% low, where the unhacked Large-v3 row sits at 1538.7 M against 1550 M. Two
+      smaller things in the same function: transformer_params takes n_heads and never reads it, and
+      its embedding term charges 3000 rows of audio positional embedding (3.84 M at d=1280) where Step
+      2's own closing line says the encoder sees 1500 tokens after the stride-2 convolution (1.92 M)
+    uses_reference:
+      - build_prompt
+      - encoder_frames
+      - transformer_params
+      - LANG
+  - index: 2
+    slug: the_schedule_costs_nineteen_points_of_wer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Install `faster-whisper`, transcribe a 10-minute podcast, compare WER against a human transcript. Try `language="auto"` vs forced `language="en"`.
+    zh: |
+      **中等。** 安裝 `faster-whisper`，轉錄一段 10 分鐘的 podcast，跟人工轉錄稿比對 WER。試試 `language="auto"` 對上強制指定 `language="en"`。
+    verifies: >-
+      faster_whisper, ctranslate2, torch, transformers and soundfile are all absent, and the reference
+      tree holds no podcast and no human transcript, so the transcription cannot run. What the
+      transcription would be wrapped in can, and it carries the answer: the chunk schedule main()
+      ships puts a WER floor of 0.1913 on a 10-minute clip with a perfect transcriber. Over a 600 s
+      reference of 1500 timed words, chunked on chunk_schedule(600, 30, 5), transcribed exactly right
+      and concatenated, the hypothesis runs to 1787 words and scores 0.1913 against Lesson 04's wer --
+      this lesson ships no metric of its own. Dropping each chunk's leading 5 s scores 0.0000. The
+      cause is arithmetic: 24 chunks of 30 s stepping by 25 s decode 715 s of audio for a 600 s clip,
+      19% more than exists, and the extra 115 s is speech transcribed twice. The overlap is deliberate
+      and right; what is missing is any way to undo it, because chunk_schedule returns 2-tuples of
+      (start, end) and nothing else, so no caller can tell which part of a chunk is the overlap
+      without re-deriving stride_s. The other half of the exercise cannot be posed against this code
+      at all: build_prompt('auto') raises KeyError: 'auto', since LANG holds only en, fr and ja and
+      the builder indexes it directly, so the forced arm is the only arm the lesson can express -- and
+      the doc's own Pitfalls section already gives the verdict the comparison is meant to reach
+    uses_reference:
+      - chunk_schedule
+      - build_prompt
+      - LANG
+  - index: 3
+    slug: two_hours_at_two_epochs_is_sixty_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Using HF `datasets`, pick a language Whisper struggles with (e.g., Urdu), fine-tune Medium with LoRA for 2 epochs on 2 hours, and report WER delta.
+    zh: |
+      **困難。** 用 HF 的 `datasets`，挑一個 Whisper 表現不好的語言（例如烏爾都語），用 LoRA 在 2 小時的資料上微調 Medium 兩個 epoch，並回報 WER 的變化量。
+    verifies: >-
+      datasets, transformers, peft and torch are all absent, so no fine-tune runs here; the budget
+      computes exactly from the lesson's own lora_params and transformer_params, and the budget is the
+      finding. Whisper pads every clip to one 30 s window, so 2 hours is 240 examples, 2 epochs is 480
+      forward passes, and at batch 8 the run the exercise specifies is 60 gradient updates for a 3.146
+      M-parameter adapter. lora_params also undercounts by exactly one third: it charges n_layers * 2
+      * per_block, one attention block per encoder layer and one per decoder layer, but a Whisper
+      decoder layer carries two, self and cross, so the right count is three per layer pair -- 4.719 M
+      against the printed 3.146 M, a ratio of exactly 3/2. Step 5's headline claim, that LoRA 'reduces
+      trainable params 100x+', is true and is not the number: against Medium's own printed total of
+      761.1 M the adapter is 242x smaller and 0.41% of the model, or 161x with the cross-attention
+      adapters counted, and neither figure appears in the output. The same ratio is what the method
+      buys in bytes -- fp32 Adam keeps a master copy and two moments, 12 bytes per trainable
+      parameter, so a full fine-tune needs 9.1 GB of optimizer state against the adapter's 37.7 MB,
+      and the adapter ships as 12.6 MB of weights. The exercise's own numbers pull against each other:
+      2 hours and 2 epochs is a sample size sized for a full fine-tune's cost, applied to the method
+      whose point is not having it
+    uses_reference:
+      - lora_params
+      - transformer_params

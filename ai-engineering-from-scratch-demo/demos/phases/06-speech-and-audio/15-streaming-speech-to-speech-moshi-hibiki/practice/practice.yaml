@@ -1,0 +1,110 @@
+lesson: 15-streaming-speech-to-speech-moshi-hibiki
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/15-streaming-speech-to-speech-moshi-hibiki/docs/en.md
+exercises:
+  - index: 1
+    slug: two_streams_that_never_touch
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It simulates the two-stream + inner-monologue architecture symbolically.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它以符號方式模擬雙串流 ＋ 內心獨白的架構。
+    verifies: >-
+      the loop runs -- 25 frames, 25 x 8 user codebooks, 25 x 8 Moshi codebooks, 25 text tokens over
+      2000 ms of simulated audio at 12.5 Hz -- and every arrow the doc draws between the three streams
+      is missing. The user stream is one token vector repeated 25 times: fake_mimi_encode seeds its
+      RNG on int(mean|x| * 1000), and the mean absolute value of a 0.15-amplitude sine is 0.15 * 2/pi
+      = 0.09549 whatever its frequency, so every frame of simulate_user_speech seeds on 95 and the 25
+      frames yield 1 distinct vector -- the 220 Hz sweep rising 20 Hz a frame is erased by the
+      encoder. The user stream also never reaches either generator: depth_transformer seeds on
+      len(context_user_mimi) + len(context_moshi_mimi) and inner_monologue_next_token returns
+      f'tok_{len(text_so_far)}', so both read lengths and neither reads a value, and replacing the
+      audio with silence or with Gaussian noise leaves moshi_mimi and moshi_text byte-identical while
+      user_mimi does change. The frame index is the only input Moshi has. The inner monologue is a
+      parameter that is never read: context_text is the first argument of depth_transformer and does
+      not appear in its body, and user_mimi_stream is the second argument of
+      inner_monologue_next_token and does not appear in its, so the doc's central claim for the design
+      is the one arrow the simulation drops. And the depth transformer is not one -- the doc says the
+      8 codebooks have inter-codebook dependencies and are predicted sequentially, while the body
+      draws them in a single list comprehension from one RNG with no conditioning of codebook k on
+      k-1. The same main() prints its realtime target as 'target: &lt; 80 ms', an HTML escape that
+      survived into a string literal
+    uses_reference:
+      - simulate_user_speech
+      - fake_mimi_encode
+      - depth_transformer
+      - inner_monologue_next_token
+      - main
+      - CODEBOOKS
+      - FRAME_MS
+      - SAMPLE_RATE
+  - index: 2
+    slug: the_stopwatch_has_no_start
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Pull Moshi from HuggingFace, run the server, test one conversation. Measure wall-clock latency from end-of-user-speech to start-of-Moshi-response.
+    zh: |
+      **中等。** 從 HuggingFace 拉下 Moshi，把伺服器跑起來，測一段對話。量測從使用者說完到 Moshi 開始回應之間的實際牆鐘延遲。
+    verifies: >-
+      moshi, torch, transformers, sounddevice and websockets are all absent, so the server cannot be
+      run; what can be settled is that the quantity the exercise names is one this architecture does
+      not have. A word-boundary search across every function body finds no vad, no silence, no turn,
+      no endpoint, no energy and no threshold, and the loop emits a Moshi frame unconditionally on
+      every iteration, so the response starts at frame 0 while the user still has 2000 ms to speak:
+      end-of-user-speech minus start-of-response measures -1920 ms. Full duplex removes the turn
+      boundary that the stopwatch needs. What main() prints is not a latency but a compute cost, and
+      it sits more than 20x below the 160 ms architectural floor the takeaways quote (80 ms frame plus
+      80 ms acoustic delay) -- a floor that is a property of the frame grid rather than of the
+      hardware, so no compute speed reaches it. Most of that per-frame figure is two time.sleep
+      constants totalling 5 ms, around two thirds of the measured frame. The cost also does not grow
+      with context: over 200 frames the median of the last 25 is within a few percent of the median of
+      the first 25, where attention over a KV cache growing one frame at a time would put it near 15x,
+      so the one thing that makes streaming inference hard is absent. Widening the depth transformer
+      changes nothing either -- taking CODEBOOKS from 8 to 128, sixteen times the tokens to predict,
+      moves the frame cost by a couple of percent, because the time.sleep(0.003) dominates it. All
+      wall-clock figures move with machine load, so every check asserts a ratio
+    uses_reference:
+      - simulate_user_speech
+      - fake_mimi_encode
+      - fake_mimi_decode
+      - depth_transformer
+      - inner_monologue_next_token
+      - FRAME_MS
+  - index: 3
+    slug: twenty_utterances_and_two_different_quantities
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Take your Lesson 12 pipeline agent and compare P50 latency vs Moshi on 20 matched test utterances. Write up when a pipeline architecturally wins anyway.
+    zh: |
+      **困難。** 拿你在單元 12 做的管線式代理程式，在 20 組配對好的測試話語上比較它與 Moshi 的 P50 延遲。寫下在哪些情況下管線架構仍然會勝出。
+    verifies: >-
+      both modules exist and both print milliseconds, so the comparison runs -- and running it shows
+      the two numbers are not the same quantity. Lesson 12 reports user-perceived delay to first
+      audio, a turn-level figure that begins when the user stops speaking, with a P50 near 804 ms over
+      20 matched utterances; Lesson 15 reports the cost of processing one 80 ms frame, a P50 of a few
+      milliseconds. The ratio is of order 100x and says nothing about either architecture, since one
+      number contains a 400 ms end-of-speech wait and two model calls and the other contains a
+      sleep(0.003). The pipeline's latency is constants: streaming_stt returns the literal 'set a
+      timer for five minutes' for a 10-sample and a 40000-sample buffer alike, llm_with_tools sleeps
+      0.12 s and streaming_tts 0.10 s regardless of their arguments, and the end-of-speech wait is the
+      literal 400, so the only input-dependent term in the pipeline is streaming_stt's
+      len(utterance)/sr * 0.05 and 20 utterances of 1-2 s spread about 1.5% relative standard
+      deviation -- twenty measurements of one constant. And twenty is what fixes what a P50 can say: a
+      median has no standard error but it has an exact distribution-free interval, and for n=20 the
+      tightest symmetric 95% interval for the median runs from the 6th to the 15th order statistic,
+      coverage 0.9586. Simulated on log-normal latencies, 20-vs-20 calls a true 1.10x difference
+      significant only 30% of the time at sigma 0.20 and 13% at sigma 0.35, a 1.25x difference 91% and
+      51%, and a 1.50x difference 100% and 92%. The doc's own cheatsheet puts Moshi at 200-300 ms and
+      the managed pipelines at 300-500 ms, overlapping ranges whose true ratio could be anywhere from
+      1.0x to 2.5x, and at the low end of that twenty utterances is a coin flip
+    uses_reference:
+      - simulate_user_speech
+      - fake_mimi_encode
+      - depth_transformer
+      - inner_monologue_next_token

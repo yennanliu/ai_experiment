@@ -1,0 +1,95 @@
+lesson: 12-voice-assistant-pipeline
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/12-voice-assistant-pipeline/docs/en.md
+exercises:
+  - index: 1
+    slug: the_largest_row_of_the_budget_is_a_constant
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It simulates one full turn end-to-end with stub modules and prints per-stage latency.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會用替身模組端到端模擬一次完整的對話輪，並印出每個階段的延遲。
+    verifies: >-
+      the file's headline is Step 5's 'TOTAL user-perceived (to first audio): 798.1 ms (target: < 800
+      ms)', and it is made of four numbers none of which is a latency this program measured: silent_ms
+      at 400.0, a sleep of 0.08 + samples/sr * 0.05 at 166.0, a sleep of 0.12 at 120.0, and a sleep of
+      0.10 at 100.0, summing to a nominal 786.0 ms. The margin to the stated target is 14.0 ms, 1.8%
+      of the budget, and time.sleep never undershoots, so the printed figure is always larger -- over
+      five runs the same four rows time at about 798 ms with an overshoot near 12 ms, roughly 88% of
+      the margin, and repeated runs straddle 800. The biggest row, 50.9% of the total, is read off the
+      fixture: mic_generator's default mask ends in exactly 20 silent chunks so the loop breaks on the
+      very last one, and trimming the tail to 19 makes the generator run out first, leaving silent_ms
+      at 380 with no break and a budget of 765.0 ms. The capture also double-counts one chunk -- 85
+      chunks go in and 86 come out, because the pre-roll ring already holds the current chunk when the
+      trigger fires and buffered.extend(chunk) adds it again, so 1700 ms of audio becomes 1720 ms and
+      the duplicate is the speech onset. And the row labelled 'LLM + tool' excludes the tool: t_llm
+      stops before the dispatch loop, so dispatch_tool's sleep sits outside every stage, while
+      t_capture is printed in Step 1 and never enters the budget and t_play appears exactly once in
+      main(), its own assignment
+    uses_reference:
+      - mic_generator
+      - vad
+      - streaming_stt
+      - llm_with_tools
+      - dispatch_tool
+      - streaming_tts
+      - main
+  - index: 2
+    slug: the_stub_returns_one_sentence_for_every_input
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Replace the STT stub with a real Whisper model on a pre-recorded `.wav`. Measure WER and end-to-end latency.
+    zh: |
+      **中等。** 把 STT 替身換成真的 Whisper 模型，跑在一段預錄的 `.wav` 上。量測 WER 與端到端延遲。
+    verifies: >-
+      whisper, torch, transformers, soundfile, sounddevice, silero_vad and openai are all absent, and
+      scanning the whole reference checkout for .wav, .flac, .mp3, .ogg and .m4a finds 0 files, so
+      there is neither a model to install nor a recording to run it on. Both measurements are decided
+      anyway. WER is 0.000 for every input because streaming_stt never reads its argument: the
+      captured turn, pure silence, white noise and an empty buffer return 1 distinct transcript, 'set
+      a timer for five minutes', and Lesson 04's wer scores each at 0.000, so the shipped value is the
+      floor and a real Whisper could only make it worse. Silence also produces a full six-word
+      sentence, which is precisely the doc's own third failure mode -- 'Silence hallucination. Whisper
+      outputs "Thanks for watching" on the silent warm-up frames. Always VAD-gate' -- performed
+      unconditionally. And streaming_stt does not stream: main() calls it once, after the capture loop
+      returns, on the whole buffer, and gets one final string with no partials, so its 166.0 ms is
+      fully serial with capture where a streaming reader would owe only the tail, 81.0 ms; the budget
+      would fall from 786.0 to 701.0 ms, a saving of 85.0 ms or 10.8%. The fixed 80 ms dominates only
+      at this length -- 48.2% of the STT row at the demo's 1.72 s turn, 13.8% at 10 s and 5.1% at 30 s
+    uses_reference:
+      - streaming_stt
+  - index: 3
+    slug: the_reply_is_written_before_the_tool_runs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Add tool calling: implement `get_weather` (any API) and `set_timer`. Route the LLM through the tools and verify that when the user says "set a 5 minute timer" the right function fires and the spoken reply confirms it.
+    zh: |
+      **困難。** 加上工具呼叫：實作 `get_weather`（任何 API 都行）與 `set_timer`。把 LLM 接到工具上，並驗證使用者說「設一個 5 分鐘的計時器」時，正確的函式會被觸發，而且說出來的回覆會確認這件事。
+    verifies: >-
+      openai, anthropic, torch and requests are all absent, so 'any API' is a local station table;
+      everything else the exercise asks for is buildable and the shipped version is measurable against
+      it. The named test case is the one case that already passes -- 'set a 5 minute timer' fires
+      set_timer(seconds=300) and the reply says five minutes -- but over eight probes carrying an
+      intended tool and an intended duration the shipped router picks the right tool 5 of 8 times and
+      the right arguments 2 of 8, and draws only 2 distinct replies. get_weather can never fire:
+      llm_with_tools is `if "timer" in transcript` and nothing else, so both weather requests return
+      no tool call and the text 'OK.', while dispatch_tool('get_weather') answers with the single key
+      ['ok'] -- no error string for a model to read and no retry, the failure the doc's own Pitfalls
+      section asks you to handle. The duration is a constant: all four timer utterances return seconds
+      300, so 'give me a two hour timer' sets five minutes, and the substring match fires set_timer on
+      'cancel the timer', a call to start what was asked to stop. The spoken reply cannot confirm
+      anything because it is written first -- response['text'] is one of two literals chosen inside
+      llm_with_tools, and main() dispatches afterwards without feeding the result back, which is what
+      the doc's Step 4 pseudocode does with continue_streaming. Routing through a duration parser, a
+      real get_weather and a reply derived from the tool result scores 8 of 8 on both, draws 7
+      distinct replies, and makes a failure audible: an unknown location answers "Sorry, that did not
+      work: no station for 'mars'."
+    uses_reference:
+      - llm_with_tools
+      - dispatch_tool

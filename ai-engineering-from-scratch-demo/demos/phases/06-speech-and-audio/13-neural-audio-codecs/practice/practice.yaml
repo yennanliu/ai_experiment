@@ -1,0 +1,96 @@
+lesson: 13-neural-audio-codecs
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/13-neural-audio-codecs/docs/en.md
+exercises:
+  - index: 1
+    slug: the_table_goes_blind_at_the_fifth_codebook
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It implements a toy scalar + residual quantizer and measures reconstruction error as you add codebooks.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它實作了一個玩具級的純量量化器加殘差量化器，並在你逐步加入碼本時量測重建誤差。
+    verifies: >-
+      the table Step 2 prints does not say what it appears to say. Two of its five rows print as
+      0.000000 and they are not the same number: the measured MSEs are 1.364684e-02, 5.205277e-04,
+      1.073862e-06, 9.157033e-12 and 3.886251e-17 at 1, 2, 4, 8 and 12 codebooks, so the last two rows
+      stand a factor of 235,626 apart and print identically. The %.6f format runs out at the fifth
+      codebook, and the rows it erases are exactly the ones the doc's Pitfalls section is about when
+      it says to stop at 8-12. The error is geometric rather than linear: each added codebook is worth
+      13.22 dB on average, between 10.03 and 14.23 dB across the twelve with a standard deviation of
+      1.12 dB, a mean ratio of 21.0x, so the Pitfall's 'adding codebooks increases fidelity linearly'
+      holds only for the dB reading while the column the lesson prints is linear MSE. bits_per_frame =
+      n_cb * 3 also charges for a uniform index distribution that does not occur -- measured index
+      entropy is 29.136 bits per sample over twelve codebooks against the 36 the table bills, 23.6%
+      high, 2.43 bits per codebook rather than 3 -- and one codebook runs a dead centroid, cb8 using 7
+      of its 8 codewords. And the codebooks themselves appear in no column: 8 float64 centroids per
+      codebook is 6144 bits of side information against 36000 bits of indices at twelve codebooks,
+      17.1%, the same share at every row
+    uses_reference:
+      - generate_signal
+      - rvq_encode
+      - rvq_decode
+      - mse
+  - index: 2
+    slug: three_of_the_four_points_plot_at_zero
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Install `encodec` and compare 1, 4, 8, 32 codebooks on a held-out speech clip. Plot PESQ or MSE vs bitrate.
+    zh: |
+      **中等。** 安裝 `encodec`，在一段保留的語音片段上比較 1、4、8、32 個碼本。畫出 PESQ 或 MSE 對位元率的關係圖。
+    verifies: >-
+      encodec, torch, torchaudio, pesq and soundfile are all absent and a recursive scan of the
+      reference checkout finds zero .wav, .flac, .mp3 or .ogg files, so there is no held-out speech
+      clip either -- but both axes of the requested plot are computable. The bitrate axis comes out of
+      the doc's own constants: Step 1 says 8 codebooks at 6 kbps with 10-bit codes and Step 3 gives
+      EnCodec-24k a 75 Hz frame rate, and 8 x 75 x 10 = 6000 bps exactly, so one codebook is 0.75 kbps
+      and the four requested points sit at 0.75, 3.00, 6.00 and 24.00 kbps. The MSE axis, run on the
+      lesson's own quantizer, measures 1.364684e-02, 1.073862e-06, 9.157033e-12 and 4.119887e-32 at 1,
+      4, 8 and 32 codebooks -- which print as 0.013647, 0.000001, 0.000000 and 0.000000, so three of
+      the four points land on the floor and the two zeros stand 2.2e+20 apart. It is only a plot in
+      dB, where the same values are -18.6, -59.7, -110.4 and -313.9 dB and fall 9.5 dB per codebook on
+      a line. And the widest point is the one that means least: the signal's RMS is 0.7759 so float64
+      resolves it to 1.72e-16, and from codebook 26 onward every centroid is smaller than that, making
+      the 4.12e-32 at 32 codebooks a property of double precision rather than of the codec
+    uses_reference:
+      - generate_signal
+      - rvq_encode
+      - rvq_decode
+      - mse
+  - index: 3
+    slug: a_codec_with_no_semantic_codebook_does_it_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Load Mimi. Encode a clip. Replace codebook 0 with random integers; decode. Then replace codebook 7 similarly. Compare the two corruptions — codebook 0 corruption should destroy intelligibility; codebook 7 corruption should barely change anything.
+    zh: |
+      **困難。** 載入 Mimi。編碼一段片段。把碼本 0 換成隨機整數後解碼。再對碼本 7 做一樣的事。比較這兩種破壞 —— 破壞碼本 0 應該會毀掉可理解度；破壞碼本 7 應該幾乎沒有變化。
+    verifies: >-
+      moshi, torch, torchaudio and transformers are all absent and there is no clip, so the D11
+      scaled-down run performs the same corruption level by level on the plain residual quantizer
+      code/main.py implements, at 8 codebooks with a clean MSE of 9.157e-12. The prediction reproduces
+      enormously: corrupting codebook 0 gives MSE 1.301458 and codebook 7 gives 1.262134e-09, a ratio
+      of 1.03e+09, monotone at every step between at 7.45e-02, 2.88e-03, 1.86e-04, 1.24e-05, 5.29e-07
+      and 2.54e-08. Corrupting codebook 0 is worse than emitting nothing: MSE 1.3015 against the
+      signal's own variance of 0.6020, 2.16x, so the decode sits more than twice as far from the
+      original as silence does. But this quantizer has no semantic codebook. rvq_encode builds all
+      eight with one call to learn_codebook(residuals, codebook_size, seed=cb_i), differing only in
+      the residual handed to it and an integer seed; none of wavlm, semantic or distill appears
+      anywhere in rvq_encode, rvq_decode or learn_codebook, and all three appear only inside main's
+      Step 4 print statements. What orders the codebooks is residual energy, and the corruption column
+      tracks it exactly -- mean-square contribution falls 5.859e-01 to 1.977e-10, a ratio of 2.96e+09,
+      monotone across all eight levels. So the experiment as designed cannot distinguish the
+      semantic-acoustic hypothesis from plain residual ordering: any RVQ gives codebook 0 the largest
+      share and the last codebook a share near the noise floor. Testing the claim needs a control the
+      exercise does not ask for, a codec whose codebooks carry comparable energy, which residual
+      quantization by construction cannot produce
+    uses_reference:
+      - generate_signal
+      - rvq_encode
+      - rvq_decode
+      - mse
+      - main

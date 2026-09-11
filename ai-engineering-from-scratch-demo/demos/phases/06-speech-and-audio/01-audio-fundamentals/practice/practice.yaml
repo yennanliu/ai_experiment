@@ -1,0 +1,90 @@
+lesson: 01-audio-fundamentals
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/01-audio-fundamentals/docs/en.md
+exercises:
+  - index: 1
+    slug: the_easy_exercise_is_the_expensive_one
+    kind: code
+    tier: T1
+    deps_group: audio
+    en: |
+      **Easy.** Synthesize a 1-second mix of 220 Hz + 440 Hz + 880 Hz at 16 kHz. Run DFT. Confirm three peaks at the expected bins.
+    zh: |
+      **簡單。** 在 16 kHz 下合成 1 秒的 220 Hz + 440 Hz + 880 Hz 混合訊號。跑 DFT。確認在預期的 bin 上出現三個峰。
+    verifies: >-
+      one second of 220 + 440 + 880 Hz at 16 kHz, transformed by the lesson's own dft, peaks at bins
+      220, 440 and 880 exactly, each of magnitude 1333.3333 = (0.5/3) * 16000/2 to within 1e-11. Bin
+      index equals frequency in Hz only because the exercise's own parameters make the bin width
+      exactly 1 Hz; on main()'s grid (512 samples at 8 kHz) the same three tones sit at bins 14.08,
+      28.16 and 56.32, none of them an integer, and the peaks land at 218.8, 437.5 and 875.0 Hz -- low
+      by 1.25, 2.5 and 5.0 Hz. The height is one third of amp * N/2 because mix averages rather than
+      sums: three tones at amp=0.5 produce a signal peaking at 0.372, not 1.5, so reading mix as a sum
+      makes every predicted height 3x too big. The cost is the finding. The doc's Step 3 calls the
+      O(N^2) DFT 'useless for real audio' at N=256 and the exercise two sections later asks for
+      N=16000, which is 977x the work of main()'s largest call: the lesson's dft takes about 24 s
+      where numpy.fft.rfft takes about 0.1 ms on the same array, a factor of order 1e5, for a spectrum
+      that agrees to 3.7e-13 relative. This Easy exercise is the most expensive computation in the
+      lesson and Exercise 3, labelled Hard, is 16x cheaper. Each peak also ties with its mirror above
+      Nyquist to 4e-11, so a top-3 over the full transform returns the right answer only because
+      sorted breaks the tie by index
+    uses_reference:
+      - sine
+      - mix
+      - dft
+      - magnitudes
+  - index: 2
+    slug: the_alias_lands_between_the_harmonics
+    kind: code
+    tier: T0
+    deps_group: audio
+    en: |
+      **Medium.** Record a 3-second WAV of your voice at 48 kHz. Downsample to 16 kHz using `torchaudio.transforms.Resample` (with anti-aliasing), then to 16 kHz using naive decimation (every third sample). FFT both. Where does the aliasing appear?
+    zh: |
+      **中等。** 用 48 kHz 錄一段 3 秒你自己聲音的 WAV。先用 `torchaudio.transforms.Resample`（含抗疊頻）降到 16 kHz，再用天真的抽取法（每三個樣本取一個）降到 16 kHz。兩者都做 FFT。疊頻出現在哪裡？
+    verifies: >-
+      torchaudio, torch, librosa, soundfile and sounddevice are all absent and the reference tree
+      ships no .wav, .flac or .mp3, so neither 'record a 3-second WAV of your voice' nor
+      torchaudio.transforms.Resample can be built. The 3 s at 48 kHz is therefore synthesised as a
+      voice would be -- a 120 Hz glottal comb, 1/k voiced rolloff to 6 kHz, then a flat sibilant shelf
+      to 22.9 kHz, 191 harmonics -- the naive arm is the lesson's own downsample_naive(x, 3)
+      unchanged, and the anti-aliased arm is a 193-tap windowed-sinc low-pass built here, measuring
+      0.00 dB at 4 kHz and -113 dB at 12 kHz. The aliasing appears mirrored about the new Nyquist: all
+      125 components above 8 kHz reappear at |f - 16000*round(f/16000)|, and the loudest land at
+      7240-7960 Hz, the top of the retained band, because the partials just above Nyquist fold just
+      below it. The sharper answer is that they never land on a harmonic: 16000 mod 120 = 40, so every
+      folded partial sits 40 or 80 Hz off the 120 Hz comb and never 0, tripling the comb density with
+      an inharmonic ghost rather than brightening the real one. Nothing is removed either -- the
+      source carries 5.45% of its energy above 8 kHz and the naive band holds 6.1% more energy than
+      the filtered one, the two differing by 24.5% relative RMS. The filter is what discards it;
+      dropping samples only relocates it, and main()'s Step 6 prints 'always low-pass filter before
+      decimating' beside a module containing nothing that does
+    uses_reference:
+      - downsample_naive
+  - index: 3
+    slug: the_hard_one_is_sixteen_times_cheaper
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build the STFT from scratch using only `math` and the DFT from Step 3. Frame size 400, hop 160, Hann window. Plot magnitudes with `matplotlib.pyplot.imshow`. This is the spectrogram of Lesson 02.
+    zh: |
+      **困難。** 只用 `math` 與步驟 3 的 DFT，從零把 STFT 做出來。幀長 400、hop 160、Hann 窗。用 `matplotlib.pyplot.imshow` 把大小畫出來。這就是單元 02 的頻譜圖。
+    verifies: >-
+      the STFT is built with math and the lesson's own dft only, as the exercise says: frame 400, hop
+      160, periodic Hann, on a 1 s 200->4000 Hz chirp at 16 kHz. It gives 98 frames of 201 bins at 40
+      Hz each and the per-frame argmax follows the sweep to 19.5 Hz worst case, inside half a bin.
+      Three things follow from its own numbers. It is the cheapest of the lesson's three exercises and
+      it is labelled Hard: 98 frames of 400 is 15.7M inner DFT steps against Exercise 1's 256M, 16.3x
+      less, 1.5 s against 24 s, so framing is what makes the O(N^2) DFT survivable. Frame 400 at hop
+      160 is not a COLA pair -- overlap-adding Hann(400) at hop 160 sums to 1.250 with 9.44% ripple,
+      while hop 200 (N/2) and hop 100 (N/4) sum flat to 7e-16 -- so the spectrogram the exercise
+      prescribes is not invertible by plain overlap-add, and 400/160 is exactly the doc's own '25 ms
+      with 10 ms hop'. And it is not the spectrogram of Lesson 02: that lesson's main ships
+      frame_len=256, hop=128 at sr=8000, a power-of-two frame at an N/2 hop, and its hann divides by
+      N-1 where the periodic window divides by N. The doc also defines the FFT as requiring N a power
+      of 2 and then sets the frame to 400 = 2^4 * 5^2, so its own fast path is excluded by its own
+      parameter. matplotlib and PIL are both absent, so imshow becomes a 20-row text raster of the
+      same matrix
+    uses_reference:
+      - dft
+      - magnitudes

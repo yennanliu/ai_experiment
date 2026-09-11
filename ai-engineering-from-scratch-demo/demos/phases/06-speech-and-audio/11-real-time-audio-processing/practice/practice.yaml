@@ -1,0 +1,100 @@
+lesson: 11-real-time-audio-processing
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/11-real-time-audio-processing/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_no_ring_buffer
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Simulates a ring buffer + energy VAD; prints stage latencies for a fake 10-second stream.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會模擬環形緩衝區 + 能量 VAD；對一段假的 10 秒串流印出各階段的延遲。
+    verifies: >-
+      the exercise makes three claims about the file -- a ring buffer, an energy VAD and a 10-second
+      stream -- and only the VAD is there. The stream is 95 chunks of 20 ms, 1900 ms, against the 500
+      chunks 10 s would need, so the demo is 5.3x short; Step 1's own caption says '1.5 s of user
+      speech' over a 1.9 s stream and the gate keeps 24000 samples, exactly 1.500 s. Nothing in the
+      module is a ring buffer: the substring 'ring' does not occur anywhere in code/main.py and
+      `buffered` is a plain list that extends without a bound, while the doc's own Step 1 defines a
+      RingBuffer sized at 32000 samples = 2 s that no line imports. At the 1.5 s this demo keeps the
+      two behave identically, which is why the omission is invisible; at the 10 s stream the exercise
+      names a speech-only buffer is 160000 samples, 5.0x that capacity. The end-to-end number also
+      omits three of the six stages in the table four lines below it: main() times STT stream, LLM
+      stream and TTS TTFA, while Step 4 also lists network in (50-100 ms), VAD (20-80 ms) and network
+      out (50-100 ms), so adding the table's own minima to the 405 ms measured gives 525 ms -- already
+      past the 'target: < 500 ms' printed on the same line -- and its maxima give 685 ms. And the
+      table's TOTAL row is not the sum of its own column: the six stages sum to 420-1380 ms against
+      the printed 400-1400, off by 20 ms at both ends in opposite directions. The measured latency is
+      within 1.3x of the closed-form sleep total, so the pipeline is timing time.sleep and nothing
+      else, and main()'s random.seed(0) call changes no output because every draw comes from its own
+      random.Random(0)
+    uses_reference:
+      - simulate_chunk
+      - vad
+      - rms_dbfs
+      - fake_stt
+      - fake_llm
+      - fake_tts_first_audio
+      - CHUNK_MS
+  - index: 2
+    slug: the_gate_is_a_statement_about_microphone_gain
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Using `sounddevice`, build a passthrough loop that processes your mic in 20 ms frames and prints VAD state at each frame.
+    zh: |
+      **中等。** 用 `sounddevice` 做一個直通迴圈，以 20 ms 的幀處理你的麥克風，並在每一幀印出 VAD 狀態。
+    uses_reference:
+      - vad
+      - rms_dbfs
+      - CHUNK_MS
+      - VAD_THRESHOLD_DBFS
+    verifies: >-
+      sounddevice, pyaudio and soundfile are all absent and there is no microphone, so the mic is
+      synthesised -- four seconds of speech-like bursts of 0.12-0.35 s separated by the 0.03-0.22 s
+      gaps ordinary speech has, over a noise floor at a chosen SNR -- and everything else is the
+      lesson's own rms_dbfs and vad called once per 20 ms frame, exactly as a passthrough callback
+      would. 'Prints VAD state at each frame' prints a flicker: over 200 frames the gate changes state
+      24 times, 6.0 per second, against 25 in the reference labelling, so it tracks the truth to
+      within one transition and the display is accurate and unusable. The standard fix costs the
+      budget -- a 100 ms hangover takes 24 flips to 4 and a 200 ms hangover takes it to 0, and 200 ms
+      is 40% of the 'target: < 500 ms' the same lesson prints, added to every end-of-turn decision.
+      The threshold is also absolute, so it describes the microphone rather than the speech: the gate
+      fires on rms_dbfs > -40, an RMS of exactly 0.01, so a floor at amplitude 0.15/10**(SNR/20)
+      reaches it at 20*log10(15) = 23.52 dB SNR, and false accepts on silent frames run 0.2623 at 40
+      dB, 0.2623 at 25 dB and 1.0000 at 20 dB. And a frame is decided by one and a half of its
+      samples: crossing 0.01 RMS needs 320*(0.01/0.15)^2 = 1.42 loud samples of 320, measured as 1
+      loud sample tripping the gate on 22% of draws and 4 on 83%, which is why silent frames
+      false-accept at 0.26 even at 40 dB -- every frame straddling a syllable edge is 99% silence and
+      reads as speech
+  - index: 3
+    slug: the_probe_repeats_every_millisecond
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a full duplex echo test with `aiortc`: browser → WebRTC → Python → WebRTC → browser. Measure glass-to-glass latency with a 1 kHz pulse.
+    zh: |
+      **困難。** 用 `aiortc` 做一個完整的全雙工回音測試：瀏覽器 → WebRTC → Python → WebRTC → 瀏覽器。用 1 kHz 的脈衝量測 glass-to-glass 延遲。
+    verifies: >-
+      aiortc, av, sounddevice and torch are all absent and there is no browser, so the transport
+      cannot be built, but the measurement the exercise specifies in detail can be run in full: a
+      known delay of 187 samples (11.688 ms) injected into a noisy return and recovered by
+      fixed-window cross-correlation. It works when the return is clean -- at 0 dB SNR both a 20 ms 1
+      kHz burst and a 20 ms 300-3000 Hz sweep recover 187 exactly on 20 of 20 trials each, to a
+      resolution of one sample, 0.0625 ms. Every error the 1 kHz probe makes is a whole millisecond:
+      at -6 dB it misses on 5 of 20 and at -10 dB on 11 of 20, and all 16 failures land within one
+      sample of a multiple of 16 samples -- -16, -16, -1, +1, +16 at -6 dB and -48, -47, -16, -16,
+      -16, +1, +1, +16, +16, +16, +31 at -10 dB -- while the sweep fails 0 of 40 over the same
+      returns. The cause is arithmetic rather than noise: 1000 Hz at 16 kHz is exactly 16 samples per
+      cycle, so the tone's autocorrelation one period out is 0.9500 of its own peak and the 5% it
+      loses is the shortened overlap rather than the waveform, against the sweep's -0.0598, so the
+      argmax is choosing between candidates identical by construction. And the precision is far finer
+      than the thing being measured: the lesson's own figures put an echo path at network in 50-100
+      plus network out 50-100 plus a 60-80 ms jitter buffer, 160-280 ms, which is 2560x to 4480x the
+      probe's 0.0625 ms resolution on a transport whose Opus frames quantise arrivals to 20 ms, so a
+      glass-to-glass figure quoted to sub-millisecond precision is reporting the probe and not the
+      path
