@@ -1,0 +1,91 @@
+lesson: 07-text-to-speech
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/07-text-to-speech/docs/en.md
+exercises:
+  - index: 1
+    slug: the_number_is_never_spoken
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Builds a phoneme dictionary from a toy vocab, estimates duration per phoneme, and prints a fake "mel" schedule.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會從一個玩具詞彙表建出音素字典、估算每個音素的時長，並印出一份假的「梅爾」排程。
+    verifies: >-
+      the pipeline runs -- 42 phonemes, 210 mel frames, 2625.0 ms at a 12.5 ms hop, 16.0 phonemes per
+      second -- and three things in that output are not what the sentence above it says. The sentence
+      it speaks is not the sentence it was given: phonemize walks the string trying 3-, 2- and
+      1-character keys and on a miss does i += 1 with no output, and the only character of 'Please
+      remind me to water the plants at 6 pm.' that misses is 6, so the demo silently synthesises 'at
+      pm'. Six of the 42 DURATION_FRAMES entries can never be reached -- AA, AE, AY, OW, OY and ZH --
+      and two of those because G2P maps their own graphemes elsewhere, 'ay' to EY and 'ow' to AW. And
+      the jitter does not jitter: int(round(base * uniform(-0.1, 0.1))) needs base * 0.1 to exceed
+      0.5, since Python rounds a half to even, so every entry of 5 frames or fewer -- 18 of the 42,
+      including every stop and every glide -- is exactly deterministic, and only 14 of this sentence's
+      42 phonemes can move at all. At the shipped seed 42 exactly 2 of them move, one up and one down,
+      so the total lands on 210, the no-jitter number; across 200 seeds the total spans 205-215 with a
+      standard deviation of 1.89 frames, 0.9% of the sentence
+    uses_reference:
+      - phonemize
+      - duration
+      - mel_schedule
+      - G2P
+      - DURATION_FRAMES
+  - index: 2
+    slug: the_duration_model_has_no_voice_input
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Install Kokoro, synthesize the same sentence at voice `af_bella` and `am_adam`. Compare audio durations and subjective quality.
+    zh: |
+      **中等。** 安裝 Kokoro，用 `af_bella` 與 `am_adam` 兩種聲音合成同一個句子。比較音訊時長與主觀品質。
+    verifies: >-
+      kokoro, torch, soundfile and sounddevice are all absent, so nothing here synthesises; what can
+      be settled is whether the comparison the exercise asks for is one this lesson can express, and
+      it is not. duration takes (phones, jitter, seed) and mel_schedule takes (phones, durs, hop_ms)
+      -- neither has a voice argument and no voice-shaped name appears anywhere in either body -- so
+      af_bella and am_adam produce the same 210 frames byte for byte and the duration comparison
+      returns exactly 0 ms. That is the wrong half to omit: in a FastSpeech-style model the acoustic
+      decoder carries timbre and the duration predictor carries rhythm, and rhythm is what a stopwatch
+      measures. The only knobs are jitter and seed, and both are small: over 200 seeds at jitter 0.1
+      the total spans 205-215 frames, 4.8% end to end, fixed at 210 with jitter 0 and spanning 191-228
+      at 0.3. The one number a voice cannot change is also wrong -- Step 4 converts at 300 samples per
+      frame, 12.5 ms at 24 kHz, while Kokoro, F5-TTS and HiFi-GAN at 24 kHz hop by 256 samples, 10.67
+      ms, so the same 210 frames are 2.240 s of audio rather than the 2.625 s printed: 17.2% long,
+      larger than any plausible gap between two voices
+    uses_reference:
+      - phonemize
+      - duration
+      - mel_schedule
+  - index: 3
+    slug: secs_is_a_property_of_the_encoder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Record a 5-second reference clip of yourself. Use F5-TTS to clone it. Report SECS between reference and cloned output.
+    zh: |
+      **困難。** 錄一段自己 5 秒的參考片段。用 F5-TTS 複製它。回報參考音訊與複製輸出之間的 SECS。
+    verifies: >-
+      f5_tts, kokoro, torch, soundfile and sounddevice are all absent, there is no microphone and no
+      audio file anywhere in the reference tree, so neither the recording nor the clone can happen --
+      but the number can. SECS is speaker-encoder cosine similarity and this phase already ships a
+      speaker encoder, Lesson 06's embed_mfcc_stats and cosine, so the D11 scaled-down run measures it
+      over a reference voice, four other voices and a graded family of deliberately imperfect clones.
+      SECS has no zero: two utterances of the same voice average 0.9958 and two of different voices
+      0.6468, so the whole meaningful range is 0.65 to 1.00 and a bare 'SECS = 0.78' sits at the top
+      of the different-speaker distribution rather than at 78% of anything. A high-looking score is
+      also a rejection -- the equal-error threshold on this encoder is 0.9909, and a clone whose
+      formants are 5% off scores 0.9856 and fails it, while +10% scores 0.9412, +25% 0.7732 and +50%
+      0.6238, the different-speaker mean. And the scale belongs to the instrument: dropping one
+      coefficient, MFCC c0, moves the different-speaker mean from 0.6468 to 0.4854 while the
+      same-speaker mean barely moves, 0.9958 to 0.9944, so the same +10% clone scores 0.9412 or 0.9123
+      depending on a choice inside the encoder -- and published SECS numbers use Resemblyzer, WavLM or
+      ECAPA, which are three different scales
+    uses_reference:
+      - tone_mix
+      - embed_mfcc_stats
+      - cosine
+      - eer
+      - l2_normalize
