@@ -1,0 +1,92 @@
+lesson: 04-speech-recognition-asr
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/04-speech-recognition-asr/docs/en.md
+exercises:
+  - index: 1
+    slug: the_decode_is_never_scored
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It greedily decodes a hand-crafted CTC output and computes WER against a reference.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會對一組手工打造的 CTC 輸出做貪婪解碼，並對照參考答案算 WER。
+    verifies: >-
+      the exercise describes one pipeline -- decode, then score the decode -- and main() runs two
+      disconnected halves: Step 2 prints a decode and Step 5 scores five hand-typed hypotheses against
+      a different reference, with no line passing a decoder output to wer. Making the call is the
+      answer: wer('hello world', ctc_greedy(probs)) is 0.000. Three things fall out beside it. On the
+      clean frames build_frame_probs produces, the lesson's beam is worse than greedy -- 'helo world'
+      at WER 0.500 against 0.000 -- because a blank sits between every character, so greedy is already
+      exact and a beam can only tie or lose. Step 4 is captioned 'corrupt logits; beam should beat
+      greedy' and the two tie at WER 1.500 each, both worse than the 1.000 an empty hypothesis scores,
+      since wer divides by the reference length only and is unbounded above. And corrupt does not
+      produce probabilities: subtracting 0.6 from entries that start at 0.02 puts the minimum entry at
+      -0.58 while the row sums stay at 1.0, because mass is moved rather than added, so ctc_beam
+      clamps every negative to 1e-10 and decodes a vector holding more than its own mass while
+      ctc_greedy's argmax never sees it. build_frame_probs also calls random.seed(0) and draws
+      nothing: re-seeding to 999 reproduces all 44 frames byte for byte
+    uses_reference:
+      - build_frame_probs
+      - ctc_greedy
+      - ctc_beam
+      - corrupt
+      - wer
+      - one_hot_like
+  - index: 2
+    slug: the_lesson_beam_cannot_emit_a_double_letter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement the prefix-tree beam search in Step 2 properly (account for the blank merge rule). Compare with greedy on a 10-example synthetic dataset.
+    zh: |
+      **中等。** 把步驟 2 的前綴樹束搜尋正確實作出來（要處理空白的合併規則）。在一個 10 個範例的合成資料集上跟貪婪解碼比較。
+    verifies: >-
+      implementing Hannun's prefix beam -- p_blank and p_nonblank per prefix, so a repeated symbol
+      extends the prefix only through the blank path -- makes the decode exact on the frames
+      build_frame_probs builds: 10 of 10 phrases at CER 0.000, against the lesson's beam at 1 of 10
+      and CER 0.116. The lesson's beam is not merely bad at repeats, it cannot represent one: its
+      update sends the blank path and the repeat path to the same seq, so no beam it holds ever
+      contains two adjacent equal tokens, and across 30 decodes at three corruption levels zero of its
+      outputs carry a doubled character while 9 of the 10 references do. Greedy is already optimal on
+      this data -- a blank sits between every character and no argmax is ever wrong, so greedy is 10
+      of 10 and no beam can beat it, which means the comparison the exercise asks for exists only once
+      the frames are corrupted, and the lesson's own corrupt cannot supply that because it leaves the
+      simplex. Moving a random share of each winner's mass to one rival keeps every row a distribution
+      and does flip argmaxes: greedy then scores 0.224 CER against the prefix beam's 0.139 and the
+      lesson's 0.171. At heavy corruption the lesson's beam appears to win on CER, but only by
+      emitting less -- reference 11.1 characters against greedy's 26.1, and the lesson's 23.6 against
+      the prefix beam's 25.1, on a score that insertions dominate
+    uses_reference:
+      - build_frame_probs
+      - ctc_greedy
+      - ctc_beam
+      - VOCAB
+      - BLANK
+  - index: 3
+    slug: a_hundred_utterances_cannot_rank_the_table
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use `whisper-large-v3-turbo` on [LibriSpeech test-clean](https://www.openslr.org/12). Compute WER on the first 100 utterances. Compare with published numbers.
+    zh: |
+      **困難。** 在 [LibriSpeech test-clean](https://www.openslr.org/12) 上使用 `whisper-large-v3-turbo`。算出前 100 句語句的 WER。跟已發表的數字比較。
+    verifies: >-
+      whisper, torch, transformers, datasets and soundfile are all absent and LibriSpeech is not here,
+      so the transcription half cannot run; the comparison half can, and it decides the exercise. This
+      is the D11 scaled-down run: 2620 utterances of 20 words, degraded at each rate in the lesson's
+      own Step 6 table, scored with the lesson's own wer, sampled 2000 times at n=100. The generator
+      reproduces every published rate to 0.07 pp over the full corpus, so what follows is about sample
+      size alone. Whisper's published 1.58% comes back as 1.10-2.15% across 95% of draws of 100
+      utterances, an interval 1.05 pp wide against the 0.52 pp separating the best model in the table
+      from the worst -- the whole table fits inside one sample's confidence interval, twice over. Over
+      2000 draws the five models land in the published order 7.4% of the time and the best is picked
+      45.1% of the time, against 20% for a coin. From the two-sample size formula, separating 1.40%
+      from 1.48% at 95% needs 170,383 reference words, 3.3x the roughly 52,400 in test-clean, so the
+      two best rows of the lesson's own table cannot be separated on the whole set; even the widest
+      gap, 1.40% against 1.92%, needs 4,638 words or about 232 utterances, more than the 100 the
+      exercise names
+    uses_reference:
+      - wer
