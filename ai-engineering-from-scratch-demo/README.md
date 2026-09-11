@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**356 / 2090 exercises** (17.0%) across 20 phases.
+**359 / 2090 exercises** (17.2%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -55,7 +55,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `03-deep-learning-core` | 63 | 63 | 13 |
 | 🚧 `04-computer-vision` | 84 | 81 | 27 |
 | ✅ `05-nlp-foundations-to-advanced` | 87 | 87 | 29 |
-| 🚧 `06-speech-and-audio` | 51 | 3 | 1 |
+| 🚧 `06-speech-and-audio` | 51 | 6 | 2 |
 | ⬚ `07-transformers-deep-dive` | 52 | 0 | 0 |
 | ⬚ `08-generative-ai` | 47 | 0 | 0 |
 | ⬚ `09-reinforcement-learning` | 36 | 0 | 0 |

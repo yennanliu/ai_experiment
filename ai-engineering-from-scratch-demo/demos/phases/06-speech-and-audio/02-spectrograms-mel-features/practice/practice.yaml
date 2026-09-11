@@ -1,0 +1,93 @@
+lesson: 02-spectrograms-mel-features
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/02-spectrograms-mel-features/docs/en.md
+exercises:
+  - index: 1
+    slug: the_track_the_lesson_prints_turns_around
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. It synthesizes a chirp (frequency swept 200 → 4000 Hz) and prints the argmax mel bin per frame. Plot (optional) and confirm it matches the sweep.
+    zh: |
+      **簡單。** 跑 `code/main.py`。它會合成一段啾聲（頻率從 200 掃到 4000 Hz），並印出每一幀的 argmax 梅爾 bin。（選做）畫出來，確認它符合那道掃頻。
+    verifies: >-
+      the argmax mel bin main() prints does not match the sweep. Across all 24 frames it reads 11 15
+      20 23 26 28 30 33 35 36 38 39 | 39 38 36 35 33 31 28 26 23 20 15 11 -- it falls on 11 of the 23
+      transitions and is its own mirror to within one bin at one frame, where a linear sweep is
+      monotone. Two compounding causes, both arithmetic. chirp puts the instantaneous frequency into
+      the phase: sin(2*pi*f(t)*t) with a linear f(t) differentiates to f0 + 2*(f1-f0)*t/T, so the
+      sweep runs at twice the requested rate and ends at 7800 Hz rather than 4000. And at sr=8000 that
+      doubled sweep reaches Nyquist at t=0.200 s, exactly half of the 0.4 s clip, so the second half
+      folds back down and the printed track turns at frame 11 of 23 -- the fold is the mirror. Fixing
+      only the phase fixes the plot: the same stft_magnitude, mel_filterbank, apply_filterbank and
+      log_transform driven by a quadratic-phase chirp never falls once and ends at mel 39 of 39,
+      because the corrected sweep ends exactly at Nyquist
+    uses_reference:
+      - chirp
+      - stft_magnitude
+      - mel_filterbank
+      - apply_filterbank
+      - log_transform
+  - index: 2
+    slug: a_third_of_the_finest_filterbank_is_empty
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Re-run with `n_mels` in `{40, 80, 128}` and `frame_len` in `{200, 400, 800}`. Measure sharp-peak bandwidth across the time axis. Which combo resolves the chirp the best?
+    zh: |
+      **中等。** 用 `n_mels` 取 `{40, 80, 128}`、`frame_len` 取 `{200, 400, 800}` 重跑一遍。沿時間軸量測尖峰的頻寬。哪一組把啾聲解析得最好？
+    verifies: >-
+      reading 'sharp-peak bandwidth' as the half-max width of the energy ridge per frame, averaged
+      over frames, at main()'s fixed hop of 128 and with n_fft tied to frame_len: 40 mels at frame_len
+      200 resolves the chirp best on both readings, 2.17 mel bins and 116 Hz. Frame length dominates
+      n_mels -- 200 to 800 costs 6.4x in Hz (116 to 739) where 40 to 128 mels costs 1.6x. The doc's
+      'larger FFT = better frequency resolution' runs backwards on this signal: the chirp sweeps at
+      19000 Hz/s, so an 800-sample frame spans 1900 Hz of sweep against its own 10 Hz bin spacing, a
+      190-bin smear, and time-bandwidth rather than FFT length sets the ridge whenever the signal
+      moves. The two units also rank the grid in opposite orders -- 40/400 beats 128/200 in mel bins
+      (3.82 against 5.00) and loses to it in Hz (336 against 181) -- because a mel bin is
+      range/(n_mels+1) and not a fixed width, and the exercise never says which unit it means. And 128
+      mels over a 200-sample frame leaves 40 of its 128 filters entirely empty, 31% of the bank:
+      mel_filterbank rounds triangle edges onto 101 FFT bins, adjacent edges collide, and the all-zero
+      rows become a constant log(1e-10) = -23.026 that Step 6's DCT then transforms. 80/200 loses 12
+      and 128/400 loses 12. The nine cells also do not share a time axis -- 24, 22 and 19 frames at
+      the three frame lengths
+    uses_reference:
+      - chirp
+      - stft_magnitude
+      - mel_filterbank
+      - apply_filterbank
+      - hz_to_mel
+      - mel_to_hz
+      - log_transform
+  - index: 3
+    slug: the_three_feature_sets_differ_by_one_number
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Implement `power_to_db` and compare ASR accuracy of a tiny CNN classifier on AudioMNIST using (a) raw log-mel, (b) dB-mel with `ref=max`, (c) MFCC-13 + delta + delta-delta. Report top-1 accuracy.
+    zh: |
+      **困難。** 實作 `power_to_db`，並在 AudioMNIST 上比較一個小型 CNN 分類器分別用（a）原始對數梅爾、（b）`ref=max` 的 dB 梅爾、（c）MFCC-13 + delta + delta-delta 時的 ASR 準確率。報告 top-1 準確率。
+    verifies: >-
+      AudioMNIST and torch are both absent, so the substitutions are a 10-class synthetic spoken-digit
+      stand-in (two formants per class, jittered F0, seeded) and a multinomial logistic classifier
+      over mean+std-pooled frames, shared by all arms. power_to_db is implemented as librosa defines
+      it, 10*log10(S/max S) with amin=1e-10 and an 80 dB floor, and it does not produce a new
+      representation: it equals (10/ln 10) * log_mel(S) minus a single per-utterance scalar to
+      1.4e-14. On matched material all three arms score 1.000 top-1 over 60 held-out utterances, so
+      the comparison the exercise asks for separates nothing. Training at full level and testing 20-40
+      dB quieter separates them: (a) log-mel falls to 0.383, (b) dB-mel with ref=max holds at 1.000,
+      and (c) MFCC-13 + delta + delta-delta falls to 0.150, below (a). One dimension of 39 explains
+      (c): deltas difference out any constant so 38 of 39 dims are already level-invariant, and c0 is
+      the sum of all 40 log-mels and therefore moves 40x as far as any single bin. main()'s own Step 6
+      prints 'coef 0 encodes overall energy; typically dropped downstream'; the exercise's feature
+      spec keeps it, and dropping it returns the arm to 1.000
+    uses_reference:
+      - stft_magnitude
+      - mel_filterbank
+      - apply_filterbank
+      - log_transform
+      - dct_ii
