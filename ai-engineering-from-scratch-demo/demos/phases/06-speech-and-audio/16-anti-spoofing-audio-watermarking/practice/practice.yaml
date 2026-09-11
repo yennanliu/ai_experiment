@@ -1,0 +1,100 @@
+lesson: 16-anti-spoofing-audio-watermarking
+phase: 06-speech-and-audio
+source: phases/06-speech-and-audio/16-anti-spoofing-audio-watermarking/docs/en.md
+exercises:
+  - index: 1
+    slug: both_printed_numbers_are_artifacts
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Toy detector + toy watermark embed/detect on synthetic audio.
+    zh: |
+      **簡單。** 跑 `code/main.py`。在合成音訊上做玩具級的偵測器 ＋ 玩具級的浮水印嵌入／偵測。
+    verifies: >-
+      main() prints two measurements and labels each with the production number it should be compared
+      against, and neither is a measurement of what its label says. 'EER ~ 100.00%' is not a possible
+      equal error rate -- a coin scores 50% and anything above that improves by flipping sign -- so
+      100% means perfect separation read backwards, and it is: the 20 real clips score 0.190020 to
+      0.197743 and the 20 fakes 0.210054 to 0.211017, disjoint with a gap of 0.012311, and the correct
+      polarity gives EER 0.0000. The sweep counts far as the fakes scoring above the threshold, which
+      for a score that rises with fakeness is the detection rate, so the printed figure is 1 - EER,
+      and it sits one line above 'real AASIST on ASVspoof 2019 LA 0.42% EER'. The watermark detector
+      never sees the payload either: toy_watermark_detect returns the sign of the carrier at 16 fixed
+      indices, run on the unwatermarked clip it returns the same 16 bits byte for byte, and inverting
+      all 16 payload bits changes nothing. The embedded step is 0.0005 against a carrier running to
+      0.2335 at those indices, 467x too small, and 0 of 16 probes sit close enough to zero for it to
+      flip a sign; over 500 random payloads the mean accuracy is 0.5000 exactly, and the printed
+      31.25% is 5 of 16, one draw of that coin. At 20 real and 20 fake both error rates move in steps
+      of 1/20, so the reachable EERs are multiples of 2.5 pp and the 0.42% quoted beside them is not
+      on the grid. And the doc's Build It Step 1 defines spectral_rolloff and is_suspicious, neither
+      of which exists in code/main.py, which scores a high-band energy ratio instead
+    uses_reference:
+      - synth_real_speech
+      - synth_fake_speech
+      - toy_detector_score
+      - toy_watermark_embed
+      - toy_watermark_detect
+  - index: 2
+    slug: noise_improves_the_bit_accuracy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Install `audioseal`, embed a 16-bit payload in a TTS output, re-decode. Corrupt the audio with noise and measure Bit Recovery Accuracy.
+    zh: |
+      **中等。** 安裝 `audioseal`，在一份 TTS 輸出裡嵌入 16 位元酬載，再解碼回來。用噪音破壞音訊，量測位元復原準確率。
+    verifies: >-
+      audioseal, silentcipher, torch, torchaudio and lameenc are all absent and the reference tree
+      ships no TTS output, so the corruption sweep runs against the scheme code/main.py does ship --
+      and the curve does not fall, it rises toward chance. Bit Recovery Accuracy is 0.3125 at 100 dB
+      SNR, 0.3219 at 40 dB, 0.4000 at 20 dB, 0.4297 at 10 dB and 0.4594 at 0 dB, averaged over 40
+      noise draws at each level. The readout is the sign of the carrier at 16 fixed indices and is
+      independent of the payload, so the clean value is a fixed wrong pattern, 5 of 16, and noise
+      walks it toward the 0.5000 a coin would score. Corrupting the audio makes the reported number
+      better, because there is nothing in the signal to degrade. Reading a sign blindly requires the
+      embedded step to outvote the carrier at every probe, so it must exceed 0.2335, the largest of
+      the 16 carrier magnitudes -- 467x the shipped 0.0005 and 0.79 of the clip's own peak of 0.2937
+      -- and BRA by step is 0.3125 at 0.0005, 0.6875 at 0.05 and 1.0000 at 0.2335. At a step that
+      works the curve the exercise asks for finally exists, holding at 1.0000 from clean down to 20 dB
+      SNR, 0.9891 at 10 dB and 0.9234 at 0 dB. Even repaired the scheme is the wrong shape: the
+      payload occupies 16 of 16000 samples, 0.10% of the clip, at indices fixed by len(audio) //
+      n_bits, so dropping one leading sample takes BRA to 0.5000, where AudioSeal adds a per-sample
+      field across the whole clip and survives a crop
+    uses_reference:
+      - synth_real_speech
+      - toy_watermark_detect
+  - index: 3
+    slug: a_margin_that_is_the_residue_of_two_cancellations
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Fine-tune a RawNet2 or AASIST on ASVspoof 2019 LA. Measure EER. Test on a held-out set of F5-TTS-generated clips — see how OOD detection degrades.
+    zh: |
+      **困難。** 在 ASVspoof 2019 LA 上微調一個 RawNet2 或 AASIST。量測 EER。再拿一組保留的 F5-TTS 生成片段來測 —— 看看分布外（OOD）的偵測能力退化得多嚴重。
+    verifies: >-
+      torch, torchaudio, transformers and soundfile are absent, ASVspoof 2019 LA is not here and the
+      reference tree holds no audio file, so nothing can be fine-tuned; the question that survives is
+      the second half's, and it answers exactly against the detector code/main.py ships. In
+      distribution the detector is perfect -- 10 real clips average 0.193926 and 10 shipped fakes
+      0.210493, disjoint, EER 0.0000 -- but the margin is only 0.016567 and it is the residue of two
+      much larger effects that nearly cancel. Removing the artifact from the fake generator drops the
+      ratio to 0.038557, 0.155369 below real, because the fake's noise floor is ten times lower; its
+      6000 Hz artifact then adds 0.171937 back. Each term is about ten times the margin the classifier
+      lives on, 9.4x and 10.4x. Off distribution the detector does not degrade, it inverts:
+      toy_detector_score sums spec[len(spec)//2:], which at n_fft=256 and 16 kHz begins at 4000 Hz, so
+      moving the artifact 100 Hz below that edge, from 6000 Hz to 3900 Hz with every other generator
+      setting unchanged, takes the EER from 0.0000 to 1.0000 -- every spoof then ranks as more real
+      than every real clip. The class is also decided as much by a parameter that is not an artifact
+      at all: keeping the 6 kHz tone and restoring the real noise floor gives 0.317614, 6.5x the
+      decision margin further from real than the shipped fake, with nothing about the spoof changed.
+      At 10 real and 10 fake the EER grid is multiples of 5.0 pp, so neither the 0.42% the doc quotes
+      for AASIST nor the 7.23% it quotes for ASVspoof 5 is a number this fixture could produce. The
+      off-distribution families are built by a generator that reproduces synth_fake_speech element for
+      element at the shipped settings, so only the parameter named in each row differs
+    uses_reference:
+      - synth_real_speech
+      - synth_fake_speech
+      - toy_detector_score
+      - magnitude_spectrum
