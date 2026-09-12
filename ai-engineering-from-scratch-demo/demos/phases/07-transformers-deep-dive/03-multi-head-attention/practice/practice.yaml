@@ -1,0 +1,91 @@
+lesson: 03-multi-head-attention
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/03-multi-head-attention/docs/en.md
+exercises:
+  - index: 1
+    slug: eleven_of_the_sixteen_head_counts_are_illegal
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Take the MHA from `code/main.py` and change `n_heads` from 1 to 16 with `d_model=64` fixed. Plot the loss of a tiny one-layer model on a synthetic copy task. Do more heads help, plateau, or hurt?
+    zh: |
+      **簡單。** 拿 `code/main.py` 裡的 MHA，固定 `d_model=64`，把 `n_heads` 從 1 改到 16。在一個合成的複製任務上，畫出單層小模型的損失。頭多了是有幫助、持平，還是有害？
+    verifies: >-
+      the sweep is run over every integer from 1 to 16, which is how the illegal ones surface:
+      split_heads asserts d_model % n_heads == 0, so at d_model=64 only 1, 2, 4, 8 and 16 are accepted
+      and the other 11 raise AssertionError('d_model not divisible by n_heads'). A plot from 1 to 16
+      has five points on it. The lesson ships no loss, no gradients and no optimizer, so the tiny
+      one-layer model is built here -- the lesson's MHA forward, a hand-written backward pass and Adam
+      -- and the numpy forward is checked against multi_head_attention at d_model=64 on the lesson's
+      own randn_matrix weights, agreeing to 9e-16, before the sweep runs in numpy rather than through
+      the lesson's triple-loop matmul. The copy task is two simultaneous lookups per position: each
+      token carries two query keys and must emit the values held at the two positions those keys
+      match, which is the smallest task a single attention distribution provably cannot do. The answer
+      is all three, in that order. One head recovers 51% of the target variance -- about half, which
+      is what averaging two lookups gets. Two heads reach 99% and four stay at 99%, so the second head
+      is worth 47 points and the third and fourth are worth nothing. Eight fall to 93% and sixteen to
+      72%, and they fall where d_head drops below the task's 12-dimensional keys: 16, 8 and 4. The
+      variable that decides help, plateau or hurt is d_model / n_heads and not n_heads
+    uses_reference:
+      - split_heads
+      - Matrix
+      - randn_matrix
+      - multi_head_attention
+  - index: 2
+    slug: the_cache_saving_is_unbounded_the_parameter_one_is_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement MQA (one KV head shared across all query heads). Measure how much parameter count drops vs full MHA. Compute how much the KV-cache size shrinks at inference for N=2048.
+    zh: |
+      **中等。** 實作 MQA（所有 query 頭共用一個 KV 頭）。量測參數量相較於完整 MHA 掉了多少。計算在 N=2048 推論時 KV 快取大小縮小了多少。
+    verifies: >-
+      MQA is grouped_query_attention(..., n_kv_heads=1), which the lesson already ships: repeat =
+      n_heads // 1, so every query head indexes Kh_small[0] and all 16 read one K head of width
+      d_model / n_heads = 4. At d_model=64 with n_heads=16 the parameters fall from 16384 to 8704 per
+      layer, 46.875%, and the KV cache at N=2048 falls from 262144 to 16384 elements, 16x or 93.75%.
+      The two are not the same kind of number. MQA leaves Wq and Wo at d_model^2 each and shrinks only
+      Wk and Wv, so the parameter ratio is 1/2 + 1/(2h) = 0.53125 here and converges to exactly 1/2:
+      measured at d_model = n_heads = 4096 the drop is 49.9878% and never reaches 50%, so no amount of
+      KV sharing removes more than half an attention block's weights. The cache ratio is 1/h with no
+      floor and no dependence on N or d_model -- 16x at 16 heads, 64x at 64 -- which is why every
+      modern decoder shares KV and none shares Wq. The control is that grouped_query_attention at
+      n_kv_heads = n_heads reproduces multi_head_attention bit for bit, difference 0.0, so the group
+      count is the only thing MQA changes
+    uses_reference:
+      - grouped_query_attention
+      - multi_head_attention
+      - split_heads
+      - matmul
+      - randn_matrix
+  - index: 3
+    slug: the_two_conditions_never_overlap
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Implement a tiny version of Multi-head Latent Attention: compress K,V to a rank-`r` latent, store the latent in the KV cache, decompress at attention time. At what `r` does cache memory cross below 1/8 of full MHA while quality stays within 1 bit of validation ppl?
+    zh: |
+      **困難。** 實作一個迷你版的多頭潛在注意力：把 K、V 壓成秩為 `r` 的潛在表示，KV 快取裡存這個潛在表示，注意時再解壓。`r` 要多小，快取記憶體才會低於完整 MHA 的 1/8，同時驗證困惑度的品質仍在 1 bit 之內？
+    verifies: >-
+      the lesson has no model, dataset, loss or perplexity, so validation ppl is read as the
+      validation loss of Exercise 1's one-layer model on its two-lookup copy task, and 1 bit is
+      converted honestly: for a Gaussian residual one bit per dimension is a factor of 4 in mean
+      squared error, since 0.5 * log2(mse_a / mse_b) = 1. The MLA is c = X Wd at width r, then K = c
+      Wuk and V = c Wuv, with only c cached. No r satisfies both conditions. The cache side is pure
+      arithmetic -- MLA stores r numbers per position where MHA stores 2 * d_model = 128, so r / 128 <
+      1/8 means r < 16 and r = 16 sits exactly on the line rather than under it. The quality side
+      first comes within 1 bit at r = 36, which caches 0.281 of MHA, 2.25x the target the exercise
+      sets, so the two conditions miss each other by that factor. The floor is information rather than
+      optimisation: each position's K and V must carry its key and both of its values, 12 + 14 + 14 =
+      40 dimensions, and the curve breaks exactly there -- 1.82 bits worse at r=32, 0.71 at 36, and
+      better than full MHA from 40 up -- so no learning rate can push a rank-r bottleneck below the
+      rank of what it carries. And the free win is 2x rather than 8x: at r = d_model = 64 the cache is
+      already halved, one latent instead of a K and a V, and the model is 1.04 bits better than full
+      MHA because the shared factorisation ties K and V together. The MHA arm agrees with the lesson's
+      own multi_head_attention to 9e-16
+    uses_reference:
+      - multi_head_attention
+      - randn_matrix
