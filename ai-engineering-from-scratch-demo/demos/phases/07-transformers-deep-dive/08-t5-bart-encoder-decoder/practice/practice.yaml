@@ -1,0 +1,86 @@
+lesson: 08-t5-bart-encoder-decoder
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/08-t5-bart-encoder-decoder/docs/en.md
+exercises:
+  - index: 1
+    slug: concatenating_gives_the_wrong_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`, apply span corruption to a 30-token sentence, verify that concatenating the non-sentinel source tokens with the decoded target spans reproduces the original.
+    zh: |
+      **簡單。** 執行 `code/main.py`，對一個 30 個詞元的句子套用片段破壞，並驗證把來源中非哨兵的詞元與解碼出的目標片段接回去，能重現原句。
+    verifies: >-
+      both procedures are run on the same corrupted pair -- the one the exercise describes, source
+      without sentinels concatenated with target without sentinels, and the one the lesson ships,
+      round_trip -- on the 30-token sentence the exercise asks for, the lesson's own being 25.
+      round_trip reproduces the original on 300 of 300 seeds. The concatenation does not: it gets the
+      length exactly right at 30 tokens and the order wrong, first mismatch at index 14, because every
+      masked span is appended at the end instead of returned to its own position. It cannot work,
+      since the sentinel is the position and dropping it leaves the original's multiset rather than
+      its sequence. At the documented rate the corruption is also much weaker than it reads: n_mask =
+      int(round(30 * 0.15)) is int(round(4.5)) = 4 because Python rounds halves to even, already 13.3%
+      before a span is placed, and n_spans = int(round(4 / 3.0)) = 1, so 30 tokens get exactly one
+      span on every one of 300 seeds and mean_span selects the number of spans rather than their
+      length. The realised mask is 2.33 tokens, 7.8%, about half the 15% requested, because
+      int(rng.gauss(3, 1)) truncates toward zero and the span is clipped again by min(length,
+      remaining, n - start). The closing sentinel is load-bearing -- round_trip's parser flushes a
+      span only on meeting the next sentinel, so dropping the trailing one breaks reconstruction --
+      and no two sentinels are ever adjacent
+    uses_reference:
+      - corrupt_spans
+      - round_trip
+      - sentinel
+  - index: 2
+    slug: the_masks_all_land_in_the_first_sixth
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement BART's `text_infill` noise: replace random spans with a single `<mask>` token, and the decoder must infer the correct span length plus contents. Show one example.
+    zh: |
+      **中等。** 實作 BART 的 `text_infill` 噪聲：把隨機片段換成單一個 `<mask>` 詞元，讓解碼器自行推斷正確的片段長度與內容。示範一個例子。
+    verifies: >-
+      text_infill already exists, so it is run at the rates the lesson uses, 500 times each, with one
+      example shown but not used as the evidence. One <mask> hides between 1 and 6 tokens across 7811
+      sampled spans, and the corrupted source cannot say which, which is exactly the objective the
+      exercise describes. But every mask lands at the front: the mean relative position of a <mask> is
+      0.158 at rate 0.15 where uniform would be 0.5, 0.303 at rate 0.3 and 0.494 at 0.6. text_infill
+      walks left to right opening a span with a hardcoded probability of 0.3 per position while
+      decrementing a budget of int(n * rate), so at the lesson's own default the budget is spent
+      inside the first sixth and the last two thirds of every sentence are never corrupted -- and the
+      fact that the skew disappears as the rate rises is the tell that it is the budget and not the
+      noise model. So rate controls how much is masked and never where, which in BART is the same
+      knob. Zero-length spans never occur either: BART's text infilling inserts a <mask> covering
+      nothing, which teaches the model that a mask can be deleted, and max(1, ...) forbids it -- 0
+      appears 0 times in 7811 sampled spans. The total is nonetheless right, 13.3% realised at rate
+      0.15 and 29.8% at 0.30, unlike corrupt_spans next door which asks 15% and delivers 7.8%
+    uses_reference:
+      - text_infill
+  - index: 3
+    slug: bleu_reads_sixty_eight_when_half_is_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Fine-tune `flan-t5-small` on a tiny English → pig-Latin corpus (200 pairs). Measure BLEU on a held-out 50-pair set. Compare against fine-tuning `Llama-3.2-1B` on the same data with the same compute.
+    zh: |
+      **困難。** 用一個很小的「英文 → 豬拉丁文」語料（200 組配對）微調 `flan-t5-small`，在另外保留的 50 組配對上量測 BLEU。再用同樣的資料與同樣的運算量微調 `Llama-3.2-1B`，兩者互相比較。
+    verifies: >-
+      torch, transformers, datasets, sacrebleu and sentencepiece all return None from find_spec and
+      there is no network, so neither fine-tune can be fetched or trained. The corpus and the metric
+      are buildable, and running the metric against systems whose errors are known exactly says more
+      than either fine-tune would: 250 pronounceable words, 200 train and 50 held out with zero
+      overlap, scored by character-level corpus BLEU-4 with a brevity penalty implemented here. BLEU
+      cannot separate the outcomes this task has. The correct rule scores 100.00 with 50 of 50 exact;
+      a system with the vowel branch wrong scores 98.07 with 48 of 50; one that moves a single
+      consonant instead of the whole onset cluster is wrong on 28 of 50 items and still reads 68.47;
+      copying the input scores 23.37 with 0 of 50. The floor is 23 rather than 0, because pig-Latin is
+      a permutation of the input's characters plus a suffix and character n-grams barely notice, so a
+      quarter of the scale is unreachable from below. And a model that memorised all 200 training
+      pairs scores exactly the copy baseline, 23.37, since the held-out words share zero entries with
+      the training set -- 200 pairs either teach the rule or teach nothing measurable, and the partial
+      credit lives in the metric rather than in the task. On the published sizes, flan-t5-small's 77M
+      against Llama-3.2-1B's 1.24B is 16.1x, so equal FLOPs buys the larger model about a sixteenth of
+      the steps, and the comparison also puts an instruction-tuned checkpoint against a base one
