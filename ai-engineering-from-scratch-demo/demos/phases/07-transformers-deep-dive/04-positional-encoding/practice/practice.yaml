@@ -1,0 +1,89 @@
+lesson: 04-positional-encoding
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/04-positional-encoding/docs/en.md
+exercises:
+  - index: 1
+    slug: half_the_matrix_has_no_stripes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Plot the sinusoidal `PE` matrix as a heatmap for `max_len=512, d=128`. Confirm the "stripes get wider as dimension index grows" pattern.
+    zh: |
+      **簡單。** 用 `max_len=512, d=128` 把正弦 `PE` 矩陣畫成熱圖。確認「條紋隨維度索引變大而變寬」的模式。
+    verifies: >-
+      the stripes are counted rather than glanced at: sign changes per sine column of the lesson's own
+      sinusoidal_pe(512, 128) fall monotonically from 162 to 0, matching closed-form wavelengths of
+      6.28 positions at band 0 and 54410 at band 63, a factor of 8660. The pattern is confirmed and it
+      is half absent. A stripe needs 2*pi*base^(2i/d) <= 512, which holds only up to band 30, so 31 of
+      64 bands stripe and 33 never complete a cycle: the top half of the heatmap is a smooth ramp and
+      the last band traverses 0.94% of one cycle across the entire matrix, leaving its two columns
+      nearly constant. Two invariants a picture cannot show. Every row has exactly the same norm --
+      sin^2 + cos^2 = 1 per band makes |PE[pos]| equal to sqrt(d/2) = 8.000000000000 at all 512
+      positions, min and max agreeing to the last printed digit, so the heatmap redistributes
+      brightness and never adds any. And the sinusoidal dot product is already purely relative: PE[p]
+      . PE[p+g] moves by at most 3e-14 as p ranges over 0, 17, 100 and 300, so the lesson's closing
+      credit to RoPE for encoding relative position in the dot product does not distinguish it -- what
+      distinguishes RoPE is surviving Wq and Wk, since sinusoidal PE is added to x before those
+      projections. matplotlib is absent, so imshow is a 16-row text raster of the same matrix
+    uses_reference:
+      - sinusoidal_pe
+  - index: 2
+    slug: interpolation_relabels_gap_four_as_gap_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement NTK-aware RoPE scaling. Train a tiny LM on sequences of length 256, then test on length 1024 with and without scaling. Measure perplexity.
+    zh: |
+      **中等。** 實作 NTK-aware 的 RoPE 縮放。用長度 256 的序列訓練一個迷你語言模型，然後在長度 1024 上分別以有縮放與無縮放測試。量測困惑度。
+    verifies: >-
+      NTK-aware scaling is base' = base * s^(d/(d-2)) at s = 1024/256 = 4, implemented by passing that
+      base to the lesson's own apply_rope, and it is verified to be exactly what it claims: the base
+      moves 10000 -> 41829.4, band 0's wavelength ratio is 1.000000 and band 31's is 4.000000, against
+      position interpolation's uniform 4x on every band. Interpolation is a relabelling and an exact
+      one -- apply_rope at pos/4 makes gap 4 return the same float as gap 1 does unscaled, difference
+      0.0 rather than 1e-16 -- so a model trained on gaps 1..256 has its whole learned profile
+      compressed into the first quarter of its range. Summed over gaps 1, 2, 4, 8 and 16 and
+      normalised by the unscaled profile's own magnitude, interpolation moves the score by 47.6% and
+      NTK-aware by 6.8%, a factor of 7, and short gaps carry most of a language model's predictive
+      mass. Extrapolation by itself breaks nothing: the score at a fixed gap is identical at base
+      positions 0, 50, 500 and 4000 to 3e-14, so only unseen gaps are new. The perplexity the exercise
+      asks for cannot be measured -- the lesson ships no model, tokenizer, data, loss or optimizer and
+      main is four print-only demos -- but the band count says what it would be measuring: 13 of 32
+      bands wrap inside the trained 256 positions, 18 inside 1024 at the same base, and NTK returns 2
+      of those 5 newly wrapped bands to the regime the model saw
+    uses_reference:
+      - apply_rope
+      - dot
+  - index: 3
+    slug: alibi_degrades_by_becoming_local
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement ALiBi and RoPE in the same attention module. Train a 4-layer transformer on a copy task with sequences of length 512. Extrapolate to 2048 at test time. Compare degradation.
+    zh: |
+      **困難。** 在同一個注意力模組裡同時實作 ALiBi 與 RoPE。用長度 512 的序列在複製任務上訓練一個 4 層 Transformer。測試時外推到 2048。比較退化的程度。
+    verifies: >-
+      the combined module is built -- q and k rotated by the lesson's apply_rope, the lesson's ALiBi
+      slope subtracted from the score afterwards -- and the two compose by addition exactly: the
+      combined score minus the bias equals the RoPE score to 6e-14 at gaps 1, 99 and 2048. RoPE alone
+      has no distance decay whatever, and not approximately: the rotation is orthogonal, so it moves k
+      without changing its norm and the score distribution over isotropic q, k cannot depend on the
+      gap. Measured, the standard deviation is 2.137 at gap 1 and 2.137 at gap 2048, 1e-15 apart, with
+      the mean at zero throughout, so the long-term decay RoPE is credited with belongs to trained Wq
+      and Wk and an extrapolated RoPE score is untrained rather than decayed. ALiBi's degradation is
+      bounded in kind rather than in size: penalties at gap 2048 are 512, 128, 32 and 8 against a
+      content sd of 2.14, that is 240, 60, 15 and 4 sigmas, while at 512 the flattest head is only 0.9
+      sigmas and content still competes -- so 512 -> 2048 turns ALiBi from 'content competes with
+      distance' into 'distance decides'. The slopes span 64x, so the heads do not degrade together and
+      the comparison has a per-head answer. And the lesson's own alibi_bias cannot be called at the
+      length the exercise sets: it materialises n_heads * L^2 Python floats, 1048576 at L=512
+      measuring 32 MiB, so 16777216 floats and about 516 MiB at 2048. The 4-layer transformer has
+      nothing to train -- no model, data, loss or optimizer, and torch is absent
+    uses_reference:
+      - apply_rope
+      - dot
+      - alibi_slopes
+      - alibi_bias

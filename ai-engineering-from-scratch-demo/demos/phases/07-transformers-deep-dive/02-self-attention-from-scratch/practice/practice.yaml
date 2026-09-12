@@ -1,0 +1,89 @@
+lesson: 02-self-attention-from-scratch
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/02-self-attention-from-scratch/docs/en.md
+exercises:
+  - index: 1
+    slug: the_negative_infinity_the_exercise_asks_for
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Modify `scaled_dot_product_attention` to accept an optional mask matrix that sets certain positions to negative infinity before softmax (this is how causal/decoder masking works)
+    zh: |
+      修改 `scaled_dot_product_attention`，讓它接受一個選用的遮罩矩陣，在 softmax 之前把某些位置設為負無限大（因果／解碼器遮罩就是這樣做的）
+    verifies: >-
+      the mask argument is added to scaled_dot_product_attention as a strict extension: with mask=None
+      the weights and the output are bit-identical to the lesson's own function on the lesson's own X
+      and SelfAttention weights. Under a causal mask row 0 comes back one-hot to the bit, [1, 0, 0, 0,
+      0, 0], and the output for the first token is bit-identical to v_0, which is why a decoder needs
+      a prompt to start from. The fill the exercise prescribes is the unsafe one. The lesson's softmax
+      subtracts the row max, so a fully masked row makes that max -inf and -inf minus -inf is nan: all
+      6 entries return nan and spread through weights @ V, where -1e9 returns a uniform row instead.
+      Causal masking never trips it because the diagonal is always kept, but a padding mask -- the
+      other half of 'certain positions' -- hits it on the first fully padded row. Across the causal
+      mask the two fills agree to 0.0, the same floats rather than merely close, because exp(-1e9 -
+      max) underflows to exactly zero, so the safer fill costs nothing numerically. The mask collapses
+      row entropies to at most log(i+1), exactly 0 at row 0, and leaves row n-1 bit-identical to
+      unmasked: exactly n-1 of n rows move, which is how the triangularity is confirmed rather than
+      assumed
+    uses_reference:
+      - softmax
+      - scaled_dot_product_attention
+      - SelfAttention
+  - index: 2
+    slug: main_prints_the_same_matrix_twice
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement multi-head attention from scratch: split Q, K, V into `n_heads` chunks, run attention on each, concatenate, and project through a final weight matrix Wo
+    zh: |
+      從零實作多頭注意力：把 Q、K、V 切成 `n_heads` 塊，各自跑注意力，串接起來，再經過最後的權重矩陣 Wo 投影
+    verifies: >-
+      the exercise's construction -- one fused projection sliced into n_heads chunks -- is built and
+      compared with the lesson's, which instead runs n_heads whole SelfAttention modules over the full
+      input. Horizontally stacking the per-head Wq, Wk and Wv into one (16, 16) matrix, projecting
+      once, slicing into dk-wide chunks and running the lesson's own scaled_dot_product_attention
+      reproduces the lesson's output to 0.0 and every per-head weight matrix exactly, so the two
+      formulations differ in memory layout and not in arithmetic. The parameter count is identical as
+      well, n_heads * d_model * dk = d_model^2 = 256 per projection, because dk = d_model / n_heads:
+      splitting buys one GEMM instead of n_heads and not fewer weights. main() then prints the same
+      attention matrix twice -- MultiHeadSelfAttention gives head i seed + i, so head 0 is
+      SelfAttention(16, 8, 8, seed=42), the object the single-head demo built twenty lines earlier,
+      and 'Head 1 attention weights' reprints 'Attention weights' bit for bit with nothing in the
+      output saying so. The same offset scheme aliases across configurations: heads[1] at seed 42 and
+      heads[0] at seed 43 are the same draw. And Wo is the only thing that mixes heads at all --
+      concatenation leaves them in disjoint column blocks, Wo is dense with all 256 entries nonzero,
+      and zeroing the last head moves all 16 output columns
+    uses_reference:
+      - scaled_dot_product_attention
+      - SelfAttention
+      - MultiHeadSelfAttention
+  - index: 3
+    slug: the_sentence_never_enters_the_computation
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Take two different sentences of the same length, feed them through the same SelfAttention instance, and compare their attention patterns. What changes? What stays the same?
+    zh: |
+      拿兩個長度相同但內容不同的句子，餵進同一個 SelfAttention 實例，比較它們的注意力模式。什麼變了？什麼沒變？
+    verifies: >-
+      two sentences of the same length are run through one SelfAttention instance, built from two
+      seeds because SelfAttention.forward(self, X) takes an array and no tokens and main() uses its
+      `sentence` list only for row and column labels. What changes is the numbers and nothing else:
+      mean |W1 - W2| is 0.104 with a largest single disagreement of 0.378 on entries averaging 0.167,
+      and both matrices stay high-entropy, 0.95 and 0.88 of log 6, because these projections are
+      random rather than trained, so neither pattern means anything and they differ the way two draws
+      differ. What stays the same is the instance, the shape and the row sums -- forward touches no
+      state so Wq is bit-identical afterwards, both matrices are (6, 6), and every row sums to 1
+      within 2.2e-16. The token strings are decorative: the same X returns a bit-identical matrix
+      whatever the words are called. The invariant that actually answers the question is that word
+      order does not exist here -- permuting the rows of X returns the same matrix with rows and
+      columns permuted, to 5.6e-17, and every output row relabelled, to 2.2e-16, so a sentence and any
+      shuffle of it are the same input to this module, which is why Lesson 04 exists. And the diagonal
+      is not privileged: over 2000 random sentences the row argmax is the diagonal 17.6% of the time
+      against 16.7% by chance, the fraction of a point of excess being q_i and k_i sharing x_i rather
+      than any self-reference mechanism
+    uses_reference:
+      - SelfAttention

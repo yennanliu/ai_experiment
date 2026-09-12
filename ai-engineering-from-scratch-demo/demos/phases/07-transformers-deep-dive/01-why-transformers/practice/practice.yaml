@@ -1,0 +1,90 @@
+lesson: 01-why-transformers
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/01-why-transformers/docs/en.md
+exercises:
+  - index: 1
+    slug: sixty_four_lanes_of_the_same_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Take `rnn_style` from `code/main.py` and replace the scalar hidden state with a length-64 vector of hidden states. Re-measure. How much does the serial overhead grow with hidden-state dimension?
+    zh: |
+      **簡單。** 拿 `code/main.py` 裡的 `rnn_style`，把純量隱藏狀態換成長度 64 的隱藏狀態向量。重新量測。串列開銷隨隱藏狀態維度成長了多少？
+    verifies: >-
+      the scalar hidden state is replaced by a length-64 vector twice -- once literally, h = [decay*hi
+      + x for hi in h], and once as the recurrence an RNN actually runs, h = W h + x -- and both are
+      timed against the lesson's own rnn_style with benchmark()'s best-of-three protocol. The
+      wall-clock answer is that 64 lanes cost about 85x the scalar at N=20000, not 64x, because the
+      comprehension adds a per-step allocation the scalar loop does not have; per lane that overhead
+      falls from 3.9x at d=1 to 1.3x at d=64, so the total grows a little faster than d while the cost
+      per lane improves. The serial overhead itself grows by exactly zero: the lesson's own depth()
+      takes n and no d, rnn_depth = n at every hidden size, and Step 2 states that depth and not op
+      count decides GPU time, so the quantity the exercise names is invariant under the change the
+      exercise asks for -- what grows is work per step, the part a GPU parallelises for free. The
+      literal reading is also degenerate: every lane starts at 0.0 and receives the same decay*hi + x,
+      so len(set(h)) is 1 and the value is bit-identical to rnn_style's scalar, 64x the work for zero
+      extra information, because nothing in an elementwise update mixes the lanes. The growth the
+      question is reaching for is quadratic and only the mixed form has it: h = W h + x is d^2 = 4096
+      multiply-adds per step and measures about 11000x the scalar, some 120x the elementwise reading
+    uses_reference:
+      - rnn_style
+      - depth
+  - index: 2
+    slug: the_equivalence_check_runs_on_the_safe_input
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement a parallel prefix-sum (Hillis-Steele scan) in pure Python. Verify it produces the same numerical output as a serial scan on length 1024. Count the depth.
+    zh: |
+      **中等。** 用純 Python 實作平行前綴和（Hillis-Steele 掃描）。在長度 1024 上驗證它與串列掃描產生相同的數值輸出。數一下深度。
+    verifies: >-
+      the Hillis-Steele scan is re-derived from the recurrence rather than copied and comes out
+      bit-identical to the lesson's own parallel_scan, which the lesson already ships. Depth is 10 =
+      log2(1024) against 1023 serial steps, 102x less, bought with 9217 additions against 1023 --
+      9.01x -- because a pass at stride s updates n - s positions, so the scan is not work-efficient
+      and that factor is the price of the depth. The exercise's own claim fails: at length 1024 on the
+      lesson's own benchmark() data only 23 of 1024 entries are bit-identical, worst gap 4.1e-14
+      absolute and 45 ULP, because float addition is not associative and the two scans bracket the
+      same sum differently. main()'s check passes because its fixture is [float(i) for i in range(16)]
+      -- small exact integers whose every partial sum is exactly representable -- and that generator
+      stays 1024/1024 identical at length 1024, so the fixture and not the length is what passes the
+      check. The 1e-9 threshold is also the wrong shape, being absolute on a prefix sum whose
+      magnitude grows with n: at n = 1048576, the top of benchmark()'s own sweep, the worst gap is
+      1.9e-8, over tolerance, while the relative error has not moved. And the parallel scan is not
+      'the same wall-clock' as its docstring claims but about 31x slower at that length, costing 9x
+      the adds plus a full list copy per pass
+    uses_reference:
+      - serial_scan
+      - parallel_scan
+  - index: 3
+    slug: the_sweep_ends_where_attention_stops_fitting
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Port the attention-style reduction to PyTorch on GPU. Time both as you sweep sequence length from 64 to 65,536. Plot and explain the curve shape.
+    zh: |
+      **困難。** 把注意力風格的歸約移植到 GPU 上的 PyTorch。把序列長度從 64 掃到 65,536，兩者都計時。畫出圖並解釋曲線的形狀。
+    verifies: >-
+      torch and jax both return None from find_spec and the host is arm64 with no CUDA device, so
+      'PyTorch on GPU' is unbuildable twice over; numpy's mean is the substitute -- one C-level
+      reduction with no Python work per element, the same dependency-graph claim as a GPU kernel at a
+      smaller constant -- and both arms are swept over the exact range asked for, 2^6 to 2^16. The
+      curve shape is a hockey stick and the log-log slope says so numerically: numpy's mean fits -0.03
+      over N=64..1024, 16x the data for the same microsecond, then +0.77 over 8192..65536, for +0.32
+      across the whole sweep. The plateau is fixed per-call dispatch cost, so the left half of the
+      plot times the call and only the right half times the reduction; a GPU has the same shape with
+      the knee further right because a kernel launch is slower still, and reading the flat part as
+      parallelism reads overhead. Nothing in the swept quantity is quadratic: attention_style is
+      sum(xs)/len(xs), a mean, O(N) in time and O(1) in extra memory, and at the sweep's own endpoint
+      the array is 512 KiB while a real N-by-N attention matrix is 16 GiB per head per layer, so the
+      doc's O(N^2) memory wall starts exactly where this sweep stops. The recurrent arm fits slope
+      0.98 across the same 1024x range, a ruler, so every bend in the plot belongs to the reduction's
+      plateau and none of it to recurrence. Step 1's claim that the reduction 'beats it at length >=
+      1,000' is off by a factor of 16: in the same pure Python it already wins at N=64 by 3.2x and at
+      all 11 lengths swept, because sum() is C
+    uses_reference:
+      - rnn_style
+      - attention_style
