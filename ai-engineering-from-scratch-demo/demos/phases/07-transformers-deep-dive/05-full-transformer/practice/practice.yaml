@@ -1,0 +1,98 @@
+lesson: 05-full-transformer
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/05-full-transformer/docs/en.md
+exercises:
+  - index: 1
+    slug: a_fifth_of_the_block_is_never_read
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Count the parameters in your encoder_block at `d_model=512, n_heads=8, ffn_expansion=4, swiglu=True`. Validate by implementing the block and using `sum(p.numel() for p in block.parameters())`.
+    zh: |
+      **簡單。** 計算你的 encoder_block 在 `d_model=512, n_heads=8, ffn_expansion=4, swiglu=True` 下的參數量。實作該區塊並用 `sum(p.numel() for p in block.parameters())` 驗證。
+    verifies: >-
+      the count is derived in closed form and checked against the lesson's own BlockParams at exactly
+      the stated settings, with the set of weights that count decided mechanically -- by parsing
+      encoder_block's source for the attributes it reads -- rather than assumed. The answer is
+      4194304, exactly 2^22: 4 * d^2 = 1048576 for attention plus 3 * d * h = 3145728 for the SwiGLU
+      FFN at h = 4d = 2048, with no biases. BlockParams holds 5242880. The constructor allocates Wq_x,
+      Wk_x, Wv_x and Wo_x -- decoder cross-attention -- unconditionally for every block, and
+      encoder_block's source never mentions them, so 1048576 of what the object carries is dead and
+      the validation the exercise prescribes, sum(p.numel() for p in block.parameters()), would return
+      1.25x the right number and agree with itself. SwiGLU at ffn_expansion=4 also costs 1.5x the FFN
+      it replaces -- 3145728 against a ReLU FFN's 2097152 at the same expansion, an extra 1048576, the
+      exact size of the whole attention sublayer -- where the usual convention is 8/3 expansion so the
+      two match. And the block carries zero normalisation parameters: rms_norm and layer_norm are both
+      written without a learnable scale. The prescribed one-liner cannot run at all -- torch is absent
+      and BlockParams is a plain object with no parameters() -- and summing len(Matrix.data) over its
+      attributes, the equivalent, is the act that exposes the dead weights
+    uses_reference:
+      - BlockParams
+      - encoder_block
+      - rms_norm
+      - layer_norm
+  - index: 2
+    slug: the_exercise_has_it_backwards
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Switch from post-norm to pre-norm. Initialize both and measure the activation norm after 12 stacked layers on random input. Post-norm's activations should explode; pre-norm's should stay bounded.
+    zh: |
+      **中等。** 從 post-norm 改成 pre-norm。兩者都初始化，並在隨機輸入上量測疊了 12 層之後的激活值範數。post-norm 的激活值應該會爆掉；pre-norm 應該維持有界。
+    verifies: >-
+      the lesson's encoder_block is already pre-norm, so the switch runs the other way: the post-norm
+      variant, x = norm(x + sublayer(x)), is written here and both stacks are driven by the same
+      twelve BlockParams and the same random input, so the only difference between the traces is where
+      the norm sits. The exercise's expectation is inverted in both halves. Post-norm's row RMS is 1.0
+      at every one of the twelve layers, the twelve values spanning 1.4e-07 which is rms_norm's own
+      eps=1e-6 and not dynamics; rms_norm is the last operation of every post-norm block, so the
+      output's row RMS is 1 by construction at any depth, initialisation or input, and there is no
+      experiment in which post-norm's forward activations explode. What explodes in a post-norm
+      transformer is the gradient, and the forward activation norm is precisely the quantity that
+      cannot show it. Pre-norm is the arm that grows: from an input row RMS of 0.982 to 1.180, 1.630,
+      2.142 and 2.791 at layers 1, 3, 6 and 12, a 2.84x growth, because the residual stream is never
+      normalised and only each branch's input is, so roughly independent contributions add in
+      variance. Growth against depth fits a log-log slope of 0.36, sub-linear and near the 0.5 of
+      variance accumulation rather than the 0 a normalised output would give
+    uses_reference:
+      - encoder_block
+      - multi_head_attention
+      - rms_norm
+      - ffn_swiglu
+      - add
+      - BlockParams
+      - randn
+  - index: 3
+    slug: reversing_the_source_changes_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement a 4-layer encoder-decoder on a toy copy task (copy `x` reversed). Train 100 steps. Report loss. Swap in RMSNorm + SwiGLU + RoPE — does loss drop?
+    zh: |
+      **困難。** 在一個玩具複製任務上（把 `x` 反轉後複製）實作一個 4 層的編碼器解碼器。訓練 100 步。報告損失。再換成 RMSNorm + SwiGLU + RoPE —— 損失有下降嗎？
+    verifies: >-
+      the 4-layer encoder-decoder is built from the lesson's own blocks and asked whether it can
+      represent the task before anything is trained. It cannot. The decoder's output is invariant to
+      any permutation of the source, to 5.3e-15 -- invariant and not merely equivariant. The encoder
+      is equivariant, permuting the source permuting enc_out's rows to 2.7e-15, and cross-attention
+      then sums over those rows with weights depending only on their content, so the permutation
+      cancels. Feeding the source reversed changes every number the decoder produces by at most
+      5.3e-15, and so do all 719 other orderings of six tokens, which means 'copy x reversed' and
+      'copy x' are the same target to this model and 100 steps of training report a floor that is the
+      same floor for both arms. Two of the exercise's three swaps are also no-ops: encoder_block and
+      decoder_block both call rms_norm and neither calls layer_norm, and BlockParams defaults
+      use_swiglu=True, so the baseline the exercise asks you to improve already is RMSNorm plus
+      SwiGLU. The only live term is RoPE, and apply_rope does not exist in this module -- nor does any
+      other positional encoding, which is exactly why the permutation symmetry holds. RoPE is
+      therefore not an improvement here but the enabling condition: it is the one swap that changes
+      what the model can represent, taking the loss from a floor to zero, and the other two contribute
+      nothing to that
+    uses_reference:
+      - encoder_block
+      - decoder_block
+      - BlockParams
+      - Matrix
+      - randn
