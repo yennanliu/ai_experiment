@@ -4,9 +4,10 @@
     you sweep sequence length from 64 to 65,536. Plot and explain the curve
     shape.
 
-Reading of the exercise: `torch` and `jax` both return None from `find_spec` and
-the host is arm64 with no CUDA device, so "PyTorch on GPU" is unbuildable twice
-over. The substitution is numpy: one C-level reduction with no Python work per
+Reading of the exercise: neither `torch` nor `jax` can see a GPU device here --
+`gpu()` asks each backend for its device count rather than merely for its
+presence, and both answer zero (on this host neither is installed at all), so
+"PyTorch on GPU" is unbuildable. The substitution is numpy: one C-level reduction with no Python work per
 element, which is the same dependency-graph argument as a GPU kernel at a smaller
 constant, and it keeps the thing being measured -- overhead versus bandwidth --
 intact. Both arms are swept over the exact range asked for, 2^6 to 2^16.
@@ -95,6 +96,17 @@ def plot(timings, columns=(0, 2), marks="Rn"):
     return "\n".join(["".join(line) for line in grid] + [axis + "   (x = log2 N, y = log10 s)"])
 
 
+def gpu(name):
+    """Is there a GPU arm to run at all? Installed is not enough -- it must see a device."""
+    if importlib.util.find_spec(name) is None:
+        return False
+    try:
+        module = importlib.import_module(name)
+        return bool(module.cuda.device_count() if name == "torch" else module.devices("gpu"))
+    except Exception:                  # installed, but no backend behind it: still no GPU arm
+        return False
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     timings = sweep(ref)
@@ -102,7 +114,7 @@ def solve():
         "timings": timings, "plot": plot(timings),
         "flat": slope(timings, 2, hi=FLAT_HI), "ramp": slope(timings, 2, lo=RAMP_LO),
         "whole": slope(timings, 2), "rnn_slope": slope(timings, 0),  # log-log exponents
-        "missing": [m for m in ("torch", "jax") if importlib.util.find_spec(m) is None],
+        "gpu": {m: gpu(m) for m in ("torch", "jax")},   # a device, not a package
         "python_wins": [n for n, row in timings.items() if row[1] < row[0]],
         "attention_bytes": (2 ** HI) ** 2 * 4, "array_bytes": 2 ** HI * 8,  # fp32 vs float64
     }
@@ -112,11 +124,12 @@ def verify(result):
     timings, span = result["timings"], 2 ** HI // 2 ** LO
     return [
         practice.Check(
-            "CONTROL: 'PyTorch on GPU' is unbuildable twice over, so numpy is the arm",
-            result["missing"] == ["torch", "jax"],
-            f"find_spec is None for {result['missing']} and the host has no CUDA device, so both "
-            "halves are absent. numpy's mean is one C-level reduction with no Python work per "
-            "element -- a GPU kernel's dependency-graph claim at a smaller constant",
+            "CONTROL: no GPU device is reachable here, so numpy is the arm",
+            not any(result["gpu"].values()),
+            f"asked for a device count rather than for a package: {result['gpu']}. 'PyTorch on "
+            "GPU' is unbuildable on this host, so numpy stands in -- one C-level reduction with "
+            "no Python work per element, a GPU kernel's dependency-graph claim at a smaller "
+            "constant. An installed but device-less backend counts as absent here, as it should",
         ),
         practice.Check(
             "ANSWER: a hockey stick whose flat part is dispatch cost, not parallelism",

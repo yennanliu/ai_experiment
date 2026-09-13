@@ -19,7 +19,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 2 | Medium. Replace learned positional embeddings with RoPE. Apply the rotation to Q and K inside… | code | T1 | `ex02_rope_is_lower_on_every_seed_and_smaller.py` |
 | 3 | Medium. Implement a KV cache in the sampling loop. Generate 500 tokens with and without cache… | code | T1 | `ex03_the_cache_is_worth_block_size_not_five_to_twenty.py` |
 | 4 | Hard. Add a second head to the model that predicts the next-plus-one token (MTP — Multi-Token… | code | T1 | `ex04_the_second_head_helps_by_less_than_the_seed_spread.py` |
-| 5 | Hard. Replace the single FFN per block with a 4-expert MoE. Router + top-2 routing. See how v… | code | T1 | `ex05_matched_active_the_moe_is_not_better.py` |
+| 5 | Hard. Replace the single FFN per block with a 4-expert MoE. Router + top-2 routing. See how v… | code | T1 | `ex05_matched_active_the_moe_is_a_wash.py` |
 <!-- generated:end -->
 
 ## Answers
@@ -117,14 +117,20 @@ Matched exactly: 4 experts of hidden `d_model` at top-2 activate
 `2 × (2·64·64) = 16,384` FFN weights per layer, against the dense block's
 `2·64·128 = 16,384`.
 
+Routing is held in both directions: the router gets no gradient, and the gate it
+produces is a constant in the backward pass. So `step` returns the exact gradient
+of a *fixed-routing* objective, and the MoE arm optimises a surrogate where the
+dense arm — whose gate is the constant 1.0 — optimises the loss itself. That is a
+caveat on the gap below, and one more reason not to read 0.012 nats as a result.
+
 | seed | 0 | 1 | 2 | mean | params |
 |---|---:|---:|---:|---:|---:|
-| dense FFN | 2.939 | **2.896** | **2.828** | **2.887** | 105,344 |
-| 4-expert MoE | **2.836** | 2.987 | 2.850 | 2.891 | **155,264** |
+| dense FFN | 2.934 | 2.944 | **2.829** | 2.902 | 105,344 |
+| 4-expert MoE | **2.858** | **2.913** | 2.900 | **2.890** | **155,264** |
 
-**ANSWER: 0.003 nats apart** — inside the **0.111** the dense arm alone spans
-across the same seeds — with the MoE winning 1 seed of 3, for **1.47×** the
-memory. Identical FLOPs per token; twice the FFN weights to hold.
+**ANSWER: 0.012 nats apart** — inside the **0.115** the dense arm alone spans
+across the same seeds, and the arm with the lower mean is the one that loses the
+single best run of the six — for **1.47×** the memory. Identical FLOPs per token; twice the FFN weights to hold.
 
 **FINDING: there is nothing here for four experts to divide.** 899 training
 characters over a 46-symbol vocabulary contain no four separable regimes, so each

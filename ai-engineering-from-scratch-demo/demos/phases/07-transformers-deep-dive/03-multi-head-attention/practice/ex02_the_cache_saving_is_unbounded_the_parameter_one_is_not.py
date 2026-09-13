@@ -130,7 +130,8 @@ def verify(result):
             f"{floor:.4%} and it never reaches 50%, because "
             f"Wq and Wo are untouched by KV sharing. The cache ratio has no such floor. The two "
             "questions the exercise pairs are a bandwidth number and a weight number, and only "
-            "one of them is unbounded -- which is why decoders share KV and never share Wq",
+            "one of them is unbounded: the cache is the axis with room in it and the weight "
+            "count is not. That is a statement about these two ratios and nothing wider",
         ),
         practice.Check(
             "CONTROL: GQA with n_kv_heads = n_heads is MHA, to 0.0",

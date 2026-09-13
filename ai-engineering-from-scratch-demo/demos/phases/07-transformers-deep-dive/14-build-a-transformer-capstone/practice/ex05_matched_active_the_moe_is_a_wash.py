@@ -8,20 +8,27 @@ is matched exactly. The dense block gets one FFN of hidden `2 * d_model`; the Mo
 gets 4 experts of hidden `d_model` at top-2, which activates
 `2 x (2 x 64 x 64) = 16,384` weights per layer against the dense block's
 `2 x 64 x 128 = 16,384`. Both arms are rebuilt in numpy at the lesson's own
-configuration, run on 3 seeds and scored at the best checkpoint. The router is
-initialised and then held: its gradient is set to zero, so this measures what
-four experts buy under fixed routing, and Lesson 11 measures what learned routing
-adds on top.
+configuration, run on 3 seeds and scored at the best checkpoint.
+
+**Routing is held, and held in both directions.** The router gets no gradient,
+and the gate it produces is treated as a constant in the backward pass -- so what
+`step` returns is the exact gradient of a *fixed-routing* objective and not of
+the full one. That is what "what four experts buy under fixed routing" means
+here; Lesson 11 measures what learned routing adds on top. It also means the MoE
+arm optimises a surrogate where the dense arm, whose gate is the constant 1.0,
+optimises the loss itself -- a caveat on any conclusion drawn from the gap
+below, and one more reason not to read 0.012 nats as a result.
 
 **ANSWER: a wash.**
 
 | seed | 0 | 1 | 2 | mean |
 |---|---:|---:|---:|---:|
-| dense FFN | 2.939 | **2.896** | **2.828** | **2.887** |
-| 4-expert MoE, top-2 | **2.836** | 2.987 | 2.850 | 2.891 |
+| dense FFN | 2.934 | 2.944 | **2.829** | 2.902 |
+| 4-expert MoE, top-2 | **2.858** | **2.913** | 2.900 | **2.890** |
 
-The two means are **0.003 nats** apart -- inside the **0.111** the dense arm alone
-spans across the same three seeds -- and the MoE wins 1 seed of 3.
+The two means are **0.012 nats** apart -- inside the **0.115** the dense arm alone
+spans across the same three seeds -- and the arm with the lower mean is the one
+that loses the single best run of the six.
 
 **FINDING: matched active, 1.47x the memory.** 105,344 parameters against
 155,264. The FFN portion doubles exactly -- 4 experts where 2 are used -- and
@@ -35,8 +42,10 @@ version of what one FFN learns from all of it. That is Lesson 11's locality
 finding arriving from the other direction: an expert is only worth its memory if
 the tokens it sees have something in common.
 
-Structure: `start` builds either FFN shape; `step` is the forward and backward
-pass in one function, with top-2 routing inlined; `train` is Adam.
+Structure: `gates` is the router, written as a mask over the hidden units so that
+one FFN matrix holds all four experts; `start` builds either shape; `step` is the
+forward and backward pass in one function; `train` is Adam. No gradient is
+emitted for the router, which is how it is held.
 """
 
 from __future__ import annotations
@@ -51,20 +60,30 @@ BLOCK, WIDTH, HEADS, LAYERS, BATCH, RATE = 64, 64, 4, 3, 8, 3e-4
 HEAD_DIM, CHECKS, SEEDS, EXPERTS, TOP = WIDTH // HEADS, (250, 500, 1_000), 3, 4, 2
 
 
+def gates(np, a, w, i, moe):
+    """Top-TOP softmax routing, as a mask over hidden units; a plain 1.0 when dense."""
+    if not moe:
+        return 1.0
+    logits = a @ w[f"r{i}"]
+    kept = np.exp(logits - logits.max(-1, keepdims=True)) * (
+        logits >= np.sort(logits, -1)[..., -TOP][..., None])          # zero outside the top TOP
+    return np.repeat(kept / kept.sum(-1, keepdims=True), WIDTH, -1)   # WIDTH units per expert
+
+
 def start(np, rng, vocab, moe):
-    """One dense FFN per block, or EXPERTS of half that hidden size plus a router."""
+    """One FFN of hidden 2*WIDTH per block, or EXPERTS of hidden WIDTH plus a router."""
     make = lambda a, b: rng.normal(0, math.sqrt(2 / (a + b)), (a, b))
-    hidden, count = (WIDTH, EXPERTS) if moe else (2 * WIDTH, 1)   # matched active weights
+    hidden = EXPERTS * WIDTH if moe else 2 * WIDTH          # matched active weights
     return {"tok": make(vocab, WIDTH), "pos": rng.normal(0, 0.02, (BLOCK, WIDTH)),
-            **{f"{n}{i}": make(WIDTH, 3 * WIDTH if n == "qkv" else WIDTH)
-               for i in range(LAYERS) for n in ("qkv", "o")},
-            **{f"u{i}{e}": make(WIDTH, hidden) for i in range(LAYERS) for e in range(count)},
-            **{f"d{i}{e}": make(hidden, WIDTH) for i in range(LAYERS) for e in range(count)},
+            **{f"qkv{i}": make(WIDTH, 3 * WIDTH) for i in range(LAYERS)},
+            **{f"o{i}": make(WIDTH, WIDTH) for i in range(LAYERS)},
+            **{f"u{i}": make(WIDTH, hidden) for i in range(LAYERS)},
+            **{f"d{i}": make(hidden, WIDTH) for i in range(LAYERS)},
             **({f"r{i}": make(WIDTH, EXPERTS) for i in range(LAYERS)} if moe else {})}
 
 
 def step(np, idx, target, w, vocab, moe, backward=True):
-    """Forward pass, and the gradient of every weight if asked. Written as one pass."""
+    """Forward, and the fixed-routing gradient if asked -- the gate is held constant."""
     split = lambda a: a.reshape(a.shape[:-1] + (HEADS, HEAD_DIM)).swapaxes(1, 2)
     merge = lambda a, s: a.swapaxes(1, 2).reshape(s)
     n = idx.shape[1]
@@ -76,15 +95,10 @@ def step(np, idx, target, w, vocab, moe, backward=True):
         p /= p.sum(-1, keepdims=True)
         ctx = (p @ v).swapaxes(1, 2).reshape(x.shape)
         a = x + ctx @ w[f"o{i}"]
-        hs, gs = [np.maximum(a @ w[f"u{i}{e}"], 0) for e in range(EXPERTS if moe else 1)], [1.0]
-        if moe:                                    # top-2 softmax routing, zero elsewhere
-            top = np.argsort(-(a @ w[f"r{i}"]), -1)[..., :TOP]
-            gate = np.exp(np.take_along_axis(a @ w[f"r{i}"], top, -1))
-            gate /= gate.sum(-1, keepdims=True)
-            gs = [sum((top[..., j] == e) * gate[..., j] for j in range(TOP))[..., None]
-                  for e in range(EXPERTS)]
-        cache.append((x, q, k, v, p, ctx, a, hs, gs))
-        x = a + sum(g * (h @ w[f"d{i}{e}"]) for e, (h, g) in enumerate(zip(hs, gs)))
+        g = gates(np, a, w, i, moe)          # held: no gradient flows back through it
+        h = np.maximum(a @ w[f"u{i}"], 0) * g
+        cache.append((x, q, k, v, p, ctx, a, h, g))
+        x = a + h @ w[f"d{i}"]
     logits, rows = x @ w["tok"].T, idx.size
     probs = np.exp(logits - logits.max(-1, keepdims=True))
     probs /= probs.sum(-1, keepdims=True)
@@ -92,17 +106,14 @@ def step(np, idx, target, w, vocab, moe, backward=True):
     if not backward:
         return loss, None
     probs.reshape(-1, vocab)[np.arange(rows), target.ravel()] -= 1
-    g = probs / rows
-    G, dx = {"tok": g.reshape(-1, vocab).T @ x.reshape(-1, WIDTH)}, g @ w["tok"]
+    top = probs / rows
+    G, dx = {"tok": top.reshape(-1, vocab).T @ x.reshape(-1, WIDTH)}, top @ w["tok"]
     for i in reversed(range(LAYERS)):
-        xi, q, k, v, p, ctx, a, hs, gs = cache[i]
-        da = dx.copy()
-        for e, (h, g) in enumerate(zip(hs, gs)):
-            G[f"d{i}{e}"] = (g * h).reshape(-1, h.shape[-1]).T @ dx.reshape(-1, WIDTH)
-            dh = ((g * dx) @ w[f"d{i}{e}"].T) * (h > 0)
-            G[f"u{i}{e}"] = a.reshape(-1, WIDTH).T @ dh.reshape(-1, h.shape[-1])
-            da = da + dh @ w[f"u{i}{e}"].T
-        G |= {f"r{i}": np.zeros_like(w[f"r{i}"])} if moe else {}
+        xi, q, k, v, p, ctx, a, h, g = cache[i]
+        G[f"d{i}"] = h.reshape(-1, h.shape[-1]).T @ dx.reshape(-1, WIDTH)
+        dh = (dx @ w[f"d{i}"].T) * (h > 0) * g          # the gate scales the gradient too
+        G[f"u{i}"] = a.reshape(-1, WIDTH).T @ dh.reshape(-1, h.shape[-1])
+        da = dx + dh @ w[f"u{i}"].T
         G[f"o{i}"] = ctx.reshape(-1, WIDTH).T @ da.reshape(-1, WIDTH)
         dctx = split(da @ w[f"o{i}"].T)
         dp = dctx @ v.swapaxes(-1, -2)
@@ -151,7 +162,7 @@ def solve():
     for name, moe in (("dense", False), ("moe", True)):
         pairs = [train(np, ref, moe, max(CHECKS), seed=s, report=CHECKS) for s in range(SEEDS)]
         runs[name] = [min(curve.values()) for _, curve in pairs]
-        sizes[name] = sum(v.size for v in pairs[0][0].values())
+        sizes[name] = sum(v.size for v in pairs[0][0].values())   # both arms, all weights
     return {"runs": runs, "sizes": sizes, "spread": max(runs["dense"]) - min(runs["dense"]),
             "active": {"dense": 4 * WIDTH * WIDTH, "moe": TOP * 2 * WIDTH * WIDTH},
             "means": {k: statistics.fmean(v) for k, v in runs.items()},
@@ -164,10 +175,9 @@ def verify(result):
         practice.Check(
             "ANSWER: at matched active parameters it is a wash",
             abs(means["moe"] - means["dense"]) < result["spread"],
-            f"best val over {list(CHECKS)}: dense {[round(v, 3) for v in runs['dense']]} "
-            f"against MoE {[round(v, 3) for v in runs['moe']]}, means {means['dense']:.3f} and "
-            f"{means['moe']:.3f} -- {abs(means['moe'] - means['dense']):.3f} apart, inside the "
-            f"{result['spread']:.3f} the dense arm alone spans across the same seeds",
+            f"best val over {list(CHECKS)}: dense {[round(v, 3) for v in runs['dense']]} against "
+            f"MoE {[round(v, 3) for v in runs['moe']]} -- means {means['dense']:.3f} and "
+            f"{means['moe']:.3f}, inside the {result['spread']:.3f} the dense arm alone spans",
         ),
         practice.Check(
             "FINDING: matched active, 1.5x the memory",
@@ -175,10 +185,10 @@ def verify(result):
             and sizes["moe"] > 1.4 * sizes["dense"],
             f"{EXPERTS} experts of hidden {WIDTH} at top-{TOP} activate "
             f"{result['active']['moe']:,} FFN weights per layer, exactly the dense block's "
-            f"{result['active']['dense']:,} at hidden {2 * WIDTH}. Totals {sizes['dense']:,} "
-            f"against {sizes['moe']:,}, {sizes['moe'] / sizes['dense']:.2f}x, for a difference "
-            f"the experiment cannot resolve ({result['wins']} of {SEEDS} seeds) -- 899 characters "
-            "offer no specialisation to divide, Lesson 11 from the other direction",
+            f"{result['active']['dense']:,} at hidden {2 * WIDTH}, for {sizes['dense']:,} weights "
+            f"against {sizes['moe']:,} -- {sizes['moe'] / sizes['dense']:.2f}x the memory to hold, "
+            f"and {result['wins']} of {SEEDS} seeds: 899 characters offer no specialisation to "
+            "divide, which is Lesson 11 arriving from the other direction",
         ),
     ]
 

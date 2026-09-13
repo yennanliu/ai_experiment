@@ -88,8 +88,8 @@ exercises:
       SwiGLU. The only live term is RoPE, and apply_rope does not exist in this module -- nor does any
       other positional encoding, which is exactly why the permutation symmetry holds. RoPE is
       therefore not an improvement here but the enabling condition: it is the one swap that changes
-      what the model can represent, taking the loss from a floor to zero, and the other two contribute
-      nothing to that
+      what the model can represent, by breaking that symmetry. No loss is measured here; what is
+      measured is that without RoPE the target is outside the function class either way
     uses_reference:
       - encoder_block
       - decoder_block

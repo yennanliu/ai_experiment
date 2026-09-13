@@ -80,8 +80,9 @@ exercises:
       within 2.2e-16. The token strings are decorative: the same X returns a bit-identical matrix
       whatever the words are called. The invariant that actually answers the question is that word
       order does not exist here -- permuting the rows of X returns the same matrix with rows and
-      columns permuted, to 5.6e-17, and every output row relabelled, to 2.2e-16, so a sentence and any
-      shuffle of it are the same input to this module, which is why Lesson 04 exists. And the diagonal
+      columns permuted, to 5.6e-17, and every output row relabelled, to 2.2e-16. That is permutation
+      equivariance: a shuffle of a sentence returns the same rows in the new order, never different
+      rows, so nothing this module computes records which order it saw, which is why Lesson 04 exists. And the diagonal
       is not privileged: over 2000 random sentences the row argmax is the diagonal 17.6% of the time
       against 16.7% by chance, the fraction of a point of excess being q_i and k_i sharing x_i rather
       than any self-reference mechanism

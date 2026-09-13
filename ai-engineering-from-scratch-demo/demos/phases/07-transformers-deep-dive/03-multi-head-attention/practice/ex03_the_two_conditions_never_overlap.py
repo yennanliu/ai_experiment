@@ -36,9 +36,10 @@ is under the task's own floor before any model is trained.
 
 **FINDING: the free win is 2x, not 8x.** At `r = d_model = 64` the cache is
 already halved -- one latent instead of a K and a V -- and quality is **1.04
-bits better** than full MHA, because the shared low-rank factorisation ties K and
-V together. The exercise asks for the ratio where MLA starts to hurt; the
-measurement says it starts by helping.
+bits better** than full MHA. Why it is better is not measured here; what is
+measured is that halving the cache costs nothing on this task at this rank. The
+exercise asks for the ratio where MLA starts to hurt; the measurement says it
+starts by helping.
 
 Structure: `task`, `forward`, `backward`, `train` are Exercise 1's model with an
 optional latent path; `bits` is the mse-to-bits conversion stated above.
@@ -179,9 +180,10 @@ def verify(result):
             "FINDING: the free win is 2x and it is an improvement, not a cost",
             bits[D_MODEL] < -0.5 and ratio[D_MODEL] == 0.5,
             f"at r = d_model = {D_MODEL} the cache is halved -- one latent instead of a K and a "
-            f"V -- and the model is {-bits[D_MODEL]:.2f} bits *better* than full MHA, because the "
-            "shared factorisation ties K and V together. The question asks where MLA starts to "
-            "hurt; the measurement says it starts by helping",
+            f"V -- and the model is {-bits[D_MODEL]:.2f} bits *better* than full MHA. Why it is "
+            "better is not measured here; what is measured is that halving the cache costs "
+            "nothing at this rank. The question asks where MLA starts to hurt; it starts by "
+            "helping",
         ),
     ]
 

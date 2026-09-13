@@ -10,7 +10,8 @@ both encodings act in the same place and compose by addition. The 4-layer
 transformer does not exist to be trained: the lesson ships no model, no data, no
 loss and no optimizer, and `torch` is absent. "Compare degradation" is therefore
 compared where the difference lives -- in the score as a function of gap, over
-256 random query/key pairs, at the two lengths the exercise names.
+4,096 random query/key pairs of one head's width, `d_model/n_heads = 16`, scored
+the way a head scores, `q.k/sqrt(16)`, at the two lengths the exercise names.
 
 **ANSWER: the two compose exactly, because they act on different terms.** RoPE
 rotates `q` and `k` before the dot product; ALiBi adds `-m * |i - j|` after it.
@@ -19,25 +20,31 @@ so "in the same attention module" is addition and nothing else.
 
 **FINDING: RoPE alone has no distance decay whatever.** The rotation is
 orthogonal: it moves `k` without changing its norm, so over isotropic `q, k` the
-score's distribution *cannot* depend on the gap. Measured, the standard deviation
-is **2.137 at gap 1 and 2.137 at gap 2048**, 1e-15 apart, mean zero throughout.
+score's distribution *cannot* depend on the gap. Measured over 4,096 pairs the
+standard deviation is **0.992 at gap 1 and 0.998 at gap 2048** -- 0.6% apart,
+which is sampling noise on a quantity that is theoretically identical -- with the
+mean at zero throughout.
 The "long-term decay" RoPE is credited with is a property of trained `Wq`/`Wk`,
 not of the rotation. Extrapolating RoPE to 2048 does not produce a decayed score;
 it produces an **untrained** one, distributed exactly as gap 1 is.
 
-**ANSWER: ALiBi's degradation is bounded in kind, not in size.**
+**ANSWER: ALiBi's degradation is a multiplier, and the multiplier is the length
+ratio.**
 
-| head | slope | penalty at 512 | at 2048 | at 2048, in content sigmas |
+| head | slope | at 512, in content sigmas | at 2048 | ratio |
 |---|---:|---:|---:|---:|
-| 0 | 0.2500 | -128 | **-512** | 240 |
-| 1 | 0.0625 | -32 | -128 | 60 |
-| 2 | 0.0156 | -8 | -32 | 15 |
-| 3 | 0.0039 | **-2** | -8 | **4** |
+| 0 | 0.2500 | 129.0 | **516.0** | 4.000 |
+| 1 | 0.0625 | 32.2 | 129.0 | 4.000 |
+| 2 | 0.0156 | 8.1 | 32.2 | 4.000 |
+| 3 | 0.0039 | **2.0** | 8.1 | 4.000 |
 
-At 512 the flattest head's penalty is 0.9 sigma, so content still wins there. At
-2048 it is four, so every head is distance-dominated. Going 512 -> 2048 turns
-ALiBi from "content competes with distance" into "distance decides", which is a
-failure you can name; RoPE's is a region nobody trained.
+The penalty is `-m*|i-j|`, linear in the gap and with no reference to the
+sequence length at all, so every head degrades by exactly `2048/512 = 4` and not
+one of them crosses a threshold on the way. Even the flattest head is already
+2 sigmas down at the far end of the trained window -- that is the soft locality
+ALiBi is for -- and at 2048 it is 8, which switches the far end off rather than
+leaving it untrained. That is a failure you can name and predict in advance;
+RoPE's is a region nobody trained.
 
 **FINDING: the lesson's own `alibi_bias` cannot be called at 2048.** It
 materialises `n_heads * L^2` Python floats -- **16,777,216** at 4 heads -- and
@@ -58,12 +65,12 @@ import tracemalloc
 from harness import parity, practice
 
 PHASE, LESSON = "07-transformers-deep-dive", "04-positional-encoding"
-DIM, HEADS, TRAIN, TEST, PAIRS = 64, 4, 512, 2048, 256
-BASE, PROBE = 10000.0, 512
+DIM, HEADS, TRAIN, TEST, PAIRS = 64, 4, 512, 2048, 4096
+HEAD_DIM, BASE, PROBE = DIM // HEADS, 10000.0, 512
 
 
-def vectors(count=PAIRS, dim=DIM, seed=0):
-    """Untrained query/key pairs, so the curve belongs to the encoding and not a model."""
+def vectors(count=PAIRS, dim=HEAD_DIM, seed=0):
+    """Untrained query/key pairs for one head, so the curve belongs to the encoding."""
     rng = random.Random(seed)
     return [([rng.gauss(0, 1) for _ in range(dim)], [rng.gauss(0, 1) for _ in range(dim)])
             for _ in range(count)]
@@ -72,7 +79,7 @@ def vectors(count=PAIRS, dim=DIM, seed=0):
 def attend(ref, q, k, query_pos, key_pos, slope=0.0, base=BASE):
     """RoPE and ALiBi in one module: rotate before the dot, penalise distance after it."""
     rotated = ref.dot(ref.apply_rope(q, query_pos, base), ref.apply_rope(k, key_pos, base))
-    return rotated / (DIM // HEADS) ** 0.5 - slope * abs(query_pos - key_pos)
+    return rotated / HEAD_DIM ** 0.5 - slope * abs(query_pos - key_pos)
 
 
 def spread(ref, pairs, gap, slope=0.0):
@@ -129,21 +136,24 @@ def verify(result):
             "Wq and Wk; extrapolated, RoPE gives an untrained score and not a decayed one",
         ),
         practice.Check(
-            "ANSWER: at 2048 every head is distance-dominated; at 512 the flattest is not",
-            min(sigmas[TEST]) > 3 and min(sigmas[TRAIN]) < 1.5,
+            "ANSWER: every head degrades by exactly the length ratio, 4x, and none crosses over",
+            abs(min(sigmas[TEST]) / min(sigmas[TRAIN]) - TEST / TRAIN) < 1e-9
+            and min(sigmas[TEST]) > 4,
             f"penalties at gap {TEST} are {[round(p) for p in result['penalty'][TEST]]} against a "
-            f"content sd of {result['sigma']:.2f}: "
-            f"{[round(s) for s in sigmas[TEST]]} sigmas. At {TRAIN} the flattest head is only "
-            f"{min(sigmas[TRAIN]):.1f} sigmas, so content still competes. Going {TRAIN} -> {TEST} "
-            "turns ALiBi from 'content competes with distance' into 'distance decides'",
+            f"content sd of {result['sigma']:.3f}: {[round(s) for s in sigmas[TEST]]} sigmas, "
+            f"against {[round(s, 1) for s in sigmas[TRAIN]]} at {TRAIN}. -m*|i-j| is linear in the "
+            f"gap and never mentions the sequence length, so every head moves by exactly "
+            f"{TEST // TRAIN}x -- the flattest from {min(sigmas[TRAIN]):.1f} sigmas to "
+            f"{min(sigmas[TEST]):.1f}, already local at {TRAIN} and switched off at {TEST}",
         ),
         practice.Check(
             "CONTROL: the slopes span 64x, so the heads do not degrade together",
             result["slopes"][0] / result["slopes"][-1] == 64,
             f"alibi_slopes({HEADS}) = {result['slopes']}, geometric with ratio 2^(-8/n) and a "
-            f"{result['slopes'][0] / result['slopes'][-1]:.0f}x span. Head 0 is purely local past "
-            f"gap {result['sigma'] / result['slopes'][0]:.0f} while head {HEADS - 1} is still "
-            "global past 500, so 'compare degradation' has a per-head answer, not one answer",
+            f"{result['slopes'][0] / result['slopes'][-1]:.0f}x span. Head 0 passes one content "
+            f"sigma at gap {result['sigma'] / result['slopes'][0]:.0f} and head {HEADS - 1} only "
+            f"at gap {result['sigma'] / result['slopes'][-1]:.0f}, the same 64x apart, so "
+            "'compare degradation' has a per-head answer and not one answer",
         ),
         practice.Check(
             "FINDING: the lesson's own alibi_bias cannot be called at 2048",

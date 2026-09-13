@@ -128,9 +128,10 @@ def verify(result):
         ),
         practice.Check(
             "CONTROL: the prescribed one-liner cannot run here",
-            result["torch"] and not result["has_parameters"],
-            "find_spec('torch') is None and BlockParams is a plain object with no parameters() -- "
-            "so `sum(p.numel() for p in block.parameters())` has nothing to call. Summing "
+            not result["has_parameters"],
+            "BlockParams is a plain object with no parameters() method, so "
+            "`sum(p.numel() for p in block.parameters())` has nothing to call -- which holds "
+            f"whether or not torch is installed (importable here: {not result['torch']}). Summing "
             "len(Matrix.data) over its attributes is the equivalent, and doing it is exactly what "
             "makes the dead cross-attention weights visible",
         ),

@@ -9,16 +9,18 @@ so the stripes are counted -- sign changes per column of the lesson's own
 `2*pi*base^(2i/d)` in closed form. `matplotlib` is absent, so `imshow` becomes a
 text raster of the same matrix.
 
-**ANSWER: confirmed, and the range is a factor of 8,664.** Band 0 has a
+**ANSWER: confirmed, and the range is a factor of 8,660.** Band 0 has a
 wavelength of 6.28 positions and band 63 has 54,410. Sign changes per column fall
-monotonically from 163 to 0.
+monotonically from 162 to 0.
 
 **FINDING: 33 of the 64 bands never complete a cycle.** A stripe needs a
 wavelength of at most `max_len`, and `2*pi*base^(2i/d) <= 512` holds only up to
-band 30. **Half the heatmap has no stripes at all** -- the top half is a smooth
-ramp, and the "pattern" the exercise asks to confirm exists in the bottom half
-only. At d=128 with max_len=512 the last band traverses **0.94%** of one cycle
-across the entire matrix, so its two columns are very nearly constant.
+band 30. **Half the heatmap has no stripes at all.** `raster` puts dimension 0 at
+the top and dimension 127 at the bottom, so the stripes are the top half and the
+bottom half is a smooth ramp -- the "pattern" the exercise asks to confirm exists
+in the top half only. At d=128 with max_len=512 the last band traverses **0.94%**
+of one cycle across the entire matrix, so its two columns are very nearly
+constant.
 
 **FINDING: every row has exactly the same norm.** `sin^2 + cos^2 = 1` per band,
 so `|PE[pos]|` is `sqrt(d/2) = 8.000000000000` for all 512 positions, to the last
@@ -77,11 +79,16 @@ def raster(pe, rows=ROWS, cols=COLS):
     return "\n".join(lines)
 
 
+def flips(picture):
+    """Shade changes along each raster row -- the stripe edges the picture actually shows."""
+    return [sum(a != b for a, b in zip(line[5:], line[6:])) for line in picture.splitlines()]
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     pe = ref.sinusoidal_pe(MAX_LEN, DIM)
     bands = DIM // 2
-    edges = {column: stripes(pe, column) for column in range(0, DIM, 2)}
+    edges, picture = {column: stripes(pe, column) for column in range(0, DIM, 2)}, raster(pe)
     norms = [math.sqrt(sum(v * v for v in row)) for row in pe]
     return {
         "edges": edges, "rows": len(pe), "cols": len(pe[0]),
@@ -90,7 +97,8 @@ def solve():
         "covered": MAX_LEN / wavelength(bands - 1),
         "norms": (min(norms), max(norms)), "target": math.sqrt(DIM / 2),
         "relative": {gap: spread(pe, gap) for gap in (1, 5, 50)},
-        "raster": raster(pe), "plotting": importlib.util.find_spec("matplotlib") is None,
+        "raster": picture, "flips": flips(picture),
+        "plotting": importlib.util.find_spec("matplotlib") is None,
     }
 
 
@@ -114,14 +122,16 @@ def verify(result):
             f"a stripe needs 2*pi*base^(2i/d) <= {MAX_LEN}, true only up to band "
             f"{result['striped'] - 1}: {result['striped']} of {result['bands']} bands stripe and "
             f"{result['bands'] - result['striped']} do not. The last band traverses "
-            f"{result['covered']:.2%} of one cycle across the whole matrix, so its two columns are "
-            "nearly constant and the top half of the picture is a smooth ramp",
+            f"{result['covered']:.2%} of one cycle across the whole matrix, so its two columns "
+            "are nearly constant and the bottom half of the picture -- raster puts dimension 0 at "
+            "the top -- is a smooth ramp",
         ),
         practice.Check(
             "FINDING: every row has exactly the same norm, sqrt(d/2)",
-            lo == hi == result["target"],
+            max(abs(lo - result["target"]), abs(hi - result["target"])) < 1e-9,
             f"sin^2 + cos^2 = 1 per band, so |PE[pos]| is {lo:.12f} = sqrt({DIM}/2) for all "
-            f"{MAX_LEN} positions -- min and max agree to the last printed digit. The heatmap "
+            f"{MAX_LEN} positions -- min and max span {hi - lo:.1e}, graded to rounding rather "
+            f"than to the bit. The heatmap "
             "redistributes brightness across a row; it never adds any, which is the one thing a "
             "picture of this matrix cannot show",
         ),
@@ -134,12 +144,14 @@ def verify(result):
             "has is survival of Wq and Wk -- sinusoidal PE is added to x before those projections",
         ),
         practice.Check(
-            "CONTROL: matplotlib is absent, so imshow is a text raster of the same matrix",
-            result["plotting"] and len(result["raster"].splitlines()) == ROWS,
-            f"find_spec('matplotlib') is None, so the picture is {ROWS} sampled dimensions "
-            f"down and {COLS} sampled positions right: the top rows "
-            f"alternate every few characters and the bottom rows do not alternate at all. Printed "
-            "in the lesson README, where the widening is visible as well as counted",
+            "CONTROL: the raster shows the widening, not just the counts",
+            len(result["raster"].splitlines()) == ROWS and result["flips"][0] > 20
+            and result["flips"][-1] == 0,
+            f"the picture is {ROWS} sampled dimensions down and {COLS} sampled positions right: "
+            f"its top row changes shade {result['flips'][0]} times and its bottom row "
+            f"{result['flips'][-1]}, so the widening is in the picture as well as in the counts. "
+            f"matplotlib importable here: {not result['plotting']} -- imshow would draw this same "
+            "matrix, and the raster is printed in the lesson README",
         ),
     ]
 

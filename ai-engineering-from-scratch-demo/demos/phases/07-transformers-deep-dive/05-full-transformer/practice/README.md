@@ -116,5 +116,6 @@ the exercise asks you to improve already *is* RMSNorm + SwiGLU.
 **FINDING: RoPE is not an improvement here, it is the enabling condition.**
 `apply_rope` does not exist in this module, and neither does any other positional
 encoding — which is exactly why the permutation symmetry above holds. RoPE is the
-only one of the three swaps that changes what the model can *represent*: it takes
-the loss from a floor to zero, and the other two contribute nothing to that.
+only one of the three swaps that changes what the model can *represent* — it
+breaks that symmetry. No loss is measured here; what is measured is that without
+RoPE the target is outside the function class either way.

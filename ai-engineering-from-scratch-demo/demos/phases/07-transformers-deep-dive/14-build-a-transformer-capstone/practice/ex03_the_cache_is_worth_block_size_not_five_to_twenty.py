@@ -11,8 +11,8 @@ both the multiply-accumulate count and the wall clock are measured over the same
 full forward pass on 64 positions for every single token emitted.
 
 **ANSWER: 64x in arithmetic, and the number is `block_size`.** Uncached, each
-step runs the whole 64-token window through 3 layers: 11.2M multiply-accumulates.
-Cached, it runs one position against 64 cached keys: 175K. The ratio is
+step runs the whole 64-token window through 3 layers: 4,907,008
+multiply-accumulates. Cached, one position against 64 cached keys: 76,672. The ratio is
 **64.0** -- exactly `block_size` -- because the cached loop does `1/N` of the
 projections and `1/N` of the attention rows for an `N`-token window.
 
@@ -48,8 +48,7 @@ import time
 from harness import parity, practice
 
 PHASE, LESSON = "07-transformers-deep-dive", "14-build-a-transformer-capstone"
-BLOCK, WIDTH, HEADS, LAYERS, TOKENS = 64, 64, 4, 3, 500
-HEAD_DIM = WIDTH // HEADS
+BLOCK, WIDTH, HEADS, LAYERS, TOKENS, HEAD_DIM = 64, 64, 4, 3, 500, 16
 
 
 def cost(queries, vocab, window=BLOCK, layers=LAYERS, width=WIDTH):
@@ -67,19 +66,23 @@ def weights(np, rng, vocab):
                for i in range(LAYERS) for n in ("qkv", "o")})
 
 
+def extend(np, kept, fresh):
+    """This step's keys and values appended to the cache, cropped to block_size."""
+    return [t if c is None else np.concatenate([c, t], axis=2)[:, :, -BLOCK:]
+            for c, t in zip(kept, fresh)]
+
+
 def sample(np, w, vocab, tokens=TOKENS, cached=False):
     """The lesson's generate loop: crop to block_size, forward, take the last logits."""
     split = lambda a: a.reshape(a.shape[:-1] + (HEADS, HEAD_DIM)).swapaxes(1, 2)
-    idx, cache = [0], [[None, None] for _ in range(LAYERS)]
+    idx, cache = [0], [(None, None)] * LAYERS
     for _ in range(tokens):
         window = idx[-BLOCK:] if not cached else idx[-1:]
         x = w["tok"][np.array(window)][None] + w["pos"][:len(window)]
         for i in range(LAYERS):
             q, k, v = (split(t) for t in np.split(x @ w[f"qkv{i}"], 3, axis=-1))
             if cached:
-                cache[i] = [t if c is None else np.concatenate([c, t], axis=2)[:, :, -BLOCK:]
-                            for c, t in zip(cache[i], (k, v))]
-                k, v = cache[i]
+                k, v = cache[i] = extend(np, cache[i], (k, v))
             p = np.exp(q @ k.swapaxes(-1, -2) / math.sqrt(HEAD_DIM))
             p /= p.sum(-1, keepdims=True)
             x = x + (p @ v).swapaxes(1, 2).reshape(x.shape) @ w[f"o{i}"]

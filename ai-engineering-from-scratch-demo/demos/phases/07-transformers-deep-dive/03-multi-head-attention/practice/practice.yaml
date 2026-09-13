@@ -50,8 +50,9 @@ exercises:
       Wk and Wv, so the parameter ratio is 1/2 + 1/(2h) = 0.53125 here and converges to exactly 1/2:
       measured at d_model = n_heads = 4096 the drop is 49.9878% and never reaches 50%, so no amount of
       KV sharing removes more than half an attention block's weights. The cache ratio is 1/h with no
-      floor and no dependence on N or d_model -- 16x at 16 heads, 64x at 64 -- which is why every
-      modern decoder shares KV and none shares Wq. The control is that grouped_query_attention at
+      floor and no dependence on N or d_model -- 16x at 16 heads, 64x at 64 -- so the cache is the
+      axis with room in it and the weight count is not, which is a claim about these two ratios and
+      nothing wider. The control is that grouped_query_attention at
       n_kv_heads = n_heads reproduces multi_head_attention bit for bit, difference 0.0, so the group
       count is the only thing MQA changes
     uses_reference:
@@ -84,7 +85,8 @@ exercises:
       better than full MHA from 40 up -- so no learning rate can push a rank-r bottleneck below the
       rank of what it carries. And the free win is 2x rather than 8x: at r = d_model = 64 the cache is
       already halved, one latent instead of a K and a V, and the model is 1.04 bits better than full
-      MHA because the shared factorisation ties K and V together. The MHA arm agrees with the lesson's
+      MHA -- why it is better is not measured, only that halving the cache costs nothing at this
+      rank. The MHA arm agrees with the lesson's
       own multi_head_attention to 9e-16
     uses_reference:
       - multi_head_attention

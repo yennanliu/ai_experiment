@@ -32,8 +32,9 @@ live term is RoPE, and `apply_rope` does not exist in this lesson.
 **FINDING: RoPE is not an improvement here, it is the enabling condition.** It is
 the only one of the three swaps that changes what the model can represent: it
 breaks the permutation symmetry that makes the task impossible. The exercise
-asks whether the loss drops; the answer is that it goes from a floor to zero, and
-the two norm/FFN swaps contribute nothing to that.
+asks whether the loss drops. What can be shown without training is narrower and
+firmer: only RoPE changes whether the target is reachable at all, and the two
+norm/FFN swaps change nothing either way. No loss is measured here.
 
 Structure: `stack` runs the 4+4 encoder-decoder; `permute` reorders rows;
 `largest` is the worst elementwise gap between two Matrix results.
@@ -88,7 +89,8 @@ def solve():
     encoder = [ref.BlockParams(D_MODEL, HEADS, EXPANSION, rng) for _ in range(DEPTH)]
     decoder = [ref.BlockParams(D_MODEL, HEADS, EXPANSION, rng) for _ in range(DEPTH)]
     encoded, decoded = stack(ref, source, target, encoder, decoder)
-    order = list(SHUFFLE)
+    order, blocks = list(SHUFFLE), {n: sorted(calls(getattr(ref, f"{n}_block")))
+                                   for n in ("encoder", "decoder")}
     shuffled = stack(ref, permute(ref, source, order), target, encoder, decoder)
     reversed_out = stack(ref, permute(ref, source, list(reversed(range(SOURCE)))),
                          target, encoder, decoder)[1]
@@ -96,8 +98,8 @@ def solve():
         "equivariant": largest(permute(ref, encoded, order), shuffled[0]),
         "invariant": largest(decoded, shuffled[1]),
         "reversed": largest(decoded, reversed_out),
-        "blocks": {"encoder": sorted(calls(ref.encoder_block)),
-                   "decoder": sorted(calls(ref.decoder_block))},
+        "blocks": blocks,
+        "normed": all("rms_norm" in c and "layer_norm" not in c for c in blocks.values()),
         "swiglu_default": inspect.signature(ref.BlockParams.__init__)
         .parameters["use_swiglu"].default,
         "rope": hasattr(ref, "apply_rope"),
@@ -129,10 +131,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the RMSNorm swap is a no-op -- both blocks already call it",
-            "rms_norm" in blocks["encoder"] and "layer_norm" not in blocks["decoder"],
-            f"encoder_block calls {blocks['encoder']} and decoder_block calls "
-            f"{blocks['decoder']}. layer_norm is defined in the module and called by neither, so "
-            "the baseline the exercise asks you to improve is already the improvement",
+            result["normed"],
+            f"encoder_block calls {blocks['encoder']} and decoder_block {blocks['decoder']}: "
+            f"each names rms_norm and neither names layer_norm, which the module defines and "
+            "nobody calls, so the baseline you are asked to improve is already the improvement",
         ),
         practice.Check(
             "FINDING: the SwiGLU swap is a no-op too -- it is the default",
@@ -146,8 +148,9 @@ def verify(result):
             not result["rope"],
             "apply_rope does not exist in this lesson's module, and neither does any other "
             "positional encoding -- which is exactly why the permutation symmetry above holds. "
-            "RoPE is the only one of the three swaps that changes what the model can represent: "
-            "it takes the loss from a floor to zero, and the other two contribute nothing to that",
+            "It is the only one of the three swaps that changes what the model can represent, "
+            "breaking that symmetry. No loss is measured here; what is measured is that without "
+            "RoPE the target is outside the function class either way",
         ),
     ]
 

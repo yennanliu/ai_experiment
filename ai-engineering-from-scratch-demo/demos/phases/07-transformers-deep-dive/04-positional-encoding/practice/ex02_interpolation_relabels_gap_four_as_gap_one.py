@@ -30,9 +30,9 @@ construction: interpolate in frequency instead of in position.
 
 **ANSWER: over gaps 1-16, interpolation distorts the score by 47.6% of the
 profile's own magnitude and NTK-aware by 6.8%** -- a factor of **7**. Short gaps
-carry most of a language model's predictive mass, so the sign of the perplexity
-comparison the exercise asks for is fixed by this measurement even though the
-perplexity is not buildable here.
+carry most of a language model's predictive mass, so score distortion is the
+proxy a perplexity comparison would be reading. It is a proxy and not a
+substitute: no perplexity is measured here, because none can be.
 
 **CONTROL: 13 of 32 bands wrap inside the trained 256 positions.** At test length
 1024 the unscaled base has 18 wrapping; NTK returns 2 of those 5 newly-wrapped
@@ -141,7 +141,8 @@ def verify(result):
             f"summed over gaps {list(SHORT)} and normalised by the unscaled profile's own "
             f"magnitude, interpolation moves the score by {result['interp_error']:.1%} and "
             f"NTK-aware by {result['ntk_error']:.1%}. Short gaps carry most of an LM's predictive "
-            "mass, so the sign of the perplexity comparison is fixed even where the LM is not",
+            "mass, so this is the proxy a perplexity comparison would be reading -- a statement "
+            "about score distortion, not a measured perplexity, which is not buildable here",
         ),
         practice.Check(
             "CONTROL: the LM is unbuildable, and the band count says what it would measure",

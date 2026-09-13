@@ -101,8 +101,9 @@ That *is* the construction: interpolate in frequency, not in position.
 **ANSWER: over gaps 1–16, interpolation distorts 7× more.** Normalised by the
 unscaled profile's own magnitude, interpolation moves the score by **47.6%** and
 NTK-aware by **6.8%**. Short gaps carry most of a language model's predictive
-mass, so the *sign* of the perplexity comparison is settled by this even though
-the perplexity is not buildable here.
+mass, so score distortion is the proxy a perplexity comparison would be reading.
+It is a proxy and not a substitute: no perplexity is measured here, because none
+can be.
 
 **CONTROL: 13 of 32 bands wrap inside the trained 256 positions.** At test length
 1024 the unscaled base has 18 wrapping — 5 bands newly in untrained territory —
@@ -120,28 +121,32 @@ product and ALiBi after it; "in the same attention module" is a `+`.
 
 **FINDING: RoPE alone has no distance decay whatever — and not approximately.**
 The rotation is orthogonal, so it moves `k` without changing its norm, and over
-isotropic `q, k` the score's distribution *cannot* depend on the gap. Measured:
-sd **2.137** at gap 1 and **2.137** at gap 2048, 1e-15 apart, mean zero
-throughout. The "long-term decay" RoPE is credited with belongs to trained `Wq`
+isotropic `q, k` the score's distribution *cannot* depend on the gap. Measured
+over 4,096 pairs of one head's width (`d_model/n_heads = 16`, scored `q·k/√16`):
+sd **0.992** at gap 1 and **0.998** at gap 2048 — 0.6% apart, which is sampling
+noise on a quantity that is theoretically identical — mean zero throughout. The "long-term decay" RoPE is credited with belongs to trained `Wq`
 and `Wk`. Extrapolated, RoPE gives an **untrained** score, not a decayed one.
 
-**ANSWER: ALiBi's degradation is bounded in kind, not in size.**
+**ANSWER: ALiBi's degradation is a multiplier, and it is the length ratio.**
 
-| head | slope | penalty at 512 | at 2048 | at 2048, in content σ |
+| head | slope | at 512, in content σ | at 2048 | ratio |
 |---|---:|---:|---:|---:|
-| 0 | 0.2500 | −128 | **−512** | 240 |
-| 1 | 0.0625 | −32 | −128 | 60 |
-| 2 | 0.0156 | −8 | −32 | 15 |
-| 3 | 0.0039 | **−2** | −8 | **4** |
+| 0 | 0.2500 | 129.0 | **516.0** | 4.000 |
+| 1 | 0.0625 | 32.2 | 129.0 | 4.000 |
+| 2 | 0.0156 | 8.1 | 32.2 | 4.000 |
+| 3 | 0.0039 | **2.0** | 8.1 | 4.000 |
 
-At 512 the flattest head's penalty is **0.9σ** and content still competes. At
-2048 it is 4σ, so every head is distance-dominated. Going 512 → 2048 turns ALiBi
-from "content competes with distance" into "distance decides" — a failure you can
-name. RoPE's is a region nobody trained.
+The penalty `−m·|i−j|` is linear in the gap and never mentions the sequence
+length, so every head degrades by exactly `2048/512 = 4` and not one of them
+crosses a threshold on the way. Even the flattest head is already **2σ** down at
+the far end of the trained window — the soft locality ALiBi exists to give — and
+**8σ** at 2048, which switches the far end off rather than leaving it untrained.
+That is a failure you can name and predict in advance. RoPE's is a region nobody
+trained.
 
-**CONTROL: the slopes span 64×, so the heads do not degrade together.** Head 0 is
-purely local past gap ≈9; head 3 is still global past 500. "Compare degradation"
-has a per-head answer, not one answer.
+**CONTROL: the slopes span 64×, so the heads do not degrade together.** Head 0
+passes one content σ at gap **4**, head 3 only at gap **254** — the same 64×
+apart. "Compare degradation" has a per-head answer, not one answer.
 
 **FINDING: the lesson's own `alibi_bias` cannot be called at 2048.** It
 materialises `n_heads · L²` Python floats — **1,048,576** at L=512, measured

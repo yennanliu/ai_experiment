@@ -82,9 +82,10 @@ as extreme as sharing gets — the drop is **49.9878%** and it never reaches 50%
 No amount of KV sharing removes more than half an attention block's weights.
 
 The cache ratio is `1/h` with **no floor and no dependence on N or `d_model`**:
-16× at 16 heads, 64× at 64. That asymmetry is the whole reason every decoder
-since 2023 shares KV and none of them shares `Wq` — and it is only visible
-because the exercise asks for both numbers side by side.
+16× at 16 heads, 64× at 64. So the cache is the axis with room in it and the
+weight count is not — a statement about these two ratios, not about what any
+shipped decoder does — and it is only visible because the exercise asks for both
+numbers side by side.
 
 **CONTROL: `n_kv_heads = n_heads` is MHA, to 0.0.** The same function reproduces
 `multi_head_attention` bit for bit when nothing is shared, so the group count is
@@ -119,6 +120,7 @@ task's own floor before a single step is taken.
 
 **FINDING: the free win is 2×, and it is an improvement.** At `r = d_model = 64`
 the cache is already halved — one latent instead of a K *and* a V — and the model
-is **1.04 bits better** than full MHA, because the shared low-rank factorisation
-ties K and V together. The exercise asks where MLA starts to hurt; the
-measurement says it starts by helping.
+is **1.04 bits better** than full MHA. Why it is better is not measured here;
+what is measured is that halving the cache costs nothing on this task at this
+rank. The exercise asks where MLA starts to hurt; the measurement says it starts
+by helping.

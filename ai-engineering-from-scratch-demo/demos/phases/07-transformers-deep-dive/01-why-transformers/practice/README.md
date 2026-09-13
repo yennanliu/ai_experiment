@@ -47,9 +47,10 @@ lesson's own `rnn_style` on the same input at N = 20,000:
 
 **ANSWER: roughly linearly, ≈1.3× per lane.** 64 lanes cost ~85× the scalar, not
 64×: the comprehension adds a per-step allocation the scalar loop does not have.
-Per lane that overhead *falls* from 3.9× at d=1 to 1.3× at d=64, so the total
-grows slightly faster than `d` while the cost per lane improves — interpreter
-overhead amortising over a wider step.
+That allocation is a fixed cost per step, so per lane the overhead *falls* from
+3.9× at d=1 to 1.3× at d=64: the ratio-to-scalar grows more slowly than `d` —
+about 20× for a 64× rise in width — while still sitting above 64× in absolute terms,
+because the allocation never goes away.
 
 **FINDING: the serial overhead grows by exactly zero.** The lesson's own
 `depth()` takes `n` and no `d`; `rnn_depth = n` at every hidden size. Step 2 says
@@ -112,8 +113,9 @@ log-depth costs 9× the adds *plus* a full `list(out)` copy per pass.
 
 ### 3 — the sweep ends where attention stops fitting
 
-`torch` and `jax` both return `None` from `find_spec`, and the host is arm64 with
-no CUDA device — "PyTorch on GPU" is unbuildable twice over. `numpy.mean` is the
+Neither `torch` nor `jax` can see a GPU device here — the control asks each
+backend for its *device count* rather than merely for its presence, and both
+answer zero — so "PyTorch on GPU" is unbuildable. `numpy.mean` is the
 substitute: one C-level reduction with no Python work per element, which is the
 same dependency-graph argument as a GPU kernel at a smaller constant. Both arms
 swept over exactly the range asked for, 2⁶ → 2¹⁶:

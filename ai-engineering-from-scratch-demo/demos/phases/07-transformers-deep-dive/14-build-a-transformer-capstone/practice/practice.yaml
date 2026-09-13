@@ -100,7 +100,7 @@ exercises:
     uses_reference:
       - TINY_SHAKESPEARE
   - index: 5
-    slug: matched_active_the_moe_is_not_better
+    slug: matched_active_the_moe_is_a_wash
     kind: code
     tier: T1
     deps_group: math
@@ -113,10 +113,14 @@ exercises:
       one FFN of hidden 2 * d_model and the MoE gets 4 experts of hidden d_model at top-2, activating
       2 * (2 * 64 * 64) = 16384 weights per layer against the dense block's 2 * 64 * 128 = 16384. Both
       arms are rebuilt in numpy at the lesson's own configuration, run on 3 seeds and scored at the
-      best checkpoint, with the router initialised and then held so this measures what four experts
-      buy under fixed routing. The result is a wash: 2.836, 2.987 and 2.850 against 2.939, 2.896 and
-      2.828, means 2.891 and 2.887, 0.003 nats apart -- inside the 0.111 the dense arm alone spans
-      across the same seeds -- with the MoE winning 1 seed of 3. It costs 1.47x the memory, 155264
+      best checkpoint, with routing held in both directions -- the router gets no gradient and the
+      gate it produces is a constant in the backward pass, so step returns the exact gradient of a
+      fixed-routing objective rather than of the full one, which also means the MoE arm optimises a
+      surrogate where the dense arm optimises the loss itself. This measures what four experts buy
+      under fixed routing. The result is a wash: 2.858, 2.913 and 2.900 against 2.934, 2.944 and
+      2.829, means 2.890 and 2.902, 0.012 nats apart -- inside the 0.115 the dense arm alone spans
+      across the same seeds -- and the arm with the lower mean is the one that loses the single best
+      run of the six. It costs 1.47x the memory, 155264
       parameters against 105344, the FFN portion doubling exactly because four experts are held where
       two are used: identical FLOPs per token, more weights to hold. And there is nothing here for
       four experts to divide, since 899 training characters over a 46-symbol vocabulary contain no

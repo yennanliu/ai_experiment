@@ -16,9 +16,10 @@ exercises:
       + x for hi in h], and once as the recurrence an RNN actually runs, h = W h + x -- and both are
       timed against the lesson's own rnn_style with benchmark()'s best-of-three protocol. The
       wall-clock answer is that 64 lanes cost about 85x the scalar at N=20000, not 64x, because the
-      comprehension adds a per-step allocation the scalar loop does not have; per lane that overhead
-      falls from 3.9x at d=1 to 1.3x at d=64, so the total grows a little faster than d while the cost
-      per lane improves. The serial overhead itself grows by exactly zero: the lesson's own depth()
+      comprehension adds a per-step allocation the scalar loop does not have; that allocation is a
+      fixed cost per step, so per lane the overhead falls from 3.9x at d=1 to 1.3x at d=64 and the
+      ratio-to-scalar grows more slowly than d, about 20x for a 64x rise in width, while still sitting above
+      64x in absolute terms. The serial overhead itself grows by exactly zero: the lesson's own depth()
       takes n and no d, rnn_depth = n at every hidden size, and Step 2 states that depth and not op
       count decides GPU time, so the quantity the exercise names is invariant under the change the
       exercise asks for -- what grows is work per step, the part a GPU parallelises for free. The
@@ -68,8 +69,9 @@ exercises:
     zh: |
       **困難。** 把注意力風格的歸約移植到 GPU 上的 PyTorch。把序列長度從 64 掃到 65,536，兩者都計時。畫出圖並解釋曲線的形狀。
     verifies: >-
-      torch and jax both return None from find_spec and the host is arm64 with no CUDA device, so
-      'PyTorch on GPU' is unbuildable twice over; numpy's mean is the substitute -- one C-level
+      neither torch nor jax can see a GPU device here -- each backend is asked for its device count
+      rather than merely for its presence, and both answer zero -- so 'PyTorch on GPU' is
+      unbuildable; numpy's mean is the substitute -- one C-level
       reduction with no Python work per element, the same dependency-graph claim as a GPU kernel at a
       smaller constant -- and both arms are swept over the exact range asked for, 2^6 to 2^16. The
       curve shape is a hockey stick and the log-log slope says so numerically: numpy's mean fits -0.03

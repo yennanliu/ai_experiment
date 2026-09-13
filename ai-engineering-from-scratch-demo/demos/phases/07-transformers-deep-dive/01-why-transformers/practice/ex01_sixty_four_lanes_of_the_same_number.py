@@ -13,9 +13,10 @@ same best-of-three protocol `benchmark()` uses.
 
 **ANSWER: roughly linearly, about 1.3x per lane.** 64 lanes cost ~85x the
 scalar at N=20000, not 64x: the list comprehension adds a per-step allocation
-the scalar loop does not have. Per lane that overhead falls from 3.9x at d=1 to
-1.3x at d=64, so the ratio-to-scalar grows slightly faster than d while the cost
-*per lane* improves -- the interpreter overhead amortises.
+the scalar loop does not have. That allocation is a fixed cost per step, so per
+lane the overhead *falls* from 3.9x at d=1 to 1.3x at d=64: the ratio-to-scalar
+grows more slowly than d -- about 20x for a 64x rise in width -- while still sitting
+above 64x in absolute terms, because the allocation never goes away.
 
 **FINDING: the serial overhead grows by exactly zero.** The lesson's own
 `depth()` takes `n` and no `d`; `rnn_depth = n` whatever the hidden size. Step 2
@@ -103,8 +104,9 @@ def verify(result):
             40 < ratio < 200 and lane[1] > 2 * lane[64],
             f"at N={N}: scalar {result['scalar'] * 1e3:.2f} ms -> 64 lanes "
             f"{result['vector'][64] * 1e3:.2f} ms, {ratio:.0f}x. Per lane the overhead falls "
-            f"from {lane[1]:.2f}x at d=1 to {lane[64]:.2f}x at d=64, so the total grows a little "
-            "faster than d while the per-lane cost improves -- interpreter overhead amortising",
+            f"from {lane[1]:.2f}x at d=1 to {lane[64]:.2f}x at d=64, so the ratio-to-scalar grows "
+            f"more slowly than d -- {ratio / lane[1]:.0f}x for a 64x rise in width -- while still "
+            "sitting above 64x, because the per-step allocation never goes away",
         ),
         practice.Check(
             "FINDING: the serial overhead itself grows by exactly zero",

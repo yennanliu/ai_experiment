@@ -28,9 +28,11 @@ is two different random seeds wearing labels.
 
 **FINDING: the real invariant is that word order does not exist.** Permute the
 rows of `X` and the attention matrix is the *same matrix* with rows and columns
-permuted, to **5.6e-17**, and every output row is the old one relabelled. Feed in
-"the cat sat on the mat" and "mat the on sat cat the" and self-attention cannot
-tell them apart -- which is the entire reason Lesson 04 exists.
+permuted, to **5.6e-17**, and every output row is the old one relabelled. The
+module is permutation-*equivariant*: shuffling "the cat sat on the mat" into "mat
+the on sat cat the" returns the same six output rows in the new order, never
+different rows, so nothing in what it computes records which order it saw --
+which is the entire reason Lesson 04 exists.
 
 **CONTROL: the diagonal is not privileged.** Over 2,000 random sentences the row
 argmax lands on the diagonal 17.6% of the time against 16.7% by chance. `Wq` and
@@ -127,8 +129,9 @@ def verify(result):
             result["permuted_w"] < 1e-15 and result["permuted_out"] < 1e-15,
             f"permuting the rows of X by {ORDER} returns the same matrix with rows and columns "
             f"permuted, to {result['permuted_w']:.1e}, and every output row relabelled, to "
-            f"{result['permuted_out']:.1e}. 'the cat sat on the mat' and a shuffle of it are the "
-            "same input to this module, which is the entire reason Lesson 04 exists",
+            f"{result['permuted_out']:.1e}. That is permutation equivariance: a shuffle of 'the "
+            "cat sat on the mat' returns the same rows in the new order, never different rows, so "
+            "nothing computed here records the order -- the entire reason Lesson 04 exists",
         ),
         practice.Check(
             "CONTROL: the diagonal is not privileged, so 'the token looks at itself' is not here",

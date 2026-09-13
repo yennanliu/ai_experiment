@@ -126,10 +126,12 @@ the way it is worded; what it is really comparing is two seeds.
 **FINDING: the invariant that answers the question is that word order does not
 exist here.** Permute the rows of `X` and the attention matrix comes back as the
 *same matrix* with rows and columns permuted — to **5.6e-17** — and every output
-row is the old one relabelled, to **2.2e-16**. "The cat sat on the mat" and "mat
-the on sat cat the" are the same input to this module. That is the entire reason
-Lesson 04 exists, and it is the one thing that stays the same between *any* two
-sentences that are permutations of each other.
+row is the old one relabelled, to **2.2e-16**. That is permutation
+*equivariance*: shuffling "the cat sat on the mat" into "mat the on sat cat the"
+returns the same six output rows in the new order, never different rows, so
+nothing this module computes records which order it saw. That is the entire
+reason Lesson 04 exists, and it is the one thing that stays the same between
+*any* two sentences that are permutations of each other.
 
 **CONTROL: the diagonal is not privileged.** Over 2,000 random sentences the row
 argmax lands on the diagonal **17.6%** of the time, against **16.7%** by chance.
