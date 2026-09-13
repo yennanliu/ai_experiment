@@ -28,14 +28,19 @@ that does not.
 
 **FINDING: the tiled softmax is not bit-identical, it is one ULP.** The module
 docstring promises "a running-max softmax that yields bit-identical output
-tile-by-tile". Measured against the standard path it differs by **2.2e-16** at
-tile sizes 2, 4, 7, 10 and 16, and **4.4e-16** at tile 1 -- one and two units in
-the last place. Even a single tile covering the whole sequence disagrees, because
-the running form divides by a differently-accumulated denominator.
+tile-by-tile". Measured against the standard path it differs by **one to two
+units in the last place** at every tile size from 1 to 16. Even a single tile
+covering the whole sequence disagrees, because the running form divides by a
+differently-accumulated denominator.
+
+The absolute figures move between platforms -- `math.exp` is not bit-identical
+across libms, so the same code lands on 1.1e-16 where it lands on 2.2e-16
+elsewhere -- which is why everything here is stated and graded in ULP.
 
 **CONTROL: the disagreement does not grow with the number of tiles.** Tile 2
-splits the sequence five ways and tile 16 not at all, and both land at 2.2e-16.
-The error is in the formulation, not in the accumulation.
+splits the sequence five ways and tile 16 not at all, and the two land within
+one ULP of each other, with no tiling worse than two. The error is in the
+formulation, not in the accumulation.
 
 Structure: `projections` is the count the lesson does not keep; `tiles` sweeps
 the tile size against the standard path.
@@ -43,12 +48,14 @@ the tile size against the standard path.
 
 from __future__ import annotations
 
+import math
 import random
 
 from harness import parity, practice
 
 PHASE, LESSON = "07-transformers-deep-dive", "12-kv-cache-flash-attention"
 WIDTH, TOKENS, SIZES, TILES = 8, 10, (10, 100, 1_000), (1, 2, 4, 7, 10, 16)
+ULP = math.ulp(1.0)          # the scale every disagreement below is quoted in
 
 
 def stream(rng, count=TOKENS, width=WIDTH):
@@ -107,16 +114,18 @@ def verify(result):
             "FINDING: the tiled softmax is one ULP off, not bit-identical",
             0 < gaps[4] < 1e-15 and gaps[TILES[-1]] > 0,
             f"the module docstring promises output that is bit-identical tile-by-tile. Measured: "
-            + ", ".join(f"tile {t} {gaps[t]:.1e}" for t in TILES)
+            + ", ".join(f"tile {t} {gaps[t] / ULP:.1f} ULP" for t in TILES)
             + f". Even tile {TILES[-1]}, one block covering the whole sequence, disagrees -- the "
               "running form divides by a differently-accumulated denominator",
         ),
         practice.Check(
             "CONTROL: the disagreement does not grow with the number of tiles",
-            gaps[2] == gaps[TILES[-1]],
-            f"tile 2 splits {TOKENS} keys five ways and tile {TILES[-1]} not at all, and both "
-            f"land at {gaps[2]:.1e}. The error is in the formulation rather than in the "
-            f"accumulation, which is why tile 1 is the only outlier at {gaps[1]:.1e}",
+            max(gaps.values()) <= 2 * ULP and gaps[2] <= gaps[TILES[-1]] + ULP,
+            f"tile 2 splits {TOKENS} keys five ways and tile {TILES[-1]} not at all: "
+            f"{gaps[2] / ULP:.1f} and {gaps[TILES[-1]] / ULP:.1f} units in the last place, within "
+            f"one ULP of each other, and no tiling exceeds {max(gaps.values()) / ULP:.1f}. The "
+            "error is in the formulation rather than in the accumulation -- an error that grew "
+            "with the block count would be the accumulation",
         ),
         practice.Check(
             "CONTROL: 'same output' is a stronger claim here than it usually is",

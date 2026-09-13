@@ -48,10 +48,15 @@ recomputes would make naive O(N²) in matmuls" — and then prints the counter t
 does not.
 
 **FINDING: the tiled softmax is one ULP off, not bit-identical.** The module
-docstring promises "bit-identical output tile-by-tile". Measured: **2.2e-16** at
-tiles 2, 4, 7, 10 and 16, **4.4e-16** at tile 1. Even a single tile covering the
+docstring promises "bit-identical output tile-by-tile". Measured: **one ULP** at
+tiles 2, 4, 7, 10 and 16, **two** at tile 1. Even a single tile covering the
 whole sequence disagrees, and the gap does not grow with the number of tiles — so
 it is the formulation, not the accumulation.
+
+Everything here is quoted in units in the last place rather than in absolutes,
+because `math.exp` is not bit-identical across libms: the same code lands on
+1.1e-16 on one platform where it lands on 2.2e-16 on another. The ULP count is
+the part that is a property of the algorithm.
 
 ### 2 — the speedup is 1.01× when the prompt is short
 

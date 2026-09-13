@@ -22,10 +22,11 @@ exercises:
       recomputes its K and V projections, N(N+1)/2 against the cache's N, a factor of (N+1)/2 -- 5.5x
       at N=10, 50.5x at 100, 500.5x at 1000 -- and the lesson's own comment says so two lines further
       down before printing the counter that does not. The tiled softmax is also not bit-identical as
-      the module docstring promises: it differs from the standard path by 2.2e-16 at tile sizes 2, 4,
-      7, 10 and 16 and 4.4e-16 at tile 1, one and two units in the last place. Even a single tile
-      covering the whole sequence disagrees, and the disagreement does not grow with the number of
-      tiles, so the error is in the formulation rather than the accumulation
+      the module docstring promises: it differs from the standard path by one unit in the last place
+      at tile sizes 2, 4, 7, 10 and 16 and by two at tile 1. Even a single tile covering the whole
+      sequence disagrees, and the disagreement does not grow with the number of tiles, so the error
+      is in the formulation rather than the accumulation. The measurement is quoted in ULP rather
+      than in absolutes because math.exp is not bit-identical across libms
     uses_reference:
       - decode_naive
       - decode_cached
