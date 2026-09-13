@@ -1,0 +1,84 @@
+lesson: 12-kv-cache-flash-attention
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/12-kv-cache-flash-attention/docs/en.md
+exercises:
+  - index: 1
+    slug: the_two_op_counts_are_the_same_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Confirm the naive and cached decoders produce the same output; note the op-count difference.
+    zh: |
+      **簡單。** 執行 `code/main.py`。確認天真解碼器與快取解碼器產生相同輸出，並記下運算次數的差異。
+    verifies: >-
+      both halves of the exercise are checked, the outputs elementwise rather than to a tolerance and
+      the two op counters against each other rather than against their labels. The outputs are
+      identical to 0.0 -- decode_cached passes the same key and value objects to the same
+      attention_full in the same order -- and so are the op counts: decode_naive adds t + 1 per step
+      and decode_cached adds len(cache), which is t + 1, so both reach 55 at N=10, exactly N(N+1)/2,
+      and main() prints them on two lines labelled O(N^2) and O(N). There is no op-count difference to
+      note. The saving is real but lives in a quantity neither counter counts: recomputing the prefix
+      recomputes its K and V projections, N(N+1)/2 against the cache's N, a factor of (N+1)/2 -- 5.5x
+      at N=10, 50.5x at 100, 500.5x at 1000 -- and the lesson's own comment says so two lines further
+      down before printing the counter that does not. The tiled softmax is also not bit-identical as
+      the module docstring promises: it differs from the standard path by one unit in the last place
+      at tile sizes 2, 4, 7, 10 and 16 and by two at tile 1. Even a single tile covering the whole
+      sequence disagrees, and the disagreement does not grow with the number of tiles, so the error
+      is in the formulation rather than the accumulation. The measurement is quoted in ULP rather
+      than in absolutes because math.exp is not bit-identical across libms
+    uses_reference:
+      - decode_naive
+      - decode_cached
+      - attention_full
+      - tiled_softmax_dot
+  - index: 2
+    slug: the_speedup_is_one_when_the_prompt_is_short
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement prefix caching: given a prompt P and several completions, run one forward pass over P to fill the KV cache, then branch per-completion. Measure speedup vs re-encoding P for each.
+    zh: |
+      **中等。** 實作前綴快取：給定一段提示詞 P 與數個續寫，先對 P 跑一次前向傳播把 KV 快取填好，再依每個續寫分支下去。量測相較於每次都重新編碼 P 的加速幅度。
+    verifies: >-
+      both arms are built on the lesson's own KVCache and attention_full, counted in attention ops,
+      with the measured numbers checked against a closed form that reproduces them to the token so the
+      sweep can reach sizes pure Python could not run. At a 512-token prompt with 8 completions of 64
+      the speedup is 3.24x, 1,329,408 ops against 410,112; at a 2000-token prompt 5.61x; at 512 and
+      512 only 1.28x; at a 64-token prompt with 512-token completions 1.01x; and with a single branch
+      exactly 1.00x, the two counts being the same integer. Prefix caching buys exactly the share of
+      the work that is prompt -- decode steps are unshared by construction -- so the lever is P/L and
+      the answer the exercise asks for spans 1.00x to the branch count rather than being a number. The
+      lesson's KVCache also cannot be branched: it has no copy() and cache.K is a plain list, so two
+      branches taken from one cache alias it and the second reports the first's appended token.
+      Branching needs a per-completion copy of K and V, O(P) each, which is why real implementations
+      page the cache instead of copying it
+    uses_reference:
+      - KVCache
+      - attention_full
+  - index: 3
+    slug: paging_beats_reserving_not_packing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement a toy PagedAttention: KV cache in fixed 16-token blocks with a free-list. When a sequence finishes, return its blocks to the pool. Simulate 1,000 chat completions with varying lengths. Compare memory fragmentation vs contiguous allocation.
+    zh: |
+      **困難。** 實作一個玩具版 PagedAttention：KV 快取切成固定 16 個詞元的區塊，並維護一份空閒清單。序列結束時把它的區塊還回池子。模擬 1,000 次長度不一的聊天續寫，並與連續配置比較記憶體碎片情況。
+    verifies: >-
+      'contiguous allocation' names two different schemes and the answer depends entirely on which, so
+      both are run against the same 1000 completions -- lengths log-normal around 180 tokens, mean
+      262, median 173, capped at a 2048 context. Against reserve-at-max_len, which is what inference
+      servers did before vLLM, paging is 8.1x: a 32768-token pool holds 16 sequences reserved at 2048
+      each and 129 paged, with internal waste falling from 87.2% to 2.82% and a paged overhead of 7.61
+      tokens per sequence, bounded above by BLOCK - 1 = 15 and independent of length, where reserving
+      costs 1786 tokens per sequence and grows with the context window. Against exact-size packing
+      with a first-fit allocator and a coalescing free list, paging is a wash: at pools of 6144, 8192
+      and 12288 tokens with 20, 28 and 40 concurrent sequences, contiguous fails 58, 60 and 26
+      allocations against paging's 82, 48 and 32. External fragmentation is real -- 116 of the 144
+      contiguous failures, 81%, had enough total free space and no single hole big enough -- and block
+      rounding costs about as much as removing it saves. But exact-size packing is not available
+      anyway, since it needs the completion's length at allocation time, which is the one number an
+      autoregressive decoder does not have, so reserve-at-max_len is the real alternative and 8.1x is
+      the number that matters

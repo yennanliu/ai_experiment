@@ -1,0 +1,95 @@
+lesson: 06-bert-masked-language-modeling
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/06-bert-masked-language-modeling/docs/en.md
+exercises:
+  - index: 1
+    slug: ten_thousand_tokens_cannot_confirm_the_eighty
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` and print the mask distribution across 10,000 tokens. Confirm ~15% are selected, and of those ~80% become `[MASK]`.
+    zh: |
+      **簡單。** 執行 `code/main.py`，印出 10,000 個詞元的遮罩分布。確認約 15% 被選中，而其中約 80% 變成 `[MASK]`。
+    verifies: >-
+      the lesson's own distribution_check is run at the exercise's 10000 tokens, at main()'s own
+      100000 and at 1000000, with the binomial standard errors computed alongside. At 10000 the split
+      is 15.710% selected, of which 78.167% become [MASK], 11.076% random and 10.757% unchanged --
+      both headline numbers in the right neighbourhood and neither close. The exercise's sample size
+      cannot confirm its own second number: only about 1500 tokens are selected, so one sigma on the
+      80% is 1.03 points and the window is 3.1 points at three sigma, with the measured 78.17% sitting
+      1.8 sigma low and indistinguishable from a real 78% rule. main() runs the identical check at
+      100000, ten times the exercise's number, and gets 79.80%; at 1000000 it gives 80.02%.
+      create_mlm_batch also hangs for vocab_size <= 4: the random-replacement branch loops while
+      rand_id in SPECIAL_IDS or rand_id == t, and with ids 0, 1 and 2 reserved there is no legal
+      replacement for t = 3 -- probed under a 0.3 s alarm, vocab_size 4 never returns and 5 does. And
+      15% is a rate over eligible positions rather than over tokens: the loop skips specials, so on a
+      sequence shaped like main()'s, [CLS] plus 9 words plus [SEP], only 9 of 11 positions can be
+      selected and the expected rate is 12.3%. Only 13.5% of tokens are changed at all, 1.5% being
+      labelled and left untouched, and 12% ever become [MASK]
+    uses_reference:
+      - distribution_check
+      - create_mlm_batch
+      - SPECIAL_IDS
+      - CLS_ID
+      - SEP_ID
+  - index: 2
+    slug: two_thirds_of_the_masks_leak_from_a_sibling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement whole-word masking: if a word is tokenized into subwords, mask all subwords together or none. Measure whether this improves MLM accuracy on a 500-sentence corpus.
+    zh: |
+      **中等。** 實作整詞遮罩：若一個詞被切成多個子詞，就把所有子詞一起遮住，或一個都不遮。在一個 500 句的語料上量測這是否提升遮罩語言建模的準確率。
+    verifies: >-
+      whole_word_mlm already exists in code/main.py, so the exercise is read as exercising it against
+      the token-level path over a 500-sentence corpus of subword-tokenised words -- lengths drawn
+      55/25/13/7 across 1 to 4 subwords, mean 1.71, 11085 tokens. The measurement the exercise names
+      cannot separate the two schemes, because the lesson's only model is toy_predict and it returns
+      1/V at every position and every vocabulary entry: MLM accuracy is exactly 0.005 under both
+      schemes, for any corpus and any mask probability. The quantity whole-word masking exists to
+      remove is measured instead. Under create_mlm_batch 64.27% of masked tokens sit in a word that
+      still has an unmasked subword, so the answer is spelled out beside the question; under
+      whole_word_mlm it is 0.00%, by construction, since the 80/10/10 branch is drawn per span and
+      applied to every token in it. Both schemes select the same share of tokens, 14.163% against
+      13.893%, because selection is per word and independent of word length, so whole-word masking is
+      not harder by masking more. What changes is the variance: the per-sentence mask count has a
+      coefficient of variation of 0.589 token-level against 0.825 word-level, 1.40x, because one draw
+      now commits up to four positions -- the same rate with a lumpier gradient
+    uses_reference:
+      - create_mlm_batch
+      - whole_word_mlm
+      - toy_predict
+      - CLS_ID
+      - SEP_ID
+      - IGNORE_INDEX
+  - index: 3
+    slug: the_decoder_gets_six_point_seven_times_the_signal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Train a tiny (2-layer, d=64) BERT on 10,000 sentences from a public dataset. Fine-tune the `[CLS]` token for SST-2 sentiment. Compare against a decoder-only baseline at matched params — which wins?
+    zh: |
+      **困難。** 在某個公開資料集的 10,000 個句子上訓練一個極小的（2 層、d=64）BERT。針對 SST-2 情感任務微調 `[CLS]` 詞元。在參數量相當的條件下與只有解碼器的基準比較 —— 誰贏？
+    verifies: >-
+      nothing in the setup exists: torch, datasets and transformers all return None from find_spec,
+      there is no SST-2 and no network to fetch one, and the module's 12 symbols include no encoder,
+      no training loop and no [CLS] representation -- CLS_ID appears on exactly two lines of the
+      lesson's source, its own definition and SPECIAL_IDS, so every masking path skips it and nothing
+      ever pools it. The comparison is therefore decided on the supervision arithmetic of the two
+      objectives at the lesson's own mask_prob. At matched parameters the decoder-only model sees
+      6.67x the supervised positions per sequence: MLM labels 0.15 * L = 19.2 positions at L=128 and a
+      causal LM labels all 128, a ratio of 1/mask_prob that does not depend on model size. BERT's
+      compensation is context and it is worth 1.97x, not 6.67x -- each masked position conditions on
+      all L-1 = 127 other tokens where a causal position i conditions on i, averaging (L+1)/2 = 64.5.
+      Multiplying the two, the decoder still leads on supervised context-tokens per sequence by 3.39x,
+      8256 against 2438, which is the reason decoder-only pretraining won the scaling race given that
+      both models are the same transformer with a different mask. And 15% x 80% = 12% of pretraining
+      tokens carry a [MASK] symbol that occurs zero times downstream, while 85% of every sequence is
+      pushed through the encoder to produce no gradient at all
+    uses_reference:
+      - CLS_ID
+      - SPECIAL_IDS
+      - toy_predict

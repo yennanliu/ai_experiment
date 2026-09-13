@@ -1,0 +1,88 @@
+lesson: 11-mixture-of-experts
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/11-mixture-of-experts/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_almost_nothing_to_even_out
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Watch how the auxiliary-loss-free bias update evens out expert usage over 50 iterations.
+    zh: |
+      **簡單。** 執行 `code/main.py`。觀察免輔助損失的偏置更新如何在 50 輪迭代內把專家使用率拉平。
+    verifies: >-
+      fifty iterations are run rather than main()'s ten, on the lesson's own token generator and then
+      on a clustered one, with usage taken from the lesson's own route, which agrees with run_epoch
+      exactly and skips the expert matmuls it does not need. The bias update does even usage out, but
+      the lesson's own tokens start only 1.65x from balanced: rng.gauss(0, 1) per coordinate has no
+      structure, whatever the comment above it says, so the only asymmetry is the random router
+      weights, and entropy is already 99.4% of ln 8 at iteration 0. Fifty iterations take max/min to
+      1.33. Drawn from 3 Gaussian clusters instead, the same rule has work to do -- starting max/min
+      657, entropy 1.5492 against a 2.0794 ceiling -- and closes 77% of the entropy gap, to 1.9589 and
+      max/min 5.24. Forty of the fifty iterations change nothing, because the step is a fixed +/-0.15
+      with no proportionality and no dead band and therefore limit-cycles rather than converging:
+      entropy from iteration 10 to 50 moves +0.0000 on the lesson's tokens and -0.0249 on clustered
+      ones, with the last thirty spanning 0.0024 and 0.0571. And entropy saturates long before balance
+      does -- at iteration 50 on clustered tokens it reads 94% of maximum while the worst expert is
+      still 227 tokens off a target of 250
+    uses_reference:
+      - route
+      - update_bias
+      - entropy
+      - run_epoch
+      - make_expert
+  - index: 2
+    slug: the_hash_router_wins_on_balance_and_nothing_else
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Replace the learned router with a hash-based router (deterministic, no learning). Compare quality and balance. Why is the learned router better?
+    zh: |
+      **中等。** 把學習式路由器換成基於雜湊的路由器（決定性的，不學習）。比較品質與平衡度。為什麼學習式路由器比較好？
+    verifies: >-
+      both routers run over the same 1000 clustered tokens, with balance read from the lesson's own
+      entropy and quality measured as the property quality depends on -- whether an expert receives a
+      coherent slice of the distribution. The hash router is better balanced by a lot: entropy 2.0788
+      against the learned router's 1.5492 out of ln 8 = 2.0794, 99.97% of the ceiling, and max/min
+      usage 1.13 against 657, with no bias correction, no auxiliary loss and no warm-up, because
+      hashing is uniform by construction. It also routes at chance under any perturbation: nudging
+      each token by Gaussian noise of 0.001, 0.01 and 0.1, the learned router keeps its top-1 expert
+      for 99.8%, 99.1% and 94.2% of tokens where the hash router keeps 12.7%, 12.9% and 13.9% against
+      12.5% by chance. Deterministic in the token is not the same as continuous in the token, and only
+      the second is useful. That is the whole answer: tokens with cosine similarity above 0.9 share
+      the learned router's top-1 expert 88.2% of the time against 46.2% for random pairs, while under
+      the hash router the same measurement reads 12.4% against 12.3%, no locality at all. An expert
+      can only specialise if the tokens it sees have something in common. The hash router has no
+      gradient either -- its gate weights are a constant 1/k by definition
+    uses_reference:
+      - route
+      - entropy
+  - index: 3
+    slug: nine_per_cent_at_the_start_sixty_three_later
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement GRPO-style "rollout-matched routing" (DeepSeek-V3.2 trick): log which experts fire during inference, force the same routing during gradient computation. Measure the effect on a toy policy-gradient setup.
+    zh: |
+      **困難。** 實作 GRPO 風格的「rollout 對齊路由」（DeepSeek-V3.2 的訣竅）：記錄推論期間觸發了哪些專家，在計算梯度時強制走同一套路由。在一個玩具級的策略梯度設定上量測它的效果。
+    verifies: >-
+      rollout-matched routing exists because the routing that produced a sample and the routing used
+      to differentiate it stop being the same function once the balance bias has moved between them,
+      so that gap is measured exactly on the lesson's own route and update_bias over 1000 clustered
+      tokens. One rollout epoch, one update_bias, one gradient epoch: the share of tokens whose top-k
+      set changes is 0.0% at gamma 0, 3.8% at 0.05, 9.0% at the lesson's own 0.15 and 25.2% at 0.5,
+      with gate mass credited to experts that never ran running 0.0%, 0.9%, 2.2% and 8.0%. Those
+      gradients update parameters that contributed nothing to the sampled output and no importance
+      weight corrects them. It also gets worse with training: after 50 balance updates the bias has
+      spread to 3.00, twenty steps of gamma, and the experts sit close enough in biased score that one
+      further update re-routes 63.2% of tokens against 9.0% on the first step -- which is why the
+      trick became necessary at scale rather than at the start. The churn is entirely in the last
+      selected expert: top-1 changes for 0.0% of tokens while 9.0% of sets change, which is why 9.0%
+      of tokens move only 2.2% of the mass. At gamma 0 the mismatch is exactly zero, so it is caused
+      by the balance rule and not by sampling
+    uses_reference:
+      - route
+      - update_bias

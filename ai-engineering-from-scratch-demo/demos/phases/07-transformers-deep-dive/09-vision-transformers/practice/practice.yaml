@@ -1,0 +1,91 @@
+lesson: 09-vision-transformers
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/09-vision-transformers/docs/en.md
+exercises:
+  - index: 1
+    slug: patchify_builds_a_grid_and_throws_it_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Verify the number of patches equals `(H/P) * (W/P)` and the flat patch dimension equals `P*P*C`.
+    zh: |
+      **簡單。** 執行 `code/main.py`。驗證影像區塊的數量等於 `(H/P) * (W/P)`，且攤平後的區塊維度等於 `P*P*C`。
+    verifies: >-
+      both identities hold at main()'s settings: 24x24x3 at patch 6 gives 16 patches against
+      (24/6)*(24/6) = 16, each 108 long against 6*6*3 = 108, with a sequence of 17 once [CLS] is
+      prepended. Reading patchify's source for how it gets there turns up three things. It assembles a
+      grid of (row, col) pairs cell by cell through both loops and then discards it -- neither grid
+      nor grid_row can be reached from the return, which recomputes the shape as (H // patch_size, W
+      // patch_size) from scratch. C = len(image[0][0]) is assigned and never read anywhere, so the
+      channel count the exercise asks you to verify is computed by the function and dropped, and the
+      assert below it checks only H and W. And the [CLS] token gets no positional encoding at all:
+      cls_and_pos writes out = [list(cls)] and adds pe only inside the patch loop, so token 0 carries
+      position from nowhere while token 1 is exactly its patch embedding plus pe[0][0]. That last one
+      contradicts the lesson's own parameter model, which bills (num_patches + 1) * d_model of
+      learnable position embeddings -- 151,296 at ViT-Base/16 -- where pos_2d is sinusoidal and costs
+      zero parameters. The parameter model is otherwise accurate to 0.14%: 86.5M against a published
+      86.6M for ViT-Base/16, 304.1M against 304.0M for ViT-Large/16 and 631.7M against 632.0M for
+      ViT-Huge/14, which is how the line the code contradicts got there
+    uses_reference:
+      - make_image
+      - patchify
+      - linear_project
+      - cls_and_pos
+      - pos_2d
+      - param_count_vit
+  - index: 2
+    slug: not_one_band_completes_a_cycle
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement 2D sinusoidal positional embeddings — two independent sinusoidal codes for `row` and `col` of each patch, concatenated. Feed them into a tiny PyTorch ViT and compare accuracy vs learnable positional embeddings on CIFAR-10.
+    zh: |
+      **中等。** 實作 2D 正弦式位置嵌入——為每個影像區塊的 `row` 與 `col` 各算一組獨立的正弦編碼，再串接起來。把它餵進一個很小的 PyTorch ViT，在 CIFAR-10 上跟可學習的位置嵌入比較準確率。
+    verifies: >-
+      pos_2d already is the 2D sinusoidal code the exercise describes, so it is audited rather than
+      reimplemented; the PyTorch comparison is unbuildable, torch returning None from find_spec with
+      no CIFAR-10 and no network. The concatenation is exactly separable: pe[i][j] . pe[i2][j2] varies
+      by at most 3.6e-15 within a (drow, dcol) offset across 49 offsets on the lesson's 4x4 grid,
+      because the row half and the column half share no dimensions so their dot products add, and
+      every position has norm sqrt(d_model/2) = 4.898979485566 to twelve places. But not one frequency
+      band completes a cycle on the lesson's own grid: the fastest band has a wavelength of 6.28
+      positions and the grid is 4, so 0 of 12 bands are periodic at d_model=48 and the whole
+      positional code is a monotone ramp in each axis. A real ViT is barely better -- ViT-Base/16's
+      14x14 grid has 17 of 192 bands completing a cycle, 8.9%, so 91% of the positional dimensions
+      traverse less than one period across the whole image and carry a slope rather than a position.
+      Sinusoidal coding was designed for sequences of hundreds. The comparison the exercise sets up is
+      also over 0.17% of the parameters: learnable positions cost (num_patches + 1) * d_model =
+      151,296 at ViT-Base/16 against 86.5M total, and sinusoidal costs zero, which is why the ViT
+      paper's own ablation finds the two within noise. pos_2d asserts d_model % 4 == 0 and rejects 46
+    uses_reference:
+      - pos_2d
+  - index: 3
+    slug: the_pairing_is_what_makes_it_visible
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Build a 3-layer ViT (PyTorch), train on 1,000 MNIST images with 4×4 patches. Measure test accuracy. Now add DINOv2 pretraining on the same 1,000 images (simplified: just train the encoder to predict patch embeddings from masked patches). Does accuracy improve?
+    zh: |
+      **困難。** 用 PyTorch 建一個 3 層的 ViT，以 4×4 的影像區塊在 1,000 張 MNIST 影像上訓練。量測測試準確率。接著在同樣這 1,000 張影像上加上 DINOv2 預訓練（簡化版：只訓練編碼器從被遮住的影像區塊預測區塊嵌入）。準確率有進步嗎？
+    verifies: >-
+      torch is absent and MNIST needs a network, so the ViT is built in numpy -- patch embedding,
+      [CLS], learned positions, 3 residual attention blocks, [CLS] head, hand-written backward pass
+      and Adam -- over scikit-learn's load_digits, 8x8 images shipped with the package, 1000 train and
+      797 test at the exercise's own 4x4 patches. The MLP sublayer is omitted to keep the file inside
+      the repo's 150-line ceiling, and both arms share the same encoder so the comparison is
+      unaffected. The pretraining arm is the exercise's stated simplification: mask half the patches,
+      reconstruct the masked patch vectors from the encoder output, then fine-tune with the same
+      supervised loop from those weights, with the seed held across each pair. The answer is that you
+      cannot tell. Supervised-only reaches 90.42% and pretrain-then-tune 90.65%, a difference of +0.23
+      points, and 3 of the 6 seeds say the opposite: -0.50, -0.63, +2.13, +0.25, -2.13, +2.26. The
+      effect sits under the noise floor and pairing does not lift it off -- accuracies spread 1.23
+      points across seeds while the per-seed difference has a standard deviation of 1.71, larger, so
+      holding the seed shrinks nothing, and six pairs give t = 0.33 on 5 degrees of freedom against
+      the 2.57 a two-sided 95% test wants. Resolving a gap this size with the exercise's own protocol,
+      one run of each arm, would take about 220 runs per arm. The pretraining corpus is also the
+      fine-tuning corpus, so the masked pass cannot add information and at most moves the starting
+      point; DINOv2's benefit is millions of unlabelled images, and a null result is what dropping
+      that ingredient predicts. The model itself is real: 90.42% against a 10% chance floor

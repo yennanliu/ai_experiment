@@ -1,0 +1,109 @@
+lesson: 15-attention-variants
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/15-attention-variants/docs/en.md
+exercises:
+  - index: 1
+    slug: the_first_window_rows_are_identical
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Verify SWA at `window=4` zeroes everything outside the last 4 tokens per row. Verify `window=n` reproduces full causal attention bit-identically.
+    zh: |
+      **簡單。** 執行 `code/main.py`。確認 `window=4` 的 SWA 會把每列最後 4 個詞元以外的位置全部歸零。確認 `window=n` 能逐位元重現完整的因果注意力。
+    verifies: >-
+      both claims are checked cell by cell rather than by counting, because bit-identical is a claim
+      about 0.0 and -inf. swa_mask(8, 8) equals causal_mask(8) exactly, since max(0, i - n + 1) is 0
+      for every row, and at window=4 row i attends [max(0, i-3) .. i] and nothing else -- 26 of the 36
+      causal cells. Rows 0 to window-1 are causal already: only rows 4 to 7 differ, because the window
+      is not full until row window-1, so a sliding window does nothing until the sequence is longer
+      than the window. The demo's own draw also contradicts its own comment: main() prints [0.018,
+      0.068, 0.335, 0.031, 0.054, 0.112, 0.156, 0.227] beside 'notice the weight bleeding to position
+      0 -- the attention sink', and position 0 is 0.018, the smallest of the eight and a seventh of
+      the uniform 0.125. Over 200 fresh key and query draws the mean weight on position 0 is 0.1206
+      against a uniform 0.1250, so it stays below uniform: the sink is a property of trained models,
+      where position 0 becomes somewhere to put unused probability mass, and a softmax over random
+      scores has no reason to produce one. The cell counts follow from the shape alone
+    uses_reference:
+      - causal_mask
+      - swa_mask
+      - count_nonmasked
+      - attention_row
+  - index: 2
+    slug: a_window_of_1024_on_64_tokens_is_full_attention
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement causal SWA with `window=1024` on top of the Lesson 07 capstone. Train for 1,000 steps on tinyshakespeare. How much does val loss regress vs full attention? How much does peak memory drop?
+    zh: |
+      **中等。** 在單元 07 的總結專案之上，實作 `window=1024` 的因果式 SWA。在 tinyshakespeare 上訓練 1,000 步。相較於完整注意力，驗證損失退步多少？峰值記憶體降了多少？
+    verifies: >-
+      the Lesson 07 capstone sets block_size = 64, so swa_mask(64, 1024) is compared with
+      causal_mask(64) cell by cell before anything is trained. They are identical: every row's lower
+      bound is max(0, i - 1023), which is 0 for every i < 64, so 0 rows differ, the two models are the
+      same function, the validation losses are equal at every seed and every step, and no training run
+      is needed to say so. Peak memory drops by nothing for the same reason -- the KV cache is
+      min(window, n) positions deep and min(1024, 64) is 64, with 2080 attended cells in both arms.
+      The window has to fall under 64 before anything happens at all: at window=32 only 32 rows move
+      and 1552 cells remain, at window=8 56 rows move and 484 remain, and even then the first window
+      rows stay causal. The exercise's own numbers are 16x apart, a 1024-token window on a 64-token
+      context, and both halves of the question have the same answer for that one reason. The saving is
+      a property of the mask, so the answer is 0.000 rather than about zero
+    uses_reference:
+      - causal_mask
+      - swa_mask
+      - count_nonmasked
+  - index: 3
+    slug: the_global_sixth_is_ninety_six_per_cent_of_the_cache
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement a Gemma-3-style 5:1 layer mix (5 SWA, 1 global) in the capstone model. Compare loss, memory, and generation quality against pure-SWA and pure-global baselines at matched parameters.
+    zh: |
+      **困難。** 在總結專案的模型裡實作 Gemma 3 風格的 5:1 層混搭（5 層 SWA、1 層全域）。在參數量相同的條件下，把損失、記憶體與生成品質拿去跟純 SWA、純全域的基準線比較。
+    verifies: >-
+      the capstone has 3 layers and 5:1 needs a multiple of 6, so the mix cannot be laid out in it --
+      3 % 6 = 3, and the nearest expressible mixes in 3 layers are 2:1 and 1:2 with ceilings of 3 and
+      1.5. Its block_size is also 64, where Exercise 2 shows any window at or above 64 is full
+      attention, so pure SWA and pure global are bit-identical models there and the loss and
+      generation comparisons are undefined. Both halves are therefore measured on the lesson's own KV
+      arithmetic at 128K context, 80 layers, 8 KV heads and d_head=128 in fp16. The 5:1 mix at W=1024
+      costs 7.44 GB against full attention's 42.9 GB, a 5.8x shrink against a ceiling of exactly
+      n_layers / global_layers = 6, so it reaches 96% of what its ratio allows. And 96.2% of that
+      cache is the single global layer: the five SWA layers contribute 3.76%, and quadrupling the
+      window from 1024 to 4096 moves the total only from 7.44 to 8.28 GB, 11%. Against pure SWA at the
+      same window, 0.34 GB, the mix pays 22x -- a deliberate regression bought to keep retrieval over
+      the whole context, which is the same number seen from the other side
+    uses_reference:
+      - kv_cache_bytes
+  - index: 4
+    slug: an_unlearned_lambda_subtracts_the_needle_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement differential attention with a learned `λ` per head. Train on a synthetic retrieval task (one needle, 2,000 distractors). Measure retrieval accuracy vs a single-attention baseline at matched parameters.
+    zh: |
+      **困難。** 實作每個頭各有一個學習式 `λ` 的差分注意力。在一個合成檢索任務上訓練（一根針、2,000 個干擾項）。在參數量相同的條件下，量測檢索準確率與單一注意力基準線的差距。
+    verifies: >-
+      the retrieval task is built as described -- one planted needle whose key is a scaled copy of the
+      query, among up to 2000 Gaussian distractors -- and both arms run through the lesson's own
+      attention_row and diff_attention_row. Lambda is not learned, because the lesson ships no
+      training loop and no gradient, so what is measured is what a fixed lambda does, which is the
+      thing learning would have to fix. Single attention retrieves the needle 100% of the time at 2000
+      distractors while differential attention at fixed lambda does worse and degrades monotonically:
+      94.0% at 64 distractors and lambda 0.8, 83.5% at 512, 72.5% at 2001. The subtracted map is a
+      noisy copy of the first -- K2 = K1 + noise, q2 = q + noise -- so it scores the needle highly too
+      and removing it removes signal and noise together. The returned weights also do not sum to 1 but
+      to 1 - lambda, measured exactly at 1.000000, 0.700000, 0.500000 and 0.200000, because
+      diff_attention_row subtracts one normalised distribution from another and returns the difference
+      unnormalised. And retrieval accuracy cannot see the phenomenon: plain attention holds 100% from
+      8 distractors to 2001 while the needle's share of the mass falls from 0.94 to 0.28. The lesson's
+      own KV figure overcharges differential attention at full * 2 = 85.9 GB, where caching K1, K2 and
+      one shared V is three units against full attention's two, so 1.5x and 64.4 GB
+    uses_reference:
+      - attention_row
+      - diff_attention_row
+      - kv_cache_bytes
