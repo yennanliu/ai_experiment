@@ -1,0 +1,125 @@
+lesson: 14-build-a-transformer-capstone
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/14-build-a-transformer-capstone/docs/en.md
+exercises:
+  - index: 1
+    slug: it_never_gets_under_two_and_stops_improving_at_five_hundred
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Easy.** Run `code/main.py`. Verify your trained model's final-step validation loss is under 2.0. Change `max_steps` from 2,000 to 5,000 — does val loss keep improving?
+    zh: |
+      **簡單。** 執行 `code/main.py`。確認你訓練出的模型在最後一步的驗證損失低於 2.0。把 `max_steps` 從 2,000 改成 5,000 —— 驗證損失還會繼續下降嗎？
+    verifies: >-
+      torch returns None from find_spec, so try_train prints its install message and trains nothing;
+      the model is rebuilt in numpy at the lesson's own configuration -- block_size=64, d_model=64, 4
+      heads, 3 layers, lr=3e-4, Adam, the embedded text split 90/10 -- with a hand-written backward
+      pass and the SwiGLU sublayer omitted to fit the repo's line ceiling. Validation never reaches
+      2.0: it bottoms at 3.15 around step 500 and rises after, reaching 3.56 at 2000 and 4.98 at 5000
+      while the training loss falls to 1.13. ln(46) = 3.83 is the loss of guessing uniformly, so
+      training for 5000 steps leaves the model worse than having no model. The corpus is why: the
+      embedded text is 999 characters, the split leaves 899 for training and 100 for validation, and
+      the model is 56192 parameters -- 63 per training character. The validation set is also 100
+      characters offering len(val_data) - block_size = 36 windows, drawn 16 at a time with
+      replacement, so every evaluation overlaps itself. And max_steps is 500 in the file rather than
+      the 2000 the exercise asks you to change, with 500 landing where the curve bottoms; the module
+      docstring advertises 4 layers, d_model=128 and seq_len=128 where try_train sets 3, 64 and 64
+    uses_reference:
+      - TINY_SHAKESPEARE
+      - try_train
+  - index: 2
+    slug: rope_is_lower_on_every_seed_and_smaller
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Replace learned positional embeddings with RoPE. Apply the rotation to Q and K inside `MultiHeadAttention`. Train and verify val loss is at least as low.
+    zh: |
+      **中等。** 把學習式的位置嵌入換成 RoPE。在 `MultiHeadAttention` 內部對 Q 與 K 施加旋轉。訓練並確認驗證損失至少一樣低。
+    verifies: >-
+      both arms are rebuilt in numpy at the lesson's own configuration and differ only in how position
+      enters: the learned arm adds a (64, 64) table to the embeddings, the RoPE arm has no table and
+      rotates Q and K inside attention. Each is run on 3 seeds and scored at its best checkpoint,
+      because Exercise 1 shows the last step is the wrong place to look. RoPE is at least as low --
+      lower, on every seed: 2.837, 2.987 and 2.988 against 3.151, 2.999 and 2.988, means 2.937 against
+      3.046. It also does it with 4096 fewer parameters, the block_size x d_model positional table
+      being 7.3% of the model and simply absent, since the rotation is a function of the index and has
+      nothing to learn or overfit. Both arms still end above 2.94 on 899 training characters, so this
+      compares two ceilings. The gradient of the rotation is the rotation transposed -- rope with
+      sign=-1 is the backward pass exactly, because a rotation is orthogonal -- which is why the
+      substitution costs nine lines
+    uses_reference:
+      - TINY_SHAKESPEARE
+  - index: 3
+    slug: the_cache_is_worth_block_size_not_five_to_twenty
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Implement a KV cache in the sampling loop. Generate 500 tokens with and without cache. Wall-clock should improve by 5–20× on a laptop.
+    zh: |
+      **中等。** 在取樣迴圈裡實作 KV 快取。分別在有快取與沒快取的情況下生成 500 個詞元。在筆電上牆鐘時間應該會改善 5 到 20 倍。
+    verifies: >-
+      torch is absent so generate cannot be run as written; both loops are rebuilt in numpy at the
+      lesson's own geometry and both the multiply-accumulate count and the wall clock are measured
+      over the same 500 tokens. The cache is worth 64x in arithmetic and the number is block_size:
+      uncached, each step runs the whole 64-token window through 3 layers, 4907008
+      multiply-accumulates, against 76672 cached, because the cached loop does 1/N of the projections
+      and 1/N of the attention rows. The wall clock is far short of that -- 107 ms against 29 ms, 3.7x
+      -- because at d_model=64 a (1, 64) matmul and a (1, 1) matmul cost nearly the same in dispatch,
+      which is where the exercise's 5-20x comes from: it is a statement about interpreter overhead
+      rather than about the cache. The ratio is block_size and nothing else, layers, width, vocabulary
+      and token count all cancelling: 64.0 at (3, 64), (12, 768) and (32, 4096) alike. Greedy sampling
+      with and without the cache produces an identical 80-token continuation, and the lesson's own
+      generate already crops to idx[:, -block_size:], which is why the answer is 64 rather than 500
+    uses_reference:
+      - TINY_SHAKESPEARE
+  - index: 4
+    slug: the_second_head_helps_by_less_than_the_seed_spread
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Add a second head to the model that predicts the next-plus-one token (MTP — Multi-Token Prediction from DeepSeek-V3). Train jointly. Does it help?
+    zh: |
+      **困難。** 為模型加上第二個頭，用來預測「下一個的下一個」詞元（MTP —— 出自 DeepSeek-V3 的多詞元預測）。一起聯合訓練。這樣有幫助嗎？
+    verifies: >-
+      both arms are rebuilt in numpy at the lesson's own configuration and differ only in whether a
+      second d_model x vocab head predicts token t+2 alongside the first predicting t+1, weighted 0.5
+      as DeepSeek-V3 weights it, with only the next-token loss reported so the two are scored on the
+      same objective. Each is run on 3 seeds and scored at its best checkpoint. MTP helps marginally
+      and not on every seed: 2.879, 3.019 and 3.083 against 3.188, 3.033 and 3.022, means 2.993
+      against 3.081, lower on 2 of 3 seeds by 0.088 nats. The effect is smaller than the seed-to-seed
+      spread -- the single-head arm alone spans 0.166 across the same three seeds, twice the effect --
+      so one run of each arm would report a sign chosen by the draw. What the second head plausibly
+      does here is regularise: it costs 2944 parameters, one untied matrix, and asks the same hidden
+      state to carry information about two future tokens, which on 899 training characters is worth
+      more as a constraint than as a prediction. DeepSeek-V3's version is about speculative decoding
+      throughput, a benefit that cannot appear in a validation loss at all
+    uses_reference:
+      - TINY_SHAKESPEARE
+  - index: 5
+    slug: matched_active_the_moe_is_not_better
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Replace the single FFN per block with a 4-expert MoE. Router + top-2 routing. See how val loss changes at matched active parameters.
+    zh: |
+      **困難。** 把每個區塊裡單一的 FFN 換成 4 個專家的 MoE，加上路由器與 top-2 路由。在活躍參數量相同的條件下，看驗證損失怎麼變。
+    verifies: >-
+      matched active parameters is the whole design, so it is matched exactly: the dense block gets
+      one FFN of hidden 2 * d_model and the MoE gets 4 experts of hidden d_model at top-2, activating
+      2 * (2 * 64 * 64) = 16384 weights per layer against the dense block's 2 * 64 * 128 = 16384. Both
+      arms are rebuilt in numpy at the lesson's own configuration, run on 3 seeds and scored at the
+      best checkpoint, with the router initialised and then held so this measures what four experts
+      buy under fixed routing. The result is a wash: 2.836, 2.987 and 2.850 against 2.939, 2.896 and
+      2.828, means 2.891 and 2.887, 0.003 nats apart -- inside the 0.111 the dense arm alone spans
+      across the same seeds -- with the MoE winning 1 seed of 3. It costs 1.47x the memory, 155264
+      parameters against 105344, the FFN portion doubling exactly because four experts are held where
+      two are used: identical FLOPs per token, more weights to hold. And there is nothing here for
+      four experts to divide, since 899 training characters over a 46-symbol vocabulary contain no
+      four separable regimes, which is Lesson 11's locality finding arriving from the other direction
+    uses_reference:
+      - TINY_SHAKESPEARE
