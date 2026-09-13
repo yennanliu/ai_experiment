@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**404 / 2090 exercises** (19.3%) across 20 phases.
+**456 / 2150 exercises** (21.2%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -56,14 +56,14 @@ hand-written "simulation" of the answer could not have found it.
 | 🚧 `04-computer-vision` | 84 | 81 | 27 |
 | ✅ `05-nlp-foundations-to-advanced` | 87 | 87 | 29 |
 | ✅ `06-speech-and-audio` | 51 | 51 | 17 |
-| ⬚ `07-transformers-deep-dive` | 52 | 0 | 0 |
+| ✅ `07-transformers-deep-dive` | 52 | 52 | 16 |
 | ⬚ `08-generative-ai` | 47 | 0 | 0 |
 | ⬚ `09-reinforcement-learning` | 36 | 0 | 0 |
 | ⬚ `10-llms-from-scratch` | 116 | 0 | 0 |
 | ⬚ `11-llm-engineering` | 79 | 0 | 0 |
 | ⬚ `12-multimodal-ai` | 125 | 0 | 0 |
 | ⬚ `13-tools-and-protocols` | 148 | 0 | 0 |
-| ⬚ `14-agent-engineering` | 212 | 0 | 0 |
+| ⬚ `14-agent-engineering` | 272 | 0 | 0 |
 | ⬚ `15-autonomous-systems` | 110 | 0 | 0 |
 | ⬚ `16-multi-agent-and-swarms` | 123 | 0 | 0 |
 | ⬚ `17-infrastructure-and-production` | 140 | 0 | 0 |
