@@ -1,0 +1,97 @@
+lesson: 13-scaling-laws
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/13-scaling-laws/docs/en.md
+exercises:
+  - index: 1
+    slug: the_headline_ratio_is_never_twenty_here
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Print Chinchilla-optimal `(N, D)` for compute budgets `1e20`, `1e22`, `1e24`. Compare to the real model table.
+    zh: |
+      **簡單。** 執行 `code/main.py`。印出運算預算 `1e20`、`1e22`、`1e24` 下計算最佳的 `(N, D)`，並與真實模型表格比對。
+    verifies: >-
+      the lesson finds the optimum by grid search, so the same optimum is also derived in closed form
+      -- minimising A/N^a + B/D^b under 6ND = C gives N* = (A*a/(B*b))^(1/(a+b)) * (C/6)^(b/(a+b)) --
+      and the two are compared, which is what makes the D/N number checkable rather than printed. The
+      grid is accurate to 2-3% in N (200 points over 8 decades is a 9.7% step) and to 2e-5 in loss,
+      because the objective is flat at its minimum: that is why a coarse grid answers the loss
+      question and cannot answer the ratio question. The ratio itself never approaches the headline.
+      D/N scales as C^0.0968 exactly and equals 20 at C = 7.59e16, five to six orders of magnitude
+      below the 1e22-1e23 the lesson says Chinchilla studied; these constants want 40.1 at 1e20, 62.6
+      at 1e22 and 97.7 at 1e24, so main() prints 'Hoffmann 2022 published D/N = 20 as the headline'
+      directly beneath a table that disagrees with it by 3x at the scale in question. Against the real
+      model table half the models are under-trained by this law rather than over-trained: GPT-3 sits
+      at D/N = 1.7 and Chinchilla at 20.0 where the law wants 98 at 1e24, while Llama 3 8B is at 1875
+      and DeepSeek-V3 active at 400
+    uses_reference:
+      - compute_optimal
+      - chinchilla_loss
+      - A
+      - B_CONST
+      - ALPHA
+      - BETA
+      - E_CONST
+  - index: 2
+    slug: the_next_tenth_stops_being_expensive_and_becomes_impossible
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement the Hoffmann loss-as-function-of-compute curve. Plot loss vs `log10(C)` for the compute-optimal frontier. Identify when the law predicts we'd need `>10^28` FLOPs for the next 0.1 reduction in cross-entropy.
+    zh: |
+      **中等。** 實作 Hoffmann 的「損失對運算量」曲線。在計算最佳前沿上畫出損失對 `log10(C)` 的關係。找出定律預測我們得花 `>10^28` FLOPs 才能讓交叉熵再降 0.1 的位置。
+    verifies: >-
+      the frontier has a closed form -- substituting the optimal (N, D) back into the loss gives L*(C)
+      = E + k * C^(-a*b/(a+b)) -- so the curve is derived rather than sampled, plotted as a text
+      raster since matplotlib is absent, and the threshold found by bisection on the exact curve,
+      which agrees with the lesson's own compute_optimal to 2e-5 at 1e20, 1e22 and 1e24. From C =
+      1.07e25, where the frontier loss is 1.8438, the next 0.1 first costs more than 1e28 FLOPs. As a
+      multiple of what is already spent the next tenth costs 5x from 1e22, 12x from 1e23, 50x from
+      1e24, 832x from 1e25 and 1.1e7x from 1e26. Shortly after that the answer stops being a number at
+      all: E = 1.69 is a floor the law never crosses, so once L* is below E + 0.1 no finite compute
+      buys another tenth, and the frontier reaches 1.79 at C = 1.76e26, about 16x past the point the
+      exercise asks about. The exponent is 0.15355 and everything follows from it -- a 0.1 reduction
+      near L - E = 0.5 needs 4x the compute and near L - E = 0.15 needs 1280x -- so the curve is not
+      slowing down, the distance to the floor is shrinking
+    uses_reference:
+      - chinchilla_loss
+      - compute_optimal
+      - A
+      - B_CONST
+      - ALPHA
+      - BETA
+      - E_CONST
+  - index: 3
+    slug: one_dataset_cannot_separate_e_from_b_over_d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Fit your own scaling law on 5 tiny models (100K to 10M params) trained on the same dataset. Estimate `α` and `E`. How well do your exponents match published ones?
+    zh: |
+      **困難。** 用 5 個在同一份資料集上訓練的極小模型（10 萬到 1000 萬參數）擬合你自己的縮放律。估出 `α` 與 `E`。你的指數和已發表的數值有多接近？
+    verifies: >-
+      rather than train five models and fit noisy losses, the published law is used as ground truth
+      and the exercise's design is run against it -- 5 sizes from 1e5 to 1e7 with D fixed at 1e9 -- so
+      every loss is exactly right by construction and anything the fit gets wrong belongs to the
+      design. The fit scans E and solves log-linear least squares for (A, alpha) at each candidate. It
+      recovers alpha = 0.3400 against a true 0.34 and A = 406.6 against 406.4 with a residual of
+      1.4e-9, and E = 2.9307 against a true 1.69, wrong by 73%. The error is exactly B / D^beta and it
+      is structural: with D held fixed the data term 410.7 / (1e9)^0.28 = 1.2403 is a constant over
+      the whole design, so least squares folds it into the intercept and 1.69 + 1.240 = 2.930 matches
+      the fitted value to four digits. 'Trained on the same dataset' is the phrase that makes E
+      unidentifiable -- no optimiser, no extra model sizes and no reduction in noise can separate a
+      constant from a constant, and only varying D can. Alpha survives noise but barely: over 200
+      refits with multiplicative noise it spans 0.33-0.35 at 0.2%, 0.31-0.37 at 0.5% and 0.28-0.40 at
+      1%, so matching a published exponent to two digits needs the five losses measured to better than
+      a percent. And the design never gets near the floor, running 11.039 at N=1e5 to 4.624 at N=1e7,
+      still 2.93 above the true E
+    uses_reference:
+      - chinchilla_loss
+      - A
+      - B_CONST
+      - ALPHA
+      - BETA
+      - E_CONST
