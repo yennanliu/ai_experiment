@@ -1,0 +1,86 @@
+lesson: 10-audio-transformers-whisper
+phase: 07-transformers-deep-dive
+source: phases/07-transformers-deep-dive/10-audio-transformers-whisper/docs/en.md
+exercises:
+  - index: 1
+    slug: two_frames_short_at_every_length
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Confirm the frame count for a 1-second signal at 16 kHz with 10 ms hop is ~100 frames. For 30 seconds: ~3,000 frames.
+    zh: |
+      **簡單。** 執行 `code/main.py`。確認一段 1 秒、16 kHz、位移 10 ms 的訊號幀數約為 100 幀。30 秒則約 3,000 幀。
+    verifies: >-
+      the lesson's own frame_signal is run at 1, 5 and 30 seconds and compared with the closed form.
+      It gives 98 frames for 1 second, not ~100, and 2998 for 30 seconds, not ~3000, because range(0,
+      len(x) - frame_size + 1, hop) emits floor((n - 400) / 160) + 1 starts -- exactly n/160 minus 2
+      whenever the hop divides the length. The deficit is (frame - hop)/hop = 1.5 rounded up, so it is
+      2 frames at every duration rather than a percentage, and it matches the closed form exactly at
+      all three lengths. That makes the lesson's own TARGET_FRAMES unreachable from audio: it is 3000,
+      30 seconds of real signal produces 2998, and pad_or_clip therefore appends 2 zero frames to
+      every full-length Whisper window this pipeline builds, so the last 20 ms of every input is
+      silence that was never recorded. Whisper's own front end centre-pads the waveform instead, which
+      is what gets it to 3000. Every frame is also 12.5 ms late: frame k covers [160k, 160k + 400) so
+      its centre is at 160k + 200, a constant 200 samples after the hop position it is named for, at
+      every one of the 98 frames. And pad_or_clip truncates in the other direction without complaint
+      -- 60 seconds frames to 5998 and comes back as 3000 with the second half dropped and nothing
+      said about it
+    uses_reference:
+      - sine_wave
+      - frame_signal
+      - pad_or_clip
+      - TARGET_FRAMES
+  - index: 2
+    slug: nineteen_filters_are_narrower_than_a_bin
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Medium.** Build the full log-mel spectrogram using `numpy.fft`. Verify 80 mel bins match `librosa.feature.melspectrogram(n_mels=80)` within numerical error.
+    zh: |
+      **中等。** 用 `numpy.fft` 建出完整的對數梅爾頻譜圖。驗證 80 個梅爾頻帶與 `librosa.feature.melspectrogram(n_mels=80)` 在數值誤差內一致。
+    verifies: >-
+      librosa, torch, torchaudio and soundfile all return None from find_spec, so there is nothing to
+      compare against; numpy is present, so the spectrogram is built at Whisper's own settings --
+      n_fft=400, hop=160, 80 mels over 0-8000 Hz -- and verified against properties a correct
+      filterbank must have. It comes out (80, 98) for one second from an (80, 201) bank, with a frame
+      count matching the lesson's own frame_signal; the 80 triangles sum to 1.0000 at every interior
+      FFT bin, a partition of unity, so total power is conserved to 1.0000; and a 440 Hz tone peaks at
+      mel bin 15, where 440 Hz falls among the centres. Two facts about Whisper's published settings
+      follow. n_fft=400 at 16 kHz gives bins of 40 Hz, the first mel triangle spans 44.9 Hz = 1.12
+      bins, and 19 of the 80 filters span fewer than two bins -- a quarter of the mel resolution is
+      finer than the spectrogram it is computed from. And 28 of the 80 centres sit below 1 kHz,
+      matching mel(1000)/mel(8000) = 35.2%, so 35% of the bins describe 12.5% of the spectrum, which
+      is the mel scale working as designed and the reason the bottom filters are unresolvable. Finally
+      the lesson's frame_energy tracks the log total mel power at r = 0.9976 on an amplitude-modulated
+      tone: an excellent measure of how loud that carries nothing about which frequencies, making the
+      sequence (3000, 1) where Whisper's is (3000, 80)
+    uses_reference:
+      - sine_wave
+      - frame_signal
+      - frame_energy
+  - index: 3
+    slug: the_overlap_costs_twenty_five_points_of_wer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement streaming inference: chunk audio into 10 s windows with 2 s overlap, run Whisper on each chunk, merge transcripts. Measure word-error rate vs single-pass on a 5-minute podcast sample.
+    zh: |
+      **困難。** 實作串流推論：把音訊切成 10 秒的視窗、重疊 2 秒，對每一塊跑 Whisper，再把轉錄稿合併起來。在一段 5 分鐘的 podcast 樣本上，量測它與單次通過相比的詞錯誤率。
+    verifies: >-
+      there is no Whisper, no audio and no network -- torch, whisper, transformers and soundfile all
+      absent -- so the recogniser is replaced by a perfect one, each chunk returning exactly the words
+      spoken inside it, and the two things the exercise actually specifies are measured: the chunk
+      arithmetic and the merge. A perfect recogniser is the right control because every error left is
+      one the protocol created. A 5-minute file at 180 wpm is 900 words; 10-second windows at 2-second
+      overlap make 38 chunks whose spans total 374 seconds of a 300-second file, and concatenating
+      them emits 1122 words. The 222 extra are the overlap and they are insertions: 24.7% WER before
+      the model makes a single mistake. A longest-suffix-prefix merge takes the same chunks to 0.0%.
+      The chunk size is also smaller than Whisper's fixed 30-second window, which pads anything
+      shorter, so a 10-second chunk costs a full 30-second forward pass: single-pass is 10 windows =
+      300 s of encoder input against streaming's 38 * 30 = 1140 s, 3.8x, turning a latency
+      optimisation into more compute. And the merge survives ragged edges -- clipping one word at each
+      chunk boundary, what a recogniser does to a word split across one, leaves naive concatenation at
+      16.7% and the merge at 0.2%
