@@ -1,0 +1,94 @@
+lesson: 05-stylegan
+phase: 08-generative-ai
+source: phases/08-generative-ai/05-stylegan/docs/en.md
+exercises:
+  - index: 1
+    slug: with_adain_off_the_generator_ignores_z
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` with `adain_on=True` and `adain_on=False`. Compare the spread of outputs for a fixed latent vs perturbed latent.
+    zh: |
+      **簡單。** 分別用 `adain_on=True` 與 `adain_on=False` 執行 `code/main.py`。比較固定潛在向量與擾動後潛在向量各自的輸出分散程度。
+    verifies: >-
+      spread is read as spread across latents, the only reading under which the comparison says
+      anything, and the lesson's own init_mapping, mapping, init_synth and stylegan_forward are run
+      at the lesson's sizes with noise_sigma 0 over 200 independent z. With adain_on=False the
+      per-channel standard deviation across those 200 latents is exactly 0.0 on all six channels and
+      the sweep holds exactly 1 distinct output, because w enters stylegan_forward only inside the
+      `if adain_on:` branch and with the branch off the function never reads its first argument;
+      with it on the same sweep spreads up to 0.266. main() nonetheless reports a non-zero spread
+      for that constant, 0.0122, because it flattens the outputs into one list and takes mean_std of
+      the pool, mixing variation across latents with variation across channels -- a number unchanged
+      whether the sweep runs one latent or a million. Perturbing z by gauss(0, 0.1) moves the output
+      by 0.0 with AdaIN off against 0.0068 with it on, so there is no fixed-versus-perturbed
+      contrast in the off arm. And the constant is confirmed as an identity rather than a small
+      standard deviation: with AdaIN off the output for a mapped latent equals the output for a zero
+      w, bit for bit
+    uses_reference:
+      - init_mapping
+      - mapping
+      - init_synth
+      - stylegan_forward
+  - index: 2
+    slug: the_last_block_overwrites_mean_and_std
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement mixing regularization: for a training batch, compute `w_a`, `w_b`, and apply `w_a` for the first half of synthesis and `w_b` for the second half. Does the decoder learn disentangled styles?
+    zh: |
+      **中等。** 實作風格混合正則化：對一個訓練批次算出 `w_a` 與 `w_b`，合成的前半段用 `w_a`、後半段用 `w_b`。解碼器學到解耦的風格了嗎？
+    verifies: >-
+      mixing is implemented as described -- w_a drives blocks 0 and 1, w_b drives block 2 -- reusing
+      the lesson's own matmul, add, leaky and adain so only the routing of w is new, and
+      disentanglement is measured rather than eyeballed over 40 latents. Varying w_b moves the
+      output's mean by 0.049 and its spread by 0.092 across 2 distinct shapes; varying w_a moves
+      them by 0.000000 and 0.000023 across 40 distinct shapes. One half owns the shape and the other
+      owns the mean and the spread, exactly. The mechanism is adain stated as an identity: the last
+      operation of the last block returns scale*(f-mean)/sd + bias, so the output's mean IS bias and
+      its sd IS |scale|, both linear forms in w_b, and measured mean(output) - <bias2, w> is 2e-17
+      while sd(output) - |<scale2, w>| is 9e-08, the second being adain's own epsilon. Nothing
+      earlier can affect either number because the last line overwrites both. There is also no
+      decoder that learns: the module exposes none of backward, update, loss or apply_grads, so the
+      question has no referent and the split is a property of where adain sits, present at
+      initialisation. Driving both halves with the same w reproduces stylegan_forward bit for bit
+    uses_reference:
+      - init_mapping
+      - mapping
+      - init_synth
+      - stylegan_forward
+      - matmul
+      - add
+      - leaky
+      - adain
+  - index: 3
+    slug: the_direction_is_already_in_the_weights
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      **Hard.** Take a pretrained StyleGAN3 FFHQ model (ffhq-1024.pkl). Find the `w` direction that controls "smile" by training an SVM on labelled samples; report how far you can push before identity drifts.
+    zh: |
+      **困難。** 取一個預訓練的 StyleGAN3 FFHQ 模型（ffhq-1024.pkl）。用帶標籤的樣本訓練一個 SVM，找出控制「微笑」的 `w` 方向；回報在身分開始偏移之前，你能推多遠。
+    verifies: >-
+      the pretrained model is unbuildable here -- torch, dnnlib and legacy, the three imports
+      ffhq-1024.pkl needs to unpickle, are all absent -- so the method runs at the scale that is
+      available (DESIGN D11): the lesson's own mapping and synthesis networks, the output's mean
+      brightness thresholded at its median standing in for "smile", and a real LinearSVC on 600
+      labelled w vectors. The SVM separates them at accuracy 0.998 and pushing along the recovered
+      direction moves the attribute +1.019 per unit of alpha, linearly and without limit: +0.95 at
+      alpha 1, +4.01 at 4, +16.24 at 16. The direction did not have to be learned, because adain's
+      last call sets the output's mean to bias = <synth["bias2"], w>, making the attribute an exact
+      linear form in w whose normal is already stored in the weights -- mean(output) - <bias2, w>
+      measures 7e-17 and the fitted direction aligns with that stored vector at cos = 0.995. And
+      "how far before identity drifts" has no threshold: the normalised shape moves 1.58 within the
+      first unit of alpha and then stops, sitting at 1.38 by alpha 16 as the earlier blocks
+      saturate, while the spread grows without bound from 0.22 to 4.44. The fitted direction reaches
+      +16.24 at alpha 16 against +5.61 for a random unit direction of the same length
+    uses_reference:
+      - init_mapping
+      - mapping
+      - init_synth
+      - stylegan_forward

@@ -1,0 +1,35 @@
+lesson: 01-generative-models-taxonomy-history
+phase: 08-generative-ai
+source: phases/08-generative-ai/01-generative-models-taxonomy-history/docs/en.md
+exercises:
+  - index: 1
+    slug: only_two_of_the_five_published_anything
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** For each of these five products, identify the family and backbone: ChatGPT image, Midjourney v7, Sora, Runway Gen-3, ElevenLabs. Evidence should be from public technical reports.
+    zh: |
+      **簡單。** 針對這五個產品，指出它們的家族與骨幹：ChatGPT image、Midjourney v7、Sora、Runway Gen-3、ElevenLabs。證據要來自公開的技術報告。
+    cites: The Concept
+  - index: 2
+    slug: every_hundred_x_is_a_denominator_question
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** The paper you are about to read tomorrow claims 100x faster sampling than diffusion. Write down three questions to check whether the speedup survives conditioning and high resolution.
+    zh: |
+      **中等。** 你明天要讀的那篇論文聲稱取樣比擴散快 100 倍。寫下三個問題，用來檢查這個加速在加上條件化與提高解析度之後還站不站得住。
+    cites: >-
+      Production note: five families, five inference shapes
+  - index: 3
+    slug: the_sampler_cannot_say_it_does_not_know
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Take one domain you care about (e.g. protein structure, CAD, molecules, trajectories). Answer the five-question triage for the current SOTA model in that domain and sketch what a better model would change.
+    zh: |
+      **困難。** 挑一個你在意的領域（例如蛋白質結構、CAD、分子、軌跡）。針對該領域當前最先進的模型回答五問快篩，並勾勒出一個更好的模型會改掉什麼。
+    cites: The five-question triage

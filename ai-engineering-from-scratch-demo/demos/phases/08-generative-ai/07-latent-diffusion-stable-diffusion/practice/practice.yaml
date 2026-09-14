@@ -1,0 +1,98 @@
+lesson: 07-latent-diffusion-stable-diffusion
+phase: 08-generative-ai
+source: phases/08-generative-ai/07-latent-diffusion-stable-diffusion/docs/en.md
+exercises:
+  - index: 1
+    slug: class_one_crosses_at_w_one_and_class_zero_never_does
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Easy.** Run `code/main.py` with guidance `w ∈ {0, 1, 3, 7, 15}`. Record mean sample by class. At what `w` do the class means diverge past the real data means?
+    zh: |
+      **簡單。** 用引導強度 `w ∈ {0, 1, 3, 7, 15}` 執行 `code/main.py`。記錄每個類別的樣本平均值。在哪個 `w` 之後，各類別的平均值開始超出真實資料的平均值？
+    verifies: >-
+      the real data means are exactly -2.0 and +2.0, written as literals in sample_data, so "past
+      the real data means" is an exact threshold rather than an estimate, and the lesson's own
+      make_schedule, init_net, forward, backward, apply, encode and decode run unchanged over 2
+      seeds. Class 1 is past +2 from w=1 onward, reaching +2.28 at w=1 and settling near +2.36,
+      while class 0 gets no closer than -1.71 and turns back, crossing at no w tested: the question
+      expects one crossing point and the two classes of the same model do not share one. The means
+      are also not monotone in w -- both peak around w=1 to 3 and then retreat, the last two columns
+      differing by 0.043 -- so the question presumes a crossing that keeps going outward when past
+      w=3 it does not push further at all. And the latent space is an exactly invertible rescaling:
+      encode is x * 0.5, decode is z * 2.0, and decode(encode(x)) - x is 0.0 rather than small
+    uses_reference:
+      - make_schedule
+      - init_net
+      - forward
+      - backward
+      - apply
+      - encode
+      - decode
+      - sample_data
+      - sin_embed
+      - one_hot
+  - index: 2
+    slug: the_tanh_latent_is_worse_and_the_reason_is_the_decoder
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Medium.** Swap the toy linear encoder for a tanh-MLP encoder/decoder pair with a reconstruction loss. Retrain diffusion on the new latents. Does sample quality change?
+    zh: |
+      **中等。** 把玩具線性編碼器換成一對帶重建損失的 tanh-MLP 編碼器／解碼器。在新的潛在表示上重新訓練擴散。樣本品質有變嗎？
+    verifies: >-
+      a tanh encoder and linear decoder are trained to convergence on the lesson's own sample_data,
+      then the lesson's own diffusion loop is retrained on whatever latents it produces and samples
+      are decoded back and scored as the share landing within 1.0 of either true centre; the
+      diffusion half is untouched, so only the space the data lives in changes. The learned latent is
+      worse on the same budget and the same seeds. The autoencoder is nonetheless the better
+      reconstructor, reaching a reconstruction mean squared error under 0.05, so reconstruction
+      quality and latent quality are not the same axis -- a point the lesson's linear encode cannot
+      make. The mechanism is saturation: the data sits at +-2, deep in tanh's flat region, so the
+      latents span only 1.490 while the learned decoder's slope is 3.48 against the linear decoder's
+      exact 2.0, and every error diffusion makes in latent space is multiplied by that slope on the
+      way out. Both arms are scored after decoding, in data space
+    uses_reference:
+      - make_schedule
+      - init_net
+      - forward
+      - backward
+      - apply
+      - sample_data
+      - sin_embed
+      - one_hot
+  - index: 3
+    slug: four_steps_costs_ten_times_less_and_the_schedule_is_why
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Set up a real Stable Diffusion inference with diffusers: load `sdxl-base`, run 30 Euler steps with CFG=7, time it. Now switch to `sdxl-turbo` with 4 steps and CFG=0. Same subject, different quality — describe what changed and why.
+    zh: |
+      **困難。** 用 diffusers 架一套真正的 Stable Diffusion 推論：載入 `sdxl-base`，跑 30 步 Euler 搭配 CFG=7，計時。接著換成 `sdxl-turbo`，4 步、CFG=0。同一個主體、不同品質 —— 描述變了什麼、以及為什麼。
+    verifies: >-
+      diffusers, torch and safetensors all return None from find_spec and SDXL is several gigabytes
+      this repo does not ship, so neither checkpoint can be loaded; the comparison the exercise asks
+      you to describe is runnable though, and it is run on one trained network so that sampling is
+      isolated -- something the exercise's own two-checkpoint version cannot do, since those models
+      differ in training as well. 30 steps at w=7 scores 1.000 in-modes in 0.59s for 200 draws
+      against 4 steps at w=0 scoring 0.525 in 0.04s, 14.6x faster. The cost ratio is the call ratio
+      and nothing else: one long draw makes 60 network calls, 30 steps doubled because guidance
+      evaluates the conditional and the null branch, against 4 for the short draw, a 15x arithmetic
+      prediction against the 14.6x measured. And the two arms do not visit the same noise levels --
+      the short arm touches 4 of 40 steps, 10% of the schedule, landing on alpha_bar values 0.6671,
+      0.8331, 0.9532 and 0.9999 rather than the range the model trained across, which is what a
+      distilled model like sdxl-turbo is retrained to fix
+    uses_reference:
+      - make_schedule
+      - init_net
+      - forward
+      - backward
+      - apply
+      - encode
+      - decode
+      - sample_data
+      - sin_embed
+      - one_hot

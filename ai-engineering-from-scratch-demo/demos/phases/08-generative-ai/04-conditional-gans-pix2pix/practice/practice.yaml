@@ -1,0 +1,98 @@
+lesson: 04-conditional-gans-pix2pix
+phase: 08-generative-ai
+source: phases/08-generative-ai/04-conditional-gans-pix2pix/docs/en.md
+exercises:
+  - index: 1
+    slug: a_third_class_is_a_label_not_a_mode
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Modify `code/main.py` to add a third class. Confirm G still maps each class's noise to the correct mode.
+    zh: |
+      **簡單。** 改 `code/main.py`，加上第三個類別。確認 G 仍然把每個類別的雜訊映射到正確的模式。
+    verifies: >-
+      "add a third class" is done the way the code invites, num_classes = 3, which widens the
+      one-hot on both nets and nothing else, and the confirmation is then actually run per class
+      over 300 prior draws on 3 seeds through the lesson's own sample_real_conditional, g_forward,
+      d_forward, update_d and update_g. G maps the three classes to -2.23, +2.03 and +2.18, so every
+      class does land on its correct mode -- and for class 2 that means nothing, because classes 1
+      and 2 sit 0.15 apart against 4.25 between classes 0 and 1. The cause is one line:
+      sample_real_conditional is `if c == 0 ... else`, so every class above zero draws gauss(+2,
+      0.3), and the real data's class means at num_classes=3 are -1.99, +2.00 and +2.00 -- two modes
+      wearing three labels. Give the third class a mode of its own, centres at -2, 0 and +2, and the
+      same architecture, budget and seeds give -2.10, +0.05 and +1.96 with the closest pair 1.90
+      apart, so capacity was never the constraint. The lesson's own 600 steps also cannot confirm
+      anything: at that budget the stock two-class run is unconverged, putting both classes on the
+      same side of zero on 1 seed of 3 (-1.27 and -0.79), and the confirmation needs about 3000
+      steps, 5x what main() runs. Widening the label is one integer, since one_hot, g_forward and
+      d_forward are already written over num_classes
+    uses_reference:
+      - init_mlp
+      - one_hot
+      - g_forward
+      - d_forward
+      - sample_real_conditional
+      - update_d
+      - update_g
+  - index: 2
+    slug: both_reconstruction_losses_collapse_the_conditional
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Medium.** Replace L1 with a perceptual-style loss in the 1-D setting (e.g. a small frozen D acting as feature extractor). Does it change sharpness of the conditional distribution?
+    zh: |
+      **中等。** 在這個 1 維設定裡，把 L1 換成一個感知損失風格的損失（例如拿一個小的凍結 D 當特徵抽取器）。它有改變條件分布的銳利度嗎？
+    verifies: >-
+      sharpness is read as the spread of G(z, c) over 400 prior draws at a fixed class, against the
+      0.3 the real data has by construction, and the perceptual arm freezes a copy of D after a
+      1000-step warm-up and scores ||h(x_hat) - h(target)||^2 through its first layer. Mean
+      per-class sd: the lesson as shipped 0.146, already 2.1x too narrow before any reconstruction
+      term; perceptual at weight 0.5 0.046; at weight 2.0 0.025; L1 at weight 1.0 0.023, 13x too
+      sharp. Every arm narrows the conditional and none widens it. There is also no L1 in use to
+      replace: update_g's reconstruction parameters default to (0.0, None) and main() calls it with
+      neither, so that branch never executes in the lesson as shipped. And in 1-D the two losses are
+      one family differing only by weight -- both pull x_hat to one point per class, the four arms
+      lie on a single monotone curve 0.146 -> 0.046 -> 0.025 -> 0.023, and a perceptual loss can
+      only differ from L1 where its features fold two inputs together, which leaky-ReLU of an affine
+      map of a scalar cannot do. The frozen extractor is checked to still equal the snapshot taken
+      beside it and to no longer equal the still-training critic
+    uses_reference:
+      - init_mlp
+      - g_forward
+      - d_forward
+      - sample_real_conditional
+      - update_d
+      - init_grads
+      - apply_grads
+      - leaky_grad
+  - index: 3
+    slug: the_cycle_loss_does_not_pick_which_map
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Sketch a CycleGAN in the 1-D setting: two distributions, two generators, cycle loss. Show that it learns to map between them with no paired data.
+    zh: |
+      **困難。** 在 1 維設定裡勾勒一個 CycleGAN：兩個分布、兩個生成器、循環損失。證明它在沒有配對資料的情況下學會了兩者之間的映射。
+    verifies: >-
+      "sketch" is taken at its word, so each generator is the smallest thing that can map a line to
+      a line, x -> w*x + b, which makes the exercise's claim provable rather than merely observed.
+      The two discriminators are the lesson's own init_mlp and d_forward at num_classes = 1 trained
+      by the lesson's own update_d, the generators carry the lesson's non-saturating adversarial
+      gradient plus an L1 cycle term, and no sample is ever paired. Over 8 seeds G_AB sends
+      A = N(-2, 0.5) to mean +1.99 sd 0.47 against B's +2.0 and 0.5, with G_BA(G_AB(a)) returning
+      within 0.16 of a. Which map it learns is not determined: 6 of 8 seeds settle on w = -0.93,
+      b = +0.14 and 2 of 8 on w = +0.95, b = +3.78, the same objective and data sending the largest
+      a to the largest b on some seeds and to the smallest on others. That ambiguity is exact rather
+      than a training artefact -- for a linear map the marginal forces |w| = sd_B/sd_A = 1 and
+      b = mean_B - w*mean_A while the cycle forces w_BA = 1/w_AB, both signs satisfy both, and the
+      two predicted intercepts +4 and 0 are measured at +3.78 and +0.14. Both arms match the
+      marginal, every seed landing within 0.15 of B's mean and 0.06 of its sd, so these are two
+      converged solutions the objective scores identically rather than one solution and one failure
+    uses_reference:
+      - init_mlp
+      - d_forward
+      - update_d
+      - leaky_grad

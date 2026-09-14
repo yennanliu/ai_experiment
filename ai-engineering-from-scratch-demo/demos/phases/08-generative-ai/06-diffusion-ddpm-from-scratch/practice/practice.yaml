@@ -1,0 +1,94 @@
+lesson: 06-diffusion-ddpm-from-scratch
+phase: 08-generative-ai
+source: phases/08-generative-ai/06-diffusion-ddpm-from-scratch/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_no_t_at_which_it_collapses
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Easy.** Change T from 40 to 10 in `code/main.py`. How does sample quality (visual histogram of outputs) degrade? At what T does the two-mode structure collapse?
+    zh: |
+      **簡單。** 把 `code/main.py` 裡的 T 從 40 改成 10。樣本品質（輸出的視覺化直方圖）退化得如何？T 掉到多少時雙峰結構會塌掉？
+    verifies: >-
+      the histogram is read rather than looked at: the share of samples within 1.0 of either true
+      centre (in-modes, which the data itself scores 0.980) and the share in the gap |x| < 0.5
+      (in-valley, which the data scores 0.000), with the lesson's own make_schedule, init_net, train
+      and sample unchanged over 2 seeds per T. Quality degrades smoothly and never collapses --
+      in-modes/in-valley runs 0.400/0.323 at T=5, 0.550/0.189 at T=10, 0.752/0.077 at T=20,
+      0.867/0.020 at T=40 and 0.895/0.003 at T=100, with no fall between neighbouring T, so the
+      question's "at what T" has no answer to give. T is also not the variable: make_schedule writes
+      betas = 1e-4 + (0.02 - 1e-4) * t / (T - 1), so the per-step range is hard-coded and identical
+      at T=10 and T=1000, meaning a change of T rescales the noise budget rather than re-timing a
+      fixed one, and both columns move with alpha_bar[-1] rather than with T. At the lesson's own
+      T=40 alpha_bar[-1] is 0.667, so x_T still carries 81.7% of the signal while sample() starts the
+      reverse chain at gauss(0, 1) -- pure noise the model never saw, reaching alpha_bar ~ 0 only at
+      about T=1000. The metric is anchored by the real data at 0.980 and 0.000
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train
+      - sample
+      - sample_data
+  - index: 2
+    slug: v_prediction_is_the_same_net_with_a_rotated_target
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Medium.** Switch from ε-prediction to v-prediction. Re-derive the reverse step. Compare final sample quality.
+    zh: |
+      **中等。** 從 ε-prediction 換成 v-prediction。重新推導反向步驟。比較最終的樣本品質。
+    verifies: >-
+      the re-derivation is the content, so it is written out and checked rather than asserted: with
+      v = sqrt(a_bar)*eps - sqrt(1-a_bar)*x0 alongside x_t = sqrt(a_bar)*x0 + sqrt(1-a_bar)*eps the
+      pair is a rotation, so eps = sqrt(a_bar)*v + sqrt(1-a_bar)*x_t inverts it exactly -- over 500
+      random (x0, eps, t) triples the recovered eps differs from the original by 1e-16, making the
+      "re-derived reverse step" one substitution into the lesson's existing sampler rather than a new
+      sampler. Both arms use the lesson's init_net, forward, backward and apply_update with only the
+      regression target moved, and quality is scored the way Exercise 1 scores it. v-prediction wins
+      on both numbers. The reason is scale rather than principle: a_bar never falls below 0.667 under
+      this schedule, so v stays near sqrt(a_bar)*eps and the v target carries 1.17x the spread of the
+      eps target across the schedule -- same network, same optimiser, same 4000 steps, a differently
+      scaled regression problem. The eps arm reproduces Exercise 1's reading at the same T and seeds
+    uses_reference:
+      - make_schedule
+      - init_net
+      - forward
+      - backward
+      - apply_update
+      - sin_embed
+      - sample_data
+  - index: 3
+    slug: guidance_trades_the_mode_for_its_tail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Add classifier-free guidance. Condition on a class label `c ∈ {0, 1}`, drop it 10% of the time during training, and at sampling time use `ε = (1+w)·ε_cond - w·ε_uncond`. Measure the conditional-mode-hit rate at `w = 0, 1, 3, 7`.
+    zh: |
+      **困難。** 加上無分類器引導。以類別標籤 `c ∈ {0, 1}` 做條件，訓練時有 10% 的機率把它丟掉，取樣時用 `ε = (1+w)·ε_cond - w·ε_uncond`。量測 `w = 0, 1, 3, 7` 時的條件模式命中率。
+    verifies: >-
+      the label reaches the network as an extra input dimension carrying -1 when dropped and 0 or 1
+      otherwise, so the lesson's own init_net, forward, backward and apply_update run unchanged at
+      x_dim = 2, with the exercise's 10% drop rate and the hit rate defined as the share of samples
+      for class c landing within 1.0 of that class's own centre. The rate is not monotone in w: it
+      runs 0.527 at w=0, peaks at 0.562 at w=1, and falls to 0.520 at w=3 and 0.490 at w=7, ending
+      below the unguided baseline, so guidance buys 3.5 points and has given them all back by w=3.
+      What guidance does reliably is narrow the output -- the sample spread falls monotonically 1.73,
+      1.66, 1.50, 1.48 across the same sweep in which the hit rate turns over, which is the
+      diversity cost guidance is known for and the one column moving in a single direction. The
+      signal being amplified is weak to begin with, the unguided hit rate being 0.527 against a
+      ceiling of 1.0 because alpha_bar[-1] is 0.667 and the sampler starts off-manifold. And the
+      subtrahend is the least-trained thing in the model: at a 10% drop rate the unconditional input
+      is seen about 594 times in 6000 steps against roughly 2703 for each label, so w multiplies the
+      error of the branch with the least training -- a mechanism for the turnover that this
+      experiment does not isolate. At w=0 the formula reduces to eps_cond exactly
+    uses_reference:
+      - make_schedule
+      - init_net
+      - forward
+      - backward
+      - apply_update
+      - sin_embed
