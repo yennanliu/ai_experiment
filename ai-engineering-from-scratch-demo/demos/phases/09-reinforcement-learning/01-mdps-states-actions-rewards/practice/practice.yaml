@@ -1,0 +1,95 @@
+lesson: 01-mdps-states-actions-rewards
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/01-mdps-states-actions-rewards/docs/en.md
+exercises:
+  - index: 1
+    slug: the_mean_stops_at_two_hundred_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement the 4×4 GridWorld and random-policy rollout in `code/main.py`. Run 10,000 episodes. Report mean and std of return. Compare to the optimal return (-6).
+    zh: |
+      **簡單。** 在 `code/main.py` 裡實作 4×4 的 GridWorld 與隨機策略的 rollout。跑 10,000 個回合。回報平均值與標準差。跟最優回報（-6）比較。
+    verifies: >-
+      the environment is re-derived from the five lines the lesson page prints and agrees with the
+      lesson's own step() on all 64 (state, action) pairs, and 10,000 episodes of the reference's own
+      rollout return a mean of -58.2 with a standard deviation of 46.0 against an optimal -6.0, a
+      factor of 9.7; the optimal is value iteration over the lesson's own step() rather than the
+      exercise's stated number taken on trust. The mean is not converging to E[G]: rollout()'s
+      max_steps=200 censors the episode, so the estimator's limit is the censored expectation -58.3204
+      and not the MDP's value of -416/7 = -59.4286, which the lesson's policy_evaluation returns
+      exactly at gamma = 1. The 1.11 gap is bias and not noise -- 10,000 episodes buy a standard error
+      of 0.45, so the measured mean sits 0.4 standard errors from the censored value and 2.8 from the
+      true one, and more episodes shrink only the noise. About 2.5% of episodes reach the cap and are
+      recorded as -200 when their true return is unbounded below, which is why the bias points up.
+      Step 2's stated 'around -60 to -80' contains neither exact value, both being above -60. And mean
+      with standard deviation is a symmetric summary of an asymmetric shape: the median is -44 against
+      a mean of -58, and the +/- 1 sigma band spans 47% of the achievable range [-200, -6]
+    uses_reference:
+      - step
+      - rollout
+      - uniform_policy
+      - policy_evaluation
+      - all_states
+  - index: 2
+    slug: growth_is_slowest_beside_the_terminal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Run `policy_evaluation` with `γ ∈ {0.5, 0.9, 0.99}` for the uniform-random policy. Print `V` as a 4×4 grid for each. Explain why the state values near the terminal grow faster with larger `γ`.
+    zh: |
+      **中等。** 對均勻隨機策略，用 `γ ∈ {0.5, 0.9, 0.99}` 跑 `policy_evaluation`。把每一種的 `V` 印成 4×4 的網格。說明為什麼終止狀態附近的狀態價值會隨著 `γ` 變大而長得更快。
+    verifies: >-
+      all three grids are produced by the lesson's own evaluation loop and every value grows in
+      magnitude toward the ceiling 1/(1-gamma) = 2, 10, 100, with the start state reaching 100%, 94%
+      and 39% of it -- the ceiling rises 50x while the fraction reached falls. The exercise's premise
+      is backwards and monotonically so: grouped by Manhattan distance to the terminal, the magnitude
+      ratio between gamma=0.5 and gamma=0.99 is 12.0x, 15.2x, 17.1x, 18.2x, 19.1x, 19.7x from the
+      terminal outward, so the two states adjacent to the terminal grow the slowest on the board and
+      the start corner the fastest, a factor of 1.64 the other way. The mechanism is that raising
+      gamma can only restore return a shorter horizon cut off, and a state beside the terminal has the
+      least of it: V(s) = -(1 - E[gamma^T])/(1 - gamma), so (1-gamma)|V| is the fraction of the
+      ceiling reached -- 20% beside the terminal against 39% at the start -- and growth is the 50x
+      ceiling rise scaled by the ratio of those fractions, reproducing 12.0x and 19.7x to within 0.2.
+      At gamma=0.5 the grid the exercise asks to print is nearly constant: an effective horizon of 2
+      steps on a board 6 deep leaves all 15 non-terminal states inside 0.30 of one another and 13 of
+      them inside 0.08. And the shipped policy_evaluation is not the one Step 3 prints -- the snippet
+      updates V in place, code/main.py updates synchronously; same fixed point to 1.3e-11, but 21 vs
+      17, 113 vs 76 and 467 vs 305 sweeps to tol=1e-6
+    uses_reference:
+      - step
+      - uniform_policy
+      - all_states
+      - ACTIONS
+      - TERMINAL
+  - index: 3
+    slug: a_uniform_policy_cannot_feel_the_slip
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Turn the GridWorld stochastic: each action slips to an adjacent direction with probability `p = 0.1`. Re-evaluate the uniform policy. Does `V[start]` get better or worse? Why?
+    zh: |
+      **困難。** 把 GridWorld 改成隨機的：每個動作都有 `p = 0.1` 的機率滑向相鄰的方向。重新評估均勻策略。`V[start]` 是變好還是變差？為什麼？
+    verifies: >-
+      V[start] is unchanged by the slip -- -39.4116480543 deterministic and with p=0.1 alike, bit for
+      bit, and no state on the board moves at all, so the question's two offered answers are both
+      wrong. The mechanism is that a state-independent slip is a stochastic matrix K on the four
+      directions, applied to the action before the environment sees it, so an agent running pi under
+      slip is an agent running pi.K without it; every column of K sums to 1 exactly, and (pi.K)(a') =
+      sum_a (1/4) K(a'|a) = 1/4, so the slipped uniform policy is the uniform policy and induces the
+      same chain and the same Bellman fixed point. The invariance is not a property of p or of the
+      reading: it holds at p = 0.1, 0.3, 0.5, 0.9 and 1.0, and under both readings of 'adjacent' --
+      the two perpendicular directions, or all three others -- because any symmetric slip is doubly
+      stochastic. The board really did become stochastic: the same slip applied to the lesson's own
+      greedy down+right policy moves V[start] from -7.589 to -8.362, 10.2% worse, and value iteration
+      under the slipped dynamics falls from -5.852 to -6.428, so every policy on this board answers
+      'better or worse' except the one the exercise names
+    uses_reference:
+      - step
+      - policy_evaluation
+      - uniform_policy
+      - greedy_policy
+      - all_states
