@@ -1,0 +1,105 @@
+lesson: 02-dynamic-programming
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/02-dynamic-programming/docs/en.md
+exercises:
+  - index: 1
+    slug: ten_times_the_horizon_buys_one_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run value iteration on the 4×4 GridWorld with `γ ∈ {0.9, 0.99}`. How many sweeps until `max |ΔV| < 1e-6`? Print `V*` as a 4×4 grid.
+    zh: |
+      **簡單。** 在 4×4 的 GridWorld 上用 `γ ∈ {0.9, 0.99}` 跑價值迭代。要掃描幾次 `max |ΔV|` 才會 `< 1e-6`？把 `V*` 印成 4×4 的網格。
+    verifies: >-
+      both readings of 'the 4x4 GridWorld' are run through the lesson's own value_iteration with only
+      its SLIP constant set, and to max|dV| < 1e-6 the sweep count is 7 and 7 on the deterministic
+      board and 14 and 15 on the shipped SLIP=0.1 one at gamma = 0.9 and 0.99 -- ten times the
+      effective horizon buys one extra sweep, and on one board none. The lesson's own guarantee,
+      geometric convergence at modulus gamma, predicts log(eps(1-gamma))/log(gamma) = 153 and 1833
+      sweeps, high by 11x and 122x. The modulus that governs is gamma*rho, where rho = 0.3873 is the
+      spectral radius of the optimal policy's transient sub-matrix and is identical at both discounts
+      because the policy is: gamma*rho is 0.349 and 0.383, the in-place sweep measures 0.137 and
+      0.162, and diameter + log(eps)/log(rate) predicts 13 and 14 against 14 and 15. On the
+      deterministic board rho is exactly 0 -- nilpotent rather than small -- so 7 = the 6-step
+      diameter plus the sweep that observes delta < tol, at every gamma. The four V* grids the
+      exercise asks to print are also the thing that moves: V*(0,0) shifts 1.44 between the two
+      discounts while the count it asks to count shifts by one, and the smaller gamma reports the
+      better-looking -4.99 against -6.43 for the same policy, not a better one
+    uses_reference:
+      - value_iteration
+      - q_value
+      - transitions
+      - states
+      - greedy_from_V
+      - ACTIONS
+      - TERMINAL
+      - GRID
+      - SLIP
+  - index: 2
+    slug: the_first_three_evaluations_are_the_whole_bill
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Compare policy iteration vs value iteration on the *stochastic* GridWorld (slip probability `0.1`). Count: sweeps, wall-clock time, final `V*(0,0)`. Which converges faster in iterations? In wall-clock?
+    zh: |
+      **中等。** 在*隨機*版的 GridWorld（滑動機率 `0.1`）上比較策略迭代與價值迭代。統計：掃描次數、實際耗時、最終的 `V*(0,0)`。以迭代次數看，哪個收斂比較快？以實際耗時看呢？
+    verifies: >-
+      a sweep is counted as one pass over the 15 non-terminal states wherever it happens, so policy
+      iteration's inner evaluation sweeps are counted rather than its outer iterations, and Bellman
+      backups are reported beside wall-clock as the machine-independent cost. At gamma=0.99 value
+      iteration wins every honest unit: 15 sweeps against 3,728, 960 backups against 56,220 (58.6x)
+      and about 60x less wall-clock, both landing on V*(0,0) = -6.4283 -- the exercise asks which wins
+      in iterations and which in wall-clock as if the two could differ, and on this MDP they do not.
+      The one unit policy iteration wins is not a sweep: 5 outer iterations against 15 reads as a 3x
+      win and is a unit error, and the lesson's policy_iteration returns it+1 while its local variable
+      named `sweeps` counts the same thing, so the number a learner would reach for is the only one
+      that flatters the loser. Inner sweeps per outer iteration are 1329, 1313, 1056, 15, 15: the
+      first three are 99.2% of the total, they evaluate policies that never reach the terminal so
+      their modulus is exactly gamma, each costs more than the whole value-iteration run, and all
+      three are discarded by the improvement step that follows them. That waste is the only
+      gamma-sensitive part, so the gap widens 7.2x to 58.6x from gamma=0.9 to 0.99 while value
+      iteration itself goes 14 sweeps to 15. And the two agree with each other to 6.3e-09 while each
+      sits 6.1e-08 from the fixed point the same operator reaches at tol=1e-14, in the same direction:
+      that fixed point costs 25 sweeps against 15, so ten more sweeps buy eight orders of magnitude
+      and it is the tolerance, not the algorithm, that is paying
+    uses_reference:
+      - value_iteration
+      - greedy_from_V
+      - q_value
+      - states
+      - TERMINAL
+  - index: 3
+    slug: the_curve_falls_and_the_cost_curve_inverts_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build modified policy iteration: in the evaluation step, run only `k` sweeps instead of to convergence. Plot `V*(0,0)` error vs `k` for `k ∈ {1, 2, 5, 10, 50}`. What does the curve tell you about the evaluation/improvement tradeoff?
+    zh: |
+      **困難。** 做出修正型策略迭代：評估步驟裡只跑 `k` 次掃描，而不是跑到收斂。對 `k ∈ {1, 2, 5, 10, 50}` 畫出 `V*(0,0)` 的誤差對 `k` 的曲線。這條曲線告訴你評估與改進之間有什麼取捨？
+    verifies: >-
+      error is measured against the fixed point the same operator reaches at tol=1e-14 and the plot
+      ships as a table; the evaluation block warm-starts from the current V, which is what makes it
+      modified policy iteration rather than the lesson's Step 4 on a smaller budget. The curve does
+      fall -- 8.50e-08, 1.29e-08, 2.19e-08, 2.24e-12 and exactly 0 at k = 1, 2, 5, 10, 50 -- and it is
+      not monotone, k=2 beating k=5, so it is not a curve a tradeoff can be read off. The fall is
+      overshoot rather than accuracy bought: modified policy iteration converges for every k >= 1, so
+      all five reach V* and all five clear the same max|dV| < 1e-6 test, and what is plotted is how
+      far past that test the last evaluation block happened to run. Priced per sweep the ordering
+      inverts -- reaching 1e-6 and staying there costs 15 sweeps at k=1 and 209 at k=50, 14x more for
+      an accuracy k=1 already has, 300 total sweeps against 16. The mechanism is that the initial
+      all-'up' policy never reaches the terminal, so its evaluation contracts at exactly gamma toward
+      -100 and a large block chases it: at 16 sweeps, where k=1 has finished, k=5, 10 and 50 are still
+      8.9, 8.7 and 8.6 from V*. The k axis is one dial between two algorithms the lesson already ships
+      -- k=1 is Step 5's value iteration at 16 sweeps against its 15, k -> infinity is Step 4's policy
+      iteration at 3,728 -- and the warm start is the dial: cold-started the way the lesson's own
+      policy_evaluation starts, k=1 is still 5.43 from V* after 4,000 sweeps while k=50 is untouched
+      at 300
+    uses_reference:
+      - value_iteration
+      - greedy_from_V
+      - q_value
+      - states
+      - TERMINAL
