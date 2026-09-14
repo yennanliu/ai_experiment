@@ -1,0 +1,103 @@
+lesson: 03-monte-carlo-methods
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/03-monte-carlo-methods/docs/en.md
+exercises:
+  - index: 1
+    slug: the_plot_converges_to_the_wrong_line
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement first-visit MC evaluation of the uniform-random policy on 4×4 GridWorld. Run 10,000 episodes. Plot `V(0,0)` as a function of episode count against the DP answer.
+    zh: |
+      **簡單。** 在 4×4 GridWorld 上實作對均勻隨機策略的首次訪問 MC 評估。跑 10,000 個回合。把 `V(0,0)` 對回合數的曲線畫出來，跟動態規劃的答案對照。
+    verifies: >-
+      the estimate is accumulated exactly as the lesson's mc_policy_evaluation accumulates it, from
+      its own rollout and returns_from, and snapshotted so the curve the exercise asks to plot exists;
+      the DP answer is re-derived by sweeping the lesson's own step() rather than read off its printed
+      -39.41. At 10,000 episodes V(0,0) = -39.556 against a DP -39.4116, 0.7 standard errors at se =
+      0.216. The line the curve converges to is not that DP answer: rollout() carries max_steps=200,
+      so the estimator's limit is the 200-step censored value -39.3123 and the 0.0993 between them is
+      bias no sample size removes, carried by the 2.3% of episodes that reach the cap. At the
+      exercise's own sample size that bias is 0.46 standard errors -- noise falls as 1/sqrt(n) and
+      bias does not, so they are equal only near 47,000 episodes, and the plot cannot show the one
+      thing wrong with it. What the plot does show is its own noise: sigma = 21.61 on a mean of -39.4,
+      so reading V(0,0) to +/-0.1 needs 46,682 episodes and the 10,000 asked for buy +/-0.216. And the
+      exact answer is cheap: MC spends 589,413 environment steps to land within a standard error while
+      sweeping the same step() to 1e-6 costs 467 sweeps and 28,020 backups, 21x fewer operations for
+      an exact result
+    uses_reference:
+      - rollout
+      - returns_from
+      - uniform_policy
+      - step
+      - states
+      - ACTIONS
+      - TERMINAL
+  - index: 2
+    slug: the_metric_prices_exploring_not_learning
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement ε-greedy MC control with `ε ∈ {0.01, 0.1, 0.3}`. Compare mean return after 20,000 episodes. What does the curve look like? Where does the bias-variance tradeoff live?
+    zh: |
+      **中等。** 實作 ε-貪婪的 MC 控制，取 `ε ∈ {0.01, 0.1, 0.3}`。比較跑 20,000 個回合之後的平均回報。曲線長什麼樣子？偏差—變異數的取捨落在哪裡？
+    verifies: >-
+      the three runs are the lesson's own mc_control at eps = 0.01, 0.1, 0.3 on one seed, and the
+      recovered greedy policy is then evaluated exactly everywhere on the board against value
+      iteration over the lesson's own step(). Mean return over the 20,000 episodes is -6.038, -6.585,
+      -8.060 and over the last 5,000 is -5.930, -6.561, -7.990; the two agree to 0.108, so the curve
+      is flat after the first few thousand episodes. That ordering is fixed by eps before a single
+      episode runs: the exact on-policy value of an eps-soft policy over the optimal action is
+      -5.9041, -6.4208 and -7.9906, and each run lands within 0.140 of its own ceiling, so 'compare
+      mean return' compares the price of exploring rather than the quality of learning. All three
+      learn the same thing -- the recovered greedy policy is worth exactly -5.8520 from (0,0) at every
+      eps, to 0.0e+00 -- so the measured quantity is the one that does not separate the runs. The
+      tradeoff lives off the path the metric walks: 4 states carry a suboptimal greedy action at
+      eps=0.01 and 4 at eps=0.1 against 0 at eps=0.3, and at eps=0.01 the top-right corner (0,3) is
+      assigned 'right', which walks into the wall forever at -100.0 against an optimal -2.97, with
+      only 59 of 60 state-action pairs ever tried. Every episode starts at (0,0), so the stated metric
+      sees none of it. Exploration is a threshold and not a dial: at eps=0 the same code touches 6 of
+      60 pairs and returns a policy worth -100.0 with a mean return of -86.6, so 0 to 0.01 moves the
+      outcome 94 points and 0.01 to 0.3 moves it 2.1, all of it cost
+    uses_reference:
+      - mc_control
+      - step
+      - states
+      - ACTIONS
+      - TERMINAL
+  - index: 3
+    slug: weighted_is_has_no_variance_and_no_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement *off-policy* MC with importance sampling: collect data under uniform-random policy `μ`, estimate `V^π` for the deterministic optimal policy `π`. Compare plain IS vs per-decision IS vs weighted IS. Which has lowest variance?
+    zh: |
+      **困難。** 實作帶重要性取樣的*異策略* MC：在均勻隨機策略 `μ` 之下收集資料，估計決定性最優策略 `π` 的 `V^π`。比較普通 IS、逐決策 IS 與加權 IS。哪一個變異數最低？
+    verifies: >-
+      'which has lowest variance' is read as the spread of an estimator across runs, so all three are
+      accumulated from the same trajectories over 20 independent batches of 4,000 episodes of the
+      lesson's own rollout under uniform_policy, with pi taken from value iteration over its own
+      step() and the target V^pi(0,0) = -5.851985 known exactly. Standard deviation across batches is
+      5.224 for plain IS, 1.220 for per-decision and exactly 0.0000 for weighted, which returns
+      -5.851985 every time. That zero is degeneracy rather than quality: pi is deterministic and so is
+      the board, so exactly one trajectory carries nonzero weight -- the 6-step optimal path at rho =
+      4^6 = 4096 -- every batch that sees it sees the same return, and all 11 defined estimates are
+      one number to 1e-12. The price is that 9 of 20 batches contain no matching trajectory at all
+      against a predicted (1 - 4^-6)^4000 = 0.377, where the denominator is 0 and the estimator is
+      undefined, so the ranking covers only the batches in which an answer exists. Plain IS's worst
+      failure on those same 9 batches is not noise but a confident 0.0000, outside [-100, -5.85], the
+      range of every return this MDP can produce; its spread is 89% of the quantity being estimated.
+      Per-decision IS's 4.3x reduction comes from weighting rewards rather than trajectories: rho_0:t
+      is 4^(t+1) only while the prefix still matches, so 25.2% of trajectories contribute something
+      against 0.020% for plain IS, and the full 4096x weight only ever lands on the last reward of a
+      complete match
+    uses_reference:
+      - rollout
+      - uniform_policy
+      - step
+      - states
+      - ACTIONS
+      - TERMINAL
