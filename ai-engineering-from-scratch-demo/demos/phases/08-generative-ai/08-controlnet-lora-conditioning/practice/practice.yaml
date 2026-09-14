@@ -1,0 +1,83 @@
+lesson: 08-controlnet-lora-conditioning
+phase: 08-generative-ai
+source: phases/08-generative-ai/08-controlnet-lora-conditioning/docs/en.md
+exercises:
+  - index: 1
+    slug: rank_two_and_the_r_one_row_is_eckart_young
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** In `code/main.py`, vary the LoRA rank `r` from 1 to 4. At what rank does the LoRA exactly match a rank-2 target delta?
+    zh: |
+      **簡單。** 在 `code/main.py` 裡把 LoRA 的 rank `r` 從 1 變到 4。在哪個 rank 上，LoRA 能完全吻合一個秩為 2 的目標差量？
+    verifies: >-
+      the lesson's own main() builds a rank-1 delta, so a rank-2 target is constructed here from two
+      orthonormal pairs with singular values chosen as 3.0 and 2.0, which makes the answer known in
+      closed form before the sweep runs; the lesson's own train_lora and lora_forward do the fitting
+      unchanged. Residual mean squared error by rank is 4.053 at r=1, 4.8e-31 at r=2, 4.2e-31 at r=3
+      and 5.4e-31 at r=4, so rank 2 matches the rank-2 delta to machine precision and further rank
+      buys nothing. The r=1 row is not a failure but the Eckart-Young optimum: the best possible
+      rank-1 approximation of a delta with singular values 3 and 2 leaves exactly 2.0^2 = 4.0 of
+      squared error, and with isotropic probes that is also the mean squared error per input, so
+      4.053 is within 1.3% of a bound no optimiser can beat. Whether the sweep is readable at all
+      depends on the delta's size: the same train_lora at the same lr=0.01 given singular values 8.96
+      and 4.99 returns nan at r=1 rather than settling at that delta's own bound of 24.9, and
+      dropping the rate to 0.001 recovers 23.5. The delta is rank 2 by construction, its two frames
+      orthogonal to 2e-16
+    uses_reference:
+      - train_lora
+      - lora_forward
+      - randn_matrix
+      - matmul_mat_vec
+  - index: 2
+    slug: it_never_breaks_because_there_is_nothing_to_break
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Train two separate LoRAs on two target transforms. Load them together and show their additive interaction. When does the interaction break linearity?
+    zh: |
+      **中等。** 針對兩個目標轉換各訓練一個 LoRA。把它們一起載入，展示兩者相加的交互作用。這個交互作用在什麼時候會不再是線性的？
+    verifies: >-
+      two adapters are fitted independently on the same frozen W, each to its own rank-2 target delta
+      so a rank-4 adapter can fit it exactly, using the lesson's own lora_forward and the gradient
+      train_lora uses. They are then merged by concatenating their factors, so B A = B1 A1 + B2 A2,
+      and pushed through the lesson's own lora_forward in a single call: over 300 random inputs that
+      merged call and the sum of the two separate contributions agree to 8.9e-16. The interaction
+      never breaks, and that is a property of this code rather than a result about LoRA --
+      lora_forward computes (W + alpha * B A) x, which is affine in the adapters, so stacking gives
+      (W + B1A1 + B2A2) x by the distributive law alone, and the module exposes none of tanh, leaky,
+      sigmoid or relu, leaving no nonlinearity anywhere between the adapters for linearity to break
+      through. alpha is likewise exactly a scalar on the delta, doubling the contribution to 0.0 at
+      every probe. Each adapter reproduces its own target alone, to 1.4e-13 and 7.8e-10, so the
+      additivity holds between two adapters that each work
+    uses_reference:
+      - lora_forward
+      - matmul_mat_vec
+      - randn_matrix
+  - index: 3
+    slug: the_stack_is_two_knobs_on_one_line
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use diffusers to stack: SDXL-base + Canny-ControlNet (weight 0.8) + a style LoRA (α 0.8) + IP-Adapter (weight 0.6). Measure FID-vs-prompt-adherence trade-off as the stack weights vary.
+    zh: |
+      **困難。** 用 diffusers 疊出：SDXL-base + Canny-ControlNet（權重 0.8）+ 一個風格 LoRA（α 0.8）+ IP-Adapter（權重 0.6）。隨著堆疊權重變化，量測 FID 與提示詞遵循度之間的取捨。
+    verifies: >-
+      diffusers, torch and transformers all return None from find_spec, so the four-part SDXL stack
+      cannot be assembled and FID cannot be computed -- its Inception network is absent too -- and
+      what is run instead is the structure the exercise is about (DESIGN D11): two weighted adapters
+      pulling one frozen layer toward two different targets, with both objectives measured across the
+      weight grid. There is a real trade-off: style adherence runs -1.315 to 0.000 while control
+      adherence runs 0.000 to -1.315, in opposite directions. The front is bowed, sitting 0.465 off
+      the straight line through its endpoints, and that bow needs no nonlinearity -- the stack is
+      exactly linear in its weights, but adherence is a squared error, so each objective is quadratic
+      in them even though the model is not, making a bowed FID-versus-adherence curve evidence about
+      the metric rather than about any interaction inside the network. The curve is exactly a conic:
+      fitting an exact quadratic in the sweep parameter to each coordinate leaves a worst residual of
+      2.2e-16. And orthogonal targets bow it more rather than less, 0.465 to 0.760, so overlap is not
+      the source of the tension -- one layer satisfying two unrelated targets is harder, not easier
+    uses_reference:
+      - lora_forward
