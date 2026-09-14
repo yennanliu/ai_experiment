@@ -1,0 +1,99 @@
+lesson: 04-q-learning-sarsa
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/04-q-learning-sarsa/docs/en.md
+exercises:
+  - index: 1
+    slug: neither_and_the_curve_is_not_theirs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement Q-learning and SARSA on the 4×4 GridWorld. Plot learning curves (mean return per 100 episodes) for 2,000 episodes. Who converges faster?
+    zh: |
+      **簡單。** 在 4×4 GridWorld 上實作 Q-learning 與 SARSA。畫出 2,000 個回合的學習曲線（每 100 個回合的平均回報）。誰收斂得比較快？
+    verifies: >-
+      both of the lesson's own learners are run over twelve paired seeds rather than the one its
+      main() uses, because 'who converges faster' is a claim about a difference, and convergence is
+      timed as the first block of 100 within 1.0 of the limit that the curve never leaves again. The
+      answer is neither, measurably: both reach the limit at episode 300 on all 12 seeds, and the
+      paired difference in the last-500 mean is -0.0045 +/- 0.0067, 0.7 standard errors from zero. The
+      limit is not either algorithm's answer but epsilon's -- the exact undiscounted return of an
+      eps-soft policy over the optimal action is -6.6087 at eps=0.1, swept from the lesson's own
+      step(), and the two settle within 0.005 of it -- so the plot measures the behaviour policy the
+      two share. Both also learn the optimal policy exactly: the greedy policy recovered on all 24
+      runs is worth -5.8520 from the start state, to 0.0e+00, which is 0.76 better than the plateau
+      the curve shows, and the gap is the exploration neither is asked to stop. The plotted quantity
+      is not the optimized one either -- total += r sums raw rewards while every update discounts at
+      gamma=0.99, and the undiscounted and discounted eps-soft returns are -6.6087 and -6.4208. The
+      comparison needs a board this one is not: nothing here punishes the eps-random action, so
+      off-policy and on-policy targets are indistinguishable, and exercise 2's cliff turns the same
+      difference into 29 points
+    uses_reference:
+      - sarsa
+      - q_learning
+      - block_means
+      - step
+      - ACTIONS
+      - TERMINAL
+  - index: 2
+    slug: q_learning_walks_the_edge_and_pays_for_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Build a cliff-walking environment (4×12, last row is the cliff with reward -100 and reset to start). Compare Q-learning and SARSA final policies. Screenshot the paths each takes. Which is closer to the cliff?
+    zh: |
+      **中等。** 打造一個懸崖行走環境（4×12，最後一列是懸崖，獎勵 -100 並重置回起點）。比較 Q-learning 與 SARSA 最終的策略。把兩者各自走的路徑截圖下來。哪一條比較貼近懸崖？
+    verifies: >-
+      only the environment is built: step and reset are module-level names the lesson's own sarsa and
+      q_learning look up at call time, so replacing those two runs both learners unmodified on the
+      4x12 cliff and nothing is forked. 'Closer to the cliff' is scored by how many of the ten cells
+      directly above the cliff each greedy path walks, which is the thing that costs: Q-learning walks
+      all 10 on seeds 7, 42 and 101 and SARSA walks 0, at 13 steps against 15 to 17. The policy
+      Q-learning learns is better and the policy it runs is much worse -- followed greedily its path
+      is worth -13.00, the optimum, against SARSA's -16.33, while under the eps=0.1 that produced it
+      the two are -50.52 and -21.44, a 29-point difference, both exact and swept over the new board
+      rather than sampled. The gap between the policy learned and the policy behaved is 37.52 for
+      Q-learning against 5.10 for SARSA, a factor of 7.4: the cliff-edge path is optimal only for an
+      agent that never explores, and the agent that learned it explores 10% of the time. The measured
+      online return over the last 500 episodes is -49.95 and -21.59 against those exact values, so the
+      gap is a property of the policies and not of three seeds. And the obvious reading of the metric
+      cannot separate them: the deepest row either path touches is 2 for both, because SARSA's first
+      move out of the start corner is upward into row 2 at column 0, which is not above a cliff cell
+    uses_reference:
+      - sarsa
+      - q_learning
+      - DELTAS
+      - ACTIONS
+  - index: 3
+    slug: the_two_biases_cancel_at_the_state_named
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement Double Q-learning. On a noisy-reward GridWorld (Gaussian noise σ=5 added to per-step reward), show Q-learning overestimates `V*(0,0)` by a meaningful amount while Double Q-learning does not.
+    zh: |
+      **困難。** 實作 Double Q-learning。在一個獎勵帶雜訊的 GridWorld 上（每步獎勵加上 σ=5 的高斯雜訊），展示 Q-learning 會把 `V*(0,0)` 高估到一個有意義的幅度，而 Double Q-learning 不會。
+    verifies: >-
+      'show' is read as measuring over enough runs to support a claim -- 20 paired seeds -- since one
+      run of this cannot resolve a bias of any size. Q-learning is the lesson's own against a step
+      wrapped to add the noise; Double Q-learning is written here as the exercise asks; V*(0,0) is
+      value iteration over the clean step, the noise being zero-mean. The claim does not reproduce and
+      its second half is backwards: Q-learning's bias in max_a Q(0,0,a) is -0.162 +/- 1.13, 0.6
+      standard errors from zero, while Double Q-learning's is -2.038, 3.7 standard errors from zero
+      and an underestimate. The maximization bias is real and is being cancelled: the four Q(0,0,.)
+      estimates carry a spread of 1.41 at sigma=5, and E[max_a (Q* + noise)] at that spread is -4.758
+      against max_a Q* = -5.852, +1.09 from the max alone with no learning in it -- but every entry it
+      maximises over is depressed by -1.56 to -2.24, mean -1.94, so the two nearly cancel and max_a Q
+      shows neither. The depression is the noise rather than the budget or the code: per-action error
+      is exact to 0.01 at sigma=0 and moves at most 0.11 between 2,000 and 8,000 episodes. One run
+      cannot show any of it -- the per-run spread of max_a Q(0,0,a) is 1.13, wider than Q-learning's
+      measured bias, wider than the maximization bias the mechanism supplies, and comparable to Double
+      Q's. And Double Q's underestimate is the price it was designed to charge: each table sees half
+      the updates and QB[argmax QA] is deliberately not a maximum, so it over-corrects a +1.09 bias
+      into a -2.04 one, 1.9x, which is a trade rather than the fix the exercise frames it as
+    uses_reference:
+      - q_learning
+      - step
+      - ACTIONS
+      - TERMINAL
