@@ -1,0 +1,108 @@
+lesson: 08-ppo
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/08-ppo/docs/en.md
+exercises:
+  - index: 1
+    slug: matching_env_steps_does_not_match_updates
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run PPO on 4×4 GridWorld with `ε=0.2, K=4`. Compare sample efficiency to A2C (one epoch per rollout) at matched env steps.
+    zh: |
+      **簡單。** 用 `ε=0.2, K=4` 在 4×4 GridWorld 上跑 PPO。在環境步數相同的條件下，跟 A2C（每個 rollout 只跑一個回合數）比較樣本效率。
+    verifies: >-
+      'A2C (one epoch per rollout)' is the lesson's own ppo_update at epochs=1, so no second algorithm
+      is written and the two arms differ in nothing but the epoch count -- same clip, same
+      normalisation, same critic. 'At matched env steps' is taken literally: each arm runs until it
+      has consumed a 4,000-step budget rather than for a fixed update count. PPO wins by 1.56, -6.25
+      against -7.81 over 12 seeds, with the budgets matched to 13 steps. Matching env steps hands PPO
+      more updates rather than fewer -- 51.6 against 34.6 inside the same budget -- because a better
+      policy reaches the terminal sooner, so its rollouts are shorter and more of them fit, which is
+      the opposite of the handicap the phrase sounds like it applies. At matched updates the mismatch
+      runs the other way and PPO still wins: given 60 updates each, A2C consumes 5,468 env steps to
+      PPO's 4,444, 23% more, and finishes worse at -6.57 against -6.18. Neither budget is neutral, so
+      the exercise's phrasing settles part of the answer before the run starts. And the pack records a
+      real defect both arms inherit: collect_rollout concatenates 8 independent environments into one
+      buffer and gae never resets its accumulator, so a truncated episode bootstraps from the next
+      environment's first state -- against the same recursion reset at each boundary the worst
+      per-step advantage differs by 15.81 on a board where |V| is about 6, and only 87 of 6,034
+      buffered steps carry a done flag
+    uses_reference:
+      - collect_rollout
+      - gae
+      - ppo_update
+      - evaluate
+      - init_theta
+      - init_w
+  - index: 2
+    slug: it_never_explodes_because_that_is_what_the_clip_is_for
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Sweep `K ∈ {1, 4, 10, 30}`. Plot return vs env steps and track mean KL per update. At what `K` does KL explode on this task?
+    zh: |
+      **中等。** 掃 `K ∈ {1, 4, 10, 30}`。畫出回報對環境步數的曲線，並追蹤每次更新的平均 KL。在這個任務上，`K` 到多少 KL 會爆掉？
+    verifies: >-
+      the question presumes a failure, so the sweep is run as asked and then run again with the clip
+      disabled at eps=1e9, because a safety mechanism that is working is indistinguishable from one
+      that is unnecessary until it is removed; 12 seeds per cell, plot as a table. KL explodes at no K
+      in the sweep: mean KL per update runs 0.0015, 0.0069, 0.0103, 0.0138 across K = 1, 4, 10, 30, so
+      a 30x increase in epochs buys 9x the KL to a value still under a typical 0.02 target, and over
+      the last ten updates it falls from K=10 to K=30. Remove the clip and it explodes exactly where
+      the exercise expects: at K=30 with eps=1e9 the mean KL is 0.5046, 37x the clipped 0.0138, and
+      the evaluated return degrades from -6.11 to -6.87. At K=4 the clip is doing nothing and costs a
+      little -- clipped -6.18 against unclipped -6.08 at mean KL 0.0069 against 0.0076 -- so the
+      shipped configuration sits where its own mechanism is inert. Return is flat from K=4 onward
+      (-6.57, -6.18, -6.12, -6.11), K=1 to K=4 being worth 0.38 and K=4 to K=30 worth 0.07 for 7x the
+      gradient work per env step. The axis that actually moves is the clip fraction, 0.002 to 0.136, a
+      61x rise: more epochs do push the policy further from the one that collected the data, and the
+      clip converts that pressure into discarded samples instead of divergence
+    uses_reference:
+      - collect_rollout
+      - gae
+      - ppo_update
+      - evaluate
+      - init_theta
+      - init_w
+  - index: 3
+    slug: the_penalty_turns_itself_off_by_nine_orders
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Replace the clipped surrogate with an adaptive KL penalty (`β` doubled if `KL > 2·target`, halved if `KL < target/2`). Compare final return, stability, and clip-free-ness.
+    zh: |
+      **困難。** 把裁剪代理目標換成自適應 KL 懲罰（`KL > 2·target` 時把 `β` 加倍，`KL < target/2` 時減半）。比較最終回報、穩定性，以及不用裁剪這件事本身的效果。
+    verifies: >-
+      only the surrogate is replaced -- the rollout, GAE, the per-minibatch normalize and the critic
+      update are called from the lesson's module unchanged, so the two arms differ in one term:
+      ratio*A with a hard clip against ratio*A - beta*KL, whose logit gradient is (ratio*A + beta).
+      beta starts at 1.0 with target=0.01 and the stated doubling rule, and 'clip-free-ness' is
+      measured by counting how many samples the eps=0.2 rule would have clipped, since the penalty arm
+      has no clip to count. The penalty matches the clip and then removes itself: final return -6.06
+      against the clipped -6.18 over 12 seeds, mean KL 0.0051 against 0.0069, 3.5% of samples
+      would-clipped. beta decays to a median 3.49e-10 -- 0.50, 0.25, 1.17e-02, 4.77e-06, 3.49e-10 at
+      updates 1, 5, 20, 40, 60 -- because the halving rule fires whenever KL < target/2 = 0.005, which
+      is most updates, so by the end the penalty term is 2.9e9 times smaller than it began and the arm
+      is running unconstrained policy gradient with normalised advantages. Which is fine, because
+      unconstrained also works at this K: the lesson's own update at eps=1e9 evaluates at -6.08, so
+      clipped, penalised and entirely unconstrained land within 0.12 of one another and 'compare final
+      return and stability' has nothing to separate at K=4. The comparison only becomes real where
+      exercise 2 found the clip load-bearing -- unconstrained at K=30 the mean KL is 0.30, 44x the
+      clipped K=4 figure -- and the adaptive rule can only act there if beta has not already been
+      halved into irrelevance first
+    uses_reference:
+      - collect_rollout
+      - gae
+      - ppo_update
+      - normalize
+      - softmax
+      - logits
+      - value
+      - evaluate
+      - init_theta
+      - init_w
+      - N_ACTIONS
+      - N_FEAT
