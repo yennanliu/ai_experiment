@@ -1,0 +1,150 @@
+lesson: 07-rlhf
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/07-rlhf/docs/en.md
+exercises:
+  - index: 1
+    slug: mean_pooling_wins_because_nothing_aggregates
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Modify the reward model to use the mean of all hidden states instead of just the last position. Compare accuracy. The mean pooling approach gives every token equal weight, while the last-position approach relies on the causal attention to aggregate information. Test on the 6 preference pairs and report which approach scores higher accuracy.
+    zh: |
+      修改獎勵模型，改用所有隱藏狀態的平均而不是只取最後一個位置。比較準確率。平均池化讓每個詞元權重相同，而取最後位置的做法則仰賴因果注意力去彙整資訊。在那 6 組偏好配對上測試，回報哪種做法準確率較高。
+    verifies: >-
+      both poolings are scored on the same trained reward model, since train_reward_model updates
+      only reward_head and swapping the pooling changes the feature the head reads and nothing else.
+      Mean pooling wins 4 of 6 against last-position's 2 of 6, and last-position scores below chance
+      rather than at it: its mean margin is -0.0383, negative, so it prefers the rejected response on
+      average. The exercise names the reason itself -- last-position "relies on the causal attention
+      to aggregate information" -- and train_reward_model leaves every attention matrix bit-for-bit
+      at its random initialisation, so there is no aggregation to rely on; mean pooling wins because
+      averaging 128 random projections is a lower-variance summary than reading one, its margin
+      spread being 0.0081 against 0.0503, six times tighter. Two further defects sit behind that: the
+      update multiplies the Bradley-Terry gradient by ln_f(embedding(ids))[:, -1, :], the embedding
+      passed straight into the final LayerNorm and skipping every transformer block, while forward()
+      scores ln_f(blocks(embedding(x)))[-1] -- a cosine of 0.50 between the two -- and the gradient
+      uses only h_preferred where the derivative is (sigmoid(d) - 1) * (h_preferred - h_rejected), so
+      each step raises the rejected response's score too. Training ends at 33% accuracy on its own
+      six pairs
+    uses_reference:
+      - RewardModel
+      - train_reward_model
+      - tokenize_for_reward
+      - PREFERENCE_DATA
+  - index: 2
+    slug: the_margin_is_negative_and_gets_worse
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement reward model calibration. After training, run all preference pairs through the reward model and compute: (a) the average reward for preferred responses, (b) the average reward for rejected responses, (c) the margin (preferred minus rejected). A well-calibrated model should have a clear margin. Then add 4 new preference pairs and check if the margin holds on unseen data.
+    zh: |
+      實作獎勵模型校準。訓練完之後，把所有偏好配對跑過獎勵模型，計算：(a) 被偏好回應的平均獎勵、(b) 被拒絕回應的平均獎勵、(c) 邊際（前者減後者）。校準良好的模型應該有明顯的邊際。接著再加 4 組新的偏好配對，檢查邊際在沒看過的資料上是否還撐得住。
+    verifies: >-
+      the four new pairs are written in the shape of the lesson's own six -- a factual question, a
+      short correct answer preferred, a padded correct answer rejected -- and all three quantities
+      use the reference's own forward and tokenize_for_reward. The answers are (a) +0.1752,
+      (b) +0.2135, (c) -0.0383: the margin is negative, the model scores the rejected response higher
+      on average on the six pairs it was trained on, and it gets 2 of 6 right. On the four unseen
+      pairs the margin holds its sign and triples, -0.1106 with 1 of 4 correct, so what survives to
+      held-out data is the wrong sign. The mechanism is that reward correlates +0.268 with response
+      length across the twelve training responses while the dataset makes the rejected response the
+      padded one -- preferred is shorter in 4 of 6 pairs -- so a model that has learned nothing but
+      "longer scores higher" gets this dataset backwards by construction. And a margin is a
+      discrimination statistic rather than a calibration one: calibration is whether a score maps to
+      a probability, and the exercise's metric would pass a model ranking every pair correctly by
+      1e-9 and fail one ranking them correctly by 1e9 with inconsistent confidence
+    uses_reference:
+      - RewardModel
+      - train_reward_model
+      - tokenize_for_reward
+      - PREFERENCE_DATA
+  - index: 3
+    slug: the_length_reward_is_a_constant
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Simulate reward hacking. Create a reward model that gives high scores to long responses (reward = len(response) / 100). Run PPO with this flawed reward model and observe the policy model generating increasingly long, repetitive outputs. Then add a KL penalty of 0.1 and show that it prevents the degenerate behavior.
+    zh: |
+      模擬獎勵駭入。做一個只會給長回應高分的獎勵模型（reward = len(response) / 100）。用這個有缺陷的獎勵模型跑 PPO，觀察策略模型產生越來越長、越來越重複的輸出。然後加上 0.1 的 KL 散度懲罰，展示它能阻止這種退化行為。
+    verifies: >-
+      the flawed reward model is built exactly as specified and driven through the lesson's own
+      ppo_training, so the predicted degenerate behaviour has to come out of the reference's own
+      generation loop, and response length is measured rather than assumed. generate_response appends
+      exactly max_new_tokens tokens and there is no EOS token, stopping criterion or early-exit
+      branch anywhere in the file, so the policy emits 20 tokens at every episode: len(response)/100
+      takes exactly six values over twenty episodes, one per prompt, each of them
+      (len(prompt) + 20)/100, and the policy's contribution to all six is the same constant 20.
+      Length is a loop bound rather than something the model can emit, so the one quantity this
+      reward measures is the one quantity the policy cannot influence. Adding the KL penalty changes
+      nothing because there is nothing to prevent: at kl_coeff=0.1 the reward trace is identical to
+      kl_coeff=0.0 and the KL itself starts at 0 and peaks at 6e-12. And the update could not hack
+      any reward in any case -- ppo_training writes
+      block.ffn.W1 += lr * total_reward * np.random.randn(...) * 0.01, a fresh random direction every
+      episode, so the expected update is zero whatever the reward says and the reward sets only the
+      step size
+    uses_reference:
+      - ppo_training
+      - generate_response
+      - copy_model_weights
+      - MiniGPT
+      - PREFERENCE_DATA
+  - index: 4
+    slug: the_conciseness_term_does_all_the_work
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement a multi-objective reward. Train two reward models -- one for helpfulness and one for conciseness. Combine them as R = 0.7 * R_helpful + 0.3 * R_concise. Show that the combined objective produces responses that are both helpful and concise, avoiding the verbosity trap of a single helpfulness reward.
+    zh: |
+      實作多目標獎勵。訓練兩個獎勵模型 —— 一個評有幫助程度，一個評精簡程度。用 R = 0.7 * R_helpful + 0.3 * R_concise 把它們合起來。展示合併後的目標函式能產生既有幫助又精簡的回應，避開單一「有幫助」獎勵會落入的囉唆陷阱。
+    verifies: >-
+      the helpfulness model is the lesson's own after its own training run and conciseness is
+      -len(response)/100, the sign-flipped version of Exercise 3's length reward, and the objective is
+      scored as agreement with the six human preferences because ppo_training cannot move a policy.
+      The combination gets 4 of 6 against 2 of 6 for helpfulness alone, which is the improvement the
+      exercise predicts -- but conciseness alone also gets 4 of 6, so the 0.7 weight on the trained
+      model contributes nothing the length term was not already supplying, and the two pairs it still
+      gets wrong are the two where the preferred response is longer. The verbosity trap is inside the
+      helpfulness model rather than opposite it: that model correlates +0.268 with response length
+      and scores below chance, so the conciseness term is overriding a signal that is verbose and not
+      helpful rather than balancing a helpful-but-verbose one. And 0.7 sits on a plateau: sweeping the
+      weight gives 4, 4, 4, 4, 4, 5, 2 from 0.0 to 1.0, so the only weight that beats pure
+      conciseness is 0.9 -- a 9:1 mix in favour of the component that scores 2 of 6 on its own, which
+      is the opposite direction from the one the exercise argues for
+    uses_reference:
+      - RewardModel
+      - train_reward_model
+      - tokenize_for_reward
+      - PREFERENCE_DATA
+  - index: 5
+    slug: all_three_betas_give_the_same_numbers
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Compare different KL coefficients. Run PPO with beta=0.001 (too low, reward hacking), beta=0.02 (standard), and beta=0.5 (too high, no learning). Plot the reward curve and KL curve for each. The beta=0.02 run should show steady reward improvement with bounded KL.
+    zh: |
+      比較不同的 KL 係數。分別用 beta=0.001（太低，會獎勵駭入）、beta=0.02（標準）、beta=0.5（太高，學不動）跑 PPO。替每一次畫出獎勵曲線與 KL 曲線。beta=0.02 那次應該呈現獎勵穩定上升、KL 有界。
+    verifies: >-
+      the three runs use the lesson's own ppo_training against its own trained reward model from one
+      fixed initialisation and one fixed RNG stream, so the only difference between them is kl_coeff.
+      They agree to 1e-12 at every episode -- same reward, same KL, same linear fit -- so none of the
+      exercise's three labels distinguishes anything. beta multiplies a number that never exceeds
+      1e-12: the KL starts at exactly 0.0, copy_model_weights having made the policy and the reference
+      the same model, and peaks at 5e-13, so even at beta=0.5 the penalty term is 2.5e-13 against a
+      reward of order 0.1 and cannot reach the fourth decimal of total_reward. The policy never moves
+      far enough for the KL to have anything to measure: the update is
+      lr * total_reward * np.random.randn(...) * 0.01 at lr = 1.5e-5, about 3e-8 per weight per
+      episode against weights of scale 0.02, and after twenty episodes the largest single weight has
+      moved 3.8e-07. The reward curve does have a trend and it is the wrong one -- -1.35e-03 per
+      episode, a decline, identical in all three runs -- which is twenty episodes cycling over six
+      prompts with a reward that depends on which prompt is up
+    uses_reference:
+      - ppo_training
+      - copy_model_weights
+      - RewardModel
+      - train_reward_model
+      - MiniGPT
