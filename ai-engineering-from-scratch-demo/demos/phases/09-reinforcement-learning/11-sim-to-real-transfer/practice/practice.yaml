@@ -1,0 +1,94 @@
+lesson: 11-sim-to-real-transfer
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/11-sim-to-real-transfer/docs/en.md
+exercises:
+  - index: 1
+    slug: the_curve_is_the_environment_not_the_agent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Train a Q-learning agent on the fixed-slip GridWorld (slip=0.0). Evaluate on slip ∈ {0.0, 0.1, 0.3, 0.5}. Plot return vs slip.
+    zh: |
+      **簡單。** 在固定打滑值（slip=0.0）的 GridWorld 上訓練一個 Q-learning 代理程式。在 slip ∈ {0.0, 0.1, 0.3, 0.5} 上評估。畫出回報對 slip 的曲線。
+    verifies: >-
+      the lesson's evaluate samples 200 episodes, which adds noise to a quantity that can be computed
+      exactly -- the greedy policy and the slip define a Markov chain whose expected return is a fixed
+      point -- so both are reported, and the sweep is placed against the optimal return at each slip,
+      because a curve that falls with slip proves nothing until you know how much of the fall was
+      unavoidable. The trained agent returns -8.00, -8.90, -11.57 and -16.60 across slip = 0, 0.1,
+      0.3, 0.5, losing 8.60 over the sweep. But the best any policy can do at those slips is -8.00,
+      -8.79, -11.15 and -15.67, so 7.67 of that 8.60 is the environment getting harder and only 0.93
+      -- 11% of the decline the plot shows -- is the agent being wrong. The degradation is entirely
+      out-of-distribution by construction: at the slip it trained on the agent is exactly optimal,
+      -8.000 against -8.000 to 0.0e+00, and the optimality gap by slip is 0.000, 0.111, 0.428, 0.931.
+      And the sampling is unnecessary and not harmless -- the lesson's evaluate agrees with the exact
+      value to within 0.14, which is larger than the whole optimality gap at slip 0.1 (0.111), so at
+      the low end of the sweep the measurement noise exceeds the effect measured
+    uses_reference:
+      - train_fixed
+      - evaluate
+      - ACTIONS
+      - DELTAS
+      - TERMINAL
+  - index: 2
+    slug: it_buys_three_percent_of_return_and_sixty_of_the_gap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Train a DR Q-learning agent sampling `slip ~ Uniform[0, 0.3]`. Evaluate the same sweep. How much does DR buy at slip=0.5 (out-of-distribution)?
+    zh: |
+      **中等。** 訓練一個取樣 `slip ~ Uniform[0, 0.3]` 的領域隨機化 Q-learning 代理程式。跑同一組掃描。在 slip=0.5（分布外）時，領域隨機化替你賺到多少？
+    verifies: >-
+      'how much' has two defensible denominators which disagree by a factor of eighteen, so both are
+      reported: the change in return and the share of the optimality gap closed. Values are exact
+      rather than sampled, and the same eight seeds train both arms so the comparison is paired. At
+      slip=0.5 the fixed-slip agent returns -16.60 and the DR agent -16.04 against an optimum of
+      -15.67, so DR buys 0.56 -- 3.4% of the return and 60% of the distance to optimal. It closes a
+      similar share at every slip, the gap falling 0.111 to 0.066 at slip 0.1, 0.428 to 0.196 at 0.3
+      and 0.931 to 0.371 at 0.5, a reduction of 41%, 54% and 60%: slip=0.3 is the edge of the training
+      range and slip=0.5 is well outside it, and nothing distinguishes them. The two agents are
+      indistinguishable where they were trained -- both return exactly -8.000 at slip=0, matching to
+      0.0e+00, because both are shortest paths -- so DR's entire benefit is a different choice among
+      equally optimal policies and no measurement taken in the training environment can see it. The
+      greedy policies differ on 6 of 24 non-terminal cells: the fixed-slip agent walks the boundary,
+      straight down the left column then right along the bottom, while the DR agent takes a staircase
+      through the interior, and both are 8 steps when nothing slips
+    uses_reference:
+      - train_fixed
+      - train_dr
+      - ACTIONS
+      - DELTAS
+      - TERMINAL
+  - index: 3
+    slug: the_curriculum_wins_without_ever_reaching_the_target
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Implement a curriculum: start with slip=0.0, widen the DR range every time the policy hits 90% of optimal. Measure total environment steps to reach slip=0.3 zero-shot vs. a fixed DR baseline.
+    zh: |
+      **困難。** 實作一套課程學習：從 slip=0.0 開始，每當策略達到最佳值的 90% 就把領域隨機化的範圍放寬一次。量測要零樣本達到 slip=0.3 總共需要多少環境步數，並跟固定領域隨機化的基準線比較。
+    verifies: >-
+      '90% of optimal' needs care when returns are negative -- value >= 0.9 * optimal demands a policy
+      better than optimal and can never fire -- so the criterion is value >= optimal / 0.9, a return
+      no worse than 1/0.9 of the optimum's magnitude; both arms are stopped by the same rule at the
+      same target, checked every 25 episodes, with environment steps counted inside the loop rather
+      than inferred. The curriculum needs 5,652 median steps against fixed DR's 7,067, 20% fewer, both
+      reaching the target on 8 of 8 seeds. It wins on step count while barely winning on episodes --
+      300 against 325 -- because the saving is in episode length: 18.8 steps per episode against 21.7,
+      since an episode at slip 0 terminates sooner than one drawn from Uniform[0, 0.3]. The curriculum
+      practises in a cheaper environment rather than a faster one. And it passes while still six times
+      narrower than the target: at the moment it clears the rule at slip=0.3 its own slip ceiling is
+      0.05, so it has never trained above a sixth of the slip it is scored on. Reaching 0.3 in steps
+      of 0.05 would take six promotions and the run ends after one, so what the exercise describes as
+      a curriculum is on this task a short warm-up at slip 0 followed by an early exit -- the schedule
+      never gets far enough to be a schedule
+    uses_reference:
+      - epsilon_greedy
+      - step
+      - default_q
+      - ACTIONS
+      - DELTAS
+      - TERMINAL
