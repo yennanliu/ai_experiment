@@ -1,0 +1,120 @@
+lesson: 05-dqn
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/05-dqn/docs/en.md
+exercises:
+  - index: 1
+    slug: the_running_mean_never_crosses_it
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Plot the per-episode return curve. How many episodes until the running mean exceeds -10?
+    zh: |
+      **簡單。** 跑 `code/main.py`。畫出每回合回報的曲線。要幾個回合，移動平均才會超過 -10？
+    verifies: >-
+      'running mean' is undefined in the lesson, so all five readings a learner could take are
+      computed on one run of main()'s own loop at its own seed, rebuilt from the lesson's init_net,
+      clone, epsilon_greedy, step and train_step because main() returns nothing to measure; the plot
+      ships as a table. The cumulative mean from episode 0 never exceeds -10, ending the 400 episodes
+      at -10.64, while trailing-10 crosses at 115, trailing-50 at 154, trailing-100 at 179 and the
+      lesson's own 50-blocks at 200 -- five readings, four numbers and one that does not exist. The
+      cumulative mean is sunk by the first block's -28.06 against a -6 optimum no later episode can
+      beat, and would need about 70 further episodes at the converged -6.34 to climb over the line.
+      The crossing episode measures the epsilon schedule rather than the learning: epsilon is
+      max(0.05, 1 - ep/200), and the exact 50-step-capped return of an eps-soft policy over the
+      optimal policy -- swept from the lesson's own step(), no learning in it -- crosses -10 on a
+      trailing-50 window at episode 142 against the measured 154, so an agent optimal from episode 0
+      answers this exercise with nearly the same number. The network is finished long before the curve
+      is: max_a Q(0,0,a) = -5.8731 against V*(0,0) = -5.8520, a gap of 0.0211, while the blocks from
+      episode 150 still move from -6.84 to -6.34. And the 50-step cap is what makes the early episodes
+      heavy -- the worst episode is exactly -50, so 44 of the curve's visible -6 to -50 range is a
+      truncation constant
+    uses_reference:
+      - init_net
+      - clone
+      - epsilon_greedy
+      - train_step
+      - forward
+      - state_features
+      - step
+      - reset
+      - ACTIONS
+      - TERMINAL
+  - index: 2
+    slug: neither_and_the_target_net_was_never_stale
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Disable the target network (use the online net for both sides of the Bellman target). Measure training instability — does return oscillate or diverge?
+    zh: |
+      **中等。** 把目標網路關掉（貝爾曼目標兩邊都用線上網路）。量一下訓練的不穩定程度——回報會震盪還是發散？
+    verifies: >-
+      two arms, two seeds each and three separate statistics, because one paired run cannot separate
+      instability from seed noise; disabling the target network means passing online where the
+      lesson's own train_step expects target, and nothing else changes. Neither oscillation nor
+      divergence: over the last 100 episodes the runs mean -6.27 and -6.34 with the target network
+      against -6.32 and -6.30 without, at standard deviations 0.69, 0.78 against 0.89, 0.77, so the
+      arms differ by 0.005 while two seeds inside one arm differ by 0.070, and the worst tail episode
+      anywhere is -11 against a -50 floor. By value accuracy the no-target arm is the better of the
+      two: max_a Q(0,0,a) is -5.8504 and -5.8506 without it against -5.8731 and -5.7475 with it, so
+      worst error 0.0016 against 0.1044 on a V*(0,0) of -5.8520. The mechanism is that the target
+      network was never stale -- refreshed every 200 steps, 21 times over the run, with a sup-norm
+      online-to-target gap averaging 0.639 and peaking at 1.215 on a Q scale of 5.9, about 11%. And
+      there is no shared approximator to interfere through: state_features is one-hot over 16 states
+      so each state owns its own column of W1, and 676 parameters are fitted to 64 Q values, 10.6x
+      more. What reads as oscillation is exploration -- a 6-step optimal episode takes at least one
+      random action 26.5% of the time at eps=0.05, which is the whole of the -6 to -11 band both arms
+      occupy after convergence
+    uses_reference:
+      - init_net
+      - clone
+      - epsilon_greedy
+      - train_step
+      - forward
+      - state_features
+      - step
+      - reset
+      - ACTIONS
+      - TERMINAL
+  - index: 3
+    slug: double_dqn_halves_the_bias_it_does_not_remove_it
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Add Double DQN: use the online net to pick `argmax a'`, target net to evaluate. Compare bias of `Q(s_0, best_a)` vs true `V*(s_0)` after 1,000 episodes with vs without Double DQN on a noisy-reward GridWorld.
+    zh: |
+      **困難。** 加上 Double DQN：用線上網路挑 `argmax a'`，用目標網路做評估。在一個獎勵帶雜訊的 GridWorld 上跑 1,000 個回合，比較有沒有 Double DQN 時 `Q(s_0, best_a)` 相對於真實 `V*(s_0)` 的偏差。
+    verifies: >-
+      three paired seeds and a sigma=0 control, because 'compare bias' at one seed cannot separate a
+      bias from a seed -- and on this experiment one seed of three reverses the comparison. Only the
+      target computation is new: the rewritten minibatch goes through the lesson's own train_step, and
+      everything else is the shipped 32-hidden, batch-32 configuration. The exercise's first half
+      holds: after 1,000 episodes at sigma=5, max_a Q(0,0,a) sits +1.61, +0.80 and +3.17 above V*(0,0)
+      = -5.8520, mean +1.86, positive on every seed. Its second half does not: Double DQN's biases are
+      +0.46, +0.84 and +1.82, mean +1.04 -- positive on all three seeds too, 1.8x smaller rather than
+      absent, so decoupling selection from evaluation shrinks the maximization bias and does not
+      cancel it. The paired difference is +1.15, -0.03, +1.35, mean +0.82 +/- 0.35, 2.3 standard
+      errors from zero with seed 1 showing no effect at all, so running the comparison once has a
+      one-in-three chance of that seed. The better estimate also buys a better policy, which the
+      exercise does not ask about: mean return over the last 50 episodes is -6.3 under Double DQN
+      against -8.1 under DQN on a -6 optimum, a gap twice the value gap it is usually justified by.
+      And the sigma=0 control settles the cause -- with the noise off and everything else identical
+      the two biases are -0.021 and -0.030, 0.009 apart against +0.82 with noise, while both arms
+      carry a target network throughout and exercise 2 measured that deleting it on the clean board
+      costs nothing. D11's scaled-down runnable is not available here: 16 hidden units with batch 8
+      gives mean biases of -0.13 and -18.54, and 16 hidden with batch 32 gives -1.06 and +0.15, both
+      inverting the sign of the effect, so the phenomenon exists only at the shipped size and the
+      exercise runs there
+    uses_reference:
+      - init_net
+      - clone
+      - epsilon_greedy
+      - train_step
+      - forward
+      - state_features
+      - step
+      - reset
+      - ACTIONS
+      - TERMINAL

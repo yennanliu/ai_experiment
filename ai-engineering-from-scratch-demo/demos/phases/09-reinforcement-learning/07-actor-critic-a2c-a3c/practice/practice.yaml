@@ -1,0 +1,118 @@
+lesson: 07-actor-critic-a2c-a3c
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/07-actor-critic-a2c-a3c/docs/en.md
+exercises:
+  - index: 1
+    slug: it_never_fails_and_it_is_four_times_slower
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Train actor-critic with MC advantage (`G_t - V(s_t)`) on 4×4 GridWorld. Compare sample efficiency to REINFORCE-with-running-mean-baseline from Lesson 06.
+    zh: |
+      **簡單。** 在 4×4 GridWorld 上用 MC 優勢（`G_t - V(s_t)`）訓練演員—評論家。跟單元 06 帶移動平均基線的 REINFORCE 比較樣本效率。
+    verifies: >-
+      no new algorithm is written: actor_critic always routes through gae_advantages, and GAE at
+      lam=1.0 agrees with G_t - V(s_t) computed directly to 0.0e+00 over every step of 60 episodes, so
+      'MC advantage' is the shipped function at one parameter. Lesson 06's reinforce is imported from
+      its own lesson rather than reproduced, and both arms run over 30 seeds under one convergence
+      rule, because lesson 06 established that a fifth of REINFORCE runs never converge and a one-seed
+      comparison picks its own answer. Sample efficiency says REINFORCE by 3.6x -- median
+      episodes-to-converge 125 against 448 -- and it is the wrong question: REINFORCE collapses on
+      8/30 seeds (26.7%) and actor-critic on 0/30. The two summaries disagree about which method is
+      better: median final return favours REINFORCE (-5.91 against -6.42, its surviving runs finding
+      the sharper policy) while mean final return favours actor-critic by 14.8 points (-6.42 against
+      -21.24), because the mean carries the failures the median throws away. The mechanism is the
+      normalised advantage: lesson 06 measured adv < 0 at 100% of REINFORCE's updates, so it can only
+      punish, while normalize subtracts the per-episode mean and 48.1% of the advantages this actor
+      sees are positive. And it is not the entropy bonus -- with ent_coef=0 the collapse rate is still
+      0/30 and the median final return is slightly better at -6.35
+    uses_reference:
+      - actor_critic
+      - gae_advantages
+      - normalize
+      - rollout
+      - init_theta
+      - init_w
+      - value
+      - N_FEAT
+  - index: 2
+    slug: the_variance_drops_34x_and_the_actor_never_sees_it
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Switch to TD-residual advantage (`r + γ V(s') - V(s)`). Measure variance of the advantage batches. By how much does it drop?
+    zh: |
+      **中等。** 換成 TD 殘差優勢（`r + γ V(s') - V(s)`）。量一下各批次優勢的變異數。降了多少？
+    verifies: >-
+      'the advantage batches' is measured at both points it exists -- as gae_advantages returns it and
+      as the actor receives it one line later, after normalize -- because measuring only the first
+      answers the question as asked and misses what the answer is worth. GAE at lam=0 is the TD
+      residual exactly, so no new estimator is written, and the measurement is taken inside a real
+      training run rather than on a frozen policy. The answer is 34x and 0x depending on which batch
+      is measured: mean per-episode advantage variance during training is 4.1002 at lam=1.0 and 0.1202
+      at lam=0, while the variance of what the actor multiplies into its gradient is 1.000000 and
+      0.999331 -- the same number. normalize subtracts the per-episode mean and divides by the
+      standard deviation, so the variance reaching the policy gradient is 1 by construction at every
+      lam, and the reduction the exercise asks for is discarded one line after it is produced. It is
+      not discarded for everyone: gae_advantages returns returns = advantages + v, the critic's own
+      regression target, and the critic update has no normalize, so lam sets the critic's target
+      variance and there the 34x survives. That is where the benefit shows up -- against the exact
+      V^pi of the policy each run ends with, swept from the lesson's own step(), the critic's mean
+      absolute error is 0.262 at lam=0 against 1.143 at lam=1.0, 4.4x, on value scales of 3.39 and
+      5.07. Measuring on a frozen policy would have answered a different question: with the shipped
+      all-zero critic every TD residual is -1 exactly, so the raw variance is 0 and normalize divides
+      by 1e-8 and returns zeros, leaving the actor no signal at all
+    uses_reference:
+      - gae_advantages
+      - normalize
+      - rollout
+      - init_theta
+      - init_w
+      - value
+      - softmax
+      - logits
+      - features
+      - step
+      - N_FEAT
+      - N_ACTIONS
+      - TERMINAL
+  - index: 3
+    slug: both_axes_move_together_so_there_is_no_tradeoff
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Implement GAE(λ). Sweep `λ ∈ {0, 0.5, 0.9, 0.95, 1.0}`. Plot final return vs sample efficiency. Where is the bias/variance sweet spot for this task?
+    zh: |
+      **困難。** 實作 GAE(λ)。掃 `λ ∈ {0, 0.5, 0.9, 0.95, 1.0}`。畫出最終回報對樣本效率的關係。在這個任務上偏差／變異數的甜蜜點在哪裡？
+    verifies: >-
+      GAE is already implemented -- gae_advantages is the only advantage path actor_critic has -- so
+      the work is the sweep and what it shows, over 30 seeds per lambda because adjacent lambdas
+      differ by less than one seed's spread; the plot ships as a table. There is no sweet spot: median
+      final return runs -5.896, -5.905, -5.977, -6.095, -6.422 and median episodes-to-converge runs
+      242, 222, 320, 362, 448 across lambda = 0, 0.5, 0.9, 0.95, 1.0, so the best lambda is at the end
+      of the range on both axes at once and the two axes the exercise asks to plot against each other
+      do not trade. The lesson ships the second-worst value in its own sweep: main runs lam=0.95,
+      fourth of five on return and taking 362 episodes against 222. The mechanism is that the tradeoff
+      has had one of its two sides removed -- normalize standardises the advantage to unit variance
+      before the actor sees it, so lambda cannot buy the actor any variance reduction, and what is
+      left is lambda's effect on the critic's regression target, which nothing standardises: mean
+      absolute critic error against the exact V^pi over 8 seeds is 1.9x lower at lam=0 than anywhere
+      in the top half of the range, though noisy across the middle. Nothing in the sweep collapses --
+      0 of 150 runs at every lambda -- while lesson 06's REINFORCE collapses on a fifth of seeds and
+      exercise 1 measured that the difference is the normalised baseline rather than the advantage
+      estimator, so lambda is being asked to tune a failure mode this algorithm does not have. And a
+      U-shape would need a critic that can be wrong: this one is linear over one-hot features and
+      therefore exactly tabular, 16 states and 16 weights with no approximation error to trade
+      against, so lam=0's bias is bounded by a critic error of 0.26 against value magnitudes near 5.9
+    uses_reference:
+      - actor_critic
+      - gae_advantages
+      - value
+      - softmax
+      - logits
+      - features
+      - step
+      - TERMINAL

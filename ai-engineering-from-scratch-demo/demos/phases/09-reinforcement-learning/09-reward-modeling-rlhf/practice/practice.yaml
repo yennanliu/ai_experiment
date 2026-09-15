@@ -1,0 +1,106 @@
+lesson: 09-reward-modeling-rlhf
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/09-reward-modeling-rlhf/docs/en.md
+exercises:
+  - index: 1
+    slug: it_is_100_percent_and_ten_pairs_get_there
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Train the Bradley-Terry reward model in `code/main.py` on 500 synthetic preference pairs. Measure pairwise accuracy on a held-out 100 pairs. Should exceed 90%.
+    zh: |
+      **簡單。** 用 500 對合成偏好資料訓練 `code/main.py` 裡的 Bradley-Terry 獎勵模型。在保留的 100 對上量測成對比較準確率。應該超過 90%。
+    verifies: >-
+      the stated bar invites a yes, so the answer is how far past it the result sits and why; train_rm
+      and rm_accuracy are the lesson's own, 20 seeds are run because one held-out sample of 100 cannot
+      distinguish 94% from 100%, and the training size is swept down to find where the bar is actually
+      crossed. Accuracy is 1.0000 on every one of 20 seeds, minimum 1.0000 -- not a single missed
+      held-out pair at any seed. Ten pairs get there and two clear the stated 90%: mean accuracy by
+      training size is 0.7920, 0.9535, 0.9855, 0.9950, 1.0000, 1.0000, 1.0000 at 1, 2, 3, 5, 10, 20,
+      50 pairs, so the 500 the exercise specifies is 50x more than the task requires. The mechanism is
+      that GOOD and BAD share no token -- their intersection is empty -- so sample_pair draws the
+      preferred response from GOOD^2 and the rejected from BAD^2, and a bag-of-words scorer separates
+      them as soon as it has seen each of the 12 tokens once. The held-out set is not held out from
+      anything that matters: 3,888 distinct (prompt, preferred, rejected) triples exist but the model
+      carries 12 parameters and the labelling rule is a partition of them into 6 and 6, so train and
+      test differ in sample and not in structure. And the separation is total rather than merely
+      accurate -- 6 of 6 GOOD tokens end with positive weight and 6 of 6 BAD with negative
+    uses_reference:
+      - train_rm
+      - rm_accuracy
+      - GOOD
+      - BAD
+      - VOCAB
+      - PROMPTS
+  - index: 2
+    slug: all_three_hack_and_the_penalty_arrives_too_late
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Run the toy PPO-RLHF loop with `β ∈ {0.0, 0.1, 1.0}`. For each, plot RM score vs KL-to-reference over updates. Which runs reward-hack?
+    zh: |
+      **中等。** 用 `β ∈ {0.0, 0.1, 1.0}` 跑玩具版 PPO-RLHF 迴圈。針對每一種，畫出 RM 分數對「相對參考模型的 KL」隨更新次數的變化。哪幾次跑出了獎勵駭入？
+    verifies: >-
+      'which runs reward-hack' presumes the sweep separates them, so hacking is given a threshold
+      rather than an impression: the reference policy is uniform over 12 tokens, so KL is bounded by
+      ln 12 = 2.4849 and a run is hacking when it spends most of that budget. All three hack,
+      including beta=1.0 -- final KL is 2.2524, 2.2183 and 1.9424, which is 91%, 89% and 78% of the
+      maximum, with the top token's probability at 0.958, 0.947 and 0.872 against a uniform 0.083.
+      Swept wider, beta has to reach 100 before the KL is meaningfully held: the shares are 91%, 89%,
+      78%, 46%, 20% at beta = 0, 0.1, 1, 10, 100, so a 1000x increase over the lesson's default
+      reaches 20% and costs 35% of the RM score, and nothing inside the stated range binds at all. The
+      mechanism is the advantage normalisation: the reward is rm_score - beta*KL but KL is computed
+      from the whole distribution, so it depends on the prompt and not the sampled token and a
+      16-rollout batch holds 3 distinct values of it against 12 for the RM score, after which (r -
+      mean)/sd deletes what is common -- early in training sd(rm) = 1.1071 against sd(beta*KL) =
+      0.000666, a factor of 1662. And the penalty only becomes visible once it is too late: by update
+      150 every rollout draws the same token so sd(rm) is 0.0000 while sd(beta*KL) has risen to
+      0.004505, so the term meant to prevent the collapse becomes audible after it has finished. The
+      hack lands on the reward model's own ceiling -- the highest single-token weight is 1.1873 and
+      the beta=0 arm reaches 1.1793, 99.3% of it
+    uses_reference:
+      - train_rm
+      - rlhf_loop
+      - policy_probs
+      - sample_token
+      - kl
+      - VOCAB
+      - PROMPTS
+  - index: 3
+    slug: comparing_on_rm_score_rewards_whichever_hacks_hardest
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement DPO (closed-form preference-likelihood loss) on the same preference data and compare to the RLHF-PPO pipeline in compute used and final RM score achieved.
+    zh: |
+      **困難。** 在同一批偏好資料上實作 DPO（閉式的偏好似然損失），並在「用掉多少算力」與「最終達到的 RM 分數」兩方面跟 RLHF-PPO 流水線比較。
+    verifies: >-
+      the comparison the exercise asks for is compute and RM score, and exercise 2 established that
+      the RM score is maximised by collapsing onto a single token -- so KL-to-reference is reported
+      alongside, because otherwise the winner is whichever method hacks the reward model hardest. DPO
+      is written here with a uniform reference matching rlhf_loop's zero-initialised one, and a
+      response's log-probability is the sum over its two tokens. At 2,400 gradient steps each,
+      PPO-RLHF reaches RM 1.178 at 91% of the maximum KL and DPO reaches 0.893 at 16%; PPO sits at
+      99.2% of the reward model's ceiling of 1.1873, having become the single token that ceiling
+      belongs to. DPO uses no policy samples and no reward model at all: PPO-RLHF spends 600 gradient
+      steps fitting the reward model, then draws 150 x 16 = 2,400 samples from the policy and queries
+      the reward model once per sample, while DPO reads the same preference pairs directly and stage 1
+      never has to happen. DPO's score rises with data and its KL rises with it -- 0.295 at 2%, 0.893
+      at 16%, 1.086 at 28% for 600, 2,400 and 10,000 pairs -- so it is not on a different trajectory
+      from PPO but further back along the same one. And the exercise's two axes disagree while only
+      one is stated: ranked by final RM score PPO wins by 0.285, ranked by KL-to-reference at equal
+      compute DPO wins by a factor of 5.7, and RM score is the axis reward hacking is defined to
+      maximise
+    uses_reference:
+      - train_rm
+      - rlhf_loop
+      - sample_pair
+      - policy_probs
+      - sample_token
+      - sigmoid
+      - kl
+      - VOCAB
+      - PROMPTS

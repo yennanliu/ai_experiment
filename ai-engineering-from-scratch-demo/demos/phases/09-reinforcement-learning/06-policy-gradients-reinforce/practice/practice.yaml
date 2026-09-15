@@ -1,0 +1,108 @@
+lesson: 06-policy-gradients-reinforce
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/06-policy-gradients-reinforce/docs/en.md
+exercises:
+  - index: 1
+    slug: a_third_of_runs_never_reach_the_terminal
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Easy.** Implement REINFORCE on 4×4 GridWorld with a linear softmax policy. Train for 1,000 episodes without a baseline. Plot the learning curve; measure variance (std of returns).
+    zh: |
+      **簡單。** 在 4×4 GridWorld 上用線性 softmax 策略實作 REINFORCE。不帶基線訓練 1,000 個回合。畫出學習曲線；量一下變異數（回報的標準差）。
+    verifies: >-
+      the lesson ships reinforce, so 'implement' is read as run it and find out what the std is
+      measuring; one run cannot answer that, so 60 seeds of the exercise's own setting are run and the
+      outcome distribution reported, with the curve shipping as a table of the lesson's own
+      block_mean. 40 of 60 seeds converge to a median final return of -5.92 and 20 (33.3%) never reach
+      the terminal at all. 18 of those 20 end at exactly -63.3968 = -(1 - 0.99^100)/(1 - 0.99), the
+      discounted return of a 100-step episode cut by rollout's cap, matched to one ULP on every one of
+      their last 200 episodes; the other 2 still finish occasionally and land within 0.099. The policy
+      has not become poor, it has stopped finishing. The std the exercise asks to measure is therefore
+      a mixture rather than a noise level: exactly 0.0 inside a frozen run, 0.51 inside a converged
+      one, and 27.0 across seeds, which is the distance between the two outcomes rather than the
+      variance of either. The mechanism is that with no baseline and every reward negative REINFORCE
+      only ever punishes -- 100% of returns-to-go are strictly negative, so adv < 0 at every update
+      and the gradient (1[i=a] - p_i)*adv lowers the probability of the action just taken while
+      raising the other three, at every step of every episode. And the curve is discounted while the
+      target it is read against is not: returns_log stores a gamma=0.99 return while the lesson's main
+      prints an optimum of -6.0, the undiscounted value, against a discounted -5.8520
+    uses_reference:
+      - reinforce
+      - block_mean
+      - rollout
+      - returns_to_go
+      - init_theta
+      - step
+      - TERMINAL
+      - N_ACTIONS
+  - index: 2
+    slug: the_baseline_does_not_reduce_steps_it_changes_who_survives
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Medium.** Add a running-mean baseline. Train again. Compare sample efficiency and variance to the vanilla run. By how much does the baseline reduce steps to convergence?
+    zh: |
+      **中等。** 加上移動平均基線。再訓練一次。比較樣本效率與變異數跟原味版本的差別。基線把收斂所需的步數減少了多少？
+    verifies: >-
+      'by how much does it reduce steps to convergence' presumes it does, so the answer needs the
+      distribution rather than one pair of runs: 60 paired seeds, with convergence defined once and
+      applied to both arms as the first episode after which 50 consecutive returns stay above -10, and
+      runs that never converge counted separately rather than dropped -- dropping them is what makes
+      the baseline look like a speed-up. It does not reduce them: median episodes-to-converge is 137.5
+      vanilla and 141.0 with the baseline, 3.5 the wrong way, over 40 and 47 converging runs of 60.
+      What the baseline changes is which runs survive -- the collapse rate falls from 20/60 (33.3%) to
+      13/60 (21.7%) and the mean final return improves from -25.14 to -18.38, an improvement entirely
+      in the mix of outcomes and not in any run's speed. It is not free either: the outcome flips on
+      13 of 60 seeds, 10 rescued and 3 that converged without the baseline collapsing with it. The
+      mechanism is that on a collapsed run the baseline annihilates its own signal -- replaying the
+      lesson's own 0.95*b + 0.05*returns[0] recursion over a collapsed run's returns, the baseline
+      converges to the capped return and the final |G - baseline| is 1.07e-13, so the gradient
+      vanishes and the policy freezes, while vanilla keeps adv = -63.4 at every update. The baseline
+      therefore never escapes a collapse; the seeds it rescues are ones where it stopped the collapse
+      happening. And it is the start-state return subtracted at every timestep: fitted to G at s0,
+      about -5.9, and subtracted from a return-to-go of -1.0 one step before the terminal, a factor of
+      6 apart -- unbiased, but reducing no variance where the two disagree
+    uses_reference:
+      - reinforce
+      - rollout
+      - returns_to_go
+      - init_theta
+  - index: 3
+    slug: the_mean_and_the_median_move_opposite_ways
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Add an entropy bonus `β · H(π)`. Sweep `β ∈ {0, 0.01, 0.1, 1.0}`. Plot final return and policy entropy. Where is the sweet spot on this task?
+    zh: |
+      **困難。** 加上熵獎勵 `β · H(π)`。掃 `β ∈ {0, 0.01, 0.1, 1.0}`。畫出最終回報與策略的熵。在這個任務上甜蜜點落在哪裡？
+    verifies: >-
+      'final return' is ambiguous once a third of runs collapse, and the ambiguity is the answer: over
+      60 seeds per beta the mean final return across beta = 0, 0.01, 0.1, 1.0 is -25.18, -28.02,
+      -23.69, -21.87 while the median is -5.95, -5.99, -6.01, -6.89, so the mean improves 3.31 while
+      the median falls 0.94 monotonically, and which one is plotted decides where the sweet spot is.
+      The entropy gradient is derived rather than approximated -- for a softmax dH/dz_i = -p_i(log p_i
+      + H) -- and added to the lesson's own policy-gradient term, the update otherwise being reinforce
+      line for line with the inner feature loop skipped where x[j] == 0, which is exact because the
+      features are one-hot and those terms add 0.0 (theta matches the unskipped loop to 0.0e+00). The
+      mean is tracking the collapse rate, which goes 20/60, 23/60, 18/60, 16/60 -- not monotone,
+      beta=0.01 the worst of the four, and every step inside a one-arm standard error of about 6.1
+      points at 60 seeds. The median is the one clean signal in the sweep, falling monotonically as
+      the bonus holds the policy away from the deterministic optimum. The entropy axis the exercise
+      asks to plot never leaves the floor: start-state entropy ends at 0.019, 0.008, 0.023 and 0.124
+      against a uniform ln 4 = 1.3863, so even beta=1.0 sits at 9% of uniform and the first three
+      betas under 2%. The reason is scale -- the policy-gradient term carries adv between -1 and -63
+      while the entropy term is bounded near 0.37*beta, about 0.004 at beta=0.01, four orders of
+      magnitude under what it opposes
+    uses_reference:
+      - rollout
+      - returns_to_go
+      - init_theta
+      - softmax
+      - logits
+      - features
+      - N_ACTIONS
+      - N_FEAT
