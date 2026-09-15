@@ -81,17 +81,22 @@ exercises:
       value iteration over the clean step, the noise being zero-mean. The claim does not reproduce and
       its second half is backwards: Q-learning's bias in max_a Q(0,0,a) is -0.162 +/- 1.13, 0.6
       standard errors from zero, while Double Q-learning's is -2.038, 3.7 standard errors from zero
-      and an underestimate. The maximization bias is real and is being cancelled: the four Q(0,0,.)
-      estimates carry a spread of 1.41 at sigma=5, and E[max_a (Q* + noise)] at that spread is -4.758
-      against max_a Q* = -5.852, +1.09 from the max alone with no learning in it -- but every entry it
-      maximises over is depressed by -1.56 to -2.24, mean -1.94, so the two nearly cancel and max_a Q
-      shows neither. The depression is the noise rather than the budget or the code: per-action error
-      is exact to 0.01 at sigma=0 and moves at most 0.11 between 2,000 and 8,000 episodes. One run
-      cannot show any of it -- the per-run spread of max_a Q(0,0,a) is 1.13, wider than Q-learning's
-      measured bias, wider than the maximization bias the mechanism supplies, and comparable to Double
-      Q's. And Double Q's underestimate is the price it was designed to charge: each table sees half
-      the updates and QB[argmax QA] is deliberately not a maximum, so it over-corrects a +1.09 bias
-      into a -2.04 one, 1.9x, which is a trade rather than the fix the exercise frames it as
+      and an underestimate. The maximization bias is real and is being cancelled, and the measured
+      -0.162 splits into two halves read off the learned estimates rather than off a surrogate:
+      E[max_a Q(0,0,a)] = -6.014 sits +1.396 above max_a E[Q(0,0,a)] = -7.410, the maximization
+      premium, while that in turn sits -1.558 below max_a Q* = -5.852 because every entry is
+      depressed by the noise (-1.56 to -2.24, mean -1.94, spread 1.41). The two sum exactly to the
+      measured bias, so max_a Q shows neither. Reading the premium off the estimates matters: drawing
+      Gaussians at the measured spread instead puts it at +1.09, understating it by 28%, since the
+      learned estimates are neither independent nor equally dispersed. The depression is the noise
+      rather than the budget or the code: per-action error is exact to 0.01 at sigma=0, and the budget
+      is checked at sigma=5 rather than inferred from the clean run, quadrupling 2,000 episodes to
+      8,000 moving per-action error by at most 0.11. One run cannot show any of it -- the per-run
+      spread of max_a Q(0,0,a) is 1.13, wider than Q-learning's measured bias and comparable to both
+      the maximization premium and Double Q's. And Double Q's underestimate is the price it was
+      designed to charge: each table sees half the updates and QB[argmax QA] is deliberately not a
+      maximum, so it over-corrects a +1.40 premium into a -2.04 bias, 1.5x, which is a trade rather
+      than the fix the exercise frames it as
     uses_reference:
       - q_learning
       - step

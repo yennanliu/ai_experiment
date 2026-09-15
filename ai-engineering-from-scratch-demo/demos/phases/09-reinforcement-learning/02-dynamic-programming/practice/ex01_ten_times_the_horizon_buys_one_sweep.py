@@ -18,16 +18,20 @@ effective horizon buys one extra sweep on the stochastic board and none at all o
 the deterministic one, where 7 = the board's 6-step diameter plus the sweep that
 detects `delta < tol`.
 
-**FINDING: the lesson's own contraction bound is off by two orders of magnitude.**
+**FINDING: the lesson's own contraction bound is valid and 122x conservative.**
 `γ`-contraction in sup-norm predicts `log(ε(1-γ))/log γ` = 153 and 1833 sweeps
-against the measured 14 and 15 -- over by 11x and 122x.
+against the measured 14 and 15 -- high by 11x and 122x. The guarantee is not wrong:
+`γ` is the sup-norm modulus of the Bellman *optimality* operator and is tight in the
+worst case over all MDPs. It is simply far from tight on this board.
 
-**MECHANISM: the modulus is `γρ`, and `ρ` is a property of the board.** The
-optimal policy reaches an absorbing terminal, so the operator contracts at `γ`
-times the spectral radius of its transient sub-matrix, `ρ = 0.3873` -- the same at
-both discounts. `γρ` is 0.349 and 0.383, so `γ` is nearly irrelevant and the
-in-place sweep does better still. On the deterministic board `ρ = 0` exactly --
-nilpotent, not merely small -- which is why 7 sweeps is the answer at every `γ`.
+**MECHANISM: the observed rate is `γρ`, and `ρ` is a property of the board.** Once
+the greedy policy stops changing, value iteration is linear iteration with `γP_π`,
+so it converges asymptotically at `γ` times the spectral radius of that policy's
+transient sub-matrix, `ρ = 0.3873` -- the same at both discounts. `γρ` is 0.349 and
+0.383, so `γ` barely moves the local rate, and the in-place sweep does better still.
+This is a rate for this board, not a replacement for the `γ` bound. On the
+deterministic board `ρ = 0` exactly -- nilpotent, not merely small -- which is why 7
+sweeps is the answer at every `γ`.
 
 **FINDING: the grid moves more than the count does.** The two `V*` the exercise
 asks to print differ by 1.44 at the start state while the sweep count it asks to
@@ -35,7 +39,7 @@ count differs by one, so the cheaper question is the one with the flat answer.
 
 Structure: `run` is the lesson's `value_iteration` at one board and one discount;
 `tail_ratio` measures the asymptotic per-sweep contraction; `rho` is power
-iteration on the transient sub-matrix.
+iteration on the greedy policy's transient sub-matrix.
 """
 
 from __future__ import annotations
@@ -88,7 +92,7 @@ def push(ref, policy, vector, transient):
 
 
 def rho(ref, policy):
-    """Spectral radius of the policy's transition matrix over the transient states."""
+    """Spectral radius of the greedy policy's transition matrix over the transient states."""
     transient = [s for s in ref.states() if s != ref.TERMINAL]
     vector = {s: 1.0 for s in transient}
     scale = 0.0
@@ -116,7 +120,7 @@ def predict(row):
 
 
 def modulus_holds(sto9, sto99, det99, guess):
-    """The gamma*rho reading, as one predicate: same rho, beaten by in-place, and nilpotent."""
+    """The gamma*rho rate, as one predicate: same rho, beaten by in-place, and nilpotent."""
     shared = abs(sto9["rho"] - sto99["rho"]) < 1e-9 and det99["rho"] == 0.0
     beats = sto9["rate"] < 0.81 * sto9["rho"] and sto99["rate"] < 0.891 * sto99["rho"]
     close = abs(guess[0] - sto9["sweeps"]) <= 2 and abs(guess[1] - sto99["sweeps"]) <= 2
@@ -150,20 +154,21 @@ def verify(result):
             "the exercise asks has a nearly discount-free answer",
         ),
         practice.Check(
-            "FINDING: the sup-norm contraction bound is over by 11x and 122x",
+            "FINDING: the sup-norm contraction bound holds, and is 11x and 122x conservative",
             min(sto9["bound"] / sto9["sweeps"], sto99["bound"] / sto99["sweeps"]) > 10,
             f"log(eps(1-gamma))/log(gamma) -- geometric convergence at modulus gamma, the "
-            f"guarantee the lesson's Concept section states -- predicts {sto9['bound']:.0f} and "
-            f"{sto99['bound']:.0f} sweeps against a measured {sto9['sweeps']} and "
-            f"{sto99['sweeps']}: high by {sto9['bound'] / sto9['sweeps']:.0f}x and "
-            f"{sto99['bound'] / sto99['sweeps']:.0f}x",
+            f"lesson's stated guarantee, correct and worst-case tight but loose here -- predicts "
+            f"{sto9['bound']:.0f} and {sto99['bound']:.0f} sweeps against a measured "
+            f"{sto9['sweeps']} and {sto99['sweeps']}: high by "
+            f"{sto9['bound'] / sto9['sweeps']:.0f}x and {sto99['bound'] / sto99['sweeps']:.0f}x",
         ),
         practice.Check(
-            "MECHANISM: the modulus is gamma*rho, and rho belongs to the board",
+            "MECHANISM: the observed rate is gamma*rho, and rho belongs to the board",
             modulus_holds(sto9, sto99, det99, guess),
-            f"the optimal policy is proper, so the operator contracts at gamma times the spectral "
-            f"radius of its transient sub-matrix, rho = {sto99['rho']:.4f}, identical at both "
-            f"discounts since the policy is. gamma*rho is {0.9 * sto9['rho']:.3f} and "
+            f"once the greedy policy settles, a sweep is linear iteration with gamma*P_pi, so the "
+            f"asymptotic rate is gamma times the spectral radius of its transient block, rho = "
+            f"{sto99['rho']:.4f}, the same at both discounts -- a local rate here, not a smaller "
+            f"sup-norm modulus. gamma*rho is {0.9 * sto9['rho']:.3f} and "
             f"{0.99 * sto99['rho']:.3f} where gamma alone says 0.9 and 0.99; the in-place sweep "
             f"measures {sto9['rate']:.3f} and {sto99['rate']:.3f}, better than either, and "
             f"diameter + log(eps)/log(rate) predicts {guess[0]:.0f} and {guess[1]:.0f}. The "
