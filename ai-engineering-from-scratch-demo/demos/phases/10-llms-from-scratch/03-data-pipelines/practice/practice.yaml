@@ -1,0 +1,96 @@
+lesson: 03-data-pipelines
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/03-data-pipelines/docs/en.md
+exercises:
+  - index: 1
+    slug: stage_one_already_did_it_with_a_regex
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy:** Add language detection to the cleaning pipeline using a simple heuristic (character set analysis). Filter to only English documents and measure how many documents get removed.
+    zh: |
+      **簡單：** 用一個簡單的啟發式（字元集合分析）在清洗流程裡加上語言偵測。只留下英文文件，並量測有多少文件被移除。
+    verifies: >-
+      the heuristic is the one the exercise names -- the share of a document's characters that are
+      ASCII, cut at 0.9 -- and what is measured is where in the pipeline it is placed, because the
+      exercise says "to the cleaning pipeline" and clean_text runs first. Placed before clean_text it
+      removes 5 of a 9-language probe corpus: Chinese 0.00, Russian 0.12, Arabic 0.17, Korean 0.27,
+      and Turkish at 0.89 -- a Latin-script language, at the same cut that keeps French and English
+      at 1.00, because a character-set test measures diacritic density rather than language. Placed
+      where the exercise says it can reject nothing that still has text in it: clean_text's third
+      line is re.sub(r'[^\x20-\x7E\n]', '', text), so 8 of the 9 score exactly 1.0 afterwards by
+      construction and the ninth scores 0.0 only because it has no characters left. Stage 1 is
+      already the language filter and it deletes rather than rejects -- Chinese 33 characters to 0,
+      Arabic 76 to 1, Russian 57 to 1, Korean 22 to 1, what survives being the full stop -- and
+      quality_filter's min_words=50 then removes the husks and books them as low quality. Latin-script
+      non-English is corrupted rather than removed: German 'künstlichen' becomes 'knstlichen',
+      Spanish 'también' becomes 'tambin', Turkish 'öğrenme' becomes 'renme', each keeping 94-99% of
+      its characters, passing every downstream filter, and reaching the tokenizer misspelled
+    uses_reference:
+      - clean_text
+      - quality_filter
+  - index: 2
+    slug: the_near_duplicate_is_the_one_it_misses
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium:** Implement exact deduplication using SHA-256 hashes alongside the MinHash near-deduplication. Compare the number of duplicates caught by each method on a web-scraped corpus.
+    zh: |
+      **中等：** 在 MinHash 近似去重之外，用 SHA-256 雜湊實作精確去重。在一份網路爬取的語料上，比較兩種方法各自抓到多少重複。
+    verifies: >-
+      "a web-scraped corpus" is the lesson's own generate_sample_corpus, which plants two duplicates
+      on purpose and names them near_dup_1 and near_dup_2, and both methods run on the 13 documents
+      that survive clean_text and quality_filter -- where run_pipeline puts deduplication. Each method
+      catches exactly one document and it is the same document: near_dup_2 is byte-identical to
+      base_docs[1] at Jaccard 1.0000, so one line of hashing finds it and so do 128 hash functions
+      across 16 bands. The document planted as the near-duplicate is missed at every threshold:
+      near_dup_1 scores 0.2703 against base_docs[0], far below the pipeline's 0.8, and lowering the
+      threshold to 0.5 or 0.3 still removes only the exact pair. The mechanism is get_shingles' k=5 --
+      the same pair scores 0.7778 on words, 0.5543 on bigrams, 0.4356 on trigrams and 0.2703 on
+      5-grams, because a rewrite that changes one word destroys five 5-grams, so k=5 with
+      threshold=0.8 asks for near-verbatim text and calls two documents that agree on 78% of their
+      word types unrelated. And neither method contains the other: a document under k words has no
+      shingles at all, get_shingles('a b c') being the empty set, so four short documents holding two
+      identical pairs are deduplicated to four by MinHash and to two by SHA-256, while a copy
+      differing only in whitespace has a different digest and identical shingles, so MinHash removes
+      it and the exact method does not
+    uses_reference:
+      - deduplicate
+      - get_shingles
+      - clean_text
+      - quality_filter
+      - generate_sample_corpus
+  - index: 3
+    slug: the_filter_ranks_the_duplicates_best
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard:** Build a perplexity-based quality filter. Train a small bigram language model on Wikipedia text, score each document by perplexity, and remove the bottom 20%. Compare model output quality when training on filtered vs unfiltered data.
+    zh: |
+      **困難：** 做一個以困惑度為基準的品質過濾器。在維基百科文本上訓練一個小的 bigram 語言模型，用困惑度給每份文件打分，移除最差的 20%。比較用過濾後與未過濾資料訓練時的模型輸出品質。
+    verifies: >-
+      "Wikipedia text" is read as encyclopedic prose and the corpus is the lesson's own
+      generate_sample_corpus after clean_text and quality_filter -- the 13 documents run_pipeline
+      actually carries -- while "model output quality" is held-out perplexity, the only quality a
+      bigram model has, measured both the way it is naturally computed and correctly. The bottom 20%
+      is three ordinary documents: Natural language processing at 145.9, Generative adversarial
+      networks at 152.9 and Computer vision at 159.4, against a corpus running 92.5 to 159.4, a
+      factor of 1.72 end to end with no gap anywhere to cut at. The filter ranks the duplicates best:
+      the two lowest are base_docs[1] and near_dup_2 tied at 92.5, the byte-identical pair Exercise 2
+      removes, and the next two at 110.1 and 115.8 are the near-duplicate pair, because a document
+      repeated in the training set is maximally predictable by a model trained on it -- so the four
+      documents a deduplicator targets are the four this filter protects, and it scores redundancy
+      and calls it quality. The one genuinely damaged document survives: clean_text strips '</h1><p>'
+      without a separator so the HTML document begins 'TitleMachine', and it ranks 9 of 13, mid-pack.
+      And the filtered-versus-unfiltered comparison measures the vocabulary rather than the data --
+      under each model's own vocabulary filtering looks like a 20.4% win on held-out text, 294.1 to
+      234.2, but add-alpha divides by alpha*V and dropping three documents takes the vocabulary from
+      327 types to 258, 21% smaller, raising every probability for free; scored under the shared
+      vocabulary of 327 the win is -0.3%
+    uses_reference:
+      - clean_text
+      - quality_filter
+      - generate_sample_corpus

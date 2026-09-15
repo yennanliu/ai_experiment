@@ -1,0 +1,150 @@
+lesson: 01-tokenizers
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/01-tokenizers/docs/en.md
+exercises:
+  - index: 1
+    slug: the_word_is_assembled_from_the_right
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the BPE tokenizer to print the vocabulary at each merge step. Watch how "t" + "h" becomes "th", then "th" + "e" becomes "the". Track how common English words get assembled piece by piece.
+    zh: |
+      改寫 BPE 分詞器，讓它在每一次合併後印出詞彙表。看著 "t" + "h" 變成 "th"、再由 "th" + "e" 變成 "the"。追蹤常見英文字是怎麼一片一片被組起來的。
+    verifies: >-
+      the modification is already shipped -- code/bpe.py is code/main.py's tokenizer plus a print in
+      the training loop -- so the run is the lesson's own train() on main.py's own corpus at its own
+      50 merges, and the narrated path does not occur. "the" is built right to left in merges 1, 2 and
+      11 as 'e'+' ' -> 'e ', 'h'+'e ' -> 'he ', ' t'+'he ' -> ' the ', and what the vocabulary holds
+      is ' the ', with a space on either side. 'th' is a token at no merge count: it is rank 8 of the
+      initial pairs at 7 occurrences, and merge 2 consumes the 'h' before its turn comes, neither at
+      50 merges nor at the 235 that exhaust the corpus. 'the' bare is never a token either, so
+      encode("the") returns three single bytes, no better than Step 1's character tokenizer. The
+      mechanism is that capitalisation splits the prefix bond and not the suffix bond: 'h'+'e' occurs
+      12 times, being 'the' (7) plus 'The' (5), while 't'+'h' gets only the lowercase 7, so a word
+      that appears sentence-initially is assembled from its ending. Without pre-tokenisation the
+      merges are phrases rather than words -- 26 of 50 contain a space and 7 span a word boundary,
+      including ' sat on the ' -- and at exhaustion 235 merges compress all 387 bytes of the corpus
+      into 1 token. The control settles it: restricting merges to word interiors does produce 'the',
+      at merge 3, via 'he' at merge 1 and never via 'th', so the exercise's path is wrong under both
+      readings and wrong the same way each time
+    uses_reference:
+      - BPETokenizer
+      - token_to_str
+  - index: 2
+    slug: the_shift_is_a_caesar_cipher_and_unk_is_dead
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add special tokens (`<pad>`, `<eos>`, `<unk>`) to the BPE tokenizer. Assign them IDs 0, 1, 2 and shift all other tokens accordingly. Implement a pre-tokenization step that splits on whitespace before running BPE.
+    zh: |
+      幫 BPE 分詞器加上特殊詞元（`<pad>`、`<eos>`、`<unk>`）。把它們指定為 ID 0、1、2，其餘詞元全部往後位移。再實作一個預分詞步驟，在跑 BPE 之前先按空白切分。
+    verifies: >-
+      both halves are implemented as written and then measured against the lesson's own
+      compression_ratio and its Step 3 roundtrip test. Done correctly the shift is a pure relabelling:
+      every ID rises by exactly 3 on all four probes, token counts are unchanged, the roundtrip holds
+      and the vocabulary goes 306 -> 309, so the three rows buy addressability and not compression.
+      Done as written it is a Caesar cipher: "shift all other tokens accordingly" names the vocabulary
+      and the merge table, but encode() also starts from raw byte values, and shifting the first two
+      and not the third means no merge can fire -- a 23-byte sentence encodes to 23 tokens and decodes
+      to 'Qeb\x1d`^q...', every byte down by 3, same length, no exception and no <unk>. <unk> cannot
+      be emitted at all: the base vocabulary covers all 256 bytes, so Japanese, emoji, Arabic and NUL
+      all roundtrip exactly and token 2 appears in no encoding of anything, which the lesson itself
+      states two sections earlier. The pre-tokenisation step as specified breaks the roundtrip --
+      text.split() drops every separator, 387 bytes in and 319 out, all 68 spaces gone, turning Step
+      3's PASS to FAIL on every sentence -- and its apparent compression win of 0.4367 against flat
+      BPE's 0.5013 is that deleted text, scored over a denominator of 387 it no longer reproduces.
+      Attach the space to the word instead, as GPT-2 does, and the roundtrip returns and the ratio is
+      0.5323, 6.2% worse than no pre-tokenisation at all, because word boundaries forbid exactly the
+      phrase tokens Exercise 1 found: pre-tokenisation is a correctness fix bought with compression
+    uses_reference:
+      - BPETokenizer
+      - compression_ratio
+      - _merge_pair
+  - index: 3
+    slug: the_ratio_is_a_rarity_detector
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the WordPiece merge criterion (likelihood ratio instead of frequency). Train both BPE and WordPiece on the same corpus with the same number of merges. Compare the resulting vocabularies -- which one produces more linguistically meaningful subwords?
+    zh: |
+      實作 WordPiece 的合併準則（用似然比而不是頻率）。用同一份語料、同樣的合併次數分別訓練 BPE 與 WordPiece。比較兩者產生的詞彙表 —— 哪一個做出的子詞在語言學上比較有意義？
+    verifies: >-
+      both arms run through the lesson's own _get_pairs and _merge_pair and the BPE arm is checked
+      merge-for-merge against the reference's train(), so only the scoring function differs, and
+      "linguistically meaningful" is scored mechanically: a merged token is reusable if its stripped
+      form occurs inside more than one distinct corpus word. BPE wins decisively and the exercise
+      implies the opposite -- 34 of its 50 merges are reusable against WordPiece's 3, and it
+      compresses to 0.5013 tokens per byte against 0.8527, 70% worse. The mechanism is that dividing
+      by count(A)*count(B) removes the frequency floor: the ratio is maximised at 1.0 by a pair whose
+      parts each occur once and always together, a score no frequent pair can reach, so 46 of the 50
+      merges fire on a pair occurring exactly once, mean 1.14 against BPE's 3.86, and the first merge
+      is 'LP' from the single occurrence of "NLP". The formula is right and the setting is wrong:
+      requiring count(AB) >= 2, the threshold real implementations carry and the lesson's one-line
+      row omits, takes hapax merges from 46 to 0, reusable merges from 3 to 30 and compression from
+      0.8527 to 0.6176 -- still 23% worse than BPE, which is the honest trade rather than a collapse.
+      And the path Exercise 1 attributes to BPE is this criterion's: at a floor of 5 the ratio yields
+      'T'+'h' -> 'Th', 'Th'+'e' -> 'The', 't'+'h' -> 'th', 'th'+'e' -> 'the' consecutively, because
+      't' is rarer than 'e' or ' ' and dividing by the parts promotes a bond raw frequency never reaches
+    uses_reference:
+      - BPETokenizer
+      - _get_pairs
+      - _merge_pair
+      - token_to_str
+  - index: 4
+    slug: per_character_charges_chinese_for_its_own_density
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Build a multilingual tokenizer efficiency benchmark. Take 10 sentences in English, Spanish, Chinese, Korean, and Arabic. Tokenize each with tiktoken (cl100k_base) and measure the average tokens per character. Quantify the "multilingual tax" for each language.
+    zh: |
+      建一個多語分詞器效率基準測試。準備英文、西班牙文、中文、韓文、阿拉伯文各 10 個句子。用 tiktoken（cl100k_base）分別做詞元化，量測每個字元平均的詞元數，把各語言的「多語稅」量化出來。
+    verifies: >-
+      the 10 sentences are the same 10 sentences in all five languages, because the exercise does not
+      say parallel and that is the whole difficulty: across unrelated samples, tokens per character
+      measures which sentences were picked. The metric as specified gives English 0.2367, Spanish
+      0.3063, Arabic 0.7095, Korean 0.9860 and Chinese 1.2000, a tax of 1.29x, 3.00x, 4.16x and 5.07x.
+      That ranking is script density and not tokenizer quality: the same 10 meanings are 283
+      characters of English and 85 of Chinese, so dividing by characters charges Chinese 3.3x for
+      carrying more meaning per character, and holding the meaning fixed -- tokens per sentence, what
+      the context window and the invoice actually see -- reverses the top of the order to Spanish
+      1.24x, Chinese 1.52x, Korean 2.10x, Arabic 2.22x, making Chinese the worst language on the
+      exercise's metric and the best non-Latin one on this. Two unrelated failures wear the same
+      number: 41% of the Chinese tokens and 45% of the Korean ones decode to U+FFFD alone, cl100k
+      splitting below the character, while 0% of the Arabic ones do at a higher tax than either, so
+      Arabic pays for merges never learned and Chinese and Korean for characters that do not survive
+      the byte-level fallback. The control is that vocabulary size is the fix and its size is
+      measurable: the same 50 sentences under o200k_base move Chinese 1.52x -> 1.01x, Arabic 2.22x ->
+      1.12x and Korean 2.10x -> 1.42x, the worst tax on the board falling 2.22x -> 1.42x with no
+      language worse, so the exercise quantifies the tax of the tokenizer it names, not of tokenization
+  - index: 5
+    slug: the_target_is_met_by_memorising_the_text
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Train your BPE tokenizer on a larger corpus (download a Wikipedia article). Tune the number of merges to achieve a compression ratio within 10% of tiktoken on that same text. This forces you to understand the relationship between corpus size, merge count, and compression quality.
+    zh: |
+      在更大的語料上訓練你的 BPE 分詞器（下載一篇維基百科文章）。調整合併次數，讓壓縮率在同一段文字上落在 tiktoken 的 10% 以內。這會逼你搞懂語料大小、合併次數與壓縮品質三者之間的關係。
+    verifies: >-
+      "download a Wikipedia article" is read as a larger piece of encyclopedic English prose and the
+      one used is the lesson's own docs/en.md -- 22,839 bytes and 3,210 words, 59x the demo corpus,
+      already on disk and hash-pinned by the coverage gate -- while "on that same text" is read
+      literally, because it is the load-bearing phrase. cl100k_base compresses the article to 0.2532
+      tokens per byte, so the window closes at 0.2785; 1,070 merges reach 0.2785, exactly 110.0% of
+      tiktoken, and 1,069 miss it, which is the tuned answer. But the target is a point on a slide
+      rather than an optimum: 2,140 merges reach 0.1924, 76.0% of tiktoken, better than the tokenizer
+      it was told to match, and every count above the answer satisfies the window too. The curve is
+      monotone because train and test are the same text -- hold out the last 20% and held-out
+      compression is 0.3360 at 1,600 merges and 0.3360 at 2,100, identical bit for bit across 500
+      additional merges, every merge past ~1,600 encoding a string that occurs only in the training
+      80%. And within 10% is unreachable on held-out text at any merge count, the floor being 145.2%
+      of tiktoken, so the exercise's goal is over-satisfied under the measurement it specifies and
+      impossible under the honest one: that gap is the relationship between corpus size, merge count
+      and compression quality it says it forces you to understand, and the metric it names hides it
+    uses_reference:
+      - BPETokenizer
+      - compression_ratio
