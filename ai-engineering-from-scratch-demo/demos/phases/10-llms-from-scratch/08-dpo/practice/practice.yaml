@@ -1,0 +1,156 @@
+lesson: 08-dpo
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/08-dpo/docs/en.md
+exercises:
+  - index: 1
+    slug: kto_wins_on_a_tie_break
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement KTO (Kahneman-Tversky Optimization). KTO doesn't need pairs -- just label each response as "good" or "bad." The loss for a good response is `-log(sigmoid(beta * log_ratio))` and for a bad response is `-log(1 - sigmoid(beta * log_ratio))` with a loss aversion multiplier (typically 1.5x) on the bad response loss. Train on the same data (treat preferred as "good" and rejected as "bad" independently) and compare accuracy against DPO.
+    zh: |
+      實作 KTO（Kahneman-Tversky Optimization）。KTO 不需要配對 —— 只要把每個回應標成「好」或「壞」。好回應的損失是 `-log(sigmoid(beta * log_ratio))`，壞回應的損失是 `-log(1 - sigmoid(beta * log_ratio))`，並對壞回應的損失乘上一個損失趨避倍數（通常是 1.5 倍）。在同一份資料上訓練（把 preferred 當成「好」、rejected 當成「壞」，各自獨立看待），再拿準確率跟 DPO 比較。
+    verifies: >-
+      both losses are computed on the same model and the same reference, at the state DPO actually
+      starts from, since copy_model_weights makes the reference a copy of the policy. Every log-ratio
+      is then exactly zero for all 12 responses -- not approximately -- so KTO's loss is fixed at
+      -log(0.5) + 1.5 * -log(0.5) = 1.7329 per pair and DPO's at 0.6931, whatever the data says. KTO
+      scores 0.500 and DPO 0.000: KTO calls a response good when beta * ratio > 0, which 0 > 0 makes
+      false, so it labels all twelve bad and gets every rejected response right and every preferred
+      one wrong, while DPO compares preferred_reward > rejected_reward, which is 0 > 0 and false for
+      every pair. The comparison the exercise asks for is therefore decided by how each metric breaks
+      a tie -- neither method has seen a gradient, KTO's 0.500 is the base rate of a constant
+      classifier and DPO's 0.000 is the floor of a strict inequality on two equal numbers. That floor
+      is itself the finding: a model that is exactly indifferent, which is the state DPO is
+      initialised into by construction, scores 0% where a preference metric should give it 50%
+    uses_reference:
+      - MiniGPT
+      - copy_model_weights
+      - compute_sequence_log_prob
+      - dpo_loss
+      - sigmoid
+      - evaluate_preference_accuracy
+      - PREFERENCE_DATA
+  - index: 2
+    slug: normalising_removes_the_only_signal
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement length-normalized DPO. Instead of raw log-probabilities, divide by the number of response tokens: `normalized_logprob = total_logprob / num_tokens`. This prevents the model from favoring shorter responses (which have higher total log-prob). Compare the implicit reward margins with and without normalization.
+    zh: |
+      實作長度正規化的 DPO。不要用原始的對數機率，而是除以回應詞元數：`normalized_logprob = total_logprob / num_tokens`。這能防止模型偏袒比較短的回應（短回應的總對數機率比較高）。比較有做和沒做正規化時的隱式獎勵邊際。
+    verifies: >-
+      both arms are built from the reference's own compute_sequence_log_prob with only the denominator
+      changed, and because the implicit margins are identically zero while the reference is a copy of
+      the policy, the comparison is made on the policy log-probabilities that feed them. The
+      exercise's premise is right and its fix costs accuracy: total log-probability correlates -0.987
+      with response length across the twelve responses, so ranking by raw total picks the shorter
+      response nearly every time, which is 4 of 6 correct because preferred is shorter in 4 of 6
+      pairs -- and dividing by token count takes it to 1 of 6. The mechanism is that per-token
+      log-probability barely varies: the twelve responses span -5.5443 to -4.3577 nats per token, a
+      1.19-nat window on a scale where ln(256) = 5.5452 is uniform, so normalising removes the one
+      quantity that varies a lot and leaves the one that hardly varies at all. On this dataset the
+      length bias is the signal, being 67% accurate against the corrected version's 17%. And neither
+      number is a property of DPO: the implicit reward margins the exercise asks to compare are
+      0.0000 for every pair either way, so the ranking comes entirely from the policy term
+    uses_reference:
+      - MiniGPT
+      - copy_model_weights
+      - compute_sequence_log_prob
+      - dpo_loss
+      - tokenize_sequence
+      - PREFERENCE_DATA
+  - index: 3
+    slug: the_dpo_term_is_a_constant_eleven_percent
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build an ORPO-style combined loss. Add a standard next-token prediction loss on the preferred response to the DPO loss: `L = L_sft(preferred) + alpha * L_dpo`. Try alpha values of 0.1, 0.5, and 1.0. The combined loss should produce a model that both follows instructions (from the SFT term) and prefers better responses (from the DPO term), eliminating the need for a separate SFT stage.
+    zh: |
+      打造一個 ORPO 風格的合併損失。在 DPO 損失上加一項對被偏好回應的標準下一詞元預測損失：`L = L_sft(preferred) + alpha * L_dpo`。試 alpha 取 0.1、0.5、1.0。合併後的損失應該訓出一個既會遵循指令（來自 SFT 項）、又偏好較佳回應（來自 DPO 項）的模型，從而免去獨立的 SFT 階段。
+    verifies: >-
+      L_sft(preferred) is the mean next-token cross-entropy over the preferred response, the per-token
+      form that is comparable to L_dpo across responses of different lengths, and both terms come from
+      the reference's own compute_sequence_log_prob and dpo_loss. The DPO term's share of the combined
+      loss is 1.27%, 6.06% and 11.43% at alpha = 0.1, 0.5 and 1.0, so even at the largest alpha the
+      exercise names the objective is 88.6% SFT. The two terms are not on the same scale: L_sft is
+      5.3734 nats per token against ln(256) = 5.5452 for a uniform model, starting near its ceiling
+      with the whole range below it, while L_dpo is bounded by its own construction and sits at 0.6931
+      whenever the margin is small, a factor of 7.8 apart before alpha is applied. And the DPO term is
+      not merely small but constant -- the reference is a copy of the policy, so every implicit margin
+      is exactly 0 and L_dpo is 0.6931 for all six pairs at every alpha, contributing no gradient, so
+      "eliminating the need for a separate SFT stage" describes an SFT stage plus a constant. Reaching
+      an even split needs alpha = 7.8, nearly 8x the exercise's largest value, and the term it would
+      be weighting is still 0.6931 for every pair
+    uses_reference:
+      - MiniGPT
+      - copy_model_weights
+      - compute_sequence_log_prob
+      - dpo_loss
+      - tokenize_sequence
+      - PREFERENCE_DATA
+  - index: 4
+    slug: self_play_inverts_the_length_relation
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement iterative DPO. Run DPO for 3 epochs, then generate new responses from the trained model, pair them with the original preferred responses as new preference pairs, and run DPO again. Two rounds of this "self-play" process. Compare preference accuracy after round 1 and round 2 to see if iterative refinement helps.
+    zh: |
+      實作迭代式 DPO。先跑 3 個回合的 DPO，接著用訓練後的模型生成新回應，把它們與原本的被偏好回應配成新的偏好對，再跑一次 DPO。這樣的「自我對弈」流程跑兩輪。比較第一輪與第二輪之後的偏好準確率，看看迭代精修有沒有幫助。
+    verifies: >-
+      both rounds use the lesson's own dpo_train and round 2's pairs are built exactly as described,
+      the original preferred response against a fresh sample from the round-1 policy, with accuracy
+      reported on the original pairs so the rounds are scored against the same question. Accuracy is
+      0.000 after round 1 and 0.000 after round 2: not one of the six pairs changes sign. Self-play
+      inverts the length relation the data was built on -- the original rejected responses average 105
+      bytes, being the padded ones, with preferred shorter in 4 of 6, while the round-1 policy samples
+      28 bytes at 30 new tokens, so round 2 trains on pairs where preferred is shorter in only 2.
+      Since length is the only property this model's log-probabilities track, self-play does not add
+      signal, it reverses it. The generated responses are not responses either: they are 30 bytes
+      sampled from a model that has moved 1.7e-06 across two whole DPO runs, so the new preference
+      pairs are (human-written answer, random bytes). And 0.000 is the metric's floor rather than a
+      measurement -- the reference is a copy of the policy, so every implicit margin is exactly 0 and
+      the strict inequality is false for all six pairs before either round and after both
+    uses_reference:
+      - MiniGPT
+      - copy_model_weights
+      - dpo_train
+      - evaluate_preference_accuracy
+      - compute_sequence_log_prob
+      - tokenize_sequence
+      - PREFERENCE_DATA
+  - index: 5
+    slug: the_most_stable_curve_is_the_one_with_no_signal
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Compare DPO with different reference models. Instead of using the SFT checkpoint as the reference, try: (a) the base model (pre-SFT), (b) a checkpoint from epoch 1 of DPO, (c) an exponential moving average of the policy model. Report which reference produces the highest preference accuracy and the most stable training curve.
+    zh: |
+      比較不同參考模型下的 DPO。不要用 SFT 檢查點當參考模型，改試：(a) 基礎模型（SFT 之前）、(b) DPO 第 1 個回合的檢查點、(c) 策略模型的指數移動平均。回報哪一種參考模型帶來最高的偏好準確率與最穩定的訓練曲線。
+    verifies: >-
+      all three references score the same policy, one trained by the lesson's own dpo_train, so the
+      comparison isolates the reference, and "most stable training curve" is read as the spread of the
+      implicit reward margins across the six pairs. The SFT checkpoint and the EMA tie for the most
+      stable curve at a margin spread below 1e-5, because copy_model_weights makes the SFT reference a
+      copy of the policy and an EMA initialised from the policy stays one to within the 9.9e-07 the
+      policy itself moves -- a reference that equals the policy gives pi_logprob - ref_logprob = 0 for
+      every response, so every margin is 0 and the curve is a flat line at zero. Most stable and most
+      informative therefore point in opposite directions: the base model, a different random
+      initialisation, gives margins with a spread of 0.1343, four orders of magnitude larger, and is
+      the only arm whose margins carry information about the pairs. On accuracy all three are at or
+      below one pair in six -- 0.000, 0.167 and 0.000 -- so the differences are whether a margin of
+      1e-7 lands on the right side of a strict inequality. And option (b) is option (a) to six decimal
+      places, since the policy moves 9.9e-07 across the whole run
+    uses_reference:
+      - MiniGPT
+      - copy_model_weights
+      - dpo_train
+      - evaluate_preference_accuracy
+      - dpo_loss
+      - compute_sequence_log_prob
+      - PREFERENCE_DATA
