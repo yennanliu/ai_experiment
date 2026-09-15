@@ -35,6 +35,7 @@ llm = [
     { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "openai" },
     { name = "optax" },
+    { name = "regex" },
     { name = "tiktoken" },
     { name = "torch" },
 ]
@@ -64,6 +65,7 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'vision'", specifier = ">=10" },
     { name = "pydantic", marker = "extra == 'vision'", specifier = ">=2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "regex", marker = "extra == 'llm'", specifier = ">=2024.5" },
     { name = "scikit-learn", marker = "extra == 'math'", specifier = ">=1.4" },
     { name = "scikit-learn", marker = "extra == 'vision'", specifier = ">=1.4" },
     { name = "tiktoken", marker = "extra == 'llm'", specifier = ">=0.7" },
