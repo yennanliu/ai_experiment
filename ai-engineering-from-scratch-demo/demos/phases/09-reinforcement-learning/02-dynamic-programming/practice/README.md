@@ -60,19 +60,24 @@ SLIP = 0.1, γ = 0.9   — 14 sweeps       SLIP = 0.1, γ = 0.99  — 15 sweeps
 deterministic one. The exercise's question — *how many sweeps?* — has the flattest
 answer of anything on the page.
 
-**FINDING: the lesson's own bound is off by two orders of magnitude.** The Concept
-section states the guarantee: the Bellman operator is a `γ`-contraction in the
-sup-norm, so convergence is geometric at modulus `γ`. Taken at its word:
+**FINDING: the lesson's own bound holds, and is conservative by two orders of
+magnitude.** The Concept section states the guarantee: the Bellman optimality
+operator is a `γ`-contraction in the sup-norm, so convergence is geometric at
+modulus `γ`. That is correct, and it is tight in the worst case over all MDPs —
+it is just nowhere near tight on this board. Taken at its word:
 
-| γ | `log(ε(1-γ)) / log γ` | measured | over by |
+| γ | `log(ε(1-γ)) / log γ` | measured | high by |
 |---|---:|---:|---:|
 | 0.9 | 153 | 14 | 11× |
 | 0.99 | 1833 | 15 | **122×** |
 
-**MECHANISM: the modulus is `γρ`, and `ρ` belongs to the board, not the
-discount.** The optimal policy reaches an absorbing terminal, so the operator
-contracts at `γ` times the spectral radius of that policy's transition matrix
-*restricted to the transient states*:
+**MECHANISM: the observed rate is `γρ`, and `ρ` belongs to the board, not the
+discount.** Once the greedy policy stops changing, a sweep is no longer a `max`
+over actions — it is linear iteration with `γP_π`. So the *asymptotic* rate is `γ`
+times the spectral radius of that policy's transition matrix *restricted to the
+transient states*. This is a local rate for this board after policy stabilization;
+it does not replace `γ` as the operator's sup-norm modulus, it explains why the
+`γ` bound is loose here:
 
 | | γ = 0.9 | γ = 0.99 |
 |---|---:|---:|
@@ -81,8 +86,8 @@ contracts at `γ` times the spectral radius of that policy's transition matrix
 | measured per-sweep ratio, in place | 0.137 | 0.162 |
 | `γ`, which the bound uses | 0.9 | 0.99 |
 
-`ρ` is *identical at the two discounts*, because the optimal policy is. That is
-the whole answer: `γ` enters the rate only as a multiplier on a number near 0.39,
+`ρ` is *identical at the two discounts*, because the greedy policy is. That is the
+whole answer: `γ` enters the local rate only as a multiplier on a number near 0.39,
 so it cannot move the sweep count much. Diameter + `log(ε)/log(rate)` predicts 13
 and 14 against the measured 14 and 15.
 

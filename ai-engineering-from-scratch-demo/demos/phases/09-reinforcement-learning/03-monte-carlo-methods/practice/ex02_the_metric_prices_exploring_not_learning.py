@@ -25,8 +25,10 @@ is exactly optimal from the start state -- `V(0,0) = -5.8520` at every `ε` -- s
 the number being compared is the one quantity that does not separate them.
 
 **FINDING: the tradeoff lives off the measured path.** At `ε = 0.01` four states
-carry a suboptimal greedy action, and one of them is the top-right corner, where
-the learned action walks into the wall forever: -100 against an optimal -2.97.
+are worth less than `V*` under the recovered policy, of which three choose a
+suboptimal action themselves and the fourth inherits the loss from a successor --
+two counts worth keeping apart. One of the three is the top-right corner, where the
+learned action walks into the wall forever: -100 against an optimal -2.97.
 `ε = 0.3` leaves none. Every episode starts at (0,0), so the stated metric cannot
 see any of it.
 
@@ -105,7 +107,9 @@ def solve():
         learned = evaluate(ref, row["greedy"])
         runs[eps] = {**row, "start": learned[(0, 0)], "ceiling": soft_value(ref, best, eps)[(0, 0)],
                      "wrong": [(s, row["greedy"][s], learned[s], star[s]) for s in ref.states()
-                               if s != ref.TERMINAL and abs(learned[s] - star[s]) > 1e-9]}
+                               if s != ref.TERMINAL and abs(learned[s] - star[s]) > 1e-9],
+                     "misact": [s for s in ref.states() if s != ref.TERMINAL
+                                and abs(look(ref, s, row["greedy"][s], star) - star[s]) > 1e-9]}
     control = run(ref, 0.0, episodes=5_000)
     return {"runs": runs, "optimal": star[(0, 0)], "control": control,
             "control_start": evaluate(ref, control["greedy"])[(0, 0)]}
@@ -157,12 +161,15 @@ def verify(result):
         practice.Check(
             "FINDING: the tradeoff lives off the path the metric walks",
             min(gaps[0] - 90, 0.5 - gaps[-1], 59.5 - low["tried"]) > 0,
-            f"states whose greedy action is suboptimal: {len(low['wrong'])} at eps=0.01, "
-            f"{len(runs[0.1]['wrong'])} at eps=0.1, {len(high['wrong'])} at eps=0.3, with worst "
-            f"gaps {gaps[0]:.2f}, {gaps[1]:.2f}, {gaps[2]:.2f}. At eps=0.01 the corner {hole[0]} "
-            f"is assigned '{hole[1]}', which walks into the wall forever -- {hole[2]:.1f} against "
-            f"an optimal {hole[3]:.2f} -- and only {low['tried']} of 60 state-action pairs are "
-            "ever tried. Every episode starts at (0,0), so the stated metric sees none of this",
+            f"states the recovered policy is worth less than V* from: {len(low['wrong'])} at "
+            f"eps=0.01, {len(runs[0.1]['wrong'])} at eps=0.1, {len(high['wrong'])} at eps=0.3, "
+            f"with worst gaps {gaps[0]:.2f}, {gaps[1]:.2f}, {gaps[2]:.2f}. Of the "
+            f"{len(low['wrong'])} at eps=0.01 only {len(low['misact'])} pick a suboptimal action "
+            f"themselves; the rest inherit the loss downstream, which is why the two counts have "
+            f"to be kept apart. At eps=0.01 the corner {hole[0]} is assigned '{hole[1]}', which "
+            f"walks into the wall forever -- {hole[2]:.1f} against an optimal {hole[3]:.2f} -- "
+            f"and only {low['tried']} of 60 state-action pairs are ever tried. Every episode "
+            "starts at (0,0), so the stated metric sees none of this",
         ),
         practice.Check(
             "CONTROL: exploration is a threshold here, not a dial",

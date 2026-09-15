@@ -17,10 +17,14 @@ exercises:
       board and 14 and 15 on the shipped SLIP=0.1 one at gamma = 0.9 and 0.99 -- ten times the
       effective horizon buys one extra sweep, and on one board none. The lesson's own guarantee,
       geometric convergence at modulus gamma, predicts log(eps(1-gamma))/log(gamma) = 153 and 1833
-      sweeps, high by 11x and 122x. The modulus that governs is gamma*rho, where rho = 0.3873 is the
-      spectral radius of the optimal policy's transient sub-matrix and is identical at both discounts
-      because the policy is: gamma*rho is 0.349 and 0.383, the in-place sweep measures 0.137 and
-      0.162, and diameter + log(eps)/log(rate) predicts 13 and 14 against 14 and 15. On the
+      sweeps, high by 11x and 122x -- the guarantee is correct and worst-case tight over all MDPs,
+      just far from tight on this board. What governs the observed rate is gamma*rho: once the greedy
+      policy settles a sweep is linear iteration with gamma*P_pi, so convergence is asymptotically at
+      gamma times rho = 0.3873, the spectral radius of that policy's transient sub-matrix, identical
+      at both discounts because the policy is. This is a local rate for this board rather than a
+      smaller sup-norm modulus for the optimality operator: gamma*rho is 0.349 and 0.383, the in-place
+      sweep measures 0.137 and 0.162, and diameter + log(eps)/log(rate) predicts 13 and 14 against 14
+      and 15. On the
       deterministic board rho is exactly 0 -- nilpotent rather than small -- so 7 = the 6-step
       diameter plus the sweep that observes delta < tol, at every gamma. The four V* grids the
       exercise asks to print are also the thing that moves: V*(0,0) shifts 1.44 between the two

@@ -99,11 +99,16 @@ separate the three runs.
 
 **FINDING: the tradeoff lives off the path the metric walks.**
 
-| ε | states with a suboptimal greedy action | worst gap | (s,a) pairs ever tried |
-|---|---:|---:|---:|
-| 0.01 | 4 | **97.03** | 59 / 60 |
-| 0.1 | 4 | 3.86 | 60 / 60 |
-| 0.3 | **0** | 0.00 | 60 / 60 |
+| ε | states worth < `V*` under the recovered policy | of those, states whose own action is suboptimal | worst gap | (s,a) pairs ever tried |
+|---|---:|---:|---:|---:|
+| 0.01 | 4 | 3 | **97.03** | 59 / 60 |
+| 0.1 | 4 | 3 | 3.86 | 60 / 60 |
+| 0.3 | **0** | 0 | 0.00 | 60 / 60 |
+
+The two counts are different questions and they give different answers. A state can
+choose an optimal action and still be worth less than `V*`, because the loss is
+inherited from a successor that chooses badly — which is what the fourth state in
+each of the first two rows is doing.
 
 At `ε = 0.01` the top-right corner `(0,3)` is assigned `right` — into the wall,
 forever. That state is worth **−100.0** under the learned policy against an

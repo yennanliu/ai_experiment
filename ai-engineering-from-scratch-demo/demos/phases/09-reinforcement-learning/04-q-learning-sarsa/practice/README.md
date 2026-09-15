@@ -140,34 +140,46 @@ iteration over the clean `step`; the noise is zero-mean and does not move it.
 measurable bias belongs to the estimator the exercise says has none, and it points
 the other way.
 
-**MECHANISM: the maximization bias is real, and it is being cancelled.**
+**MECHANISM: the maximization bias is real, and it is being cancelled.** The
+measured −0.162 splits into two halves that are read off the learned estimates
+themselves, and the split is an exact identity rather than an argument:
 
 | | value |
 |---|---:|
+| `E[max_a Q(0,0,a)]` | −6.0141 |
+| `max_a E[Q(0,0,a)]` | −7.4099 |
+| **maximization premium** `E[max Q] − max E[Q]` | **+1.396** |
 | `max_a Q*(0,0,a)` | −5.8520 |
-| spread of the four `Q(0,0,·)` estimates at σ=5 | 1.41 |
-| `E[max_a (Q* + noise)]` at that spread | −4.758 |
-| **bias from the max operator alone** | **+1.09** |
-| mean per-action error of the entries it maximizes over | **−1.94** |
+| **mean estimation error** `max E[Q] − max Q*` | **−1.558** |
+| sum — the measured bias | **−0.162** |
 
 `Q*(0,0,·)` is `up −6.79, down −5.85, left −6.79, right −5.85` — two tied optima,
 so the max really is taken over near-ties and really is biased upward. But every
-entry underneath it is depressed by −1.56 to −2.24. The two nearly cancel, and
-`max_a Q` — the only quantity the exercise asks you to look at — shows neither.
+entry underneath it is depressed by −1.56 to −2.24 (mean −1.94, spread 1.41). The
+two halves nearly cancel, and `max_a Q` — the only quantity the exercise asks you
+to look at — shows neither.
+
+Reading the premium off the estimates matters. Drawing Gaussians at the measured
+spread of 1.41 instead — the max operator isolated from all learning — puts it at
++1.09, understating the real thing by 28%, because the learned estimates are
+neither independent nor equally dispersed across the four actions.
 
 **FINDING: the depression is the noise, not the code and not the budget.** The
 same code on the same 2,000 episodes at σ=0 gives per-action errors of `+0.01,
-+0.00, +0.01, +0.00` — exact. The budget suffices and the implementation is right;
-only the noise separates that from −1.94.
++0.00, +0.01, +0.00` — exact, so the implementation is right. The budget is then
+checked where it matters rather than inferred from the clean run, since noise can
+change the convergence rate: quadrupling it to 8,000 episodes at σ=5 moves
+per-action error by at most 0.11 (`−2.14, −1.80, −2.17, −1.54`). So −1.94 is the
+noise, not a finite-budget artifact.
 
 **FINDING: one run cannot show any of this.** The per-run spread of
-`max_a Q(0,0,a)` is 1.13 — wider than Q-learning's measured bias, wider than the
-maximization bias the mechanism supplies, comparable to Double Q's. "Show … by a
+`max_a Q(0,0,a)` is 1.13 — wider than Q-learning's measured bias, comparable to
+the maximization premium the mechanism supplies, and to Double Q's. "Show … by a
 meaningful amount" is asked of a measurement whose own error bar is larger than
 every effect in the experiment.
 
 **FINDING: Double Q's underestimate is the price it was designed to charge.** Each
 table sees half the updates and `QB[argmax QA]` is deliberately not a maximum, so
 the estimator is pessimistic by construction. Here that costs 2.04 against the
-1.09 it exists to remove — an over-correction of 1.9×. Trading a +1.09 bias for a
-−2.04 one is a trade; the exercise frames it as a fix.
+1.40 premium it exists to remove — an over-correction of 1.5×. Trading a +1.40
+bias for a −2.04 one is a trade; the exercise frames it as a fix.

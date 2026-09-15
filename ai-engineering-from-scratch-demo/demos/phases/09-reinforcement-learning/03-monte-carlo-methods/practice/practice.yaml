@@ -54,8 +54,10 @@ exercises:
       mean return' compares the price of exploring rather than the quality of learning. All three
       learn the same thing -- the recovered greedy policy is worth exactly -5.8520 from (0,0) at every
       eps, to 0.0e+00 -- so the measured quantity is the one that does not separate the runs. The
-      tradeoff lives off the path the metric walks: 4 states carry a suboptimal greedy action at
-      eps=0.01 and 4 at eps=0.1 against 0 at eps=0.3, and at eps=0.01 the top-right corner (0,3) is
+      tradeoff lives off the path the metric walks: 4 states are worth less than V* under the
+      recovered policy at eps=0.01 and 4 at eps=0.1 against 0 at eps=0.3, of which only 3, 3 and 0
+      choose a suboptimal action themselves -- the rest inherit the loss from a successor, so the two
+      counts are separate questions -- and at eps=0.01 the top-right corner (0,3) is
       assigned 'right', which walks into the wall forever at -100.0 against an optimal -2.97, with
       only 59 of 60 state-action pairs ever tried. Every episode starts at (0,0), so the stated metric
       sees none of it. Exploration is a threshold and not a dial: at eps=0 the same code touches 6 of
