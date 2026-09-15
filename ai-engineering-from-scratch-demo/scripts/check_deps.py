@@ -21,7 +21,9 @@ GROUP_MODULES = {
     # torch, and four of its lessons (05, 08, 12, 15) import torchvision directly
     "vision": {"numpy", "PIL", "sklearn", "torch", "torchvision"},
     "audio": {"numpy"},
-    "llm": {"openai", "torch", "transformers", "jax", "jaxlib", "optax"},
+    # phase 10 is the tokenizer phase: four of its lessons measure their own BPE
+    # against cl100k_base, so tiktoken is a build input there and not an extra
+    "llm": {"openai", "torch", "transformers", "jax", "jaxlib", "optax", "tiktoken"},
     "agents": set(),
     "infra": set(),
 }
