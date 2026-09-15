@@ -1,0 +1,102 @@
+lesson: 10-multi-agent-rl
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/10-multi-agent-rl/docs/en.md
+exercises:
+  - index: 1
+    slug: the_joint_state_costs_four_times_the_episodes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Train independent Q-learning on the 2-agent cooperative GridWorld. How many episodes until mean return > 0? Plot the joint learning curve.
+    zh: |
+      **簡單。** 在雙代理合作式 GridWorld 上訓練獨立 Q-learning。要跑多少回合平均回報才會大於 0？畫出聯合學習曲線。
+    verifies: >-
+      'mean return > 0' needs a window, so it is read as the first episode at which a trailing 100
+      crosses, applied to 10 seeds because one seed of the lesson's own independent_q never crosses
+      inside its budget; the curve ships as a table of the lesson's block_mean. The answer is a median
+      of 735 episodes over the 9 of 10 seeds that reach it, at a final mean return of 0.30 above zero
+      on 8 of 10. The best possible return is 3.0 rather than 10: step pays +10 on the joint arrival
+      and -1 on every other turn, agent 1 starts 8 moves from the goal and agent 2 starts 4, so the
+      fastest episode is 8 turns and scores -7 + 10, and the achievable band is [-90, 3.0]. These
+      learners are also not independent in the sense the name implies -- both Q-tables are indexed by
+      s = (pos1, pos2), 625 entries against 25 for an agent's own position, so they are independent in
+      action only and each sees exactly where the other is. That observation costs 4x the episodes
+      while buying nothing: giving each agent only its own position crosses at a median 188 against
+      735, a factor of 3.9, and ends at 1.27 against 0.30, above zero on 10 of 10 seeds against 8. The
+      mechanism is that the shipped task is separable -- done requires both agents to be at the goal
+      rather than to arrive together, so whichever gets there first stands still and waits, and each
+      policy is 'walk to the goal' with nothing in the joint state to learn
+    uses_reference:
+      - independent_q
+      - block_mean
+      - step
+      - reset
+      - epsilon_greedy
+      - default_q
+      - GOAL
+      - GRID
+  - index: 2
+    slug: it_converges_until_the_agents_are_actually_independent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add a "coordination" task: the goal is reached only when both agents step onto it on the same turn. Does independent Q still converge? What breaks?
+    zh: |
+      **中等。** 加一個「協調」任務：只有當兩個代理程式在同一回合同時踏上目標，目標才算達成。獨立 Q 還收斂得了嗎？是哪裡壞掉了？
+    verifies: >-
+      the shipped step already requires both agents to be at the goal together, so the task the
+      exercise asks for is a strictly stronger rule -- neither agent may already be standing there --
+      and that one clause is the only change. Because exercise 1 found both Q-tables indexed by the
+      joint state, the sweep runs twice: once as shipped and once with each agent seeing only its own
+      position, which is what independent normally means. Independent Q does still converge, because
+      the learners are not independent: with the joint state the strict rule crosses on 10/10 seeds at
+      a median 738 against 9/10 at 735 for the shipped rule. What breaks is stability rather than
+      convergence -- final mean return falls from 0.30 to -0.13 and the seeds ending above zero from
+      8/10 to 5/10. Take the joint state away and the coordination task becomes unsolvable: with local
+      observation the shipped rule is easier, 10/10 at a median 188, while the strict rule is 0/10
+      with a final mean of -4.69, never once crossing zero in 1,500 episodes. The mechanism is camping
+      -- under the shipped rule the first agent to arrive waits, since move at the goal returns the
+      goal, so each policy needs nothing about the other; the strict rule removes waiting and an agent
+      that cannot see its partner has no way to represent timing. So the exercise's premise is already
+      true of the lesson: done = (new1 == GOAL) and (new2 == GOAL) is a coordination condition as
+      shipped, and what made it coordinate-able was the joint state the learners were handed
+    uses_reference:
+      - step
+      - move
+      - reset
+      - epsilon_greedy
+      - default_q
+      - GOAL
+  - index: 3
+    slug: the_critic_is_not_the_bottleneck_the_actor_is
+    kind: code
+    tier: T1
+    deps_group: none
+    en: |
+      **Hard.** Implement a centralized critic for MAPPO-style training and compare convergence speed to independent PPO on the coordination task.
+    zh: |
+      **困難。** 為 MAPPO 式的訓練實作一個集中式評論家，並在協調任務上跟獨立 PPO 比較收斂速度。
+    verifies: >-
+      MAPPO is centralised training with decentralised execution, so the two arms differ in the
+      critic's input only and both keep actors over each agent's own position -- the setting exercise
+      2 showed the coordination task defeats. The comparison therefore runs on both tasks, and a third
+      pair of arms gives the actor the joint state, because otherwise the result reads as a verdict on
+      centralised critics rather than on where the information has to arrive. On the coordination task
+      the centralised critic makes it worse: 3/10 seeds above zero at a final mean -69.1 against 5/10
+      and -39.1 for independent PPO, and neither arm solves it. On the separable shipped task the
+      identical pair inverts -- 10/10 against 8/10, final +2.97 against -17.74 -- so the centralised
+      critic works exactly where coordination is not required. The mechanism is that the actor cannot
+      represent what the critic has learned: giving the actor the joint state solves the coordination
+      task outright, 10/10 at +2.36 with a local critic and 10/10 at +2.75 with a central one, so the
+      critic's input barely separates those two while the actor's input separates everything. And the
+      joint-state actor pays for it in speed, crossing at a median 1,369 episodes against 263 for a
+      local actor on the separable task, a factor of 5.2 -- the same 625-against-25 state-space cost
+      exercises 1 and 2 measured
+    uses_reference:
+      - step
+      - move
+      - reset
+      - ACTIONS
+      - GOAL
