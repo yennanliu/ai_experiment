@@ -1,0 +1,106 @@
+lesson: 12-rl-for-games
+phase: 09-reinforcement-learning
+source: phases/09-reinforcement-learning/12-rl-for-games/docs/en.md
+exercises:
+  - index: 1
+    slug: three_quarters_of_the_updates_do_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Implement the GRPO bandit in `code/main.py`. Train on 2 prompts × 4 answer tokens each. Converge in < 1,000 updates with `G=8`.
+    zh: |
+      **簡單。** 實作 `code/main.py` 裡的 GRPO 吃角子老虎機。在 2 個提示詞 × 每個 4 個答案詞元上訓練。用 `G=8`，在 1,000 次更新內收斂。
+    verifies: >-
+      the bandit is already implemented, so 'implement' is read as run it and report what convergence
+      costs; accuracy is computed from the policy itself rather than the lesson's 200-episode
+      evaluate, since a softmax over four answers gives the probability of being right exactly. It
+      converges: mean probability of the correct answer is 0.6825, 0.9075, 0.9536 and 0.9692 at 100,
+      250, 500 and 1,000 updates over 10 seeds, with a worst seed of 0.9660 at 1,000, so 'converge in
+      < 1,000 updates with G=8' is met with room. But two thirds of those updates produce exactly zero
+      gradient: GRPO standardises rewards inside the group, so when all 8 samples earn the same reward
+      the variance is zero, every advantage is 0/1e-8 = 0, and the update is a no-op -- measured at
+      67.2% over 2,000 updates. The rate climbs as the policy improves, running 39.8%, 75.2%, 75.6%
+      and 78.2% across successive blocks of 500: GRPO's signal is group disagreement and success is
+      what destroys it, the degenerate groups being all-wrong at the start and all-right by the end.
+      That is why the curve flattens rather than finishes -- accuracy moves 0.9075 to 0.9536 over 250
+      updates and 0.9536 to 0.9692 over the next 500, half the rate for twice the budget. And the
+      exercise's '2 prompts' is not the lesson's 3: QUESTIONS carries three entries, so the shipped
+      bandit is 3 x 4 rather than the 2 x 4 described
+    uses_reference:
+      - train_grpo
+      - grpo_step
+      - policy_probs
+      - sample
+      - verify
+      - QUESTIONS
+      - N_PROMPTS
+      - N_ANSWERS
+  - index: 2
+    slug: grpo_loses_at_every_sample_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Plug in PPO (clipped) and vanilla REINFORCE. Compare sample efficiency and reward variance to GRPO on the same bandit.
+    zh: |
+      **中等。** 換上 PPO（裁剪版）與原味 REINFORCE。在同一個吃角子老虎機上，跟 GRPO 比較樣本效率與獎勵的變異數。
+    verifies: >-
+      'sample efficiency' is read as accuracy per sample drawn from the policy rather than per update,
+      because GRPO draws G=8 samples per update and REINFORCE draws one, so comparing per update hands
+      GRPO eight times the data and calls the result efficiency; both readings are reported since they
+      disagree. At matched samples REINFORCE wins at every budget -- 0.893 against 0.460 at 400
+      samples, 0.983 against 0.875 at 1,600, 0.994 against 0.954 at 4,000 and 0.999 against 0.970 at
+      16,000. Per update the ordering flips and that is the comparison the lesson's main prints: at
+      500 updates GRPO leads 0.954 to 0.923, at 2,000 REINFORCE has overtaken 0.987 to 0.970. PPO,
+      added as the clipped ratio on the same group so the three differ only in how the advantage is
+      formed, never clips: on one pass over a fresh group the ratio is exactly 1 and a step of lr/G =
+      0.0125 cannot move it out of [0.8, 1.2], and even four passes leave the clip rate near zero, so
+      PPO here is GRPO with extra arithmetic. REINFORCE on this bandit can only reward and never
+      punish -- verify returns 0 or 1 and reinforce_step uses the raw reward as the advantage, so a
+      wrong answer gives a gradient of exactly zero -- which is the mirror of lesson 06, where every
+      reward was negative and the same update could only punish. And reward variance is both what GRPO
+      removes and what it needs: its per-update variance falls from 0.174 to 0.022 across training
+      while REINFORCE's sits at 0.069, and exercise 1 measured what that fall costs
+    uses_reference:
+      - grpo_step
+      - reinforce_step
+      - policy_probs
+      - sample
+      - verify
+      - QUESTIONS
+      - N_PROMPTS
+      - N_ANSWERS
+  - index: 3
+    slug: the_harder_task_is_the_one_grpo_learns_faster
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Extend to a length-2 "reasoning chain": the agent emits two tokens and the verifier rewards the pair. Measure how GRPO handles the credit assignment across two-step sequences. (Hint: compute group advantage per *full sequence*, propagate to both token positions.)
+    zh: |
+      **困難。** 延伸成長度為 2 的「推理鏈」：代理程式吐出兩個詞元，驗證器針對這一對給獎勵。量測 GRPO 如何處理跨兩步序列的功勞分配。（提示：以*完整序列*為單位計算群組優勢，再傳播到兩個詞元位置。）
+    verifies: >-
+      the hint is followed exactly -- one advantage per sequence, applied unchanged at both positions
+      -- and then tested against the thing it is a hint about, by re-running with a verifier that
+      scores each token separately, because if sequence-level credit were the bottleneck the dense
+      verifier would pull ahead. GRPO handles the chain and handles it better than the single-token
+      task: exact sequence accuracy is 0.9121, 0.9889 and 0.9961 at 500, 2,000 and 5,000 updates
+      against 0.9701 for the length-1 bandit at 2,000, on a task whose random success rate is 1/16
+      rather than 1/4. Per-token credit buys almost nothing -- the dense verifier reaches 0.9895
+      against the sequence-level 0.9889 at the same budget, a difference of 0.0005 -- so the credit
+      assignment the exercise asks about is not where the difficulty is. The mechanism is that the
+      harder task keeps GRPO's groups disagreeing: exercise 1 measured that the gradient vanishes when
+      all 8 samples earn the same reward and that the rate climbs to three quarters, and at 1/16
+      degenerate updates run 23.5% over the first 500 against 39.8% for the 1/4 task, so more of the
+      budget carries signal. And the advantage still reaches the right token -- the two positions are
+      independent in the policy and a sequence is correct only when both are, so one sequence-level
+      advantage pushes both positions of a correct pair up and both of a wrong pair down, the right
+      direction for each even though neither is scored on its own
+    uses_reference:
+      - train_grpo
+      - softmax
+      - sample
+      - policy_probs
+      - QUESTIONS
+      - N_PROMPTS
