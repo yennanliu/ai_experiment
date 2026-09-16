@@ -71,24 +71,36 @@ budget on tokens that cannot be learned from.
 **FINDING: the verification the exercise asks for cannot be performed.** The
 five prompts do produce five distinct token sequences — but see above.
 
-### 2 — 5% of examples is 7.5% of trained tokens
+### 2 — 5% of examples is 9.5% of trained tokens
 
-**ANSWER:** 468 of 724 tokens across the eight pairs are response tokens —
-**64.6%**. A raw example contributes 100% of its tokens; an instruction pair
-contributes 64.6%. So
+The mix is built at exactly 5% of examples — the eight pairs repeated 19 times,
+so that 8 raw examples is 5.0% of 160 — and the share that matters is counted on
+the batches `sft_train` receives, after its own `seq_len=64` truncation and
+shift.
 
-```text
-raw share of trained tokens = 0.05 / (0.05 + 0.95 × 0.646) = 7.5%
-```
+| | supervised | total | share |
+|---|---:|---:|---:|
+| one raw example | 61 | 63 | 96.8% |
+| eight pairs, untruncated | 468 | 724 | 64.6% |
+| eight pairs, as the trainer sees them | **245** | **493** | **49.7%** |
+
+**ANSWER: 5% of examples is 9.5% of trained tokens** — `8 × 61 / (8 × 61 + 19 ×
+245)`, nearly double the ratio that was set.
+
+**FINDING: the trainer's truncation removes 48% of the supervised signal.**
+`sft_train` cuts each example to 64 tokens, and it cuts from the end, which is
+where the response is. Half the tokens SFT exists to train on never reach the
+loss, and the cut happens inside the trainer where the dataset cannot show it.
 
 **MECHANISM: the ratio is set on examples and the effect lands on tokens.**
 Masking is the point of SFT and it is also what makes the two example types
-incomparable units. The gap widens as responses shorten — at a 50% response
-share the same 5% becomes 9.5%.
+incomparable units. The gap widens as the supervised share falls — which is
+exactly what the truncation does to it.
 
-**FINDING: the forgetting comparison differs in the sixth decimal.** Three
-epochs move the metric from 5.524290 to 5.524293. Pure SFT and mixed SFT are the
-same random walk. And the held-out loss sits at 5.5243 against `ln(256) =
+**FINDING: both arms move in the sixth decimal.** Three epochs move the metric
+from 5.524290 to 5.524293 on pure SFT and to 5.524272 on the mix. The update is
+`lr * np.random.randn(...)` and the gradient is discarded, so the two arms are
+the same random walk. And the held-out loss sits at 5.5243 against `ln(256) =
 5.5452` — the model is at the uniform baseline before training and stays there.
 
 ### 3 — the two filters point in opposite directions

@@ -15,11 +15,11 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Implement KTO (Kahneman-Tversky Optimization). KTO doesn't need pairs -- just label each resp… | code | T1 | `ex01_kto_wins_on_a_tie_break.py` |
+| 1 | Implement KTO (Kahneman-Tversky Optimization). KTO doesn't need pairs -- just label each resp… | code | T1 | `ex01_each_method_prefers_the_others_metric.py` |
 | 2 | Implement length-normalized DPO. Instead of raw log-probabilities, divide by the number of re… | code | T1 | `ex02_normalising_removes_the_only_signal.py` |
 | 3 | Build an ORPO-style combined loss. Add a standard next-token prediction loss on the preferred… | code | T1 | `ex03_the_dpo_term_is_a_constant_eleven_percent.py` |
-| 4 | Implement iterative DPO. Run DPO for 3 epochs, then generate new responses from the trained m… | code | T1 | `ex04_self_play_inverts_the_length_relation.py` |
-| 5 | Compare DPO with different reference models. Instead of using the SFT checkpoint as the refer… | code | T1 | `ex05_the_most_stable_curve_is_the_one_with_no_signal.py` |
+| 4 | Implement iterative DPO. Run DPO for 3 epochs, then generate new responses from the trained m… | code | T1 | `ex04_the_unit_decides_whether_anything_inverts.py` |
+| 5 | Compare DPO with different reference models. Instead of using the SFT checkpoint as the refer… | code | T1 | `ex05_the_winner_wins_both_questions_on_noise.py` |
 <!-- generated:end -->
 
 ## Answers
@@ -49,21 +49,49 @@ Together these make `evaluate_preference_accuracy` return **0.000**, not 0.5:
 `preferred_reward > rejected_reward` is `0 > 0`, false for every pair. The floor
 of the lesson's own metric is the state its own trainer starts in.
 
-### 1 — KTO wins on a tie-break
+### 1 — each method prefers the other's metric
 
-| | loss | accuracy |
+Both arms are trained, as the exercise says to: DPO through the lesson's own
+`dpo_train`, KTO through the same update rule with the KTO loss deciding the
+direction, from one initialisation and one RNG stream. Both are then scored
+under *both* metrics, because "compare accuracy against DPO" does not say which
+metric the comparison uses.
+
+**FINDING: both methods start from an exact tie and break it differently.**
+`copy_model_weights` makes the reference the policy, so `pi_logprob -
+ref_logprob` is 0.0 for all twelve responses. KTO's loss is fixed at `0.6931 +
+1.5 × 0.6931 = 1.7329` per pair and DPO's at `0.6931`, whatever the data says.
+Untrained, KTO scores **0.500** — the base rate of a constant "bad" classifier,
+since `0 > 0` is false — and DPO **0.000**, the floor of a strict inequality on
+two equal numbers.
+
+**ANSWER: after training, each scores better under the other's metric.**
+
+| trained with | KTO metric | DPO metric |
 |---|---:|---:|
-| KTO (good + 1.5 × bad) | 0.6931 + 1.0397 = **1.7329** | **0.500** |
-| DPO | **0.6931** | **0.000** |
+| DPO | 0.417 | **0.333** |
+| KTO | **0.333** | 0.667 |
 
-**ANSWER: KTO 0.500, DPO 0.000** — and neither has seen a gradient. KTO calls a
-response good when `beta * ratio > 0`; `0 > 0` is false, so it labels all twelve
-bad, getting every rejected response right and every preferred one wrong.
-Exactly half. DPO's strict inequality on two equal numbers gives zero.
+KTO training produces the best DPO accuracy in the table and the worst KTO
+accuracy. "Compare accuracy against DPO" has four answers and they do not agree
+on an ordering.
 
-**FINDING: the comparison is decided by tie-breaking conventions.** KTO's 0.500
-is the base rate of a constant classifier on a balanced set; DPO's 0.000 is a
-metric floor. Both losses are constants, because both log-ratios are zero.
+**MECHANISM: neither trainer uses a gradient.**
+
+```python
+update_direction = 1.0 if metrics["logit"] < 0 else -0.1     # dpo_train
+block.ffn.W1 += lr * update_direction * np.random.randn(*shape) * 0.01
+```
+
+A random direction whose only tie to the loss is a sign. After 5 epochs at
+`lr=5e-6` the largest weight has moved 8.3e-07 under DPO and 1.4e-06 under KTO,
+against weights of scale 0.02. Every accuracy above is the sign of noise, read
+on 6 pairs and quantised to sixths.
+
+**FINDING: `evaluate_preference_accuracy`'s floor is 0, not 0.5.** A model that
+is exactly indifferent — the state DPO is initialised into, by construction —
+scores 0% where a preference metric should give it 50%. The first number the
+lesson's own training loop can print is the worst one the metric has.
 
 ### 2 — normalising removes the only signal
 
@@ -100,43 +128,76 @@ a dataset built by padding the rejected response.
 near its ceiling (5.3734 against `ln(256) = 5.5452`) with the whole range below
 it; `L_dpo` is pinned at 0.6931 by a margin that is structurally zero.
 
-**FINDING: the DPO term is constant, so it contributes no gradient.** Whatever
-alpha is set to, the combined loss has one active term. Reaching an even split
-needs **alpha = 7.8** — and the term it would weight is still 0.6931 everywhere.
+**FINDING: the DPO term's *value* is constant — its gradient is not zero.**
+`L_dpo` is 0.6931 for all six pairs because every implicit margin is exactly 0,
+but that is one value repeated, not a flat function: differentiating
+`-log(sigmoid(beta·m))` at `m = 0` through the lesson's own `dpo_loss` gives
+**−0.0500 = −beta/2**. The term supplies a preference gradient and alpha scales
+it. What makes it inert here is `dpo_train`, which never computes that gradient
+— its update is `lr * (1.0 if logit < 0 else -0.1) * randn(...)`. Reaching an
+even split needs **alpha = 7.8**, and the term it would weight is still 0.6931
+everywhere.
 
-### 4 — self-play inverts the length relation
+### 4 — the unit decides whether anything inverts
 
-| | mean rejected length | preferred shorter |
-|---|---:|---:|
-| original pairs | **105 bytes** | 4 / 6 |
-| self-play pairs | **28 bytes** | 2 / 6 |
+| | preferred | rejected | preferred shorter |
+|---|---:|---:|---:|
+| original pairs | 50.3 tok | **105.0 tok** | 4 / 6 |
+| self-play pairs, in tokens | 50.3 tok | **56.3 tok** | **4 / 6** |
+| self-play pairs, in characters | 50.3 ch | 28.5 ch | 2 / 6 |
 
 **ANSWER: 0.000 after round 1, 0.000 after round 2.** Not one pair changes sign.
 
-**FINDING: self-play reverses the only relation the model can see.** The
-original rejected responses are the *padded* ones; the round-1 policy samples 30
-tokens, so the new "rejected" responses are the *short* ones. Exercise 2 shows
-length is the only property these log-probabilities track.
+**FINDING: self-play does not invert the length relation.** In the units DPO
+scores — `tokenize_sequence` — the round-1 samples are 56.3 tokens, still longer
+than preferred's 50.3, and preferred is the shorter response in 4 of 6 pairs
+before and after. The property Exercise 2 shows these log-probabilities track is
+halved by round 2 and left pointing the same way.
 
-**FINDING: the generated responses are 30 bytes from a model that moved
-1.7e-06.** The new pairs are `(human-written answer, random bytes)`.
+**FINDING: counted in characters the same data says 2 of 6.** `sample` decodes
+the drawn bytes with `errors="replace"`, and 11 to 15 of each sample's ~29
+characters are U+FFFD. `len(str)` counts each once; `tokenize_sequence`
+re-encodes each as three bytes. The unit, not the self-play, produces the
+inversion.
 
-### 5 — the most stable curve is the one with no signal
+**FINDING: the generated responses are not responses.** 30 tokens sampled from a
+model that moved **1.7e-06** across two whole DPO runs — `(human-written answer,
+undecodable bytes)`.
 
-| reference | accuracy | mean margin | margin spread |
+**FINDING: 0.000 is the metric's floor.** Every implicit margin is exactly 0, so
+the strict inequality is false for all six pairs before either round and after
+both.
+
+### 5 — the winner wins both questions on noise
+
+Each strategy gets its own DPO run, from identical initial weights and the same
+RNG stream, driven one epoch at a time so that (b) can snapshot the policy after
+epoch 1 and (c) can keep a genuine EMA.
+
+| reference | curve range | margin spread | accuracy |
 |---|---:|---:|---:|
-| (a) base model, different init | **0.167** | −0.1197 | **0.1343** |
-| SFT checkpoint (a copy) | 0.000 | −0.0000 | **< 1e-5** |
-| (c) EMA of the policy | 0.000 | +0.0000 | **< 1e-5** |
+| SFT checkpoint | 3.8e-06 | 2.7e-06 | 0.000 |
+| base model | **0.3164** | **0.2027** | 0.167 |
+| epoch-1 checkpoint | **3.1e-06** | 9.2e-07 | **0.833** |
+| EMA of the policy | 3.4e-06 | 2.2e-06 | 0.000 |
 
-**ANSWER: the SFT copy and the EMA tie for most stable — their margins are all
-essentially zero.** A reference equal to the policy gives `pi − ref = 0` for
-every response, so the curve is a flat line at zero.
+**ANSWER: the epoch-1 checkpoint wins both questions at once** — highest
+accuracy and flattest curve, which is exactly the combination the exercise asks
+for. It wins them on margins of order 1e-06 produced by a policy that moved
+9e-07.
 
-**FINDING: "most stable" and "most informative" point in opposite directions.**
-The base model is the least stable arm by four orders of magnitude and the only
-one whose margins carry information about the pairs.
+**FINDING: two references that agree to 1e-06 score 0.000 and 0.833.** The
+epoch-1 snapshot and the SFT checkpoint are the same weights to six decimal
+places, so `preferred_reward > rejected_reward` is a sign test on noise. Five of
+six land one way against one reference and none against the other.
 
-**FINDING: option (b) is option (a) to six decimal places.** "A checkpoint from
-epoch 1 of DPO" is the policy after one epoch, and the policy moves 9.9e-07
-across all three. Two of the exercise's three options name one model.
+**FINDING: only the base model produces a curve at all.** The other three
+references are copies of the policy, so `pi_logprob − ref_logprob` is 0 for
+every response and the loss is `log(2) = 0.6931` at every step. Three of the four
+candidates for "most stable curve" are flat lines.
+
+**FINDING: most stable and most informative point in opposite directions.** The
+only arm whose margins distinguish the six pairs is the least stable one — and
+it is least stable because its reference is a *different random
+initialisation*, so the spread measures the gap between two random models rather
+than anything DPO learned.

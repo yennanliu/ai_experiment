@@ -1,4 +1,4 @@
-"""Exercise 4 — self-play flips the one relation the model can see, and accuracy stays 0.000.
+"""Exercise 4 — the unit decides whether self-play inverts anything, and accuracy stays 0.000.
 
     Implement iterative DPO. Run DPO for 3 epochs, then generate new responses
     from the trained model, pair them with the original preferred responses as
@@ -10,26 +10,34 @@ Reading of the exercise: both rounds use the lesson's own `dpo_train`, and
 round 2's pairs are built exactly as described -- the original preferred
 response against a fresh sample from the round-1 policy. Accuracy is the
 reference's own `evaluate_preference_accuracy`, reported on the original pairs
-so the two rounds are scored against the same question.
+so the two rounds are scored against the same question, and every length is
+counted with `tokenize_sequence`, which is the unit DPO scores in.
 
 **ANSWER: 0.000 after round 1 and 0.000 after round 2.** Not one of the six
 pairs changes sign. The exercise asks whether iterative refinement helps and the
-measured answer is that nothing happens at all -- the three findings below
-account for it.
+measured answer is that nothing happens at all -- the findings below account for
+it.
 
-**FINDING: self-play inverts the length relation the data was built on.** The
-original rejected responses average **105 bytes** -- they are the padded ones --
-while the round-1 policy samples **28 bytes** at 30 new tokens. So round 2 trains
-on pairs where the preferred response is the *longer* one, which is the opposite
-of every pair in the original set. Exercise 2 shows that response length is the
-only property this model's log-probabilities track, so self-play does not add
-signal, it reverses it.
+**FINDING: self-play does not invert the length relation.** The original
+rejected responses average **105 tokens** -- they are the padded ones -- and the
+round-1 policy samples **56**, still above preferred's 50.3. Preferred is the
+shorter response in **4 of 6** pairs before self-play and in **4 of 6** after.
+The one property Exercise 2 shows these log-probabilities track is not reversed
+by round 2; it is halved and left pointing the same way.
 
-**FINDING: the generated responses are not responses.** They are 30 bytes
-sampled from a model at random initialisation -- Exercise 5 shows the policy
-moves 1e-6 across a whole DPO run -- so the "new preference pairs" are
-`(human-written answer, random bytes)`. Two rounds of this is one round of DPO
-followed by one round of DPO against noise.
+**FINDING: counted in characters the same data says 2 of 6.** `sample` decodes
+the drawn bytes with `errors="replace"`, and 11 to 15 of each sample's ~29
+characters are U+FFFD. `len(str)` counts each of those once; `tokenize_sequence`
+re-encodes each as three bytes. So the self-play responses are 28.5 characters
+and 56.3 tokens, and the two units disagree about the direction of the
+comparison in two of the six pairs. The unit, not the self-play, produces the
+inversion.
+
+**FINDING: the generated responses are not responses.** They are 30 tokens
+sampled from a model at random initialisation -- the policy moves 1.7e-06 across
+two whole DPO runs -- so the "new preference pairs" are `(human-written answer,
+undecodable bytes)`. Two rounds of this is one round of DPO followed by one
+round of DPO against noise.
 
 **FINDING: 0.000 is the metric's floor, not a measurement.** The reference is a
 copy of the policy, so every implicit margin is exactly 0 and
@@ -38,12 +46,15 @@ before either round and after both. Two rounds move the largest weight 1.7e-06,
 nowhere near enough to break a tie resolved by a strict inequality.
 
 Structure: `sample` draws a response from a policy the way the lesson's own
-generation does; `round_two` builds the self-play pairs the exercise specifies.
+generation does; `round_two` builds the self-play pairs the exercise specifies;
+`length` counts in the tokenizer's units and `len` is kept beside it for the
+comparison.
 """
 
 from __future__ import annotations
 
 import contextlib
+import functools
 import io
 import statistics
 
@@ -92,6 +103,18 @@ def round_two(ref, policy, seed):
             for pair in ref.PREFERENCE_DATA]
 
 
+def length(ref, text):
+    """Length in the units DPO scores: the lesson's own tokens, not Python characters."""
+    return len(ref.tokenize_sequence(text))
+
+
+def tally(ref, pairs, measure):
+    """Mean preferred length, mean rejected length, and how often preferred is shorter."""
+    return (statistics.fmean(measure(p["preferred"]) for p in pairs),
+            statistics.fmean(measure(p["rejected"]) for p in pairs),
+            sum(measure(p["preferred"]) < measure(p["rejected"]) for p in pairs))
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     policy, reference = models(ref)
@@ -99,17 +122,16 @@ def solve():
     accuracy_one = ref.evaluate_preference_accuracy(first, reference, ref.PREFERENCE_DATA, BETA)
     pairs = round_two(ref, first, SEED + 14)
     second = train(ref, first, reference, pairs, SEED + 2)
+    tokens = functools.partial(length, ref)
     return {
         "accuracy": (accuracy_one,
                      ref.evaluate_preference_accuracy(second, reference,
                                                       ref.PREFERENCE_DATA, BETA)),
         "pairs": len(ref.PREFERENCE_DATA),
-        "original_rejected": statistics.fmean(len(p["rejected"]) for p in ref.PREFERENCE_DATA),
-        "selfplay_rejected": statistics.fmean(len(p["rejected"]) for p in pairs),
-        "preferred": statistics.fmean(len(p["preferred"]) for p in ref.PREFERENCE_DATA),
-        "original_shorter": sum(len(p["preferred"]) < len(p["rejected"])
-                                for p in ref.PREFERENCE_DATA),
-        "selfplay_shorter": sum(len(p["preferred"]) < len(p["rejected"]) for p in pairs),
+        "original": tally(ref, ref.PREFERENCE_DATA, tokens),
+        "selfplay": tally(ref, pairs, tokens),
+        "selfplay_chars": tally(ref, pairs, len),
+        "replacements": [pair["rejected"].count("\ufffd") for pair in pairs],
         "drift": float(np.abs(second.blocks[0].ffn.W1 - reference.blocks[0].ffn.W1).max()),
     }
 
@@ -117,6 +139,10 @@ def solve():
 def verify(result):
     one, two = result["accuracy"]
     pairs = result["pairs"]
+    was_pref, was_rej, was_shorter = result["original"]
+    now_pref, now_rej, now_shorter = result["selfplay"]
+    _, char_rej, char_shorter = result["selfplay_chars"]
+    marks = result["replacements"]
     return [
         practice.Check(
             f"ANSWER: {one:.3f} after round 1 and {two:.3f} after round 2 -- no pair moves",
@@ -126,23 +152,30 @@ def verify(result):
             "happens at all, which the next three findings account for",
         ),
         practice.Check(
-            "FINDING: self-play inverts the length relation the data was built on",
-            result["selfplay_shorter"] < result["original_shorter"]
-            and result["selfplay_rejected"] < result["preferred"],
-            f"the original rejected responses average {result['original_rejected']:.0f} bytes -- "
-            f"they are the padded ones, and preferred is shorter in "
-            f"{result['original_shorter']} of {pairs}. The round-1 policy samples "
-            f"{result['selfplay_rejected']:.0f} bytes at {NEW_TOKENS} new tokens, so round 2 "
-            f"trains on pairs where preferred is shorter in only {result['selfplay_shorter']}. "
-            "Exercise 2 shows length is the only property this model's log-probabilities track, "
-            "so self-play does not add signal -- it reverses it",
+            "FINDING: self-play does not invert the length relation -- 4 of 6 either way",
+            now_shorter == was_shorter and now_rej > now_pref,
+            f"the original rejected responses average {was_rej:.0f} tokens -- they are the padded "
+            f"ones -- and the round-1 policy samples {now_rej:.0f}, still above preferred's "
+            f"{now_pref:.1f}. Preferred is the shorter response in {was_shorter} of {pairs} pairs "
+            f"before self-play and {now_shorter} of {pairs} after. The one property Exercise 2 shows "
+            "these log-probabilities track is halved by round 2 and left pointing the same way",
+        ),
+        practice.Check(
+            "FINDING: counted in characters the same data says 2 of 6 -- the unit inverts it",
+            char_shorter < now_shorter and min(marks) > 5,
+            f"sample decodes the drawn bytes with errors='replace', and {min(marks)} to "
+            f"{max(marks)} of each sample's characters are U+FFFD. len(str) counts each of those "
+            f"once and tokenize_sequence re-encodes each as three bytes, so the self-play "
+            f"responses are {char_rej:.1f} characters and {now_rej:.1f} tokens, and the two units "
+            f"disagree about the direction of the comparison in {now_shorter - char_shorter} of "
+            f"the {pairs} pairs. The unit, not the self-play, produces the inversion",
         ),
         practice.Check(
             "FINDING: the generated responses are not responses",
             result["drift"] < 1e-5,
-            f"they are {NEW_TOKENS} bytes sampled from a model that has moved "
+            f"they are {NEW_TOKENS} tokens sampled from a model that has moved "
             f"{result['drift']:.1e} across two whole DPO runs. The new preference pairs are "
-            "(human-written answer, random bytes), so two rounds of this is one round of DPO "
+            "(human-written answer, undecodable bytes), so two rounds is one round of DPO "
             "followed by one round of DPO against noise",
         ),
         practice.Check(

@@ -156,8 +156,19 @@ order 0.1.
 is ~3e-8 per weight against weights of scale 0.02. After 20 episodes the largest
 single weight has moved **3.8e-07**, and KL is quadratic in that displacement.
 
-**FINDING: the reward trends the wrong way.** The exercise predicts "steady
-reward improvement" at beta=0.02; the fit is **−1.35e-03 per episode**, a
-decline, and the same decline in all three runs. It is 20 episodes cycling over
-6 prompts, with the reward depending on which prompt is up rather than on what
-the policy did.
+**FINDING: the reward trends the wrong way, and the trend is the prompt order.**
+The exercise predicts "steady reward improvement" at beta=0.02; the fit is
+**−1.35e-03 per episode**, a decline, and the same decline in all three runs.
+
+| arm | reward slope/episode |
+|---|---:|
+| trained, beta = 0.001 / 0.02 / 0.5 | −1.35e-03 |
+| policy frozen, same prompts and sampling | **−1.35e-03** (bit for bit) |
+| policy frozen, prompt order reversed | −2.25e-04 |
+
+Freezing the policy entirely — same prompts, same sampling stream, the update
+computed and thrown away — reproduces the reward sequence exactly, so none of
+the decline comes from learning. Reversing the prompt order on that same frozen
+policy shrinks the fit sixfold. The per-prompt mean rewards run −0.12 to +0.18,
+and 20 episodes over 6 prompts ends on the two lowest: the "reward curve" is the
+prompt schedule sampled 20 times.

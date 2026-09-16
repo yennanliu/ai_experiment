@@ -140,8 +140,12 @@ exercises:
       lr * total_reward * np.random.randn(...) * 0.01 at lr = 1.5e-5, about 3e-8 per weight per
       episode against weights of scale 0.02, and after twenty episodes the largest single weight has
       moved 3.8e-07. The reward curve does have a trend and it is the wrong one -- -1.35e-03 per
-      episode, a decline, identical in all three runs -- which is twenty episodes cycling over six
-      prompts with a reward that depends on which prompt is up
+      episode, a decline, identical in all three runs -- and the trend is the prompt order rather
+      than anything the policy did: freezing the policy entirely, with the same prompts, the same
+      sampling stream and the update computed and thrown away, reproduces the reward sequence bit
+      for bit, and reversing the prompt order on that same frozen policy moves the fit to
+      -2.25e-04, six times smaller. The per-prompt mean rewards run -0.12 to +0.18, and twenty
+      episodes over six prompts ends on the two lowest
     uses_reference:
       - ppo_training
       - copy_model_weights

@@ -3,7 +3,7 @@ phase: 10-llms-from-scratch
 source: phases/10-llms-from-scratch/08-dpo/docs/en.md
 exercises:
   - index: 1
-    slug: kto_wins_on_a_tie_break
+    slug: each_method_prefers_the_others_metric
     kind: code
     tier: T1
     deps_group: math
@@ -12,18 +12,25 @@ exercises:
     zh: |
       實作 KTO（Kahneman-Tversky Optimization）。KTO 不需要配對 —— 只要把每個回應標成「好」或「壞」。好回應的損失是 `-log(sigmoid(beta * log_ratio))`，壞回應的損失是 `-log(1 - sigmoid(beta * log_ratio))`，並對壞回應的損失乘上一個損失趨避倍數（通常是 1.5 倍）。在同一份資料上訓練（把 preferred 當成「好」、rejected 當成「壞」，各自獨立看待），再拿準確率跟 DPO 比較。
     verifies: >-
-      both losses are computed on the same model and the same reference, at the state DPO actually
-      starts from, since copy_model_weights makes the reference a copy of the policy. Every log-ratio
-      is then exactly zero for all 12 responses -- not approximately -- so KTO's loss is fixed at
-      -log(0.5) + 1.5 * -log(0.5) = 1.7329 per pair and DPO's at 0.6931, whatever the data says. KTO
-      scores 0.500 and DPO 0.000: KTO calls a response good when beta * ratio > 0, which 0 > 0 makes
-      false, so it labels all twelve bad and gets every rejected response right and every preferred
-      one wrong, while DPO compares preferred_reward > rejected_reward, which is 0 > 0 and false for
-      every pair. The comparison the exercise asks for is therefore decided by how each metric breaks
-      a tie -- neither method has seen a gradient, KTO's 0.500 is the base rate of a constant
-      classifier and DPO's 0.000 is the floor of a strict inequality on two equal numbers. That floor
-      is itself the finding: a model that is exactly indifferent, which is the state DPO is
-      initialised into by construction, scores 0% where a preference metric should give it 50%
+      both arms are trained, as the exercise says to -- DPO through the lesson's own dpo_train, KTO
+      through the same update rule with the KTO loss deciding the direction -- from one initialisation and
+      one RNG stream, and both are then scored under both metrics, because "compare accuracy against DPO"
+      does not say which metric the comparison uses and the two disagree. At the state both start from,
+      copy_model_weights having made the reference a copy of the policy, every log-ratio is exactly zero
+      for all 12 responses -- not approximately -- so KTO's loss is fixed at -log(0.5) + 1.5 * -log(0.5) =
+      1.7329 per pair and DPO's at 0.6931 whatever the data says, and the untrained accuracies are 0.500
+      for KTO, the base rate of a constant "bad" classifier since 0 > 0 is false, and 0.000 for DPO, the
+      floor of a strict inequality on two equal numbers. After five epochs each method scores better under
+      the other's metric than under its own: the DPO-trained policy scores 0.333 on DPO's metric and 0.417
+      on KTO's, and the KTO-trained policy scores 0.333 on KTO's and 0.667 on DPO's, so KTO training
+      produces the best DPO accuracy in the table and the worst KTO accuracy. Neither trainer uses a
+      gradient to get there: dpo_train's update is lr * (1.0 if logit < 0 else -0.1) *
+      np.random.randn(...) * 0.01, a random direction whose only tie to the loss is a sign, and after five
+      epochs at lr = 5e-06 the largest single weight has moved 8.3e-07 under DPO and 1.4e-06 under KTO
+      against weights of scale 0.02, so every accuracy is the sign of noise read on six pairs and
+      quantised to sixths. And the DPO floor is itself a finding: a model that is exactly indifferent,
+      which is the state DPO is initialised into by construction, scores 0% where a preference metric
+      should give it 50%
     uses_reference:
       - MiniGPT
       - copy_model_weights
@@ -79,10 +86,14 @@ exercises:
       exercise names the objective is 88.6% SFT. The two terms are not on the same scale: L_sft is
       5.3734 nats per token against ln(256) = 5.5452 for a uniform model, starting near its ceiling
       with the whole range below it, while L_dpo is bounded by its own construction and sits at 0.6931
-      whenever the margin is small, a factor of 7.8 apart before alpha is applied. And the DPO term is
-      not merely small but constant -- the reference is a copy of the policy, so every implicit margin
-      is exactly 0 and L_dpo is 0.6931 for all six pairs at every alpha, contributing no gradient, so
-      "eliminating the need for a separate SFT stage" describes an SFT stage plus a constant. Reaching
+      whenever the margin is small, a factor of 7.8 apart before alpha is applied. The DPO term's
+      value is constant but its gradient is not zero: the reference is a copy of the policy, so every
+      implicit margin is exactly 0 and L_dpo is 0.6931 for all six pairs at every alpha, which is one
+      value repeated rather than a flat function -- differentiating the lesson's own dpo_loss at
+      margin 0 gives -0.0500, or -beta/2, so the term does supply a preference gradient and alpha
+      does scale it. What makes it inert here is dpo_train, which never computes that gradient; its
+      update is lr * (1.0 if logit < 0 else -0.1) * np.random.randn(...), so the preference half of
+      "eliminating the need for a separate SFT stage" is live on paper and unused in the loop. Reaching
       an even split needs alpha = 7.8, nearly 8x the exercise's largest value, and the term it would
       be weighting is still 0.6931 for every pair
     uses_reference:
@@ -93,7 +104,7 @@ exercises:
       - tokenize_sequence
       - PREFERENCE_DATA
   - index: 4
-    slug: self_play_inverts_the_length_relation
+    slug: the_unit_decides_whether_anything_inverts
     kind: code
     tier: T1
     deps_group: math
@@ -102,19 +113,24 @@ exercises:
     zh: |
       實作迭代式 DPO。先跑 3 個回合的 DPO，接著用訓練後的模型生成新回應，把它們與原本的被偏好回應配成新的偏好對，再跑一次 DPO。這樣的「自我對弈」流程跑兩輪。比較第一輪與第二輪之後的偏好準確率，看看迭代精修有沒有幫助。
     verifies: >-
-      both rounds use the lesson's own dpo_train and round 2's pairs are built exactly as described,
-      the original preferred response against a fresh sample from the round-1 policy, with accuracy
-      reported on the original pairs so the rounds are scored against the same question. Accuracy is
-      0.000 after round 1 and 0.000 after round 2: not one of the six pairs changes sign. Self-play
-      inverts the length relation the data was built on -- the original rejected responses average 105
-      bytes, being the padded ones, with preferred shorter in 4 of 6, while the round-1 policy samples
-      28 bytes at 30 new tokens, so round 2 trains on pairs where preferred is shorter in only 2.
-      Since length is the only property this model's log-probabilities track, self-play does not add
-      signal, it reverses it. The generated responses are not responses either: they are 30 bytes
-      sampled from a model that has moved 1.7e-06 across two whole DPO runs, so the new preference
-      pairs are (human-written answer, random bytes). And 0.000 is the metric's floor rather than a
-      measurement -- the reference is a copy of the policy, so every implicit margin is exactly 0 and
-      the strict inequality is false for all six pairs before either round and after both
+      both rounds use the lesson's own dpo_train and round 2's pairs are built exactly as described, the
+      original preferred response against a fresh sample from the round-1 policy, with accuracy reported
+      on the original pairs so the rounds are scored against the same question and every length counted
+      with tokenize_sequence, which is the unit DPO scores in. Accuracy is 0.000 after round 1 and 0.000
+      after round 2: not one of the six pairs changes sign. Self-play does not invert the length relation
+      the data was built on -- the original rejected responses average 105 tokens, being the padded ones,
+      and the round-1 policy samples 56, still above preferred's 50.3, so preferred is the shorter
+      response in 4 of 6 pairs before self-play and 4 of 6 after. The one property these log-probabilities
+      track is halved by round 2 and left pointing the same way. Counted in characters the same data says
+      2 of 6: sample decodes the drawn bytes with errors='replace' and 11 to 15 of each sample's roughly
+      29 characters are U+FFFD, which len(str) counts once each and tokenize_sequence re-encodes as three
+      bytes, so the self-play responses are 28.5 characters and 56.3 tokens and the two units disagree
+      about the direction of the comparison in two of the six pairs -- the unit, not the self-play,
+      produces the inversion. The generated responses are not responses either: they are 30 tokens sampled
+      from a model that has moved 1.7e-06 across two whole DPO runs, so the new preference pairs are
+      (human-written answer, undecodable bytes). And 0.000 is the metric's floor rather than a measurement
+      -- the reference is a copy of the policy, so every implicit margin is exactly 0 and the strict
+      inequality is false for all six pairs before either round and after both
     uses_reference:
       - MiniGPT
       - copy_model_weights
@@ -124,7 +140,7 @@ exercises:
       - tokenize_sequence
       - PREFERENCE_DATA
   - index: 5
-    slug: the_most_stable_curve_is_the_one_with_no_signal
+    slug: the_winner_wins_both_questions_on_noise
     kind: code
     tier: T1
     deps_group: math
@@ -133,19 +149,25 @@ exercises:
     zh: |
       比較不同參考模型下的 DPO。不要用 SFT 檢查點當參考模型，改試：(a) 基礎模型（SFT 之前）、(b) DPO 第 1 個回合的檢查點、(c) 策略模型的指數移動平均。回報哪一種參考模型帶來最高的偏好準確率與最穩定的訓練曲線。
     verifies: >-
-      all three references score the same policy, one trained by the lesson's own dpo_train, so the
-      comparison isolates the reference, and "most stable training curve" is read as the spread of the
-      implicit reward margins across the six pairs. The SFT checkpoint and the EMA tie for the most
-      stable curve at a margin spread below 1e-5, because copy_model_weights makes the SFT reference a
-      copy of the policy and an EMA initialised from the policy stays one to within the 9.9e-07 the
-      policy itself moves -- a reference that equals the policy gives pi_logprob - ref_logprob = 0 for
-      every response, so every margin is 0 and the curve is a flat line at zero. Most stable and most
-      informative therefore point in opposite directions: the base model, a different random
-      initialisation, gives margins with a spread of 0.1343, four orders of magnitude larger, and is
-      the only arm whose margins carry information about the pairs. On accuracy all three are at or
-      below one pair in six -- 0.000, 0.167 and 0.000 -- so the differences are whether a margin of
-      1e-7 lands on the right side of a strict inequality. And option (b) is option (a) to six decimal
-      places, since the policy moves 9.9e-07 across the whole run
+      each strategy gets its own DPO run, from identical initial weights and the same RNG stream, so the
+      reference is the only thing that differs, and the runs are driven one epoch at a time through the
+      lesson's own dpo_train because options (b) and (c) change the reference during training -- (b)
+      snapshots the policy after epoch 1 and (c) keeps a genuine exponential moving average, updated after
+      every epoch. "Training curve" is the per-example loss trace dpo_train returns and "stable" is its
+      range across that trace. The epoch-1 checkpoint wins both of the exercise's questions at once: the
+      highest accuracy, 0.833, and the flattest curve, a range of 3.1e-06, against the SFT checkpoint's
+      0.000 and 3.8e-06, the base model's 0.167 and 0.3164, and the EMA's 0.000 and 3.4e-06. It wins them
+      on noise. The policy drifts 9.0e-07 in total, so the epoch-1 snapshot and the SFT checkpoint are the
+      same weights to six decimal places, every margin against either is of order 1e-06, and
+      preferred_reward > rejected_reward is a sign test on that noise -- five of six land one way against
+      one reference and none against the other. Only the base model produces a curve at all: its loss
+      trace moves over 0.3164 where the other three move 3e-06, because each of those references is a copy
+      of the policy and pi_logprob - ref_logprob is 0 for every response, so the loss is log(2) = 0.6931
+      at every step and three of the four candidates for "most stable curve" are flat lines. And most
+      stable and most informative point in opposite directions: the only arm whose margins distinguish the
+      six pairs, with a spread of 0.2027 against 1e-06, is the least stable one, and it is least stable
+      because its reference is a different random initialisation -- the spread measures the gap between
+      two random models rather than anything DPO learned
     uses_reference:
       - MiniGPT
       - copy_model_weights

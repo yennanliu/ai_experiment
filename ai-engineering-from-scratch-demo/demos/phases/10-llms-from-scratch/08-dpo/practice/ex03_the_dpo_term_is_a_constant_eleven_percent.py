@@ -23,12 +23,16 @@ near its ceiling and has the whole range below it to move through. `L_dpo` is
 bounded by its own construction: `-log(sigmoid(beta * margin))` with beta = 0.1
 sits at 0.6931 whenever the margin is small, and the margin is small by default.
 
-**FINDING: the DPO term is not merely small, it is constant.** The reference is
-a copy of the policy, so every log-ratio is exactly zero (Exercise 1) and
-`L_dpo` is **0.6931** for all six pairs at every alpha. A constant contributes
-no gradient, so whatever alpha is set to, the combined loss has exactly one
-active term. "Eliminating the need for a separate SFT stage" describes an
-objective that is, here, an SFT stage plus a constant.
+**FINDING: the DPO term's *value* is constant, and its gradient is not zero.**
+The reference is a copy of the policy, so every log-ratio is exactly zero
+(Exercise 1) and `L_dpo` is **0.6931** for all six pairs at every alpha. That is
+one value repeated, not a flat function: differentiating `-log(sigmoid(beta *
+m))` at `m = 0` through the lesson's own `dpo_loss` gives **-0.0500**, which is
+`-beta/2`, so the term does supply a preference gradient and alpha does scale
+it. What makes it inert here is `dpo_train`, which never computes that gradient
+-- its update is `lr * (1.0 if logit < 0 else -0.1) * np.random.randn(...)`. The
+preference half of "eliminating the need for a separate SFT stage" is live on
+paper and unused in the loop.
 
 **FINDING: alpha cannot buy the DPO term influence.** Reaching an even split
 needs alpha = **7.8**, nearly 8x the exercise's largest value -- and at that
@@ -37,7 +41,8 @@ exercise offers moves the ratio between the two terms and not the amount of
 information in either.
 
 Structure: `sft_loss` is the per-token cross-entropy on the preferred response;
-`combined` is the exercise's objective at one alpha.
+`dpo_term` is the reference's own DPO loss on one pair; `margin_slope` reads its
+derivative at margin zero.
 """
 
 from __future__ import annotations
@@ -83,6 +88,13 @@ def dpo_term(ref, policy, reference, pair):
     return float(loss), metrics["reward_margin"]
 
 
+def margin_slope(ref, step=1e-6):
+    """d/dmargin of the lesson's own dpo_loss at margin 0, by central difference."""
+    up, _ = ref.dpo_loss(step, 0.0, 0.0, 0.0, BETA)
+    down, _ = ref.dpo_loss(-step, 0.0, 0.0, 0.0, BETA)
+    return float((up - down) / (2 * step))
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     policy, reference = models(ref)
@@ -97,6 +109,7 @@ def solve():
         "constant": len({round(loss, 12) for loss, _ in dpos}) == 1,
         "margins": [margin for _, margin in dpos],
         "even_split": sft / dpo,
+        "slope": margin_slope(ref),
     }
 
 
@@ -122,13 +135,18 @@ def verify(result):
             f"is small by default. The two differ by {sft / dpo:.1f}x before alpha is applied",
         ),
         practice.Check(
-            "FINDING: the DPO term is not merely small, it is constant across all six pairs",
-            result["constant"] and all(m == 0.0 for m in result["margins"]),
-            f"the reference is a copy of the policy, so every log-ratio is exactly zero and the "
-            f"implicit margin is {result['margins'][0]:.4f} for all six pairs -- making L_dpo "
-            f"{dpo:.4f} everywhere, at every alpha. A constant contributes no gradient, so the "
-            "combined loss has exactly one active term whatever alpha is set to. 'Eliminating "
-            "the need for a separate SFT stage' describes an SFT stage plus a constant",
+            "FINDING: the DPO term's value is constant, and its gradient is not zero",
+            result["constant"] and all(m == 0.0 for m in result["margins"])
+            and abs(result["slope"] + BETA / 2) < 1e-6,
+            f"the reference is a copy of the policy, so every implicit margin is "
+            f"{result['margins'][0]:.4f} for all six pairs and L_dpo is {dpo:.4f} everywhere, at "
+            f"every alpha. That is one value repeated, not a flat function: differentiating the "
+            f"lesson's own dpo_loss at margin 0 gives {result['slope']:.4f}, which is -beta/2, so "
+            f"the term does supply a preference gradient and alpha does scale it. What makes it "
+            f"inert here is dpo_train, which never computes that gradient -- its update is "
+            "lr * (1.0 if logit < 0 else -0.1) * np.random.randn(...). The preference half of "
+            "'eliminating the need for a separate SFT stage' is live on paper and unused in the "
+            "loop",
         ),
         practice.Check(
             "FINDING: alpha cannot buy the DPO term influence -- an even split needs 7.8",

@@ -41,18 +41,22 @@ exercises:
     zh: |
       實作資料混合。寫一個函式，吃進一份 SFT 資料集與一份原始文字語料，產出訓練批次，其中 5% 的範例是原始文字（不做遮罩）、95% 是指令配對（有遮罩）。跑 3 個回合，把遺忘指標拿來跟純 SFT 訓練比較。
     verifies: >-
-      the mix is built at the ratio the exercise names, 5% of examples, and then the quantity that
-      reaches the optimiser is counted, because a raw example trains on all its tokens while an
-      instruction pair trains only on its response. 468 of 724 tokens across the lesson's eight pairs
-      are response tokens, 64.6%, so the raw share of what carries gradient is
-      0.05 / (0.05 + 0.95 x 0.646) = 7.5%, half again the ratio that was set -- the ratio is
-      specified on examples and the effect lands on tokens, and the gap widens as responses shorten,
-      reaching 9.5% at a 50% response share. The comparison the exercise ends on has no signal: three
-      epochs of sft_train move the lesson's own forgetting metric from 5.524290 to 5.524293, a change
-      of 2.83e-06 or 5e-07 relative, because the update is lr * np.random.randn(...) and the gradient
-      is discarded, so pure SFT and mixed SFT are the same random walk. And the metric could not show
-      forgetting anyway: the held-out loss sits at 5.5243 against ln(256) = 5.5452, at the uniform
-      baseline, on a model whose attention stack and embedding table never move
+      the mix is built at exactly the ratio the exercise names -- 5% of examples, which needs the eight
+      pairs repeated 19 times so that 8 raw examples is exactly 5% of 160 -- and the quantity that reaches
+      the optimiser is then counted on the batches sft_train receives, after its own seq_len=64 truncation
+      and its own shift. A raw example carries 61 of its 63 tokens through the mask and an instruction
+      pair 245 of 493, or 49.7%, so the raw share of what receives gradient is 9.5%, 1.9 times the ratio
+      that was set. The truncation is where most of that comes from: sft_train cuts each example to 64
+      tokens and it cuts from the end, which is where the response is, so the eight pairs go from 724
+      tokens with 468 supervised to 493 with 245 -- 48% of the tokens SFT exists to train on never reach
+      the loss, and the cut happens inside the trainer where the dataset cannot show it. The ratio is
+      specified on examples and the effect lands on tokens, and the gap widens as the supervised share
+      falls. The comparison the exercise ends on has no signal either: three epochs of sft_train move the
+      lesson's own forgetting metric from 5.524290 to 5.524293 on pure SFT and to 5.524272 on the mix,
+      +2.83e-06 and -1.85e-05, because the update is lr * np.random.randn(...) and the gradient is
+      discarded, so the two arms are the same random walk. And the metric could not show forgetting
+      anyway: the held-out loss sits at 5.5243 against ln(256) = 5.5452, at the uniform baseline, on a
+      model whose attention stack and embedding table never move
     uses_reference:
       - INSTRUCTION_DATA
       - tokenize_instruction_pair
