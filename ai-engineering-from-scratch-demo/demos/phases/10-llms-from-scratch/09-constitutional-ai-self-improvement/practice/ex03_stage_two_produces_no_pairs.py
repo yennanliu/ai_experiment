@@ -29,11 +29,14 @@ implies, **k=2**, that happens in **42%** of groups; at k=4 it is 6% and at k=8
 it is 0%. The exercise's "two responses each" is the worst group size GRPO has,
 and the DPO path inherits the tie without the guard.
 
-**FINDING: the two paths are the same estimator at different group sizes.** A
-DPO pair is a group of 2 with a sign; a GRPO group of 8 is the same reward
-normalised over more samples. What the exercise frames as a choice between
-algorithms is, on this data, a choice of how many samples to average over before
-deciding.
+**FINDING: what the group size buys is tie resistance, and ties are all this
+comparison can see.** The degenerate rate falls from 42% at k=2 to 6% at k=4 and
+0% at k=8: more samples means fewer groups in which every reward is equal, and a
+pair is the fewest samples available. That is a statement about ties, not about
+the two objectives -- DPO optimises a logistic loss on reference-relative
+log-odds and GRPO normalises scalar rewards into a policy gradient, and nothing
+measured here compares those. What *is* comparable is that "two responses each"
+puts the DPO path at the group size where GRPO's own guard fires most often.
 
 Structure: `pairs` runs stage 2 and counts what it returns; `tie_rate` measures
 how often the reward orders two independent samples of the same prompt.
@@ -135,13 +138,16 @@ def verify(result):
             "DPO path inherits the tie without the guard that detects it",
         ),
         practice.Check(
-            "FINDING: the two paths are one estimator at different group sizes",
+            "FINDING: what the group size buys is tie resistance, and ties are all this compares",
             degenerate_rate[8] < degenerate_rate[4] < degenerate_rate[2],
-            "a DPO pair is a group of 2 with a sign; a GRPO group of 8 is the same reward "
-            f"normalised over more samples, and the degenerate rate falls from "
-            f"{100 * degenerate_rate[2]:.0f}% to {100 * degenerate_rate[8]:.0f}% as the group "
-            "grows. What the exercise frames as a choice between algorithms is, on this data, a "
-            "choice of how many samples to average over before deciding",
+            f"the degenerate rate falls from {100 * degenerate_rate[2]:.0f}% at k=2 to "
+            f"{100 * degenerate_rate[4]:.0f}% at k=4 and {100 * degenerate_rate[8]:.0f}% at k=8, "
+            "so more samples means fewer groups in which every reward is equal, and a pair is the "
+            "fewest samples available. That is a statement about ties and not about the two "
+            "objectives -- DPO optimises a logistic loss on reference-relative log-odds and GRPO "
+            "normalises scalar rewards into a policy gradient, and nothing measured here compares "
+            "those. What is comparable is that 'two responses each' puts the DPO path at the "
+            "group size where GRPO's own guard fires most often",
         ),
     ]
 

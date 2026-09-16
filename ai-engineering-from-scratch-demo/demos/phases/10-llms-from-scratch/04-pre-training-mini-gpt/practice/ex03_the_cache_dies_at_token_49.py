@@ -55,21 +55,17 @@ import numpy as np
 from harness import parity, practice
 
 PHASE, LESSON = "10-llms-from-scratch", "04-pre-training-mini-gpt"
-STEPS, SEED, WANTED = 500, 1, 200
-PROMPT = list(b"Machine learning")
-CORPUS = ("Machine learning is a subset of artificial intelligence. "
-          "Deep learning uses neural networks with many layers. "
-          "The transformer architecture relies on self-attention. "
-          "Language models predict the next token in a sequence. ") * 10
+STEPS, SEED, WANTED, PROMPT = 500, 1, 200, list(b"Machine learning")
+CORPUS = ("Machine learning is a subset of artificial intelligence. Deep learning uses "
+          "neural networks with many layers. The transformer architecture relies on "
+          "self-attention. Language models predict the next token in a sequence. ") * 10
 
 
 class Cache:
     """Incremental decode: K and V kept per layer, one new position per `step`."""
 
     def __init__(self, model):
-        self.model = model
-        self.kv = [[None, None] for _ in model.blocks]
-        self.pos = 0
+        self.model, self.pos, self.kv = model, 0, [[None, None] for _ in model.blocks]
 
     def step(self, token):
         model = self.model
@@ -90,26 +86,30 @@ class Cache:
             kv[slot] = new if kv[slot] is None else np.concatenate([kv[slot], new], axis=2)
         scores = query @ kv[0].transpose(0, 1, 3, 2) / np.sqrt(attn.head_dim)
         weights = np.exp(scores - scores.max(axis=-1, keepdims=True))
-        weights = weights / weights.sum(axis=-1, keepdims=True)
-        merged = (weights @ kv[1]).transpose(0, 2, 1, 3)
+        merged = ((weights / weights.sum(-1, keepdims=True)) @ kv[1]).transpose(0, 2, 1, 3)
         return merged.reshape(1, 1, self.model.embed_dim) @ attn.W_out
 
 
 def greedy(model, count):
     """`generate`'s loop with argmax in place of sampling: full forward every step."""
-    window = model.embedding.pos_embed.shape[0]
-    tokens = list(PROMPT)
+    window, tokens = model.embedding.pos_embed.shape[0], list(PROMPT)
     for _ in range(count):
-        context = np.array(tokens[-window:]).reshape(1, -1)
-        tokens.append(int(np.argmax(model.forward(context)[0, -1, :])))
+        ids = np.array(tokens[-window:]).reshape(1, -1)
+        tokens.append(int(np.argmax(model.forward(ids)[0, -1, :])))
     return tokens
+
+
+def fill(model, tokens):
+    cache = Cache(model)
+    for token in tokens:
+        cache.step(token)
+    return cache
+
 
 
 def cached(model, count):
     """The same loop, one position at a time, reusing K and V."""
-    cache, tokens = Cache(model), list(PROMPT)
-    for token in PROMPT[:-1]:
-        cache.step(token)
+    tokens, cache = list(PROMPT), fill(model, PROMPT[:-1])
     logits = cache.step(PROMPT[-1])
     for _ in range(count):
         tokens.append(int(np.argmax(logits)))
@@ -119,19 +119,14 @@ def cached(model, count):
 
 def stale_context(model, tokens, swapped):
     """Per-layer drift in the surviving tokens' cached K when only token 0 changes."""
-    kept, altered = Cache(model), Cache(model)
-    for token in tokens:
-        kept.step(token)
-    for token in [swapped] + list(tokens[1:]):
-        altered.step(token)
+    kept, altered = fill(model, tokens), fill(model, [swapped] + list(tokens[1:]))
     return [float(np.abs(a[0][:, :, 1:] - b[0][:, :, 1:]).max())
             for a, b in zip(kept.kv, altered.kv)]
 
 
 def timed(fn, *args):
     start = time.perf_counter()
-    out = fn(*args)
-    return out, time.perf_counter() - start
+    return fn(*args), time.perf_counter() - start
 
 
 def solve():
@@ -139,23 +134,13 @@ def solve():
     np.random.seed(SEED)
     with contextlib.redirect_stdout(io.StringIO()):
         model = ref.train_mini_gpt(CORPUS, num_steps=STEPS)
-    window = model.embedding.pos_embed.shape[0]
-    inside = window - len(PROMPT)
+    inside = model.embedding.pos_embed.shape[0] - len(PROMPT)
     plain, plain_seconds = timed(greedy, model, inside)
     fast, fast_seconds = timed(cached, model, inside)
-    return {
-        "window": window,
-        "inside": inside,
-        "identical": plain == fast,
-        "seconds": (plain_seconds, fast_seconds),
-        "full_seconds": timed(greedy, model, WANTED)[1],
-        "positions": model.embedding.pos_embed.shape,
-        "drift": stale_context(model, PROMPT, (PROMPT[0] + 1) % 256),
-    }
-
-
-def layer_drift(drift):
-    return ", ".join(f"layer {i} {d:.2f}" for i, d in enumerate(drift))
+    return {"window": inside + len(PROMPT), "inside": inside, "identical": plain == fast,
+            "seconds": (plain_seconds, fast_seconds),
+            "positions": model.embedding.pos_embed.shape,
+            "drift": stale_context(model, PROMPT, (PROMPT[0] + 1) % 256)}
 
 
 def verify(result):
@@ -167,42 +152,39 @@ def verify(result):
             result["identical"] and plain > 1.5 * fast,
             f"{inside} generated tokens take {plain * 1000:.0f} ms uncached and "
             f"{fast * 1000:.0f} ms cached, {plain / fast:.1f}x, and the two arms produce an "
-            "identical token sequence. Exactness is the thing to check first: a cache that "
-            "changed the output would be a different model, not a faster one",
+            "identical token sequence -- a cache that changed the output would be a different "
+            "model, not a faster one",
         ),
         practice.Check(
-            f"FINDING: only {result['inside']} of the {WANTED} tokens the exercise asks for can use it",
+            f"FINDING: only {inside} of the {WANTED} tokens the exercise asks for can use it",
             inside < WANTED // 3 and window == result["positions"][0],
             f"train_mini_gpt passes max_seq_len=seq_len=64, so pos_embed is "
             f"{result['positions'][0]}x{result['positions'][1]} and generate slices "
             f"tokens[-{window}:]. A {len(PROMPT)}-token prompt leaves {inside} positions before "
-            f"the window starts sliding, so the measurement the exercise asks for is available "
-            f"on {100 * inside / WANTED:.0f}% of the generation it names",
+            f"the window slides, so the measurement is available on "
+            f"{100 * inside / WANTED:.0f}% of the generation asked for",
         ),
         practice.Check(
             "MECHANISM: sliding the window invalidates every entry in the cache",
             result["positions"][0] == window < len(PROMPT) + WANTED,
             "positions here are learned absolute embeddings indexed pos_embed[:seq_len] from "
-            "zero, so when the window slides by one every surviving token's positional "
-            f"embedding changes and every cached K and V was computed from an input that no "
-            f"longer exists. The cache has to be rebuilt at each of the remaining "
-            f"{WANTED - inside} steps, which costs more than never caching -- the uncached "
-            f"{WANTED}-token run takes {result['full_seconds'] * 1000:.0f} ms and a rebuilt "
-            "cache would pay that plus the rebuild",
+            "zero, so one slide changes every surviving token's positional embedding and every "
+            f"cached K and V came from an input that no longer exists. It has to be rebuilt at "
+            f"each of the remaining {WANTED - inside} steps, and a rebuild is the uncached "
+            "forward plus bookkeeping -- strictly worse than never caching",
         ),
         practice.Check(
             "FINDING: a position scheme removes the first obstacle, not the last one",
             drift[0] == 0.0 and min(drift[1:]) > 0.1,
             f"nothing about the cache is wrong -- it is exact and {plain / fast:.1f}x faster "
             "where it applies -- and absolute position is what breaks it, so RoPE or ALiBi would "
-            "let the surviving entries keep their indices when the window slides. That rescues "
-            "layer 0 only. Changing the token at position 0, holding every other token and every "
-            "position fixed, moves the surviving tokens' cached K by "
-            + layer_drift(drift)
-            + ": layer 0's entries depend on nothing but their own token and position, and every "
-            "deeper layer's was computed from a hidden state that attended over the token the "
-            "window is about to evict. Exact rolling-window attention needs those rebuilt, so a "
-            "relative position scheme buys a cache that is cheap and approximate, not exact",
+            "let surviving entries keep their indices. That rescues layer 0 only: changing the "
+            "token at position 0, all else held fixed, moves the surviving cached K by "
+            + ", ".join(f"layer {i} {d:.2f}" for i, d in enumerate(drift))
+            + ": layer 0 depends on nothing but its own token and position, and every deeper "
+            "layer came from a state that attended over the token about to be evicted. Exact "
+            "rolling-window attention needs those rebuilt -- a relative position scheme buys a "
+            "cheap approximate cache, not an exact one",
         ),
     ]
 

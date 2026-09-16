@@ -110,6 +110,13 @@ twice across 30 seeds, more than a third of pairs are unordered.
 "two responses each" is the worst group size GRPO has, and the DPO path inherits
 the tie without the guard that detects it.
 
+**FINDING: what the group size buys is tie resistance, and ties are all this
+comparison can see.** More samples means fewer groups in which every reward is
+equal, and a pair is the fewest samples available. That is a statement about
+ties, not about the two objectives — DPO optimises a logistic loss on
+reference-relative log-odds and GRPO normalises scalar rewards into a policy
+gradient, and nothing measured here compares those.
+
 ### 4 — there is no policy to collapse
 
 **FINDING: `self_improvement_round` takes a sampler and returns statistics.** No
@@ -135,12 +142,17 @@ term.
 
 ### 5 — the ORM reads the last number
 
-| response | ORM | PRM |
-|---|---:|---:|
-| `"First 3+4=7, then 7*5=35."` | **1.0** | 1.0 |
-| `"The answer is 35. Note 3+4=7."` | **0.0** | 1.0 |
-| `"35"` | 1.0 | 0.5 |
-| `"3+4=7"` | 0.0 | 0.5 |
+The PRM is written in two versions: `loose_prm`, which is the exercise's own
+phrasing (half if 7 appears, half if 35 appears), and `strict_prm`, which
+requires the equation `3+4=7` to be stated and 35 to be the last number.
+
+| response | ORM | loose PRM | strict PRM |
+|---|---:|---:|---:|
+| `"First 3+4=7, then 7*5=35."` | **1.0** | 1.0 | 1.0 |
+| `"The answer is 35. Note 3+4=7."` | **0.0** | 1.0 | 0.5 |
+| `"35"` | 1.0 | 0.5 | 0.5 |
+| `"3+4=7"` | 0.0 | 0.5 | 0.5 |
+| `"7 is lucky; 35 is mentioned; final answer 36"` | 0.0 | **1.0** | 0.0 |
 
 **FINDING: word order decides the reward.** `reward_math` takes
 `re.findall(r"-?\d+", response)[-1]`, so the same content scores 1.0 or 0.0
@@ -150,6 +162,16 @@ depending on whether the working comes before or after the answer.
 ORM.** Against the bare `"35"` baseline, the PRM ranks both above it; the ORM
 ranks neither above it. Those two are precisely the cases the exercise wants
 rewarded.
+
+**FINDING: a PRM that only looks for the numbers can be gamed.** The decoy row
+does no step and ends on 36, and the exercise's own phrasing of the PRM gives it
+**1.0**.
+
+**FINDING: closing that hole costs the PRM its independence from word order.**
+The strict PRM's answer half is the same positional rule the ORM uses, so
+`"The answer is 35. Note 3+4=7."` drops to 0.5. "Which number is the answer" has
+no non-positional test in free text — a PRM that cannot be gamed by a decoy is a
+PRM that inherits the defect the exercise is asking you to measure.
 
 **FINDING: the exercise's own requirement is worth 0.0 under the ORM.** `"35"`
 and `"3+4=7 so the answer is 35"` both score 1.0. There is no ORM setting that

@@ -60,22 +60,39 @@ scorer reveals fragile prompts; the fragility here is at process boundaries.
 
 ### 2 — the leaderboard flips at 0.55
 
+The weight is a distribution over all three judges, validated as one.
+
 | model | exact | F1 | judge |
 |---|---:|---:|---:|
 | `demo_model_good` | 1.000 | 1.000 | 1.000 |
 | `demo_model_bad` | 0.000 | 0.291 | 0.630 |
-| `terse` *(added)* | **0.143** | **0.143** | — |
+| `terse` *(added)* | **0.143** | **0.143** | **0.240** |
 
 **FINDING: on the lesson's own two models no weighting changes anything.** Good
 dominates bad on all three judges, so the comparison the exercise asks for has
 no degrees of freedom on the data it ships.
 
 **ANSWER: with a third model the leaderboard flips at weight(exact) = 0.55** —
-`good, bad, terse` below it, `good, terse, bad` at and above.
+`good, bad, terse` below it, `good, terse, bad` at and above, with the judge
+weighted 0.
+
+**FINDING: give the judge a third of the weight and the flip becomes
+unreachable.**
+
+| weight on the judge | exact-match weight that flips the board |
+|---:|---|
+| 0.0 | **0.55** |
+| 0.1 | 0.60 |
+| 1/3 | none — only 0.67 of the weight is left for exact match |
+
+`llm_judge_simulated` agrees with F1 about these two models (bad 0.630 against
+terse 0.240), so weighting it in pushes the crossover past the available range.
+Which judge carries the weight decides whether the comparison has an answer.
 
 **MECHANISM: the judges disagree about what a wrong answer is worth.**
 `exact_match` gives a verbose-but-correct answer 0; `token_f1` gives it partial
-credit. Weighting them is choosing which failure to call worse.
+credit and the judge rewards its length. Weighting them is choosing which
+failure to call worse.
 
 **FINDING: ELO contributes only path dependence.** The judges are deterministic,
 so the ELO ranking *is* the ranking by mean score — and the same three matches
@@ -139,7 +156,9 @@ function of a constant it never names.
 
 ### 5 — three scorers, three verdicts on one diff
 
-The same change, `demo_model_bad` → a terse model:
+`diff` returns one record per case — id, prompt, before, after, verdict — keyed
+by position so a repeated prompt stays two cases, and the counts below are
+derived from those records. The same change, `demo_model_bad` → a terse model:
 
 | scorer | improved | regressed | unchanged |
 |---|---:|---:|---:|
@@ -153,7 +172,7 @@ The same change, `demo_model_bad` → a terse model:
 shipped pair has no contested case and cannot show what the tool is for.
 
 **MECHANISM: `exact_match` is blind to a wrong answer becoming a different wrong
-answer.** Four cases went from `"Paris is the capital city of France"` to
+answer.** Cases 0, 2, 3 and 6 went from `"Paris is the capital city of France"` to
 `"no"` — both wrong, one sharing words with the expected answer. `exact_match`
 calls that unchanged; `token_f1` calls it a regression; the judge penalises the
 length drop on top.

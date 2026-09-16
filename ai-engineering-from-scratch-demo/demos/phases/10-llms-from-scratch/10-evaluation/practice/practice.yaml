@@ -41,19 +41,23 @@ exercises:
     zh: |
       擴充 ELO 追蹤器，讓它支援多個評審函式（完全比對、F1、LLM 評審）並加權。比較看看：把完全比對加重，跟把 F1 加重，排行榜會怎麼變。
     verifies: >-
-      the three judges are the lesson's own exact_match, token_f1 and llm_judge_simulated, and the
-      weighted score decides each pairwise match fed to ELOTracker.record_match. On the lesson's own
-      two models no weighting changes anything: demo_model_good scores 1.000 on all three judges and
-      demo_model_bad scores 0.000, 0.291 and 0.630, so good dominates on every metric and the
-      comparison has no degrees of freedom on the data it ships. Adding a terse model that answers one
-      question exactly and says "no" to the rest -- 0.143 exact against bad's 0.000, 0.143 F1 against
-      bad's 0.291 -- makes the leaderboard flip at weight 0.55, from good/bad/terse to good/terse/bad.
-      The mechanism is that the two judges disagree about what a wrong answer is worth: exact_match
-      gives a verbose-but-correct answer 0 while token_f1 gives it partial credit, so weighting them
-      is choosing which failure to call worse. And ELO adds nothing except path dependence -- the
-      judges are deterministic, so the ELO ranking is the ranking by mean score, and running the same
-      three matches in a different order moves a player's rating from 1530.5 to 1532.0 without
-      changing the order
+      the three judges are the lesson's own exact_match, token_f1 and llm_judge_simulated, and the weight
+      is a distribution over all three -- validated as one -- whose weighted score decides each pairwise
+      match fed to ELOTracker.record_match. On the lesson's own two models no weighting changes anything:
+      demo_model_good scores 1.000 on all three judges and demo_model_bad 0.000, 0.291 and 0.630, so good
+      dominates on every metric and the comparison has no degrees of freedom on the data it ships. Adding
+      a terse model that answers one question exactly and says "no" to the rest -- 0.143 exact, 0.143 F1,
+      0.240 judge against bad's 0.000, 0.291 and 0.630 -- makes the leaderboard flip at exact-match weight
+      0.55 with the judge weighted 0, from good/bad/terse to good/terse/bad. Weighting the judge in pushes
+      that crossover away: 0.55 at judge weight 0, 0.60 at 0.1, and at an equal third there is no
+      crossover at all, because only 0.67 of the weight is left for exact match and the judge agrees with
+      F1 about these two models. Which of the three judges carries the weight decides whether the
+      comparison has an answer. The mechanism is that the judges disagree about what a wrong answer is
+      worth: exact_match gives a verbose-but-correct answer 0 while token_f1 gives it partial credit and
+      the judge rewards its length, so weighting them is choosing which failure to call worse. And ELO
+      adds nothing except path dependence -- the judges are deterministic, so the ELO ranking is the
+      ranking by mean score, and running the same three matches in a different order moves a player's
+      rating from 1530.5 to 1532.0 without changing the order
     uses_reference:
       - ELOTracker
       - EvalSuite
@@ -126,19 +130,20 @@ exercises:
     zh: |
       打造一個「模型 diff」工具。給定兩個模型版本的評估結果，標出哪些測試案例變好、哪些退步、哪些沒變。這是評估版的程式碼 diff —— 要判斷一次改動到底是幫了忙還是幫了倒忙，非它不可。
     verifies: >-
-      the tool is built as described -- per-case improved, regressed and unchanged -- and run with all
-      three of the lesson's scorers, because "which cases improved" is only defined relative to a
-      scorer. On the lesson's own two models no scorer finds a regression: good against bad is 7
-      improved under exact_match and token_f1 and 4 improved with 3 unchanged under the judge, so the
-      diff has no contested case on it. Swap in a pair the scorers disagree about -- the verbose model
-      against a terse one -- and one diff becomes three: exact match reads 1 improved / 0 regressed /
-      6 unchanged, token_f1 reads 1 / 4 / 2, and the judge reads 0 / 5 / 2. A pure win, a net loss and
-      a pure loss, with nothing about the models changing between those lines. The mechanism is that
-      exact_match is blind to a wrong answer becoming a different wrong answer: 4 of the 7 cases are
-      unchanged to it and regressions to token_f1, which sees the shared words disappear, while the
-      judge penalises the length drop on top. "Essential for understanding whether a change helped or
-      hurt" presumes a diff has a direction, and choosing the scorer is the decision the tool was
-      supposed to inform
+      the tool is built as the exercise describes it, returning one record per case -- id, prompt, before,
+      after and verdict -- keyed by position so a repeated prompt stays two cases, with the improved,
+      regressed and unchanged counts derived from those records rather than counted separately. It is run
+      with all three of the lesson's scorers, because "which cases improved" is only defined relative to a
+      scorer. On the lesson's own two models no scorer finds a regression: good against bad is 7 improved
+      under exact_match and token_f1 and 4 improved with 3 unchanged under the judge, so the diff has no
+      contested case on it. Swap in a pair the scorers disagree about -- the verbose model against a terse
+      one -- and one diff becomes three: exact match reads 1 improved / 0 regressed / 6 unchanged, token_f1
+      reads 1 / 4 / 2, and the judge reads 0 / 5 / 2. A pure win, a net loss and a pure loss, with nothing
+      about the models changing between those lines. The mechanism is that exact_match is blind to a wrong
+      answer becoming a different wrong answer: cases 0, 2, 3 and 6 are unchanged to it and regressions to
+      token_f1, which sees the shared words disappear, while the judge penalises the length drop on top.
+      "Essential for understanding whether a change helped or hurt" presumes a diff has a direction, and
+      choosing the scorer is the decision the tool was supposed to inform
     uses_reference:
       - EvalCase
       - EvalSuite

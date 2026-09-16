@@ -40,11 +40,16 @@ credit the one case that became exactly right.
 has a direction. It has one per scorer, and choosing the scorer is the decision
 the tool was supposed to inform.
 
-Structure: `diff` is the tool; `terse` is the second model version, chosen so
-the three shipped scorers disagree about it.
+Structure: `diff` is the tool and returns one record per case -- id, prompt,
+before, after, verdict -- keyed by position so a repeated prompt stays two
+cases; `counts` derives the summary from those records rather than counting
+separately. `terse` is the second model version, chosen so the three shipped
+scorers disagree about it.
 """
 
 from __future__ import annotations
+
+import collections
 
 from harness import parity, practice
 
@@ -73,37 +78,57 @@ def suite(ref):
 
 
 def scores(ref, model_fn):
-    return {row["input"]: row["scores"] for row in suite(ref).run(model_fn)}
+    """One row per case, in suite order, so a repeated prompt is still two cases."""
+    return [(row["input"], row["scores"]) for row in suite(ref).run(model_fn)]
+
+
+def verdict(was, now):
+    return "improved" if now > was else ("regressed" if now < was else "unchanged")
 
 
 def diff(before, after, metric):
-    """The tool: per-case improved, regressed and unchanged under one scorer."""
-    improved = sum(after[k][metric] > before[k][metric] for k in before)
-    regressed = sum(after[k][metric] < before[k][metric] for k in before)
-    return improved, regressed, len(before) - improved - regressed
+    """The tool: one record per case, keyed by position so duplicate prompts stay distinct."""
+    return [{"case": index, "prompt": prompt, "before": was[metric], "after": now[metric],
+             "verdict": verdict(was[metric], now[metric])}
+            for index, ((prompt, was), (_, now)) in enumerate(zip(before, after))]
+
+
+def counts(records):
+    """The summary, derived from the records rather than counted separately."""
+    tally = collections.Counter(record["verdict"] for record in records)
+    return tally["improved"], tally["regressed"], tally["unchanged"]
+
+
+def blind_spots(contested):
+    """Cases exact_match calls unchanged and token_f1 calls a regression."""
+    by_case = {record["case"]: record for record in contested["exact"]}
+    return [record for record in contested["f1"]
+            if record["verdict"] == "regressed"
+            and by_case[record["case"]]["verdict"] == "unchanged"]
 
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    bad = scores(ref, ref.demo_model_bad)
-    good = scores(ref, ref.demo_model_good)
+    bad, good = scores(ref, ref.demo_model_bad), scores(ref, ref.demo_model_good)
     short = scores(ref, terse)
-    shifted = [k for k in bad
-               if bad[k]["exact"] == short[k]["exact"] and short[k]["f1"] < bad[k]["f1"]]
+    contested = {metric: diff(bad, short, metric) for metric in METRICS}
+    shifted = blind_spots(contested)
+    first = shifted[0]["prompt"] if shifted else ""
     return {
         "cases": len(bad),
-        "shipped": {metric: diff(bad, good, metric) for metric in METRICS},
-        "contested": {metric: diff(bad, short, metric) for metric in METRICS},
+        "shipped": {metric: counts(diff(bad, good, metric)) for metric in METRICS},
+        "records": contested,
+        "contested": {metric: counts(records) for metric, records in contested.items()},
         "blind": len(shifted),
-        "example": (shifted[0] if shifted else "",
-                    ref.demo_model_bad(shifted[0]) if shifted else "",
-                    terse(shifted[0]) if shifted else ""),
+        "blind_cases": [record["case"] for record in shifted],
+        "example": (first, ref.demo_model_bad(first) if first else "",
+                    terse(first) if first else ""),
     }
 
 
 def verify(result):
     shipped, contested = result["shipped"], result["contested"]
-    cases = result["cases"]
+    cases, records = result["cases"], result["records"]
     prompt, was, now = result["example"]
     return [
         practice.Check(
@@ -128,8 +153,10 @@ def verify(result):
         practice.Check(
             "MECHANISM: exact_match is blind to a wrong answer becoming a different wrong answer",
             result["blind"] == contested["f1"][1] > 0,
-            f"{result['blind']} of the {cases} cases are unchanged under exact_match and "
-            f"regressions under token_f1 -- {prompt!r} went from {was!r} to {now!r}, both wrong, "
+            f"cases {result['blind_cases']} -- {result['blind']} of the {cases} -- are unchanged "
+            f"under exact_match and regressions under token_f1. Case "
+            f"{records['f1'][result['blind_cases'][0]]['case']}, {prompt!r}, went from {was!r} to "
+            f"{now!r}, both wrong, "
             "one sharing words with the expected answer and one not. exact_match cannot see the "
             "difference between two failures; token_f1 can, and the judge penalises the length "
             "drop on top",

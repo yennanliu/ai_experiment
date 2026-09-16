@@ -116,6 +116,15 @@ def slope(rewards):
     return float(np.polyfit(range(len(rewards)), rewards, 1)[0])
 
 
+def gaps(arms, first):
+    """How far the three beta arms diverge from the first, on each recorded series."""
+    return {"reward_gap": max(abs(x - y) for a in arms.values()
+                              for x, y in zip(a["rewards"], first["rewards"])),
+            "kl_gap": max(abs(x - y) for a in arms.values()
+                          for x, y in zip(a["kls"], first["kls"])),
+            "slope_gap": max(abs(a["slope"] - first["slope"]) for a in arms.values())}
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     rm = reward_model(ref)
@@ -123,19 +132,12 @@ def solve():
     arms = {beta: run(ref, rm, prompts, beta) for beta in BETAS}
     first = arms[BETAS[0]]
     frozen = replay(ref, rm, prompts, freeze=True)
-    return {
-        "arms": arms,
-        "frozen_gap": max(abs(x - y) for x, y in zip(frozen, first["rewards"])),
-        "frozen_slope": slope(frozen),
-        "shuffled_slope": slope(replay(ref, rm, list(reversed(prompts)), freeze=True)),
-        "reward_gap": max(abs(x - y) for a in arms.values()
-                          for x, y in zip(a["rewards"], first["rewards"])),
-        "kl_gap": max(abs(x - y) for a in arms.values()
-                      for x, y in zip(a["kls"], first["kls"])),
-        "slope_gap": max(abs(a["slope"] - first["slope"]) for a in arms.values()),
-        "kl": (first["kls"][0], max(first["kls"])),
-        "prompts": len(prompts),
-    }
+    return dict(gaps(arms, first),
+                arms=arms,
+                frozen_gap=max(abs(x - y) for x, y in zip(frozen, first["rewards"])),
+                shuffled_slope=slope(replay(ref, rm, list(reversed(prompts)), freeze=True)),
+                kl=(first["kls"][0], max(first["kls"])),
+                prompts=len(prompts))
 
 
 def verify(result):
