@@ -1,0 +1,137 @@
+lesson: 22-async-hogwild-inference
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/22-async-hogwild-inference/docs/en.md
+exercises:
+  - index: 1
+    slug: progress_saturates_at_two_whatever_n_is
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` with the default settings. Confirm the N=2 Hogwild! configuration produces more work-tokens than the N=1 baseline in the same wall time.
+    zh: |
+      以預設設定執行 `code/main.py`。確認在相同耗時下，N=2 的 Hogwild! 設定產出的工作詞元比 N=1 基準更多。
+    verifies: >-
+      "the same wall time" is the same step_budget, since run_hogwild advances one step per
+      iteration for every worker at once, so the confirmation is one call per worker count, and the
+      sweep is extended to N=4 and N=8 because two points cannot show whether the comparison
+      continues. It is confirmed: in a 200-step budget the workers emit 200, 400, 800 and 1600
+      tokens of which 193, 385, 761 and 1511 are work tokens, so N=2 produces 1.99x the N=1
+      baseline. But unique progress is 193, 385, 400 and 400 -- identical at N=4 and N=8 -- because
+      run_hogwild credits progress once per distinct category in ("A", "B") per step and tags the
+      rest redundant, so progress_per_step is bounded by 2 and the budget by 400. At N=8 six of
+      every eight tokens are redundant by construction, whatever they contain. The metric the
+      exercise names is the one that cannot saturate: work tokens count every non-noise token and
+      grow 7.83x by N=8 while unique progress grows 2.07x. And the useful fraction falls from 100%
+      at N=1 to 26% at N=8 -- 400 unique of 1511 work tokens -- so the simulator is reporting
+      exactly the phenomenon Hogwild! exists to avoid, on a metric that does not see it
+    uses_reference:
+      - run_hogwild
+  - index: 2
+    slug: coordination_helps_the_baseline_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reduce the coordination heuristic's strength (set `coordination_weight=0.1`). Re-run. Show that speedup collapses. Explain why: the workers duplicate effort when they cannot coordinate.
+    zh: |
+      調低協調啟發式規則的強度（設定 `coordination_weight=0.1`），重跑一次，展示加速比如何崩掉。解釋原因：無法協調時，工作者會做重複的功。
+    verifies: >-
+      speedup is unique progress at N workers over unique progress at one, both at the same
+      coordination weight, because the weight is a property of the workers and a single-worker run
+      has it too, and the sweep covers 1.0, 0.5, 0.1 and 0.0 since the exercise names two points and
+      the claim is about a trend. At N=2 the speedup falls 1.99x to 1.27x as the weight drops from
+      1.0 to 0.1, and to 1.15x at 0.0. The duplication is exactly what the trace records: at weight
+      0 every worker stays on its intended category A, so each step produces one unique A and N-1
+      redundant tokens, and unique progress is 197, 200 and 200 at N=2, 4 and 8 against work-token
+      counts of 343, 673 and 1352. But part of the collapse is the single-worker baseline getting
+      better -- one worker's unique progress rises from 171 to 193 as the weight goes 0 to 1, 1.13x
+      from a heuristic meant to prevent collisions with workers that are not there, because at
+      weight 1.0 the coordination branch fires before the coord-token branch and a coordinating
+      worker emits 0 coordination tokens against 22. At weight 0.5 N=8 therefore scores 2.18x
+      against 2.07x at weight 1.0, since the denominator moved: speedup and progress do not order
+      the configurations the same way
+    uses_reference:
+      - run_hogwild
+  - index: 3
+    slug: the_chat_task_is_slower_at_every_n
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the expected Hogwild! speedup for a 50k-token reasoning task with `p=0.8, c=500` and N=4 workers. Do the same for a 1k-token chat task with `p=0.3, c=200` and N=4. Why is one a win and the other a loss?
+    zh: |
+      計算一個 5 萬詞元推理任務在 `p=0.8, c=500`、N=4 個工作者下的預期 Hogwild! 加速比。再對一個 1 千詞元的對話任務在 `p=0.3, c=200`、N=4 下算一次。為什麼一個划算、另一個賠本？
+    verifies: >-
+      both numbers come from the lesson's own expected_speedup, and "why" is answered by separating
+      the two terms it contains -- Amdahl's parallel fraction, a property of the task, and the c * N
+      coordination overhead, a property of the deployment -- with each held fixed while the other
+      varies, because the exercise's two cases differ in both at once. At N=4 the reasoning task
+      scores 2.273x and the chat task 0.635x, and across N=2, 4 and 8 they run 1.613, 2.273, 2.632
+      against 0.800, 0.635, 0.428: scanning to 40 workers the reasoning task peaks at N=9 with
+      2.639x and the chat task at N=1 with 0.833x, so no parallelism helps it at all -- and at N=1
+      the formula still charges c, reporting 0.833x for a run with nobody to coordinate with. The
+      chat task's coordination cost at N=4 is 800 against a 1,000-unit serial time, 80% of the whole
+      job, while the reasoning task's is 2,000 against 50,000, 4%. Neither p nor c alone decides it:
+      at the chat task's p with the reasoning task's T, N=4 gives 1.23x, and at the reasoning task's
+      p with the chat task's T and c it gives 0.83x, so the separating variable is T. Amdahl also
+      caps them at 5.00x and 1.43x before any overhead, and expected_speedup takes a fifth argument
+      its body never uses
+    uses_reference:
+      - expected_speedup
+  - index: 4
+    slug: perfect_coordination_emits_no_coordination_tokens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Hogwild! paper's Section 4 (preliminary evaluation). Identify the two failure modes the authors report. Describe how a better coordination prompt might mitigate each.
+    zh: |
+      讀 Hogwild! 論文的第 4 節（初步評估）。找出作者回報的兩種失效模式，並描述一個更好的協調提示詞可以怎麼各自緩解它們。
+    verifies: >-
+      the failure modes are looked for in the simulator, because a prompt that mitigates one has to
+      change a number the simulator produces, and run_hogwild tags every token unique or redundant
+      and returns per-category counts. At N=2 with no coordination, 146 of 343 work tokens are
+      redundant and with perfect coordination 0 -- that mode a better prompt fixes entirely. At N=8
+      it fixes almost none: perfect coordination still leaves 1,111 of 1,511 redundant, because
+      unique progress is capped at 400 by one token per category per step across two categories, so
+      above two workers the ceiling binds whatever the prompt says. Coordinating also costs nothing
+      in this model, which inverts the trade: at weight 1.0 the workers emit 0 coordination tokens
+      and at weight 0.0 they emit 163, because decide_next_category reaches its coord branch only
+      when the coordination branch did not fire -- in the paper the coordination prompt is the
+      overhead, here it is a discount. Noise is the one cost that survives the weight, 89 tokens
+      against 85 out of 1,600, and it is what keeps progress_per_step below 2 at small N. And
+      target_per_category is a parameter of decide_next_category that never appears in its body, so
+      a prompt saying "stop at N of each" has nowhere to land
+    uses_reference:
+      - run_hogwild
+      - decide_next_category
+  - index: 5
+    slug: there_is_one_list_and_no_prefix_to_share
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Combine Hogwild! with speculative decoding in the toy: each worker uses a 2-token spec-decode internally. Report the multiplicative speedup. What bookkeeping problem arises when two workers both want to extend the same shared-cache prefix?
+    zh: |
+      在這個玩具實作中把 Hogwild! 與推測式解碼合起來：每個工作者內部使用 2 個詞元的推測式解碼。回報相乘後的加速比。當兩個工作者都想延伸同一段共享快取前綴時，會冒出什麼樣的記帳問題？
+    verifies: >-
+      the two speedups are computed on their own terms and then multiplied, because that is what
+      "multiplicative" asserts and it is a claim worth checking: speculative decoding's factor uses
+      the standard expected-tokens form at the acceptance rate Lesson 15 measures, and Hogwild!'s
+      comes from the lesson's own run_hogwild. Hogwild! gives 1.99x, 2.07x and 2.07x at N=2, 4 and
+      8, speculation gives 2.26x at K=2, a=0.8 and c=0.04, and the combined figures are 4.51x, 4.68x
+      and 4.68x -- the speculative factor is (1 + a + a^2) / (1 + 2c) and does not depend on the
+      worker count, so the product inherits Hogwild!'s ceiling and nothing else. The two act on
+      different quantities and only one is in the simulator: Hogwild! multiplies tokens per step and
+      speculation multiplies tokens per verifier call, and run_hogwild has no notion of a call, with
+      SharedCache's only method being counts. The bookkeeping question answers itself from the
+      cache's shape -- SharedCache is a single field holding (worker_id, category) pairs appended by
+      every worker in turn, so two workers extending the same prefix would need positions, branches
+      and per-worker lengths, and a rejected speculation would have to truncate its own tokens out
+      of a list other workers have already appended to. And the simulator already has the race
+      without modelling it as one: decide_next_category reads cache.counts() before that step's
+      appends, so within a step no worker sees the others' current tokens
+    uses_reference:
+      - run_hogwild
+      - SharedCache
