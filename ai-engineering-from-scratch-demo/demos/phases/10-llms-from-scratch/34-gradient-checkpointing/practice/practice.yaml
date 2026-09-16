@@ -1,0 +1,162 @@
+lesson: 34-gradient-checkpointing
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/34-gradient-checkpointing/docs/en.md
+exercises:
+  - index: 1
+    slug: the_test_cannot_fail_and_the_hazard_is_absent
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Verify correctness. Run `model_forward` + `model_backward` (full activations) vs `model_forward_checkpointed` + `model_backward_checkpointed` (segments). Parameter gradients must be identical to machine precision.
+    zh: |
+      驗證正確性。跑 `model_forward` + `model_backward`（完整啟動值）對比 `model_forward_checkpointed` + `model_backward_checkpointed`（分段）。參數梯度必須在機器精度內完全相同。
+    verifies: >-
+      the comparison is run as written at every segment size from 1 to 8 through the lesson's own
+      verify_equivalence, and two arms are added: a corrupted saved input, to establish that the
+      test discriminates at all, and the same network with dropout, because that is the one place a
+      checkpointed backward can legitimately disagree. The maximum parameter-gradient difference is
+      exactly 0.0 at every k -- not "within machine precision" but bitwise equal, including at the
+      segment sizes that do not divide the layer count. model_backward never reads the stored
+      intermediates: layer_backward recomputes h_pre and h from x_in, so the only thing the
+      full-activation path uses from its list is the per-layer input, which is exactly what the
+      checkpointed path saves -- at k=1 the two lists are both 7 tensors and element-for-element
+      identical, so "full activations vs segments" compares two paths that store the same tensors
+      and recompute the same intermediates from them in the same order in float32. The test does
+      discriminate, so the 0.0 is a result and not a no-op: scaling one saved segment input by
+      1.0001 moves the gradients by 2.7e-04. And the hazard the threshold exists for is absent --
+      the module has no stochastic op at all, and adding dropout at rate 0.5 and recomputing with a
+      fresh mask moves the gradients by 120% of their own magnitude, while the same seed returns to
+      exactly 0.0
+    uses_reference:
+      - verify_equivalence
+      - model_forward
+      - model_backward
+      - model_forward_checkpointed
+      - model_backward_checkpointed
+      - make_params
+      - linear_forward
+      - relu
+  - index: 2
+    slug: the_knee_is_at_one_and_the_curve_is_an_undercharge
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Sweep segment size `k` from 1 to `L`. Plot FLOP overhead and memory. Find the knee of the curve.
+    zh: |
+      掃過分段大小 `k`，從 1 到 `L`。把 FLOP 開銷與記憶體畫出來。找出曲線的拐點。
+    verifies: >-
+      both curves are swept with the lesson's own checkpoint_cost and memory_after_checkpoint over
+      every k from 1 to 64, and then the checkpointed path is timed against the full one on a real
+      24-layer network, because "the knee of the curve" is a claim about a trade and only one side
+      of it is modelled. There are two curves and the knee is at k=1: against a no-checkpoint
+      baseline of 103,079 MB, k=1 already removes 91.5% of the activation memory -- 93.5% of the
+      total achievable saving -- at a modelled 0% cost, and the remaining 6.4 points cost 29.2
+      points of compute at the k=8 minimum. The FLOP curve has no knee at all: it is monotone,
+      bounded by 33.3%, and 75% of the way there by k=4. The formula charges (k-1)/k and the code
+      recomputes k/k -- model_backward_checkpointed calls model_forward over the whole segment while
+      checkpoint_cost charges for k-1 of its layers, so the real recompute is one full extra forward
+      at every k, a flat 33.3%, and the rising curve the exercise asks to plot is exactly the n/k
+      layer-forwards the model does not charge for. Measured, k=1 costs about 30% rather than 0%,
+      above the model at every k and furthest above it where the model says there is nothing to pay.
+      And the sqrt-L rule picks the dearest of the memory-tied options: memory_after_checkpoint is
+      flat near its minimum -- at L=32 every k from 4 to 8 ties -- and optimal_segment returns the
+      large end of the tie at 6 of the 9 layer counts swept, for up to 2.8 points of compute bought
+      with no memory
+    uses_reference:
+      - checkpoint_cost
+      - memory_after_checkpoint
+      - activation_memory_mb
+      - optimal_segment
+      - make_params
+      - model_forward
+      - model_backward
+      - model_forward_checkpointed
+      - model_backward_checkpointed
+  - index: 3
+    slug: the_constant_is_right_only_at_the_seq_the_exercise_picks
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement selective checkpointing: store the attention-module input but not its intermediates. Measure the FLOP overhead vs full-layer checkpointing for a 32-layer model at seq=8192.
+    zh: |
+      實作選擇性檢查點：存下注意力模組的輸入，但不存它的中間值。以 seq=8192 的 32 層模型量測它相對於整層檢查點的 FLOP 開銷。
+    verifies: >-
+      the measurement is run through the lesson's own checkpoint_cost(selective=True) at the
+      configuration named and then at four other sequence lengths, because the one number the
+      exercise varies is the one the function does not take. The answer is 5.0000% selective against
+      32.2917% full at k=32, a 6.46x reduction -- and 5.0000% at seq 1024, 2048, 4096, 8192 and
+      16384 alike, and at every segment size too, because checkpoint_cost takes no seq and its
+      selective branch ignores segment_size. So "for a 32-layer model at seq=8192" narrows nothing.
+      seq=8192 is also the one length in the range where the hard-coded attention_fraction=0.15 is
+      correct: attention's share of a layer's forward FLOPs is s / (6h + s), which at h=8192 runs
+      0.0204, 0.0400, 0.0769, 0.1429, 0.2500 across the sweep, so the default is within 5% of the
+      truth at exactly seq=8192 and off by 7.4x at seq=1024, and the honest overheads span 0.68% to
+      8.33%. The half of selective checkpointing that needs the sequence length has no function at
+      all -- memory_after_checkpoint has no selective mode and no name in the module mentions
+      selective -- so the memory saving the technique exists for cannot be computed, and the
+      exercise asks for the FLOP overhead, the half that does not need seq. The memory model is
+      itself linear in seq, exactly 16.0x from 1024 to 16384, so the s^2 softmax volume the lesson's
+      own Key Terms calls the O(L^2) problem is absent: at seq=8192 it is 8,590 MB per layer against
+      a modelled 1,611 MB, 5.33x the entire figure
+    uses_reference:
+      - checkpoint_cost
+      - memory_after_checkpoint
+      - activation_memory_mb
+  - index: 4
+    slug: the_breakeven_is_the_interconnect_a_list_cannot_have
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add offload. Save segment inputs to a simulated "CPU buffer" (a separate list). Measure "PCIe bandwidth" as bytes/time and find the breakeven point between offload and recompute.
+    zh: |
+      加上卸載。把分段輸入存到一個模擬的「CPU 緩衝區」（另一個 list）。用 bytes/time 量測「PCIe 頻寬」，找出卸載與重算之間的損益兩平點。
+    verifies: >-
+      the offload is built as described -- the checkpointed forward copies each segment input into a
+      separate list with np.array(copy=True), returning the same output as the lesson's own -- and
+      bytes/time is measured both at the size the saved tensors actually are and on one large enough
+      to leave cache. There is no breakeven inside the toy: copying a layer's input is 15x to 120x
+      cheaper than recomputing that layer at every hidden size from 8 to 512, and the ratio grows
+      with width, because recompute is O(h*inner) and the copy is O(h) -- the sweep runs away from
+      the crossing rather than toward it. bytes/time measures this machine's cache hierarchy and
+      moves about 4x with the array size: the 6.8 MB of segment inputs copy at about 75 GB/s and a
+      single 67 MB array at about 20 GB/s, straddling the 25 GB/s of the PCIe gen4 link the exercise
+      names. The traffic is also unmeasurable in place -- the copies are 0.24% of the checkpointed
+      forward's time against 8.6% run-to-run jitter on the forward itself, a factor of 36 -- so the
+      figures above come from timing them in isolation. The breakeven has to be written as h = F /
+      (6 * BW), which lands at hidden 2,080 on PCIe gen4, 812 on gen5, 173 on NVLink 3 and 58 on
+      NVLink 4: a 36x range set entirely by the one quantity a list in the same address space does
+      not have. At the lesson's own defaults a layer's recompute is 42.3 ms against a 10.7 ms round
+      trip for 134.2 MB, so offload wins 3.9x
+    uses_reference:
+      - make_params
+      - layer_forward
+      - model_forward_checkpointed
+  - index: 5
+    slug: the_instrument_returns_zero_without_raising
+    kind: code
+    tier: T3
+    deps_group: llm
+    en: |
+      Benchmark a real PyTorch transformer with and without `torch.utils.checkpoint`. Measure memory (via `torch.cuda.max_memory_allocated`) and step time.
+    zh: |
+      對一個真實的 PyTorch transformer 做基準測試，比較有無 `torch.utils.checkpoint` 的差別。量測記憶體（透過 `torch.cuda.max_memory_allocated`）與每步耗時。
+    verifies: >-
+      a real 12-block PyTorch transformer is built and run both ways with torch.utils.checkpoint at
+      four segment sizes; the prescribed instrument is called first and then
+      torch.autograd.graph.saved_tensors_hooks is used instead, because it counts the same bytes on
+      any device. torch.cuda.max_memory_allocated() returns 0 and does not raise: without CUDA it
+      reads 0 before the step and 0 after, for both arms, so the exercise's measurement reports that
+      checkpointing saved nothing, silently, with no error to notice. The pack hook gives the real
+      numbers -- 152.166 MB in 121 tensors with no checkpointing against 13.631 MB in 13 at k=1
+      (11.2x) and 2.097 MB in 2 at k=12 (72.6x) -- exact rather than a high-water mark, and needing
+      no GPU. PyTorch's recompute total is one extra forward at every k, so its FLOP overhead is fwd
+      / (fwd + bwd) = 33.3% flat, not the (k-1)/k curve checkpoint_cost plots; what k changes is
+      only the memory, and the gradients are identical at every segment size. Measured step time
+      rises with k anyway, from about +35% at k=1 to above +100% at k=12, while the number of
+      checkpoint calls falls 12x over the same range -- so it is neither call overhead nor FLOPs:
+      with use_reentrant=False a segment's recomputed graph is materialised in full and held until
+      that segment's backward finishes, so a larger k trades saved bytes for a larger transient
