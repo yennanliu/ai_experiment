@@ -1,0 +1,146 @@
+lesson: 09-constitutional-ai-self-improvement
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/09-constitutional-ai-self-improvement/docs/en.md
+exercises:
+  - index: 1
+    slug: no_rule_can_fire_on_any_output
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Replace the handwritten critic in Step 2 with an LLM call. Use any local chat model. Measure how often the critique and revision actually improve the response versus leaving it unchanged.
+    zh: |
+      把步驟 2 裡手寫的批評者換成一次 LLM 呼叫。用任何本機的對話模型都可以。量測批評與修訂真的改善了回應的比例，相對於原封不動的比例。
+    verifies: >-
+      no local chat model is available so the substitution cannot be made, but the measurement can and
+      it is the half of the exercise that has an answer: the handwritten critic is run over 100
+      responses from the lesson's own mock_sampler on its own prompts, scored with its own
+      combined_reward. 0 improved, 0 worsened, 100 unchanged -- cai_stage_one finds zero problems and
+      performs zero revisions. The mechanism is that the critic's four thresholds do not intersect the
+      sampler's output distribution: over 58 distinct outputs the longest is 26 words against a rule
+      needing more than 40, the most commas in one is 3 against a rule needing more than 4, none
+      begins with a refusal and none contains "maybe" or "i think", so every branch of critique() is
+      unreachable from every branch of mock_sampler(). The length rule is gated on a coin flip as
+      well: it fires only when "plainly" in principle, true of 1 of the 4 entries in CONSTITUTION,
+      and cai_stage_one picks one with random.choice, so even a 41-word response would be critiqued
+      25% of the time. Two smaller defects sit behind those: the guard `"hedging" not in problems` is
+      a list-membership test against entries like "too much hedging" and is always true, and the
+      refusal revision returns "Here is the answer: " + response.split(":")[-1], which on a refusal
+      with no colon prefixes the refusal instead of replacing it
+    uses_reference:
+      - critique
+      - revise
+      - cai_stage_one
+      - mock_sampler
+      - combined_reward
+      - CONSTITUTION
+  - index: 2
+    slug: the_reward_is_zero_for_every_factual_prompt
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add a third constitutional principle about factuality. Run the pipeline on prompts that require factual claims (capitals, dates) and measure how many revisions remove factual errors versus introduce new ones.
+    zh: |
+      加上第三條關於事實性的憲法原則。拿需要提出事實主張的提示詞（首都、日期）跑整條流水線，量測有多少次修訂移除了事實錯誤、又有多少次反而引入了新的錯誤。
+    verifies: >-
+      the principle is added to CONSTITUTION as written and the pipeline is run on the prompt class the
+      exercise names, capitals and dates, with the lesson's own cai_stage_one and combined_reward. The
+      answer is 0 revisions removing an error and 0 introducing one, and neither is a measurement: no
+      revision occurs on any factual prompt, and even if one did, reward_math strips "What is " and
+      "?" and calls eval, so "the capital of France" raises and the except returns 0.0 -- right and
+      wrong answers score identically at 0.0 while the same scorer gives 1.0 on an arithmetic prompt.
+      "Removes an error" and "introduces one" are therefore the same number. And a fifth principle is
+      a dilution rather than an addition: cai_stage_one calls random.choice(CONSTITUTION), so going
+      from four principles to five takes the chance any existing one is applied from 25% to 20%, while
+      critique() dispatches on four hard-coded conditions with no branch keyed to factuality -- the
+      new string is data the code does not read
+    uses_reference:
+      - reward_math
+      - combined_reward
+      - cai_stage_one
+      - critique
+      - CONSTITUTION
+  - index: 3
+    slug: stage_two_produces_no_pairs
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement DPO on the preference pairs produced by CAI stage 2. Take 20 prompts, generate two responses each, have the critic pick a winner per pair, then run the DPO loss from Lesson 08. Compare to the GRPO path on the same data.
+    zh: |
+      對 CAI 階段 2 產出的偏好對實作 DPO。取 20 個提示詞，每個生成兩個回應，讓批評者替每一對挑出勝出者，再跑單元 08 的 DPO 損失。拿同一份資料跟 GRPO 那條路徑比較。
+    verifies: >-
+      "the preference pairs produced by CAI stage 2" are the (initial, revised) pairs cai_stage_one
+      returns with changed=True, and the GRPO comparison uses the lesson's own
+      group_relative_advantage on the same responses. Stage 2 produces 0 preference pairs from 20
+      prompts, because the critic finds no problems and performs no revisions, so the comparison the
+      exercise ends with has one arm. The fallback of letting the reward pick the winner ties 36% of
+      the time: combined_reward takes three values on this sampler, 0.0, 1.0 and 1.1, so over 20
+      prompts sampled twice across 30 seeds the two responses score equal in more than a third of
+      draws. GRPO has the same problem at the group size a pairwise comparison implies and names it --
+      group_relative_advantage returns all zeros when r.std() < 1e-8, which happens in 42% of groups
+      at k=2, 6% at k=4 and 0% at k=8 -- so the exercise's "two responses each" is the worst group
+      size GRPO has and the DPO path inherits the tie without the guard. The two paths are one
+      estimator at different group sizes: a DPO pair is a group of 2 with a sign
+    uses_reference:
+      - cai_stage_one
+      - mock_sampler
+      - combined_reward
+      - group_relative_advantage
+  - index: 4
+    slug: there_is_no_policy_to_collapse
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add entropy regularization to the GRPO objective. The term `-alpha * entropy(policy)` with alpha=0.01 encourages diverse sampling. Measure whether it delays mode collapse across 5 rounds of self-improvement.
+    zh: |
+      在 GRPO 目標函式上加入熵正則化。`-alpha * entropy(policy)` 這一項搭配 alpha=0.01，會鼓勵取樣更多樣。量測它在 5 輪自我改進中有沒有延緩模式塌縮。
+    verifies: >-
+      five rounds are run with the lesson's own self_improvement_round on its own mock_sampler over 40
+      seeds rather than one, and mode collapse is measured as the entropy of the sampler's five output
+      modes. self_improvement_round takes a sampler and returns statistics -- no model in, no model
+      out -- so five calls are five independent draws from one fixed distribution. Mode entropy is
+      1.6076 nats at the first round and 1.6078 at the last against a ceiling of ln(5) = 1.6094, so
+      the sampler is within 0.002 of maximum diversity at both ends and unchanged between them: mode
+      collapse cannot occur and entropy regularisation cannot delay it. The reward mean does not trend
+      either -- over 40 seeds the five rounds average 0.6114, 0.6401, 0.6504, 0.6105 and 0.6070 with a
+      per-round spread of 0.0842 and a fitted slope of -3.8e-03, less than a twentieth of the noise,
+      so a single-seed run that appears to decline is that spread. And the advantages are discarded
+      even when informative: at group_size=8 none of the 20 groups is degenerate, so every one carries
+      a non-zero advantage vector that a policy gradient could consume
+    uses_reference:
+      - self_improvement_round
+      - mock_sampler
+      - group_relative_advantage
+      - combined_reward
+  - index: 5
+    slug: the_orm_reads_the_last_number
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build a process reward scorer for a two-step arithmetic problem. Given "What is (3+4)*5?", the model must show the intermediate 3+4=7 step. Grade the intermediate step separately from the final answer and compare PRM-weighted GRPO to pure ORM-weighted GRPO over 10 rounds.
+    zh: |
+      替一道兩步驟的算術題打造一個過程獎勵評分器。給定「What is (3+4)*5?」，模型必須寫出 3+4=7 這個中間步驟。把中間步驟與最終答案分開評分，並在 10 輪之內比較 PRM 加權的 GRPO 與純 ORM 加權的 GRPO。
+    verifies: >-
+      the ORM is the lesson's own combined_reward and the PRM is written beside it -- half for stating
+      the intermediate 7, half for ending on 35 -- so the two differ only in what they can see.
+      reward_math reads the last number in the response, so word order decides the reward: "First
+      3+4=7, then 7*5=35." scores 1.0 and "The answer is 35. Note 3+4=7." scores 0.0, the same content
+      with the same PRM score of 1.0 and opposite ORM verdicts. Taking the bare "35" as a baseline,
+      the PRM ranks both working responses above it at 1.0 against 0.5 while the ORM ranks neither
+      above it, one tying at 1.0 and the other falling to 0.0 -- the two cases the exercise wants
+      rewarded are exactly the two the scorers order differently. The exercise's own requirement is
+      worth 0.0 extra under the ORM, "35" and "3+4=7 so the answer is 35" both scoring 1.0, so there
+      is no ORM setting that pays for the step. And ten rounds cannot separate the two, because
+      self_improvement_round returns per_prompt and overall_mean and no model, so both weightings draw
+      from the same fixed sampler and discard advantages that at group_size=4 are non-degenerate under
+      either scorer
+    uses_reference:
+      - combined_reward
+      - reward_math
+      - group_relative_advantage
+      - self_improvement_round
+      - mock_sampler
