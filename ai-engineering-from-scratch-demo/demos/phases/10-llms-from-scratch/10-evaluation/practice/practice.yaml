@@ -1,0 +1,149 @@
+lesson: 10-evaluation
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/10-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: perfectly_consistent_and_not_reproducible
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add a "consistency" scorer that runs the same input through the model 5 times and measures how often the outputs match. Inconsistent answers on deterministic inputs reveal fragile prompts or high temperature settings.
+    zh: |
+      加上一個「一致性」評分器：把同一個輸入丟給模型跑 5 次，量測輸出彼此相符的頻率。在確定性的輸入上得到不一致的答案，代表提示詞脆弱或溫度設定太高。
+    verifies: >-
+      the scorer is built exactly as specified -- five calls, count how often the outputs agree -- and
+      run on all three demo models including demo_model_random, the one it is meant to catch; the same
+      measurement is then repeated in fresh interpreters, because "runs the same input through the
+      model 5 times" leaves open whether the runs share a process and here that is the whole answer.
+      Consistency is 1.00 for all three models on every prompt: the first two are dictionary lookups
+      and the third seeds numpy with hash(prompt) before drawing, so it is a deterministic function of
+      the prompt too, and the scorer correctly finds nothing. But the same models give different
+      answers in different processes -- np.random.seed(hash(prompt) % 2**31) uses Python's hash, which
+      is salted per interpreter unless PYTHONHASHSEED is set, so six fresh processes return several
+      distinct answers to "What is 2 + 2?" and several distinct perplexities for one fixed string,
+      redrawn on every run. token_log_probs_simulated carries the same defect and feeds every
+      perplexity the lesson prints. The scorer looks in the one place the inconsistency is not: five
+      calls inside one interpreter share one hash seed and cannot disagree
+    uses_reference:
+      - demo_model_good
+      - demo_model_bad
+      - demo_model_random
+      - perplexity
+      - token_log_probs_simulated
+  - index: 2
+    slug: the_leaderboard_flips_at_0_55
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Extend the ELO tracker to support multiple judge functions (exact match, F1, LLM-as-judge) and weight them. Compare how the leaderboard changes when you weight exact match heavily versus F1 heavily.
+    zh: |
+      擴充 ELO 追蹤器，讓它支援多個評審函式（完全比對、F1、LLM 評審）並加權。比較看看：把完全比對加重，跟把 F1 加重，排行榜會怎麼變。
+    verifies: >-
+      the three judges are the lesson's own exact_match, token_f1 and llm_judge_simulated, and the
+      weighted score decides each pairwise match fed to ELOTracker.record_match. On the lesson's own
+      two models no weighting changes anything: demo_model_good scores 1.000 on all three judges and
+      demo_model_bad scores 0.000, 0.291 and 0.630, so good dominates on every metric and the
+      comparison has no degrees of freedom on the data it ships. Adding a terse model that answers one
+      question exactly and says "no" to the rest -- 0.143 exact against bad's 0.000, 0.143 F1 against
+      bad's 0.291 -- makes the leaderboard flip at weight 0.55, from good/bad/terse to good/terse/bad.
+      The mechanism is that the two judges disagree about what a wrong answer is worth: exact_match
+      gives a verbose-but-correct answer 0 while token_f1 gives it partial credit, so weighting them
+      is choosing which failure to call worse. And ELO adds nothing except path dependence -- the
+      judges are deterministic, so the ELO ranking is the ranking by mean score, and running the same
+      three matches in a different order moves a player's rating from 1530.5 to 1532.0 without
+      changing the order
+    uses_reference:
+      - ELOTracker
+      - EvalSuite
+      - EvalCase
+      - exact_match
+      - token_f1
+      - llm_judge_simulated
+      - demo_model_good
+      - demo_model_bad
+  - index: 3
+    slug: the_edge_cases_break_the_scorers_not_the_models
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build an eval suite for a specific task: email classification into 5 categories. Create 100 test cases with diverse examples including edge cases (emails that could belong to multiple categories, empty emails, emails in other languages). Measure how different "models" (rule-based, keyword matching, simulated LLM) perform.
+    zh: |
+      為一個特定任務打造評估套件：把電子郵件分成 5 類。建立 100 個測試案例，涵蓋多樣的例子，包含邊界案例（可能同時屬於多個類別的信、空白的信、其他語言的信）。量測不同「模型」（規則式、關鍵字比對、模擬的 LLM）的表現。
+    verifies: >-
+      the suite is 100 cases built through the lesson's own EvalCase and EvalSuite with the three
+      edge-case families the exercise names present by construction, and the three models are scored
+      with exact_match and token_f1. The models separate on the 70 ordinary cases -- a 0.400 spread --
+      and converge to a 0.000 spread on the 30 edge cases, because the edge cases are where the scorer
+      rather than the model decides the outcome. The two scorers disagree by the maximum possible
+      amount on an empty prediction: exact_match('', '') is 1.0 and token_f1('', '') is 0.0, since
+      token_f1 returns 0.0 whenever either side has no tokens before it compares anything, so a model
+      that correctly classifies an empty email as empty is perfect to one shipped scorer and zero to
+      the other. A single-label suite cannot express a multi-label case either -- EvalCase holds one
+      expected string, so a model picking the other defensible category scores the same 0.0 as one
+      answering "purple", with the second category recorded in metadata where no scorer reads it. And
+      token_f1 scores category labels as bags of words, giving "billing question" 0.500 against
+      "billing complaint" for sharing a token
+    uses_reference:
+      - EvalCase
+      - EvalSuite
+      - exact_match
+      - token_f1
+  - index: 4
+    slug: the_paraphrase_detector_scores_a_shuffle_as_identical
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement contamination detection: given a set of eval questions and a training corpus, check what percentage of eval questions (or close paraphrases) appear in the training data. This is how researchers audit benchmark validity.
+    zh: |
+      實作汙染偵測：給定一組評估題目與一份訓練語料，檢查有多少比例的評估題目（或它們的近義改寫）出現在訓練資料裡。研究者就是這樣稽核基準測試的有效性。
+    verifies: >-
+      "or close paraphrases" needs a similarity function and the lesson ships exactly one that could
+      serve, token_f1, so the detector is built on it and tested on the cases it has to get right,
+      against a corpus with 4 of 10 questions planted verbatim and 3 reworded. It recovers exactly the
+      plant -- 40% under exact_match and 70% at a 0.6 threshold -- which is what makes the defects
+      matter. token_f1 scores a word shuffle as a perfect match: "mat the on sat cat the" against "the
+      cat sat on the mat" is 1.000, the same score the sentence gets against itself, because the
+      function takes set(...) of both sides and discards order and repetition, so any permutation of a
+      question is indistinguishable from the question. Repetition alone buys a third of the score --
+      "the the the the the the" scores 0.333 against that sentence while an unrelated one scores 0.000
+      -- so a corpus of filler words registers as partially contaminated with everything sharing its
+      stop words. And the threshold does the work: sweeping it from 0.3 to 0.9 moves the reported
+      contamination rate from 90% to 40% on one fixed corpus, and the exercise never names a value
+    uses_reference:
+      - token_f1
+      - exact_match
+  - index: 5
+    slug: three_scorers_three_verdicts_on_one_diff
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build a "model diff" tool. Given eval results from two model versions, highlight which specific test cases improved, which regressed, and which stayed the same. This is the eval equivalent of a code diff -- essential for understanding whether a change helped or hurt.
+    zh: |
+      打造一個「模型 diff」工具。給定兩個模型版本的評估結果，標出哪些測試案例變好、哪些退步、哪些沒變。這是評估版的程式碼 diff —— 要判斷一次改動到底是幫了忙還是幫了倒忙，非它不可。
+    verifies: >-
+      the tool is built as described -- per-case improved, regressed and unchanged -- and run with all
+      three of the lesson's scorers, because "which cases improved" is only defined relative to a
+      scorer. On the lesson's own two models no scorer finds a regression: good against bad is 7
+      improved under exact_match and token_f1 and 4 improved with 3 unchanged under the judge, so the
+      diff has no contested case on it. Swap in a pair the scorers disagree about -- the verbose model
+      against a terse one -- and one diff becomes three: exact match reads 1 improved / 0 regressed /
+      6 unchanged, token_f1 reads 1 / 4 / 2, and the judge reads 0 / 5 / 2. A pure win, a net loss and
+      a pure loss, with nothing about the models changing between those lines. The mechanism is that
+      exact_match is blind to a wrong answer becoming a different wrong answer: 4 of the 7 cases are
+      unchanged to it and regressions to token_f1, which sees the shared words disappear, while the
+      judge penalises the length drop on top. "Essential for understanding whether a change helped or
+      hurt" presumes a diff has a direction, and choosing the scorer is the decision the tool was
+      supposed to inform
+    uses_reference:
+      - EvalCase
+      - EvalSuite
+      - exact_match
+      - token_f1
+      - llm_judge_simulated
+      - demo_model_good
+      - demo_model_bad
