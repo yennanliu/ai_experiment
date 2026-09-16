@@ -1,0 +1,149 @@
+lesson: 20-deepseek-v3-walkthrough
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/20-deepseek-v3-walkthrough/docs/en.md
+exercises:
+  - index: 1
+    slug: the_head_dim_is_fifty_six_and_should_be_128
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare the calculator's total-parameter estimate to the published 671B and identify where the delta comes from. The paper's Section 2 has the full itemization.
+    zh: |
+      跑 `code/main.py`。把計算器估出來的總參數量跟公開的 6710 億比較，找出差距從哪裡來。論文第 2 節有完整的逐項列表。
+    verifies: >-
+      the estimate is the lesson's own compute_totals, and "identify where the delta comes from" is
+      answered by naming each candidate term and pricing it rather than by describing one, with the
+      active count checked alongside the total because DeepSeek publishes both. compute_totals gives
+      664.54B against a published 671B and 30.36B active against 37B, and one line explains the
+      second gap almost exactly: compute_components sets head_dim = hidden_size //
+      num_attention_heads = 56, where DeepSeek's published widths are 128 for V and 128 + 64 for QK,
+      so recomputing mla_attention_params with those gives 187.1M per layer against 84.4M -- 2.22x
+      -- and over 61 layers a 6.26B shortfall. Active plus that plus the untied LM head is 37.55B
+      against a published 37B. The total's delta is a different pair of terms: the MTP module is
+      counted with a dense MLP, as mtp_module_params' own docstring says while citing a published
+      14B overhead, giving 0.705B, and rebuilt with the MoE structure DeepSeek uses it is 11.63B --
+      adding that and the untied head takes the total to 676.39B, overshooting by 5.4B. The
+      mechanism is that hidden // n_heads is a multi-head identity and MLA is not multi-head: in MLA
+      the heads read from a latent and their width is a free hyperparameter, which DeepSeek set to
+      2.29x what tiling would give. And the embedding is counted once with no tie_word_embeddings
+      key in the config
+    uses_reference:
+      - compute_totals
+      - compute_components
+      - DEEPSEEK_V3
+      - mla_attention_params
+      - swiglu_mlp_params
+      - router_params
+      - rmsnorm_params
+  - index: 2
+    slug: half_the_cache_for_five_hundredths_of_a_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the config to use MLA rank 256 instead of 512. Compute the resulting KV cache size at 128k context. What percentage reduction does it buy, and at what cost to the per-head expressiveness?
+    zh: |
+      把 config 改成 MLA rank 256 而不是 512。算出 128k 上下文下 KV 快取的大小。這換來多少百分比的縮減，又在每個頭的表達能力上付出了什麼代價？
+    verifies: >-
+      both quantities come from the lesson's own compute_totals, which returns kv_cache_bytes and
+      the parameter total from the same config, so the trade can be read off one call per rank, and
+      "per-head expressiveness" is made concrete as the rank of the subspace each head's K and V are
+      reconstructed from. Rank 256 buys exactly 50.0% of the cache -- 7.62 GB to 3.81 GB at 128k
+      context -- for 0.34B of parameters, 0.05%, because kv_cache_bytes is n_layers * kv_lora_rank *
+      max_seq * 2, linear in the rank and in nothing else. The cost is a rank bound and it is the
+      point of the method: all 128 heads' keys live in a subspace of dimension at most the rank, so
+      512 of 7168 is already 14x compression and 256 is 28x, the same trade one step further. The
+      parameters barely move because the latent is small either way -- 5.5M per layer, against a
+      665B model -- so the ratio of the two percentages is 989 to 1, cache being a per-token cost
+      and parameters a one-time one. And the GQA reference the lesson prints for comparison is not
+      the same model: compute_totals hard-codes kv_heads_hypothetical = 8 and head_dim_hypothetical
+      = 128, neither of which is in DEEPSEEK_V3, whose num_key_value_heads is 128, so its 30.50 GB
+      is a Llama-3 shape and the 4.0x advantage is MLA against another model's GQA
+    uses_reference:
+      - compute_totals
+      - DEEPSEEK_V3
+  - index: 3
+    slug: the_extra_experts_are_memory_and_nothing_else
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare DeepSeek-V3's (256 experts, top-8) routing to a hypothetical (512 experts, top-8) variant. Total parameters grow; active parameters stay the same. What does the extra expert capacity buy in theory, and what does it cost at inference?
+    zh: |
+      把 DeepSeek-V3 的（256 個專家、top-8）路由，跟一個假想的（512 個專家、top-8）變體比較。總參數量成長，啟用參數量不變。理論上多出來的專家容量買到了什麼，推論時又要付出什麼？
+    verifies: >-
+      both variants go through the lesson's own compute_totals, which reports total, active and
+      active_ratio from one config, so "total grows, active stays the same" is checkable directly,
+      and a 1024-expert variant is run beside them because the question is about a direction.
+      Doubling the experts multiplies the total by 1.98 -- 664.5B to 1318.6B -- and the active count
+      by 1.0035, which is 106M parameters or 0.4%, so the exercise's claim holds to within the
+      router. What the extra capacity buys is storage and storage is what it costs: every expert
+      must be resident for the router to be able to choose it, so the deployment gains 654B
+      parameters, 0.6 TB at FP8, while the FLOPs per token are unchanged because top-k is still 8.
+      The router is the one term that scales with the wrong thing -- router_params is hidden *
+      n_experts, so it doubles with the count and appears on the active path, reaching 425.7M across
+      the MoE layers at 1024 experts, 1.4% of the active total, spent deciding which 8 of 1024 to
+      use. And the active ratio falls 4.57% to 1.17% across the sweep entirely because the
+      denominator grows, so it measures how many experts were bought rather than how selectively
+      they are used
+    uses_reference:
+      - compute_totals
+      - router_params
+      - DEEPSEEK_V3
+  - index: 4
+    slug: absorption_costs_parameters_and_saves_the_cache
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 2.1 of the DeepSeek-V3 technical report (arXiv:2412.19437) on MLA. Explain in three sentences why the K and V decompression matrices can be "absorbed" into the subsequent matmul for inference-time efficiency.
+    zh: |
+      讀 DeepSeek-V3 技術報告（arXiv:2412.19437）第 2.1 節關於 MLA 的部分。用三句話解釋為什麼 K 與 V 的解壓矩陣可以為了推論效率被「吸收」進後續的矩陣乘法。
+    verifies: >-
+      the explanation is written as arithmetic on the lesson's own mla_attention_params, because
+      "efficiency" is a quantity and the function that counts MLA's matrices is the place to count
+      it, and both readings of the claim are priced: the absorbed matrix as a parameter count, and
+      what the absorption lets the cache hold. The absorbed matrix is bigger -- W_q_up is 11.01M and
+      W_k_up 3.67M, 14.68M together, while folding them into one q_lora x kv_lora matrix per head is
+      1536 x 512 x 128 = 100.66M, 6.9x more -- so absorption is not a parameter saving. What it
+      saves is the thing stored per token: with the product pre-multiplied a query is projected
+      straight into the latent's space and scored against the cached latent, so the per-head keys
+      are never materialised and the cache holds kv_lora = 512 numbers per token per layer instead
+      of n_heads x head_dim = 7168, 14x, which at 128k is 7.62 GB against 213.50. The trade turns on
+      whether q_lora x kv_lora is less than head_dim x (q_lora + kv_lora), and here it is 786,432
+      against 114,688, so the parameters lose by 6.9x -- the reason to do it anyway is that
+      parameters are paid once per model and the cache once per token per sequence in flight. And
+      the absorbed form is never the one the counter counts: mla_attention_params sums the training
+      form's six separate matrices
+    uses_reference:
+      - mla_attention_params
+      - compute_totals
+      - DEEPSEEK_V3
+  - index: 5
+    slug: the_weights_were_never_the_constraint
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      DeepSeek-V3 uses FP8 training for most operations. Compute the memory savings of FP8 vs BF16 for storing the 671B weights. How does this intersect with the 14.8T-token training budget?
+    zh: |
+      DeepSeek-V3 大多數運算採用 FP8 訓練。算出用 FP8 而非 BF16 儲存那 6710 億權重能省下多少記憶體。這件事又如何與 14.8T 詞元的訓練預算交互影響？
+    verifies: >-
+      the weight figure uses the lesson's own compute_totals total rather than the round 671B, so
+      the saving is measured on the model the calculator describes, and the intersection with the
+      token budget is computed the only way it can be -- 6ND against the published GPU-hours --
+      because weight storage and a token count do not otherwise meet. The 664.5B parameters are
+      1,238 GB at BF16 and 619 GB at FP8, a saving of exactly half since the count does not depend
+      on the dtype, and across 2,048 H800s that is 0.60 GB against 0.30: the weights were never the
+      constraint. The token budget meets the precision through compute rather than storage -- 6ND
+      with 30.36B active over 14.8T tokens is 2.70e24 FLOPs, and the published 2.788M H800-hours at
+      989 TFLOPs implies 27.2% MFU, so FP8 raises the achievable FLOPs per second rather than
+      lowering the FLOPs required. The calculator has no dtype anywhere: kv_cache_bytes hard-codes a
+      factor of 2 for BF16 with no argument to change it, working out to 1024 bytes per token per
+      layer at every context length, and it is the only byte count in the module. And at 14.8T
+      tokens each parameter sees 22.3 tokens on the total count and 487 on the active one, against a
+      Chinchilla-optimal 20 -- which is the sparse model's actual bargain
+    uses_reference:
+      - compute_totals
+      - DEEPSEEK_V3
