@@ -1,0 +1,145 @@
+lesson: 19-dualpipe-parallelism
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/19-dualpipe-parallelism/docs/en.md
+exercises:
+  - index: 1
+    slug: the_two_fractions_have_different_denominators
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` on `(P=8, micro_batches=16, schedule=dualpipe)` and `(P=8, micro_batches=16, schedule=1f1b)`. Compute the GPU utilization difference and express it as recovered GPU-hours per million tokens of training.
+    zh: |
+      用 `(P=8, micro_batches=16, schedule=dualpipe)` 與 `(P=8, micro_batches=16, schedule=1f1b)` 跑 `code/main.py`。算出 GPU 使用率的差異，並換算成每訓練一百萬詞元救回多少 GPU-小時。
+    verifies: >-
+      the two numbers come from the lesson's own summarize and the recovery from its own
+      gpu_hours_recovered, and then the subtraction is audited, because the two bubble fractions are
+      built from different totals and gpu_hours_recovered subtracts them as though they were the
+      same quantity. At P=8, M=16 the bubbles are 30.43% for 1F1B and 5.45% for DualPipe, a
+      24.98-point difference that becomes 249,802 GPU-hours on a million-hour run. But the
+      denominators are different units: bubble_1f1b's total is 2M + 2(P-1) forward-or-backward
+      chunks, bubble_zero_bubble's is 3M + 2(P-1) B/W sub-chunks as its own docstring says, and
+      bubble_dualpipe's is 3M + (P-1) -- 14/46, 7/62 and 3/55 at this shape -- so subtracting one
+      whole's fraction from another's is not a utilisation difference. "Per million tokens" cannot
+      be computed from anything the lesson provides either: gpu_hours_recovered is the only function
+      that touches time, and no name in the module mentions tokens or batch size, so micro-batches
+      are counted while their size is not. And every schedule's bubble shrinks to zero as M grows --
+      63.6/26.9/15.8/18.9% at M=4 down to 0.17/0.06/0.02/0.03% at M=4096 -- so "bubbles do not grow
+      with M for DualPipe" is true of all four, since every numerator is constant in P and every
+      denominator linear in M
+    uses_reference:
+      - summarize
+      - gpu_hours_recovered
+      - bubble_1f1b
+      - bubble_dualpipe
+  - index: 2
+    slug: the_1f1b_formula_checks_out_and_dualpipes_has_no_schedule
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sketch the schedule table for `(P=4, micro_batches=8, schedule=dualpipe)` by hand. Mark each time slot with the micro-batch ID and direction. Identify the first time slot where bubbles are absent.
+    zh: |
+      手繪 `(P=4, micro_batches=8, schedule=dualpipe)` 的排程表。在每個時段標上微批次編號與方向。找出第一個沒有氣泡的時段。
+    verifies: >-
+      the lesson ships four bubble fractions and no schedule, so the table has to be built; it is
+      built for 1F1B first -- warmup of P-1-p idle slots per rank, then alternating forward and
+      backward, then a mirrored cooldown -- because that is the one schedule whose formula can be
+      checked against it. At P=4, M=8 the table is 22 slots wide and every rank is busy from t=3 to
+      t=15, thirteen slots or 59.1% of the wall clock, so the first bubble-free slot is t = P - 1:
+      exactly how long the first micro-batch takes to reach the last rank. The 1F1B formula is exact
+      to twelve decimal places -- the simulated bubble is 27.27273% and bubble_1f1b returns
+      27.27273%, and they agree on (4,8), (8,16), (4,16), (8,64), (16,128) and (2,8) -- so 2(P-1)
+      idle slots out of 2M + 2(P-1) is a count of the table rather than an approximation. Nothing in
+      the lesson lets the same check run on DualPipe: bubble_dualpipe is (P-1)//2 over 3M + (P-1)
+      and its docstring asserts a zero stable-phase bubble without a schedule to count, so the
+      exercise asks for a DualPipe table and the answer key is a formula no table was derived from.
+      The integer division also makes the bubble a step function of P: (P-1)//2 is 0 at P=2, giving
+      exactly 0.000%, and 1 at both P=3 and P=4, giving 0.515% and 0.513% where 1F1B moves 3.030% to
+      4.478%
+    uses_reference:
+      - bubble_1f1b
+      - bubble_dualpipe
+  - index: 3
+    slug: the_overlap_is_a_string
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Figure 5 of the DeepSeek-V3 technical report (arXiv:2412.19437). Identify the overlap window for all-to-all dispatch inside a DualPipe forward chunk. Explain how the compute schedule hides it.
+    zh: |
+      讀 DeepSeek-V3 技術報告（arXiv:2412.19437）的圖 5。找出 DualPipe 前向 chunk 裡 all-to-all dispatch 的重疊視窗。解釋計算排程是怎麼把它藏起來的。
+    verifies: >-
+      the explanation is written as an audit of what the lesson can represent, because "how the
+      compute schedule hides it" is a claim about communication time and the module has to contain
+      that quantity for the claim to be checkable. Communication appears exactly once, as the fourth
+      element of summarize's 4-tuples taking the values full, minimal and partial; it is printed and
+      nothing else consumes it, so there is no overlap window to identify and nothing for the
+      compute schedule to hide. The bubble formulas are functions of (P, M) and nothing else --
+      every one takes exactly two integers -- so a schedule that overlapped all-to-all perfectly and
+      one that overlapped none of it return the same number at the same shape. ScheduleStats is
+      declared and never constructed: it has five fields, name, stable_bubble_frac,
+      scales_with_micro_batches, param_copies and comm_overlap, and summarize returns bare tuples
+      instead, so scales_with_micro_batches is never assigned anywhere in the module. And the one
+      number that distinguishes DualPipeV is a stipulated constant -- bubble_dualpipev is
+      bubble_dualpipe * 1.2 exactly, to machine precision, at every shape tried, which its own
+      docstring admits
+    uses_reference:
+      - summarize
+      - ScheduleStats
+      - bubble_1f1b
+      - bubble_zero_bubble
+      - bubble_dualpipe
+      - bubble_dualpipev
+  - index: 4
+    slug: the_moe_overhead_is_larger_until_expert_parallelism_arrives
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the 2x parameter overhead of DualPipe for a 70B dense model with P=8 pipeline stages and a 671B MoE model with P=16 pipeline stages. Show why the MoE case's overhead is proportionally smaller (most parameters are experts, sharded across a large EP group).
+    zh: |
+      算出 DualPipe 對一個 P=8 管線階段的 700 億參數密集模型、以及一個 P=16 管線階段的 6710 億參數 MoE 模型各自的 2 倍參數額外開銷。說明為什麼 MoE 那一邊的開銷按比例來說比較小（絕大多數參數是專家，被分片到一個很大的 EP 群組上）。
+    verifies: >-
+      the overhead is what a second copy of one pipeline stage costs on one GPU, so it is params / P
+      in both cases, and the exercise's explanation is then tested by adding the expert-parallel
+      group it names -- which appears nowhere in the lesson, whose only knobs are P and M. With
+      pipeline parallelism alone the MoE's overhead is larger, not smaller: 70B over 8 stages is
+      8.75B per GPU and 671B over 16 is 41.94B, so DualPipe's extra copy is 4.8x bigger on the model
+      the exercise says should be cheaper. Expert parallelism is what makes the claim true and it is
+      not in the model -- the experts are 656B of 671B, 97.8% of the parameters, and sharding them
+      gives a stage of 41.94B at EP=1, 6.04B at EP=8 and 1.55B at EP=64, which is 479%, 69% and 18%
+      of the dense stage. At EP=64, DeepSeek-V3's own configuration, the MoE stage is a fifth of the
+      dense one. The mechanism is that DualPipe replicates the stage while EP shrinks it: the two
+      knobs act on the same quantity from opposite sides, and nothing about DualPipe is cheaper on
+      an MoE -- what is cheaper is the MoE stage. And no function in the lesson takes a parameter
+      count: param_copies is recorded as 1 or 2 and read by nothing
+    uses_reference:
+      - summarize
+  - index: 5
+    slug: the_model_records_one_of_the_two_properties
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare DualPipe to Chimera (a competing bidirectional scheduler from 2021). Identify the two specific properties DualPipe added that Chimera did not have, using the paper's Section 3.4 as the reference.
+    zh: |
+      把 DualPipe 拿來跟 Chimera（2021 年一個競爭的雙向排程器）比較。以論文第 3.4 節為依據，指出 DualPipe 多了哪兩項 Chimera 沒有的具體性質。
+    verifies: >-
+      the comparison is made against what the lesson can express, because a property DualPipe
+      "added" has to be visible somewhere in the model for the comparison to be checkable, and
+      Chimera is bidirectional with two model copies -- so param_copies = 2 is the one field
+      DualPipe shares with it. The model has two fields that could carry the answer and one of them
+      is Chimera's own trick: param_copies = 2 is what Chimera did in 2021, and comm_overlap =
+      "full" is the only field separating DualPipe from everything else in the table, and it is a
+      string rather than a quantity. The fine-grained forward/backward chunk split that makes the
+      overlap possible has no field at all. DualPipeV is the honest test and it fails: it has
+      param_copies = 1, dropping the very thing Chimera and DualPipe share, and the lesson still
+      calls its overlap partial and its bubble 1.2x DualPipe's -- so the table says a schedule with
+      Chimera's memory profile loses a fifth of DualPipe's advantage. Only one number separates the
+      four schedules anyway: at P=8, M=16 the fractions are 14/46, 7/62, 3/55 and 3/55, so DualPipe
+      and DualPipeV share a formula up to the stipulated 1.2. And the field that would have carried
+      the distinction, scales_with_micro_batches, is assigned nowhere
+    uses_reference:
+      - summarize
+      - ScheduleStats
