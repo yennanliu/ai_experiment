@@ -1,0 +1,154 @@
+lesson: 14-open-models-architecture-walkthroughs
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/14-open-models-architecture-walkthroughs/docs/en.md
+exercises:
+  - index: 1
+    slug: the_delta_is_the_untied_head_to_three_decimals
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Qwen 2.5 72B config from HuggingFace. Compute total parameters from scratch. Compare to the HF-reported value and identify where any delta comes from (head dim rounding, KV sharing factor, etc.).
+    zh: |
+      從 HuggingFace 讀取 Qwen 2.5 72B 的 config。從零算出總參數量。與 HF 公布的數字比對，找出任何差異的來源（head dim 取整、KV 共享係數等等）。
+    verifies: >-
+      "from scratch" is the lesson's own analyze, since it is a from-scratch parameter counter and
+      the config is already in CONFIGS, and the delta is attributed term by term rather than
+      described -- each candidate the exercise names is computed and either accounts for the gap or
+      does not. analyze gives 71.4597B against Qwen's reported 72.706B, and the 1.2463B gap is one
+      term: Qwen 2.5 72B does not tie its input embedding to its output head and analyze counts
+      vocab_size * hidden_size exactly once, so adding the second copy at 1.2457B and the q/k/v
+      attention biases at 0.0008B gives 72.7062B, a residual of 0.0002B or 0.0003%. Neither
+      candidate the exercise suggests contributes anything: head dim is 8192 / 64 = 128 exactly so
+      there is no rounding to find, and the KV sharing factor is already in
+      attention_params_per_layer, which sizes K and V at kv_heads * head_dim rather than hidden_size
+      -- turning GQA off would add 9.4B, not 1.2B, so the sharing factor is the largest single term
+      in the count and the one already correct. An untied head is a whole embedding table and
+      vocabulary is where the width is: at vocab 152,064 and h 8,192 one table is 1.246B parameters,
+      1.7% of the model and more than any single layer's 0.88B, so tying is a one-line config flag
+      that moves more parameters than most of the six-knob choices. The same omission is worth 0.93B
+      on DeepSeek V3, whose config is also untied and which analyze reports at 665.9B against a
+      published 671B -- the LM head closes 18% of that gap and the rest is the
+      multi-token-prediction module the config does not describe
+    uses_reference:
+      - analyze
+      - CONFIGS
+      - attention_params_per_layer
+  - index: 2
+    slug: the_expert_share_is_not_the_parameter_share
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      DeepSeek V3 uses 256 experts with top-8 routing. Compute the ratio of activated experts to total experts and compare to Mixtral 8x7B's top-2 of 8. What does the shift from sparse (25%) to denser sparse (3%) imply about capacity per FLOP?
+    zh: |
+      DeepSeek V3 使用 256 個專家、top-8 路由。算出啟用專家佔全部專家的比例，並與 Mixtral 8x7B 的 8 選 2 比較。從稀疏（25%）走向更稀疏（3%），對每個 FLOP 換到的容量意味著什麼？
+    verifies: >-
+      both ratios are computed and then the quantity the exercise is really asking about -- what
+      fraction of the model is active per token -- is read off the lesson's own analyze, which
+      tracks total_params and active_params separately, because the two ratios are not the same
+      number and the difference is the whole answer to "capacity per FLOP". Mixtral activates 25.00%
+      of its experts and DeepSeek 3.12%, an 8x shift, but Mixtral activates 27.4% of its parameters
+      and DeepSeek 4.9%, a 5.6x shift: the expert ratio overstates the sparsity in both, because
+      attention, embeddings, norms and the shared expert are active on every token whatever the
+      router does. Capacity per FLOP is total over active and it is what the shift buys -- Mixtral
+      holds 3.7 parameters for every one it spends and DeepSeek 20.6, so going from top-2-of-8 to
+      top-8-of-256 multiplies stored capacity per unit of compute by 5.6x while increasing the
+      experts consulted per token from 2 to 8. The expert also got smaller, which is how the ratio
+      moved: DeepSeek's moe_intermediate_size is 2,048 against Mixtral's 14,336, a 7x narrower
+      expert at 44M parameters against 176M, so 256 of DeepSeek's experts is 8.0x Mixtral's 8 in
+      parameters rather than 32x and the headline "256 experts" counts a different unit. And the
+      floor is the dense part: attention, embeddings, norms, the router, the first three dense
+      layers and the always-on shared expert come to 11.9B active parameters, 37% of the 32.4B
+      active total, before a single routed expert is consulted
+    uses_reference:
+      - analyze
+      - CONFIGS
+      - mlp_params
+  - index: 3
+    slug: the_weights_do_not_fit_before_the_cache_is_counted
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the KV cache for Llama 3 405B at 128k context in FP8 and BF16. At FP8 it is half the BF16 number. How many parallel sequences can you serve on a single 8xH100 node (80GB each = 640GB total, minus weight memory)?
+    zh: |
+      分別以 FP8 與 BF16 算出 Llama 3 405B 在 128k 上下文下的 KV 快取。FP8 是 BF16 數字的一半。在單一個 8xH100 節點（每張 80GB，共 640GB，扣掉權重記憶體）上，你能同時服務幾條平行序列？
+    verifies: >-
+      CONFIGS stops at the 70B, so the 405B shape is added -- hidden 16384, 126 layers, 128 query
+      heads, 8 KV heads -- and run through the lesson's own analyze, whose kv_cache_bytes_bf16
+      already uses max_position_embeddings of 131072; both dtypes are then priced against the node
+      the exercise names, and the weights are priced at both dtypes too, because "minus weight
+      memory" does not say which dtype the weights are in. At BF16 weights the model does not fit:
+      403.8B counted parameters are 752.0 GB on a 640 GB node, leaving -112.0 GB before a single
+      token is cached. At FP8 weights it is 376.0 GB leaving 264.0, which seats 4 sequences with a
+      BF16 cache and 8 with an FP8 one. FP8 is exactly half of BF16 -- 504 KB per token against 252,
+      or 63.0 GB against 31.5 for one 128k sequence -- because 2 x layers x kv_heads x head_dim x
+      seq x bytes is linear in bytes and nothing else in it changes. The question therefore presumes
+      a subtraction that goes negative, and the first decision on this node is quantising the
+      weights, which the exercise does not mention and which moves 376 GB, six sequences' worth of
+      cache. And 504 KB per token is a GQA number: with 128 KV heads instead of 8 a single 128k
+      sequence would need 1,008 GB against a 640 GB node, so the 405B is servable at long context
+      because of one config field
+    uses_reference:
+      - analyze
+      - CONFIGS
+      - attention_scheme
+  - index: 4
+    slug: the_window_can_never_save_more_than_half
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Gemma 2 alternates full-attention and sliding-window-attention layers. Write the math for the KV cache when half the layers use a 4096-token sliding window instead of full context. How much memory does that save at 8k total context?
+    zh: |
+      Gemma 2 交替使用完整注意力層與滑動視窗注意力層。寫出當一半的層改用 4096 詞元滑動視窗而非完整上下文時，KV 快取的算式。在總共 8k 上下文下，這能省多少記憶體？
+    verifies: >-
+      the math is written as the lesson's own KV formula with the per-layer sequence length made a
+      per-layer quantity -- 2 x bytes x sum over layers of kv_heads x head_dim x cached_len, with
+      cached_len = min(window, context) on the sliding layers -- using Gemma 2 27B's shape of 46
+      layers, 16 KV heads, 128 head dim and a 4096 window, because CONFIGS has no Gemma and the
+      exercise names the model. At 8k context 23 layers cache 8192 tokens and 23 cache 4096, so 2.88
+      GB becomes 2.16 GB, a saving of exactly 25.0%: (8192 + 4096) / (2 x 8192) is 0.75 of the full
+      cache, and the formula is (1 - window/context) / 2 whenever the window is shorter than the
+      context. The ceiling is 50% and the model approaches it without reaching it -- 43.8% at 32k,
+      48.4% at 128k -- because half the layers have no window and their cache grows linearly with
+      context forever. The saving is a property of the ratio rather than of the window: at a context
+      no longer than the window the sliding layers cache everything, so the saving is 0.0% at 4k and
+      0.0% at 2k, and the 8k point the exercise picks is the smallest context at which the answer is
+      not zero. And the window is the second halving applied to the same tensor, since Gemma 2 27B
+      is GQA (32/16) before it: the 25% at 8k is 0.72 GB where the same alternation on a multi-head
+      model would save 1.44 GB
+    uses_reference:
+      - attention_scheme
+  - index: 5
+    slug: the_seventh_knob_is_already_in_the_table
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Find a recent frontier open model that was released after this lesson was written. Identify which of the six knobs it picked and whether it introduced a seventh knob. The curriculum will feel out of date the moment a new architecture ships -- the goal is to update your table without rebuilding your mental model.
+    zh: |
+      找一個在本課寫成之後才發表的前沿開放模型。指出它挑了六個旋鈕中的哪幾個，以及它是否引入了第七個旋鈕。新架構一發表，這份課程內容就會顯得過時 —— 目標是讓你能更新自己的表格，而不必重建心智模型。
+    verifies: >-
+      a model released after the lesson cannot be fetched from here and the exercise's own point is
+      that the table is the artifact rather than the model list, so the test is run against the
+      newest model the lesson already ships -- DeepSeek V3 -- by asking what analyze's six-knob
+      verdict string reports about it and what it leaves out: if the table is complete the verdict
+      accounts for the model, and if a knob is missing it shows up as parameters the verdict cannot
+      explain. The verdict is "RMSNORM · SWIGLU · ROPE · MLA · MoE 256e/top-8", five flags, and
+      shared_experts is in the config, is read by analyze, changes both total_params and
+      active_params by 2.554B, and appears in none of them -- 7.9% of the model's 32.4B active
+      parameters. A shared expert is also a different kind of knob from the six: those are
+      substitutions, LayerNorm or RMSNorm and dense or MoE, while a shared expert is an addition
+      that makes dense-versus-sparse a spectrum rather than a switch, and the table has no column
+      for a model that is both in every MoE layer. Across the six non-GPT-2 configs the norm and
+      activation knobs take one value each, RMSNorm and SwiGLU, while attention sharing and
+      dense-vs-MoE still discriminate and position varies only between RoPE and RoPE-with-YaRN. And
+      what makes a knob a knob here is that analyze reads it: moe, num_experts, experts_per_token,
+      attention, kv_lora_rank, first_dense_layers and shared_experts all change the parameter count,
+      while switching position from rope to learned leaves the total bit-for-bit unchanged
+    uses_reference:
+      - analyze
+      - CONFIGS
+      - mlp_params
