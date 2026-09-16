@@ -1,0 +1,159 @@
+lesson: 15-speculative-decoding-eagle3
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/15-speculative-decoding-eagle3/docs/en.md
+exercises:
+  - index: 1
+    slug: the_check_fails_on_a_third_of_seeds
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the chi-square statistic on the Leviathan distribution check stays below the 95% critical value on 50,000 samples.
+    zh: |
+      執行 `code/main.py`。確認 Leviathan 分布檢驗在 50,000 個樣本上的卡方統計量，維持在 95% 臨界值以下。
+    verifies: >-
+      "confirm it stays below" describes a deterministic property and the statistic is a random
+      variable, so it is run on 24 seeds rather than one, and the same 24 runs are scored a second
+      way -- against the exact verifier distribution rather than against a second random sample --
+      because distribution_check returns two sampled histograms and chi_square treats one of them as
+      the expectation. On seed 42 the statistic is 11.60, below the 14.07 critical value, so the run
+      the lesson prints does confirm what the exercise asks; across 24 seeds it exceeds that value
+      29% of the time, with a mean of 12.34 against the 7.0 a chi-square with 7 degrees of freedom
+      should average. Nothing is wrong with the sampler: the test compares two random samples and
+      calls one of them the expectation, drawing 50,000 speculative tokens and 50,000 direct ones
+      and rescaling the second to the first's total, which roughly doubles the variance of the
+      statistic so a nominal 5% test rejects 29% of the time. Scored against the exact q the same
+      histograms give a mean of 7.01 against the theoretical 7.0 and 4% above the critical value,
+      which is what a 95% threshold is supposed to give -- and the verifier distribution is known
+      exactly, being a list of eight floats at the top of main. Leviathan's guarantee is exact: with
+      a draft whose KL from the verifier is 0.0198, the speculative tokens match q to a worst-case
+      chi-square of 18.37 across all 24 seeds
+    uses_reference:
+      - distribution_check
+      - chi_square
+      - perturb
+      - kl
+  - index: 2
+    slug: the_minimum_is_outside_the_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sweep `N` from 1 to 10 with `α` held at 0.9 and `c` held at 0.04. Plot expected tokens per verifier call and actual wall time per token. Find the `N` that minimizes wall time. Explain the shape of the curve.
+    zh: |
+      固定 `α` 為 0.9、`c` 為 0.04，把 `N` 從 1 掃到 10。畫出每次驗證呼叫的期望詞元數，以及每個詞元的實際牆鐘時間。找出讓牆鐘時間最小的 `N`，並解釋曲線的形狀。
+    verifies: >-
+      both curves come from the lesson's own expected_tokens_per_verify and wall_time_per_token, and
+      the sweep is extended past 10 because "find the N that minimizes wall time" presumes the
+      minimum is inside the range and that is a testable claim. Wall time falls at every step from
+      N=1 to N=10 -- 0.5474 down to 0.2040 -- so the sweep's answer is its last point, while the
+      actual minimum is 0.1964 at N=15. The two terms pull in opposite directions and one of them
+      saturates: cost per verifier call is 1 + N x 0.04, linear in N without bound, while expected
+      tokens is (1 - alpha^(N+1)) / (1 - alpha), which saturates at 1/(1-alpha) = 10 -- at N=10 it
+      has reached 6.86 of that and is gaining 0.35 tokens per extra draft against 0.04 of extra cost
+      on a base of 1.40, so the curve turns where the marginal token stops paying for the marginal
+      draft. The ceiling rather than the cost is what ends the curve: at N=30 the chain averages
+      9.62 tokens, 96% of the ceiling, and wall time is back up to 0.2287, worse than N=10. And the
+      shape is flat where the answer lies -- within 1% of the optimum, N = 13 to 17 are
+      indistinguishable and from N=12 to N=18 wall time varies by 1.3% -- so the exercise's window
+      sits entirely on the slope leading into the basin, where wall time falls by 63%
+    uses_reference:
+      - expected_tokens_per_verify
+      - wall_time_per_token
+  - index: 3
+    slug: the_tree_breaks_what_exercise_one_verified
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the code to simulate EAGLE-2 tree search: at each step, the draft proposes a tree of shape `[2, 2, 2]` (eight candidate paths). The verifier runs once, and the highest-probability accepted path wins. Compute `α` per leaf and total tokens per verifier call. Compare to linear-chain spec-decoding at equivalent compute.
+    zh: |
+      改寫程式碼來模擬 EAGLE-2 的樹狀搜尋：每一步草稿提出一棵形狀為 `[2, 2, 2]` 的樹（八條候選路徑）。驗證模型跑一次，機率最高的被接受路徑勝出。算出每個葉節點的 `α` 與每次驗證呼叫的總詞元數，並在同等算力下與線性鏈的推測式解碼比較。
+    verifies: >-
+      "the highest-probability accepted path wins" is implemented literally, because that is the
+      natural reading and it is exactly what breaks, and the result is put through the same
+      chi_square test Exercise 1 uses -- scored against the exact q, which Exercise 1 establishes is
+      what the check should have done -- since a speculative scheme that changes the output
+      distribution is not a faster decoder but a different model. Per-node acceptance rises from
+      0.933 at one branch to 0.996 at two and 1.000 at four, and the chi-square of the first emitted
+      token against q goes 3.3, 8,790.5, 38,669.6 against a 14.07 critical value: two branches per
+      node is a genuine improvement in acceptance and a catastrophic one in correctness. The
+      mechanism is that selection is a bias -- Leviathan's guarantee is that one draft, accepted
+      with min(1, q/p) and corrected from the residual otherwise, is distributed as q, and taking b
+      independent drafts and keeping the survivor with the largest q/p re-weights the output by the
+      very ratio that was supposed to cancel, so tokens the draft under-produces relative to q are
+      over-represented at exactly the rate that made them likely to win. Acceptance per node is the
+      wrong thing to maximise: at four branches tokens per verifier call reaches 4.00 against the
+      linear chain's 3.62, a 10% gain for 84 drafted nodes against 3, and the metric the exercise
+      asks for cannot see that the tokens are no longer samples from the verifier. SpecInfer and
+      EAGLE-2 verify a tree by renormalising the residual over the candidates already rejected at
+      each node -- an accept rule per node, not a selection over leaves
+    uses_reference:
+      - sample
+      - residual
+      - chi_square
+      - perturb
+  - index: 4
+    slug: truncate_to_never_truncates
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a batched KV rollback simulator for two concurrent sequences. Sequence A has all drafts accepted; sequence B rejects at position 2. Show that the correct `kv_length` is updated per sequence and that no work is wasted.
+    zh: |
+      為兩條並行序列實作一個批次化的 KV 回捲模擬器。序列 A 的草稿全部被接受；序列 B 在位置 2 被拒絕。證明每條序列的 `kv_length` 都各自被正確更新，而且沒有任何工作被浪費掉。
+    verifies: >-
+      the two sequences get their own KVBuffer and are stepped through the lesson's own spec_step,
+      with A given a draft equal to the verifier so every token is accepted and B given a badly
+      mismatched one, and both claims the exercise makes are tested rather than demonstrated. The
+      per-sequence lengths are correct -- from a shared prefix of 10, A emits 6 tokens and ends at
+      16 while B rejects early, emits 3 and ends at 13 -- and they are correct without truncate_to
+      ever truncating: spec_step calls extend(1) once per accepted token and then truncate_to(prefix
+      + len(emitted)), which is one more than the current length because emitted already contains
+      the correction token, so across both sequences the method is invoked once and it grows the
+      buffer. The exercise's second claim is false and the amount is the point: B drafted 5 tokens
+      and used 2, so 3 draft forwards are computed and thrown away, which is not an implementation
+      flaw but what speculative decoding pays for the verifier call it saves. A batched rollback
+      also has nothing to synchronise here -- KVBuffer's state is one scalar and spec_step touches
+      exactly one buffer, so the "batched" simulator is two independent simulators, and the hard
+      part of a real batched rollback, that the verifier's forward was issued for a padded batch
+      whose rows now diverge, has no analogue because the buffer holds a length and no bytes. A
+      buffer that only grows is a counter
+    uses_reference:
+      - KVBuffer
+      - spec_step
+      - perturb
+  - index: 5
+    slug: teacher_forced_alpha_over_predicts_by_28_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the EAGLE-3 paper's Section 4 (Training-Time Test). Explain in two sentences why naive draft training without TTT suffers from exposure bias, and why feeding the draft its own predictions during training fixes it. Connect this to the scheduled-sampling literature in seq2seq.
+    zh: |
+      讀 EAGLE-3 論文的第 4 節（Training-Time Test）。用兩句話解釋為什麼不做 TTT 的天真草稿訓練會有 exposure bias，以及為什麼訓練期間把草稿自己的預測餵回去能修好它。把這件事連結到 seq2seq 領域的 scheduled sampling 文獻。
+    verifies: >-
+      the explanation is written as a measurement, because the lesson's own code contains the
+      assumption Section 4 is about: spec_step's docstring says q and p are context-free
+      distributions shared across positions and that the math extends to position-dependent q_i, p_i
+      without changing the loop, and that is the claim under test. A minimal context-dependent pair
+      is built -- a verifier and a draft whose next-token distribution depends on the previous
+      token, with one state where they disagree and which the draft over-produces and then sticks
+      to. With the prefix drawn from the verifier, alpha is flat at 0.871, 0.849, 0.848, 0.849,
+      0.848, 0.849; with the draft conditioning on its own output it falls 0.869, 0.755, 0.683,
+      0.630, 0.595, 0.568 -- a gap of 0.281 by position 6, which is exposure bias in one line. The
+      draft walks into the states where it is worst: the probability it is conditioning on the
+      disagreement state goes 0.000 to 0.435 under free running against a flat 0.030 under teacher
+      forcing, and feeding the draft its own predictions during training is what puts those prefixes
+      into the training distribution, which is scheduled sampling's answer to the same problem in
+      seq2seq. The lesson's own measure_alpha is itself a teacher-forced measurement, drawing a
+      single token with no chain and no conditioning, so it reports 0.871 and
+      expected_tokens_per_verify predicts 4.52 tokens per verifier call against the 3.52 the
+      measured per-position alphas give -- an over-prediction of 28%. And the formula assumes alpha
+      is constant rather than merely known: given the correct mean of the free-running alphas it
+      still predicts 2.94 against 3.52, because a decaying sequence and a constant one with the same
+      mean are not the same product
+    uses_reference:
+      - sample
+      - measure_alpha
+      - expected_tokens_per_verify
