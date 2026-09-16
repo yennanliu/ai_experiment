@@ -119,11 +119,24 @@ window slides →   every token's pos_embed index shifts by one
 The cache has to be rebuilt at each of the remaining 152 steps, which costs more
 than never caching at all.
 
-**FINDING: the fix is a position scheme, not a better cache.** Nothing about the
-cache is wrong. Absolute position is. RoPE and ALiBi make a token's
-representation depend on *relative* offset, so a sliding window leaves cached
-entries valid — the position encoding decides whether a KV cache survives a long
-generation, and this model made that choice before the cache was written.
+**FINDING: a position scheme removes the first obstacle, not the last one.**
+Nothing about the cache is wrong. Absolute position is — so RoPE or ALiBi would
+let the surviving entries keep their indices when the window slides. That
+rescues layer 0 only.
+
+```text
+change the token at position 0, hold every other token and position fixed:
+  layer 0   ΔK = 0.00      depends on its own token and position, nothing else
+  layer 1   ΔK = 0.32      computed from a state that attended over position 0
+  layer 2   ΔK = 0.35
+  layer 3   ΔK = 0.27
+```
+
+Every entry above layer 0 was computed from a hidden state that attended over
+the token the window is about to evict, so it carries context the rolling window
+no longer contains. Exact rolling-window attention needs those entries rebuilt.
+A relative position scheme buys a cache that is cheap and approximate, not one
+that is exact.
 
 ### 4 — the nucleus holds 227 of 256 tokens
 
@@ -174,19 +187,26 @@ of 0.0995 — still descending faster than it wobbles. It ends at 3.7270 against
 the uniform-byte baseline `ln(256) = 5.5452`, having covered 32% of the way to a
 byte entropy it never reaches.
 
-**FINDING: the plateau is attributed to overfitting, which a training curve
-cannot show.** Overfitting is the *gap* between training and held-out loss:
+**FINDING: the overfitting is real, 2.4%, and on an axis the plot lacks.**
+Overfitting is the *gap* between training and held-out loss, so it is measured at
+four checkpoints with the untrained model as a control for corpus difficulty:
 
-| | loss |
-|---|---:|
-| training text | 3.7052 |
-| held-out text | 3.7573 |
-| gap | **+0.0522 (1.4%)** |
+| step | training | held-out | gap |
+|---:|---:|---:|---:|
+| 0 (untrained) | 5.4889 | 5.4516 | −0.0372 |
+| 250 | 4.7183 | 4.6875 | −0.0307 |
+| 500 | 4.2356 | 4.2303 | −0.0053 |
+| 750 | 3.9175 | 3.9416 | +0.0241 |
+| 1000 | 3.7052 | 3.7573 | **+0.0522** |
 
-There is no overfitting after 1000 steps — and there could be no evidence of any
-in the curve the exercise asks you to plot, because a training-loss curve does
-not contain the held-out loss. The third phase is named after a quantity that is
-not on the axis.
+The gap is monotone, so the model *is* beginning to fit the training sentences
+specifically. But the untrained model already scores −0.0372 on the same two
+corpora, purely because one is easier to predict than the other, so the
+corpus-corrected figure at step 1000 is **+0.0894 — 2.4%** of the training loss.
+
+Every number in that table comes from a held-out corpus the requested plot does
+not contain. The third phase is named after a quantity that is not on the axis,
+at a point where the loss is still falling.
 
 **FINDING: the curve is produced with 30% of the model frozen.** `W_q`, `W_k`,
 `W_v`, `W_out` and `pos_embed` are bit-for-bit unchanged after 1000 steps. "The

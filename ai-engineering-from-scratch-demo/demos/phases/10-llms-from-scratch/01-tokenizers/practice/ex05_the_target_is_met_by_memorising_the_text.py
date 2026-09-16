@@ -45,9 +45,12 @@ from __future__ import annotations
 import contextlib
 import io
 
-import tiktoken
-
 from harness import parity, practice
+
+try:
+    import tiktoken
+except ImportError as exc:                       # pragma: no cover - env guard
+    raise practice.Skip(f"needs tiktoken: uv sync --extra llm ({exc})") from None
 
 PHASE, LESSON = "10-llms-from-scratch", "01-tokenizers"
 ENCODING, TOLERANCE, SPLIT = "cl100k_base", 0.10, 0.8

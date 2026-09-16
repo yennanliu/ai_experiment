@@ -92,7 +92,8 @@ def solve():
     return {
         "first": {lr: losses[0] for lr, losses in sweep.items()},
         "last": {lr: losses[-1] for lr, losses in sweep.items()},
-        "spread": max(l[-1] for l in sweep.values()) - min(l[-1] for l in sweep.values()),
+        "spread": (max(losses[-1] for losses in sweep.values())
+                   - min(losses[-1] for losses in sweep.values())),
         "data_independent": all(np.array_equal(weights(real)[n], weights(decoy)[n])
                                 for n in NAMES),
         "moved": [n for n in NAMES if not np.array_equal(start[n], trained[n])],

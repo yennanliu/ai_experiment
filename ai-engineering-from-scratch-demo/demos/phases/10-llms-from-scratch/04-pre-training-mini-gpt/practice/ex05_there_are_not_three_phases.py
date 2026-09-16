@@ -22,12 +22,15 @@ the loss is still falling. The curve ends at 3.73 against the uniform-byte
 baseline ln(256) = 5.5452: it has covered a third of the distance to a byte
 entropy it never reaches.
 
-**FINDING: the plateau is attributed to overfitting, which a training curve
-cannot show.** Overfitting is the *gap* between training and held-out loss.
-Measured here it is **+0.05**, 1.4% -- training 3.7052, held-out 3.7573. There
-is no overfitting after 1000 steps, and there could not be evidence of any in
-the curve the exercise asks you to plot, because a training-loss curve does not
-contain the held-out loss.
+**FINDING: the overfitting is real, 2.4%, and on an axis the plot does not
+have.** Measured at five checkpoints the train/held-out gap runs -0.0372,
+-0.0307, -0.0053, +0.0241, +0.0522 -- monotone, so the model is beginning to fit
+the training sentences specifically. The untrained model already scores -0.0372
+on the same two corpora, purely because one is easier to predict than the other,
+so the corpus-corrected figure at step 1000 is **+0.0894** against a training
+loss of 3.7052: **2.4%**. Every one of those numbers comes from a held-out
+corpus the requested plot does not contain, so the third phase is named after a
+quantity that is not on the axis -- at a point where the loss is still falling.
 
 **FINDING: 30% of the model never trains.** `train_mini_gpt`'s backward pass
 takes the residual path around the attention sub-block and never enters it, so
@@ -37,7 +40,9 @@ you are training a 128-dim model or GPT-4" is claimed for a curve produced with
 attention frozen -- which is the one thing GPT-4's curve is mostly about.
 
 Structure: `curve` runs the reference trainer and recovers its printed losses;
-`held_out` scores a corpus the trainer never saw.
+`held_out` scores a corpus the trainer never saw; `trace` repeats that at four
+checkpoints plus the untrained model, which is the control for corpus
+difficulty.
 """
 
 from __future__ import annotations
@@ -53,6 +58,7 @@ from harness import parity, practice
 
 PHASE, LESSON = "10-llms-from-scratch", "04-pre-training-mini-gpt"
 STEPS, SEED, CONTEXT = 1000, 1, 64
+CHECKPOINTS = (250, 500, 750, STEPS)
 TRAIN = ("Machine learning is a subset of artificial intelligence. "
          "Deep learning uses neural networks with many layers. "
          "The transformer architecture relies on self-attention. "
@@ -85,16 +91,27 @@ def held_out(ref, model, text, chunks=6):
     return statistics.fmean(scores)
 
 
+def trace(ref, start):
+    """Held-out minus training loss at every checkpoint, the untrained model included."""
+    gaps = {0: held_out(ref, start, HELD) - held_out(ref, start, TRAIN)}
+    model, losses = start, []
+    for steps in CHECKPOINTS:
+        model, losses = curve(ref, steps, SEED)
+        gaps[steps] = held_out(ref, model, HELD) - held_out(ref, model, TRAIN)
+    return gaps, model, losses
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     np.random.seed(SEED)
     start = ref.MiniGPT(vocab_size=256, embed_dim=128, num_heads=4, num_layers=4,
                         max_seq_len=CONTEXT, ff_dim=512)
-    model, losses = curve(ref, STEPS, SEED)
+    gaps, model, losses = trace(ref, start)
     third = len(losses) // 3
     parts = (losses[:third], losses[third:2 * third], losses[2 * third:])
     return {
         "losses": losses,
+        "gaps": gaps,
         "drops": [part[0] - part[-1] for part in parts],
         "argmin": losses.index(min(losses)) + 1,
         "tail": losses[-6] - losses[-1],
@@ -109,9 +126,14 @@ def solve():
     }
 
 
+def gap_series(gaps):
+    return ", ".join(f"step {s} {g:+.4f}" for s, g in sorted(gaps.items()))
+
+
 def verify(result):
     losses, drops = result["losses"], result["drops"]
-    gap = result["heldout"] - result["train"]
+    series = [result["gaps"][s] for s in sorted(result["gaps"])]
+    corrected = series[-1] - series[0]
     return [
         practice.Check(
             "ANSWER: there are not three phases -- the drop decelerates monotonically",
@@ -135,14 +157,18 @@ def verify(result):
             "entropy it never reaches",
         ),
         practice.Check(
-            "FINDING: the plateau is called overfitting, which a training curve cannot show",
-            abs(gap) < 0.1 * result["train"],
-            f"overfitting is the gap between training and held-out loss, and here it is "
-            f"{gap:+.4f} -- {100 * gap / result['train']:.1f}% -- with training at "
-            f"{result['train']:.4f} and held-out text at {result['heldout']:.4f}. There is no "
-            f"overfitting after {STEPS} steps, and there could be no evidence of any in the "
-            "curve the exercise asks you to plot, because a training-loss curve does not "
-            "contain the held-out loss. The third phase is named after a quantity not on the axis",
+            "FINDING: the gap grows to 2.4% of the loss, measured on an axis the plot lacks",
+            series == sorted(series) and corrected < 0.1 * result["train"],
+            "overfitting is the gap between training and held-out loss, and across "
+            f"{len(series)} checkpoints it runs "
+            + gap_series(result["gaps"])
+            + f" -- monotone, so the model is beginning to fit {TRAIN.count('.')} sentences "
+            f"specifically. The untrained model already scores {series[0]:+.4f} on the same two "
+            f"corpora, purely because one is easier to predict, so the corpus-corrected figure at "
+            f"step {STEPS} is {corrected:+.4f} against a training loss of {result['train']:.4f}: "
+            f"{100 * corrected / result['train']:.1f}%. Every number here comes from a held-out "
+            "corpus the requested plot does not contain -- the third phase is named after a "
+            "quantity that is not on the axis, at a point where the loss is still falling",
         ),
         practice.Check(
             "FINDING: the curve is produced with 30% of the model frozen at random init",

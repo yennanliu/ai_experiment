@@ -21,7 +21,7 @@ length, the four survivors are the four *shortest* (26, 27, 31, 61 bytes) and
 the four dropped are the four *longest* (71, 78, 84, 90). Byte diversity is
 `unique/total` over an alphabet of about 40 characters that English actually
 uses, so it falls as a response gets longer -- the correlation between length
-and diversity here is **-0.94**. The length filter removes short answers and
+and diversity here is **-0.99**. The length filter removes short answers and
 the diversity filter, standing beside it, removes long ones.
 
 **MECHANISM: 0.3 is a word-level threshold on a byte-level tokenizer.** The same

@@ -27,7 +27,7 @@ was never going to: weights, gradients and Adam states are 840 GB of the 850.7.
 **FINDING: the answer is a statement about batch size, not about
 checkpointing.** Activations are the only term that scales with the batch, so
 the saving goes 1.2%, 2.5%, 4.8%, 9.2%, 16.8%, 28.7% as the batch goes 1, 2, 4,
-8, 16, 32. Activations do not equal the fixed 840 GB until **batch size 78**.
+8, 16, 32. Activations do not equal the fixed 840 GB until **batch size 79**.
 The exercise asks "how much memory does checkpointing save" as though it had one
 answer, and the calculator's default batch of 1 is the setting where the answer
 is smallest.
@@ -43,6 +43,8 @@ Structure: `memory` calls the reference calculator at one batch size;
 """
 
 from __future__ import annotations
+
+import math
 
 from harness import parity, practice
 
@@ -108,7 +110,8 @@ def verify(result):
             "activations are the only term that scales with the batch, so the saving goes "
             + ", ".join(f"{100 * saving[b]:.1f}%" for b in BATCHES)
             + f" as the batch goes {list(BATCHES)}. They do not equal the fixed "
-            f"{result['fixed']:.0f} GB until batch size {result['crossover']:.0f}. The exercise "
+            f"{result['fixed']:.0f} GB until batch size {math.ceil(result['crossover'])}. The "
+            f"exercise "
             "asks how much checkpointing saves as though that had one answer, and the "
             "calculator's default batch of 1 is the setting where it is smallest",
         ),

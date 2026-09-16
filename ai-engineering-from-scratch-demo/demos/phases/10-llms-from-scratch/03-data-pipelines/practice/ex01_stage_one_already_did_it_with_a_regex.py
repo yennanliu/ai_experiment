@@ -11,16 +11,18 @@ the cleaning pipeline" and `clean_text` runs first. Both placements are run on
 the same nine-document probe corpus, four scripts that are not Latin and four
 Latin languages that are not English.
 
-**ANSWER: placed before `clean_text`, the heuristic removes 4 of 9.** The
-Chinese, Arabic, Russian and Korean documents score 0.03 to 0.29 ASCII and fall;
-the French, German, Spanish and Turkish ones score above 0.94 and pass, which is
-the known limitation of a character-set test.
+**ANSWER: placed before `clean_text`, the heuristic removes 5 of 9** -- and
+Turkish is one of them. Chinese, Arabic, Russian and Korean score 0.00 to 0.27
+ASCII and fall, which is the intended behaviour; Turkish scores **0.89** and
+falls at the same cut that keeps French and English at 1.00. A character-set
+test measures diacritic density, not language.
 
-**FINDING: placed where the exercise says, it removes 0 -- and cannot do
-otherwise.** `clean_text`'s third line is `re.sub(r"[^\\x20-\\x7E\\n]", "",
-text)`, which deletes every non-ASCII character. After it, every document has an
-ASCII ratio of exactly **1.0** by construction, so a character-set detector
-returns "English" for all nine, unanimously and for free.
+**FINDING: placed where the exercise says, the only rejection is an empty
+file.** `clean_text`'s third line is `re.sub(r"[^\\x20-\\x7E\\n]", "",
+text)`, which deletes every non-ASCII character, so **8 of the 9** documents
+score exactly 1.0 afterwards by construction. The ninth is Chinese, which scores
+0.0 only because cleaning left it with no characters at all. A detector added
+"to the cleaning pipeline" can reject nothing that still has text in it.
 
 **FINDING: stage 1 is already the language filter, and a destructive one.** The
 Chinese document goes from 33 characters to **0**; Arabic 76 to 1, Russian 57 to

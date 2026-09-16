@@ -23,7 +23,7 @@ exercises:
       840 GB of the 850.7. The answer is really a statement about batch size, activations being the
       only term that scales with it: the saving goes 1.2%, 2.5%, 4.8%, 9.2%, 16.8%, 28.7% as the
       batch goes 1, 2, 4, 8, 16, 32, and activations do not equal the fixed 840 GB until batch size
-      78. And the calculator's fallback overstates the one term this exercise is about by 6.5x --
+      79. And the calculator's fallback overstates the one term this exercise is about by 6.5x --
       70 GB against 10.7 -- which is the difference between activations being 8% of memory and 1.3%
     uses_reference:
       - memory_calculator
@@ -62,20 +62,26 @@ exercises:
     zh: |
       實作一個梯度累積模擬器。不要每個微批次都做 all-reduce，改成在本地累積 K 步的梯度再做 all-reduce。展示這如何把通訊量減少 K 倍，卻產生完全相同的最終梯度（因此訓練結果也完全相同）。
     verifies: >-
-      the gradients are float32, because that is what a gradient is in mixed-precision training and
-      "identical" is only interesting in floating point, and communication is counted with the
-      lesson's own communication_volume_calculator. Communication does fall by exactly K: 8
-      accumulated micro-batches are 1 all-reduce against 8, each moving the same 245.0 GB for a 70B
-      model on 8 GPUs, so 1960.0 GB becomes 245.0 GB. But the gradients are not identical -- summing
-      8 float32 buffers in place and dividing differs from all-reducing each and averaging by
-      1.601e-10 absolute and 1.097e-07 relative, against a float32 epsilon of 1.192e-07, because
-      addition is not associative in floating point and the two schedules add in different orders.
-      And the baseline it is identical to is not the one the exercise describes: accumulating K
-      micro-batches and stepping once is arithmetically one step at K times the batch size, not K
-      steps at batch size B, so the optimizer takes 1 step where the other schedule takes 8 and the
-      learning-rate schedule sees 8 times fewer points. Bytes per micro-batch of data are unchanged;
-      what falls is bytes per optimizer step, and the optimizer steps fall with it -- gradient
-      accumulation buys a larger effective batch at fixed memory, not free bandwidth
+      both schedules run in float32 -- what a gradient is in mixed-precision training, and the only
+      dtype in which "identical" is an interesting claim -- and differ only in when the division by K
+      happens and in what order the micro-batches arrive; float64 appears once, to compare the two float32
+      results, and communication is counted with the lesson's own communication_volume_calculator.
+      Communication does fall by exactly K: 8 accumulated micro-batches are 1 all-reduce against 8, each
+      moving the same 245.0 GB for a 70B model on 8 GPUs, so 1960.0 GB becomes 245.0 GB. But "identical
+      final gradients" is a fact about K rather than about accumulation. At K=8 and K=16 the two schedules
+      agree bitwise on all 100,000 coordinates, because 1/K is exact in binary there and the two summation
+      orders coincide; at K=6 and K=10 they disagree on 66,206 and 68,919 of them. How the disagreement is
+      summarised then changes it by 30,000x: the largest element-wise relative gap is 3.8e-03, four orders
+      of magnitude above float32 epsilon, while max|delta| / max|g| on the very same arrays reads 1.3e-07,
+      which is float32 epsilon and would have been quoted as "identical to rounding" -- the gap is largest
+      where the accumulated gradient nearly cancels, and dividing by the largest coordinate hides exactly
+      those coordinates. Arrival order breaks the bitwise result even at K=8: delivering the same eight
+      micro-batches in reverse, which is what a ring all-reduce does, makes 61,977 coordinates differ at
+      2.9e-03. And the baseline it is identical to is not the one the exercise describes -- accumulating K
+      micro-batches and stepping once is arithmetically one step at K times the batch size, not K steps at
+      batch size B, so the optimizer takes 1 step where the other schedule takes 8 and the learning-rate
+      schedule sees 8 times fewer points. Bytes per micro-batch of data are unchanged at 245.0 GB either
+      way; what falls is bytes per optimizer step, and the steps fall with it
     uses_reference:
       - communication_volume_calculator
   - index: 4
@@ -120,11 +126,14 @@ exercises:
       560 GB, 48 GB more than the 512 GB of CPU RAM assumed -- the 2 TB of NVMe fits it, but that is
       ZeRO-Infinity rather than ZeRO-Offload. The GPU counts are 5 and 13 rather than 4 and 16:
       ZeRO-3 needs 840/N + 10.7 <= 80, first true at 13 GPUs (75.4 GB each), and leaving the Adam
-      state on the CPU makes it 5 (66.7 GB each). The slowdown is not 30-50% of the optimizer step
-      but 2x the whole step: at 5 GPUs offload moves gradients down and updated parameters back every
-      step, 56 GB per GPU or 2.24 s at a stated PCIe 4.0 x16 budget of 25 GB/s, against 2.17 s of
-      compute by 6ND at 40% MFU -- transfer and compute are the same size, so the step goes to 2.03x
-      unless they overlap perfectly. What is bought is fewer cards at 2.03x the card-seconds per
-      token: 13 cards clear 26,624 tokens in one step time and 5 clear 10,240 in 2.03 of one
+      state on the CPU makes it 5 (66.7 GB each). And 30-50% is not a slowdown but an overlap
+      assumption the exercise never states: at 5 GPUs offload moves gradients down and updated
+      parameters back every step, 56 GB per GPU or 2.24 s at a stated PCIe 4.0 x16 budget of
+      25 GB/s, against 2.17 s of compute by 6ND at 40% MFU, so serialised the step is 2.03x -- an
+      upper bound rather than a prediction -- and hidden perfectly behind compute it is 1.03x,
+      the transfer being the longer of the two. The exercise's 1.30-1.50x lies inside that window
+      and pins the overlap to 52-71%. What is bought is fewer cards at 1.03x to 2.03x the
+      card-seconds per token: 13 cards clear 26,624 tokens in one step time and 5 clear 10,240 in
+      1.03 to 2.03 of one, 1,008 to 1,986 tokens per card-second against 2,048
     uses_reference:
       - memory_calculator

@@ -59,7 +59,7 @@ gradients and Adam states are 840 GB of the 850.7.
 
 **FINDING: the answer is a statement about batch size.** Activations are the
 only term that scales with the batch, so the saving runs from 1.2% to 28.7% over
-the table above, and does not equal the fixed 840 GB until **batch size 78**.
+the table above, and does not equal the fixed 840 GB until **batch size 79**.
 The exercise asks the question as though it had one answer, and the default of 1
 is where that answer is smallest.
 
@@ -99,32 +99,47 @@ the pipeline; only one holds eight activation sets while doing it.
 
 ### 3 — identical to the wrong baseline
 
+Both schedules run in float32 and differ only in the two things a real system
+differs in: when the division by K happens, and in what order the micro-batches
+arrive. float64 appears once, to compare the two float32 results.
+
 **ANSWER: communication does fall by exactly K.** One all-reduce per 8
 micro-batches instead of 8, each moving the same 245.0 GB by the lesson's own
 ring-all-reduce formula for a 70B model on 8 GPUs: **1960.0 GB → 245.0 GB**.
 
-**FINDING: the gradients are not identical.**
+**FINDING: "identical" is a fact about K, not about accumulation.**
 
-| | value |
-|---|---:|
-| max absolute difference | 1.601e-10 |
-| max relative difference | **1.097e-07** |
-| float32 epsilon | 1.192e-07 |
+| K | bitwise identical | coordinates differing | element-wise max rel | pooled max rel |
+|---:|---|---:|---:|---:|
+| 6 | no | 66,206 | **3.8e-03** | 1.3e-07 |
+| 8 | **yes** | 0 | 0 | 0 |
+| 10 | no | 68,919 | **3.1e-03** | 2.0e-07 |
+| 16 | **yes** | 0 | 0 | 0 |
 
-Addition is not associative in floating point, and the two schedules add in
-different orders. "Identical" holds in exact arithmetic and not in the
-arithmetic the code runs on.
+At K = 8 and 16 the two schedules agree bitwise on all 100,000 coordinates: 1/K
+is exact in binary and the two summation orders coincide. One micro-batch either
+side and they disagree on about two thirds of them.
+
+**FINDING: how you summarise the disagreement changes it by 30,000×.** The
+element-wise maximum relative gap is 3.8e-03. The pooled statistic usually
+quoted, `max|Δ| / max|g|`, reads 1.3e-07 on the very same arrays — float32
+epsilon, which would have been reported as "identical to rounding". The gap is
+largest where the accumulated gradient nearly cancels, and dividing by the
+largest coordinate in the tensor hides precisely those coordinates.
+
+**FINDING: arrival order breaks it even at K = 8.** Delivering the same eight
+micro-batches in reverse — what a ring all-reduce does, since each worker forms
+its partial sums in a rotated sequence — makes **61,977** coordinates differ at
+2.9e-03 element-wise. Addition is not associative, so the bitwise result
+survives only the schedule that adds in the same sequence.
 
 **FINDING: the baseline it *is* identical to is not the one described.**
 Accumulating K micro-batches and stepping once is arithmetically one step at K×
 the batch size — not K steps at batch size B. The optimizer takes 1 step where
 the other schedule takes 8, and the learning-rate schedule sees 8× fewer points.
-"And thus identical training" compares gradient accumulation against a schedule
-nobody was running.
-
-**MECHANISM: the saving is per step, and there are K× fewer steps.** Bytes per
-micro-batch of data are unchanged. Gradient accumulation buys a larger effective
-batch at fixed memory; it does not buy free bandwidth.
+Bytes per micro-batch of data are unchanged at 245.0 GB either way; what falls is
+bytes per optimizer step, and the steps fall with it. Gradient accumulation buys
+a larger effective batch at fixed memory, not free bandwidth.
 
 ### 4 — the two known costs use different rates
 
@@ -169,7 +184,7 @@ magnitude slower again.
 | ZeRO-3 | `840/N + 10.7 ≤ 80` | **13** | 75.4 GB |
 | ZeRO-3 + optimizer offload | `280/N + 10.7 ≤ 80` | **5** | 66.7 GB |
 
-**FINDING: the cost is 2× the whole step, not 30–50% of the optimizer step.** At
+**FINDING: 30–50% is not a slowdown, it is an unstated overlap assumption.** At
 5 GPUs, offload moves gradients down and updated parameters back every step:
 
 ```text
@@ -177,12 +192,20 @@ transfer  2 × 140 GB / 5 = 56 GB per GPU   →  2.24 s at 25 GB/s (PCIe 4.0 x16
 compute   6ND at 40% MFU, 5 × 2048 tokens  →  2.17 s
 ```
 
-Transfer and compute are the same size, so the step goes to **2.03×** unless
-they overlap perfectly. The quoted 30–50% is a figure for the optimizer *step* —
-a small part of the step a user waits on.
+| overlap of transfer with compute | step |
+|---|---:|
+| none (serial) | **2.03×** — an upper bound, not a prediction |
+| 52% | 1.50× — the top of the exercise's range |
+| 71% | 1.30× — the bottom of it |
+| perfect | 1.03× — the transfer is the longer of the two |
 
-**FINDING: what is bought is fewer cards, at 2.03× the card-seconds per token.**
-13 cards clear 26,624 tokens in one step time; 5 clear 10,240 in 2.03 of one —
-1,008 tokens per card-second against 2,048. Offload buys the ability to run at
-all on the hardware you have. "Allows a 70B model to train on 4 GPUs instead of
-16" reads as though the GPU count were the only thing that changed.
+The exercise's 30–50% lies inside that window and pins the overlap to **52–71%**,
+which is the quantity it never names. On top of that, the figure is quoted for
+the optimizer *step* — a small part of the step a user waits on.
+
+**FINDING: what is bought is fewer cards, at 1.03× to 2.03× the card-seconds per
+token.** 13 cards clear 26,624 tokens in one step time; 5 clear 10,240 in 1.03
+to 2.03 of one — 1,008 to 1,986 tokens per card-second against 2,048, depending
+entirely on overlap. Offload buys the ability to run at all on the hardware you
+have. "Allows a 70B model to train on 4 GPUs instead of 16" reads as though the
+card count were the only thing that changed.

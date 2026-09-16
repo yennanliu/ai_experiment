@@ -79,8 +79,15 @@ exercises:
       pos_embed[:seq_len] from zero, so one slide changes every surviving token's positional
       embedding and every cached K and V was computed from an input that no longer exists -- the
       cache must be rebuilt at each of the remaining 152 steps, which costs more than never caching.
-      Nothing about the cache is wrong; absolute position is, and RoPE or ALiBi would make a token's
-      representation depend on relative offset so a sliding window leaves cached entries valid
+      Nothing about the cache is wrong; absolute position is, and RoPE or ALiBi would let the
+      surviving entries keep their indices when the window slides -- but that rescues layer 0 only.
+      Changing the token at position 0, holding every other token and every position fixed, moves
+      the surviving tokens' cached K by 0.00 at layer 0 and 0.27 to 0.35 at layers 1-3: layer 0's
+      entries depend on nothing but their own token and position, and every deeper layer's was
+      computed from a hidden state that attended over the token the window is about to evict, so it
+      carries context the rolling window no longer contains. Exact rolling-window attention needs
+      those entries rebuilt, and a relative position scheme buys a cache that is cheap and
+      approximate rather than one that is exact
     uses_reference:
       - train_mini_gpt
       - MiniGPT
@@ -131,10 +138,15 @@ exercises:
       minimum is at logged point 48 of 50, the last 100 steps move 0.1816 against a local spread of
       0.0995, so the loss is still descending faster than it wobbles, and it ends at 3.7270 against
       the uniform-byte baseline ln(256) = 5.5452 having covered 32% of the way to a byte entropy it
-      never reaches. The plateau is attributed to overfitting, which a training curve cannot show:
-      overfitting is the gap between training and held-out loss, and here it is +0.0522 or 1.4%,
-      training 3.7052 against held-out 3.7573 -- there is none after 1000 steps, and there could be
-      no evidence of any in the curve the exercise asks you to plot. And the curve is produced with
+      never reaches. The overfitting the plateau is named for is real, small, and on an axis the
+      plot does not have: measured at four checkpoints with the untrained model as a control for
+      corpus difficulty, the train/held-out gap runs -0.0372 at step 0, -0.0307, -0.0053, +0.0241
+      and +0.0522 at step 1000, so it is monotone and the model is beginning to fit the training
+      sentences specifically -- but the untrained model already scores -0.0372 on the same two
+      corpora purely because one is easier to predict, making the corpus-corrected figure +0.0894
+      against a training loss of 3.7052, or 2.4%. Every one of those numbers comes from a held-out
+      corpus the requested plot does not contain, so the third phase is named after a quantity that
+      is not on the axis, at a point where the loss is still falling. And the curve is produced with
       30% of the model frozen at random initialisation: W_q, W_k, W_v, W_out and pos_embed are
       bit-for-bit unchanged after 1000 steps, so "the shape of this curve is the same whether you are
       training a 128-dim model or GPT-4" is claimed for a curve produced with attention frozen

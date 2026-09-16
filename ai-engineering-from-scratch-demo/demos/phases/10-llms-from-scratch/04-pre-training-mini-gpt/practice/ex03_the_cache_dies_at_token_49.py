@@ -28,14 +28,20 @@ The cache must be rebuilt from scratch at each of the remaining 152 steps, which
 costs more than not caching. The exercise's measurement is available on 24% of
 the generation it asks for and structurally impossible on the other 76%.
 
-**FINDING: the fix is not a better cache.** Nothing about the cache is wrong;
-absolute position is. RoPE and ALiBi make a token's representation depend on
-*relative* offset, so a sliding window leaves cached entries valid. The choice
-of position encoding is what decides whether a KV cache survives a long
-generation, and this model made it before the cache was written.
+**FINDING: a position scheme removes the first obstacle and not the last one.**
+Nothing about the cache is wrong; absolute position is, so RoPE or ALiBi would
+let surviving entries keep their indices when the window slides. That rescues
+**layer 0 only**. Changing the token at position 0 while holding every other
+token and every position fixed moves the surviving tokens' cached K by 0.00 at
+layer 0 and **0.27 to 0.35** at layers 1-3: layer 0's entries depend on nothing
+but their own token and position, and every deeper layer's was computed from a
+hidden state that attended over the token the window is about to evict. Exact
+rolling-window attention needs those entries rebuilt. A relative position scheme
+buys a cache that is cheap and approximate, not one that is exact.
 
 Structure: `Cache` is the incremental decoder, one position per `step`; `greedy`
-is `generate`'s loop with argmax substituted so the two arms are comparable.
+is `generate`'s loop with argmax substituted so the two arms are comparable;
+`stale_context` changes one evicted-to-be token and reads the drift per layer.
 """
 
 from __future__ import annotations
@@ -111,6 +117,17 @@ def cached(model, count):
     return tokens
 
 
+def stale_context(model, tokens, swapped):
+    """Per-layer drift in the surviving tokens' cached K when only token 0 changes."""
+    kept, altered = Cache(model), Cache(model)
+    for token in tokens:
+        kept.step(token)
+    for token in [swapped] + list(tokens[1:]):
+        altered.step(token)
+    return [float(np.abs(a[0][:, :, 1:] - b[0][:, :, 1:]).max())
+            for a, b in zip(kept.kv, altered.kv)]
+
+
 def timed(fn, *args):
     start = time.perf_counter()
     out = fn(*args)
@@ -133,12 +150,17 @@ def solve():
         "seconds": (plain_seconds, fast_seconds),
         "full_seconds": timed(greedy, model, WANTED)[1],
         "positions": model.embedding.pos_embed.shape,
+        "drift": stale_context(model, PROMPT, (PROMPT[0] + 1) % 256),
     }
+
+
+def layer_drift(drift):
+    return ", ".join(f"layer {i} {d:.2f}" for i, d in enumerate(drift))
 
 
 def verify(result):
     plain, fast = result["seconds"]
-    inside, window = result["inside"], result["window"]
+    inside, window, drift = result["inside"], result["window"], result["drift"]
     return [
         practice.Check(
             "ANSWER: ~3x inside the window, and the cache is exact rather than approximate",
@@ -169,14 +191,18 @@ def verify(result):
             "cache would pay that plus the rebuild",
         ),
         practice.Check(
-            "FINDING: the fix is a position scheme, not a better cache",
-            plain / fast > 1.5,
+            "FINDING: a position scheme removes the first obstacle, not the last one",
+            drift[0] == 0.0 and min(drift[1:]) > 0.1,
             f"nothing about the cache is wrong -- it is exact and {plain / fast:.1f}x faster "
-            "where it applies. Absolute position is what breaks it. RoPE and ALiBi make a "
-            "token's representation depend on relative offset, so a sliding window leaves "
-            "cached entries valid. The position encoding is what decides whether a KV cache "
-            "survives a long generation, and this model made that choice before the cache "
-            "was written",
+            "where it applies -- and absolute position is what breaks it, so RoPE or ALiBi would "
+            "let the surviving entries keep their indices when the window slides. That rescues "
+            "layer 0 only. Changing the token at position 0, holding every other token and every "
+            "position fixed, moves the surviving tokens' cached K by "
+            + layer_drift(drift)
+            + ": layer 0's entries depend on nothing but their own token and position, and every "
+            "deeper layer's was computed from a hidden state that attended over the token the "
+            "window is about to evict. Exact rolling-window attention needs those rebuilt, so a "
+            "relative position scheme buys a cache that is cheap and approximate, not exact",
         ),
     ]
 

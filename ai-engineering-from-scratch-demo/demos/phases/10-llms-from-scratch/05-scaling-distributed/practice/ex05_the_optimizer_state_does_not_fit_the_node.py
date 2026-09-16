@@ -25,20 +25,24 @@ each). Offload the 560 GB of Adam state and the requirement becomes
 `280/N + 10.7 <= 80`, first satisfied at **5** (66.7 GB each). Both numbers in
 the exercise are round numbers next to the ones the calculator gives.
 
-**FINDING: the slowdown is not 30-50% of the optimizer step, it is 2x the whole
-step.** At 5 GPUs, offload moves gradients down and updated parameters back
-every step: `2 x 140 GB / 5` = **56 GB per GPU**, which is **2.24 s** at 25 GB/s.
-The step's own compute, by 6ND at 40% MFU on 5 H100s for 5 x 2048 tokens, is
-**2.17 s**. Transfer and compute are the same size, so the step goes to
-**2.03x** unless the two overlap perfectly -- and the quoted 30-50% is a figure
-for the optimizer *step*, which is a small part of the step the user waits for.
+**FINDING: 30-50% is not a slowdown, it is an unstated overlap assumption.** At
+5 GPUs, offload moves gradients down and updated parameters back every step:
+`2 x 140 GB / 5` = **56 GB per GPU**, which is **2.24 s** at 25 GB/s. The step's
+own compute, by 6ND at 40% MFU on 5 H100s for 5 x 2048 tokens, is **2.17 s**.
+Serialised, the step is **2.03x** -- an upper bound, not a prediction. Hidden
+perfectly behind compute it is **1.03x**, because the transfer is the longer of
+the two. The exercise's 1.30-1.50x lies inside that window and pins the overlap
+to **52-71%**, which is the quantity the exercise never names. On top of that,
+30-50% is quoted for the optimizer *step*, a small part of the step a user waits
+on.
 
-**FINDING: what is bought is fewer cards, at 2.0x the card-seconds per token.**
-Each card processes the same 2048 tokens a step either way, so 13 cards clear
-26,624 tokens in one step time and 5 clear 10,240 in 2.03 of one -- 1,009 tokens
-per card-second against 2,048. Offload buys the ability to run at all on the
-hardware you have; the exercise's "allows a 70B model to train on 4 GPUs instead
-of 16" reads as though the only change were the GPU count.
+**FINDING: what is bought is fewer cards, at 1.03x to 2.03x the card-seconds per
+token.** Each card processes the same 2048 tokens a step either way, so 13 cards
+clear 26,624 tokens in one step time and 5 clear 10,240 in 1.03 to 2.03 of one
+-- 1,009 to 1,986 tokens per card-second against 2,048, depending entirely on
+overlap. Offload buys the ability to run at all on the hardware you have; the
+exercise's "allows a 70B model to train on 4 GPUs instead of 16" reads as though
+the only change were the card count.
 
 Structure: `smallest_fit` searches the reference calculator for the first GPU
 count that fits 80 GB, with or without the optimizer term.
@@ -71,6 +75,11 @@ def step_seconds(gpus, tokens_per_gpu=2048):
     return 6 * PARAMS * 1e9 * gpus * tokens_per_gpu / (TFLOPS * MFU * gpus)
 
 
+def overlap_for(target, compute, moved):
+    """The fraction of the transfer that has to hide behind compute to reach `target`."""
+    return 1 - (target - 1) * compute / moved
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     sharded, offloaded = smallest_fit(ref, False), smallest_fit(ref, True)
@@ -88,13 +97,15 @@ def solve():
         "transfer_gb": transfer,
         "seconds": (compute, transfer / PCIE_GBS),
         "slowdown": (compute + transfer / PCIE_GBS) / compute,
+        "best": max(compute, transfer / PCIE_GBS) / compute,
+        "needed": [overlap_for(t, compute, transfer / PCIE_GBS) for t in CLAIMED],
     }
 
 
 def verify(result):
     sharded, offloaded = result["gpus"]
     compute, moved = result["seconds"]
-    optimizer = result["optimizer_gb"]
+    optimizer, needed = result["optimizer_gb"], result["needed"]
     return [
         practice.Check(
             f"FINDING: {result['optimizer_gb']:.0f} GB of Adam state into {CPU_GB} GB of RAM",
@@ -116,27 +127,29 @@ def verify(result):
             "own calculator produces",
         ),
         practice.Check(
-            "FINDING: the cost is 2x the whole step, not 30-50% of the optimizer step",
-            result["slowdown"] > CLAIMED[1] + 0.4,
+            "FINDING: 30-50% is not a slowdown, it is an overlap assumption of 52-71%",
+            result["slowdown"] > 2.0 > result["best"] and 0.4 < needed[1] < needed[0] < 0.8,
             f"at {offloaded} GPUs, offload moves gradients down and updated parameters back every "
             f"step: {result['transfer_gb']:.0f} GB per GPU, {moved:.2f} s at {PCIE_GBS:.0f} GB/s "
             f"over PCIe 4.0 x16. The step's own compute, by 6ND at {100 * MFU:.0f}% MFU on "
-            f"{offloaded} H100s for {offloaded} x 2048 tokens, is {compute:.2f} s. Transfer and "
-            f"compute are the same size, so the step goes to {result['slowdown']:.2f}x unless "
-            f"they overlap perfectly -- against a claim of "
-            f"{CLAIMED[0]:.2f}-{CLAIMED[1]:.2f}x, which is a figure for the optimizer step and "
-            "not for the step a user waits on",
+            f"{offloaded} H100s for {offloaded} x 2048 tokens, is {compute:.2f} s. Serialised, "
+            f"the step is {result['slowdown']:.2f}x -- an upper bound, not a prediction; hidden "
+            f"perfectly behind compute it is {result['best']:.2f}x. The exercise's "
+            f"{CLAIMED[0]:.2f}-{CLAIMED[1]:.2f}x sits inside that window and pins the overlap to "
+            f"{100 * needed[1]:.0f}-{100 * needed[0]:.0f}%, which is the number it never states "
+            "-- and it quotes the figure for the optimizer step, not the step a user waits on",
         ),
         practice.Check(
-            "FINDING: what is bought is fewer cards, at 2.0x the card-seconds per token",
-            result["slowdown"] > 1.9,
+            "FINDING: what is bought is fewer cards, at 1.03x to 2.03x the card-seconds per token",
+            result["best"] > 1.0 and result["slowdown"] > 1.9,
             f"each card processes 2048 tokens a step either way, so {sharded} cards clear "
             f"{sharded * 2048:,} tokens in one step time and {offloaded} clear "
-            f"{offloaded * 2048:,} in {result['slowdown']:.2f} of one -- "
-            f"{2048 / result['slowdown']:.0f} tokens per card-second against 2048, a "
-            f"{result['slowdown']:.2f}x cost per token. Offload buys the ability to run at all "
-            "on the hardware you have; the exercise's 'allows a 70B model to train on 4 GPUs "
-            "instead of 16' reads as though the only change were the GPU count",
+            f"{offloaded * 2048:,} in {result['best']:.2f} to {result['slowdown']:.2f} of one -- "
+            f"{2048 / result['slowdown']:,.0f} to {2048 / result['best']:,.0f} tokens per "
+            f"card-second against 2,048, so the cost per token is between {result['best']:.2f}x "
+            f"and {result['slowdown']:.2f}x depending entirely on overlap. Offload buys the "
+            "ability to run at all on the hardware you have; the exercise's 'allows a 70B model "
+            "to train on 4 GPUs instead of 16' reads as though the only change were the card count",
         ),
     ]
 

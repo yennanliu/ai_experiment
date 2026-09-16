@@ -45,9 +45,12 @@ denominators for one encoding so the metrics can be compared rather than chosen;
 
 from __future__ import annotations
 
-import tiktoken
-
 from harness import practice
+
+try:
+    import tiktoken
+except ImportError as exc:                       # pragma: no cover - env guard
+    raise practice.Skip(f"needs tiktoken: uv sync --extra llm ({exc})") from None
 
 ASKED = "cl100k_base"
 LARGER = "o200k_base"
