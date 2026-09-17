@@ -1,0 +1,153 @@
+lesson: 04-embeddings
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/04-embeddings/docs/en.md
+exercises:
+  - index: 1
+    slug: every_disagreement_is_inside_a_tie
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Metric comparison**: run the same 5 queries against the sample documents using cosine similarity, dot product, and euclidean distance. Record the top-3 results for each. For which queries do the metrics disagree? Why?
+    zh: |
+      **度量比較**：對樣本文件用餘弦相似度、點積和歐幾里得距離各跑同樣 5 個查詢。記下每一種的 top-3 結果。哪些查詢上這些度量意見不一致？為什麼？
+    verifies: >-
+      the engine is the lesson's default SemanticSearchEngine() over SAMPLE_DOCUMENTS and 'disagree'
+      is read as the top-3 index lists differing, not the scores, which are on three different scales
+      by construction. Two of the five queries disagree and neither disagreement is about similarity:
+      SimpleEmbedder.embed divides by the L2 norm, so cosine and the dot product agree to 5.6e-17 over
+      every query-chunk pair and euclidean matches sqrt(2 - 2 cos) to 1e-16 over the four queries that
+      normalise -- one ranking on three scales. Re-run the identical scoring with ties broken by index
+      and all five queries agree. What separates the metrics is the tie-break: cosine and dot keep
+      insertion order because sort is stable, while euclidean scores -||q - v|| and the stored norms
+      take 2 distinct values spanning 1.1e-16, so it orders tied chunks by the last bit of their
+      normalisation. One of the five queries, 'how do I reset my password', embeds to the zero vector
+      -- 0 of 270 dimensions non-zero, not one of its words in the vocabulary -- and for it the
+      euclidean identity is off by 0.41 because the query never normalised. The correspondence is
+      exact: chunks scoring exactly 0.0 per query are [0, 5, 0, 0, 4], the queries with a non-zero
+      count are indices 1 and 4, and the queries that disagree are indices 1 and 4
+    uses_reference:
+      - SemanticSearchEngine
+      - SAMPLE_DOCUMENTS
+      - cosine_similarity
+      - dot_product
+      - euclidean_distance
+  - index: 2
+    slug: the_first_chunk_size_the_exercise_asks_for_cannot_terminate
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Chunk size experiment**: index the sample documents with chunk sizes of 50, 100, 200, and 500 words. For each, run 5 queries and record the top-1 similarity score. Plot the relationship between chunk size and retrieval quality. Find the point where larger chunks start hurting.
+    zh: |
+      **切塊大小實驗**：用 50、100、200、500 個詞的切塊大小分別為樣本文件建索引。每一種都跑 5 個查詢，記下 top-1 相似度分數。畫出切塊大小與檢索品質的關係。找出更大的塊開始造成傷害的那一點。
+    verifies: >-
+      the overlap is the engine's default 50, because the exercise names only the chunk size, and
+      chunk_text is never called at (50, 50): its step is verified arithmetically and reproduced with
+      a bounded clone. Chunk size 50 hangs -- chunk_text advances by chunk_size - overlap = 0, so the
+      while loop never moves and the bounded clone emits 1,000 identical chunks with start still at 0,
+      meaning index_documents(chunk_size=50) does not return and the exercise's first data point is
+      unreachable. Two of the remaining three are the same experiment: the longest sample document is
+      102 words, so sizes 200 and 500 both give one chunk per document, 5 chunks with byte-identical
+      text. The scores are not comparable across sizes anyway, because index_documents calls
+      embedder.fit(all_chunks): the IDF sum is 660.65 at 11 chunks and 537.35 at 5 while the
+      vocabulary stays at 270 words, and the same query embeds to a different vector, cosine 0.998785
+      between the two. There is no knee and no consistent direction -- from 100 to 200, three queries
+      improve, one gets worse and one is 0.0 both ways. Holding one embedder fitted on the documents
+      across all three chunkings gives per-query spreads of at most 0.003, so what the exercise's plot
+      would have shown is the refit
+    uses_reference:
+      - chunk_text
+      - SemanticSearchEngine
+      - SimpleEmbedder
+      - SAMPLE_DOCUMENTS
+      - cosine_similarity
+  - index: 3
+    slug: truncation_keeps_the_alphabetically_first_dimensions
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Matryoshka simulation**: build a SimpleEmbedder that produces 500-d vectors. Truncate to 50, 100, 200, and 500 dimensions. Measure how retrieval recall degrades at each truncation. This simulates Matryoshka behavior without needing the real training trick.
+    zh: |
+      **Matryoshka 模擬**：做一個產出 500 維向量的 SimpleEmbedder。截斷到 50、100、200 和 500 維。量測每種截斷下檢索召回率如何衰退。這模擬了 Matryoshka 的行為，而不需要真的訓練技巧。
+    verifies: >-
+      the lesson's SimpleEmbedder produces one dimension per vocabulary word, which is 270 at chunk
+      size 100 rather than the 500 the exercise names -- the dimensionality is the vocabulary, not a
+      choice -- so the truncations measured are 50, 100, 200 and the full 270, and recall is top-3
+      overlap against the untruncated ranking over the four queries that embed to something. Recall
+      does not degrade; it wanders: 0.667, 0.833, 0.667, 1.000, so adding dimensions 101 to 200 makes
+      retrieval worse. The mechanism is that vocab = sorted(vocab_set), so the first d dimensions are
+      the d alphabetically first words and the first seven are ['$29', '$500', '$99', '0.1%', '1.3.',
+      '10%', '100'] -- Matryoshka's premise is that a prefix is sufficient, and an alphabetical prefix
+      is arbitrary. At 50 dimensions 2 of the 4 live queries truncate to the zero vector and fall back
+      to insertion order, so part of the short-end recall is scored against an ordering nothing
+      produced. Ordering the dimensions by document frequency first makes it a curve -- 0.583, 0.917,
+      1.000, 1.000, monotone, full recall at 200 -- while ordering by IDF, the obvious importance
+      proxy, makes it worse than the alphabet at two of four points (0.500, 0.500, 0.750, 1.000),
+      because the rarest words are the ones fewest chunks share. Which prefix is sufficient is exactly
+      what the training trick decides
+    uses_reference:
+      - truncate_embedding
+      - SemanticSearchEngine
+      - cosine_similarity
+      - SAMPLE_DOCUMENTS
+  - index: 4
+    slug: overlap_at_ten_is_forced_by_an_index_of_eleven
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Binary quantization**: take the embeddings from the search engine, convert them to binary (1 if positive, 0 if negative), and implement Hamming distance search. Compare the top-10 results against full-precision cosine similarity. Measure the overlap percentage.
+    zh: |
+      **二元量化**：拿搜尋引擎裡的嵌入，轉成二元（正值為 1，負值為 0），並實作漢明距離搜尋。把 top-10 結果和全精度餘弦相似度比較，量測重疊百分比。
+    verifies: >-
+      binarize, hamming_distance and the index's 'hamming' branch already ship, so the exercise is
+      read as measuring the overlap it asks for and then measuring it where it can vary. The index
+      holds 11 chunks at chunk size 100, so two subsets of size 10 must share at least 2*10 - 11 = 9:
+      the overlap at k=10 is 0.9 on all five queries and it cannot be less, for any metric whatsoever.
+      At every k where the number can move it collapses -- 0.00 at k=1 on all five, 0.333 at k=3,
+      0.400 at k=5. The mechanism is that tf-idf is non-negative: the smallest IDF is 1.087 and the
+      smallest vector entry is 0.0, so binarize(v) equals (v != 0) on every stored vector and every
+      weight is discarded, leaving Hamming distance as the size of a symmetric difference of word
+      sets. What survives is length: the number of ones correlates 0.9922 with the chunk's word count
+      and the returned Hamming ranking is the chunks sorted by size with one inversion, because a
+      query has a handful of ones against a chunk's thirty-seven to seventy-four. Jaccard over the
+      identical bitmaps -- intersection over union, the length-invariant reading of the same bits --
+      scores 0.40 at k=1 and 0.867 at k=3, so the quantization was never the problem and the
+      unnormalised distance was
+    uses_reference:
+      - binarize
+      - hamming_distance
+      - cosine_similarity
+      - SemanticSearchEngine
+      - SAMPLE_DOCUMENTS
+  - index: 5
+    slug: sentence_chunking_changes_nothing_but_the_tokens
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Sentence-based chunking**: replace fixed-size chunking with `chunk_by_sentences`. Run the same queries and compare retrieval scores. Does respecting sentence boundaries improve the results?
+    zh: |
+      **句子切塊**：把固定大小切塊換成 `chunk_by_sentences`。跑同樣的查詢並比較檢索分數。尊重句子邊界會讓結果變好嗎？
+    verifies: >-
+      both chunkers are run at the lesson's default 200 tokens over SAMPLE_DOCUMENTS through the same
+      SimpleEmbedder pipeline, and 'improve' is the top-1 cosine score per query, which is what
+      search_with_scores reports. The longest document is 102 words and the limit is 200, so both
+      chunkers emit exactly 5 chunks, one whole document each: the boundaries are identical and there
+      is no chunking difference in the comparison at all. Three of the five queries get slightly worse
+      and none improves -- 0.3539 to 0.3463, 0.4389 to 0.4368, 0.4366 to 0.4354 -- with the refund
+      query tied at 0.4714 and the out-of-vocabulary query 0.0 either way. The entire measured
+      difference is tokenisation: text.split('.') shatters every decimal, version number and hostname,
+      destroying 6 tokens ('0.1%', '1.3.', '2.0.', '99.9%', '99.99%', 'status.acme.com') and creating
+      11 junk ones, taking the vocabulary 270 -> 275 and the whitespace word count 471 -> 479, so the
+      chunker does not preserve its input. And the splitter cannot enforce its own budget: the length
+      test fires only when the current chunk is already non-empty, so a single 300-word sentence
+      becomes one 300-word chunk against a max_chunk_tokens of 200 -- invisible here because no sample
+      document is long enough
+    uses_reference:
+      - chunk_by_sentences
+      - chunk_text
+      - SemanticSearchEngine
+      - SAMPLE_DOCUMENTS
