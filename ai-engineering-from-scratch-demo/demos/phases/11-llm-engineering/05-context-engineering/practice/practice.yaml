@@ -1,0 +1,152 @@
+lesson: 05-context-engineering
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/05-context-engineering/docs/en.md
+exercises:
+  - index: 1
+    slug: the_detector_cannot_fire_because_the_counter_undercounts
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add a "token waste detector" to the ContextBudget class. It should flag components using more than 30% of the budget and suggest compression strategies specific to each component type (summarize history, prune tools, re-rank documents).
+    zh: |
+      為 ContextBudget 類別加上一個「詞元浪費偵測器」。它應該標記出用掉超過 30% 預算的元件，並針對各元件類型建議相應的壓縮策略（摘要歷史、修剪工具、重排文件）。
+    verifies: >-
+      'the budget' is ContextBudget.available -- max_tokens minus generation_reserve, the number every
+      other method divides by -- and the detector runs over the allocations ContextEngine.assemble
+      actually produces, for five queries covering the five intents classify_intent knows. It never
+      fires: the largest component across the five queries is 96 tokens against an available budget of
+      124,000, and total utilisation runs 0.079% to 0.114%. Read as a share of tokens actually used it
+      fires every time and always on retrieved_context, 52% to 66%, with nothing else passing 30% --
+      so the answer is decided by a denominator the exercise does not name. The mechanism is that
+      count_tokens is int(len(text.split()) * 1.3) and assemble serialises the tools as
+      json.dumps(list(tools.keys())), which has almost no spaces: the tool block books 6, 1, 1, 2 and
+      2 tokens while TOOL_REGISTRY declares 710, 180, 140, 360 and 360 for the same tools, a 180x
+      under-count on the component whose compression strategy the exercise names first. Pricing the
+      tool block at the registry's numbers flags tools on all five queries and displaces
+      retrieved_context on four. Run instead on what assemble reserves -- the per-component caps of
+      1000, 2000, 3000, 5000 and 500, summing to 11,500 -- and those are 9.3% of a 128,000-token
+      available budget but 274% of an 8,192-token one, where the detector flags conversation_history,
+      retrieved_context and tools at once
+    uses_reference:
+      - ContextEngine
+      - ContextBudget
+      - count_tokens
+      - select_tools
+      - TOOL_REGISTRY
+  - index: 2
+    slug: nothing_is_duplicated_and_the_waste_is_the_word_the
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement semantic deduplication for retrieved context. If two retrieved documents are more than 80% similar (by word overlap or cosine similarity of their embeddings), keep only the higher-scored one. Measure how much token budget this recovers.
+    zh: |
+      為檢索到的上下文實作語意去重。如果兩份檢索到的文件相似度超過 80%（用詞重疊或嵌入的餘弦相似度衡量），只留分數較高的那一份。量測這能回收多少詞元預算。
+    verifies: >-
+      'word overlap' is Jaccard over the lowercased word sets and 'cosine similarity of their
+      embeddings' is cosine over word-count vectors, both computed over the documents assemble
+      actually retrieves -- the knowledge base filtered at its own 0.05 relevance threshold -- for
+      five queries covering the five intents. Deduplication recovers 0 tokens on every query under
+      both measures: the highest Jaccard between any two retrieved documents is 0.176 and the highest
+      count-cosine 0.334, against a threshold of 0.80. The retrieved set is 4 to 7 of the 10 documents
+      and 4 to 7 of those overlap the query only in stopwords -- for 'how do I fix the failing test'
+      six documents are retrieved, five of them on the word 'the' alone, each scoring exactly 0.143,
+      one shared word out of seven. The mechanism is that score_relevance is len(query_words &
+      doc_words) / len(query_words) with no stopword list and no length normalisation, and the
+      threshold is 0.05, so one shared token out of a twenty-word query is enough. The recoverable
+      budget is therefore 378 tokens, not 0: dropping stopword-only matches takes the retrieved blocks
+      from 80, 53, 94, 96, 83 to 13, 0, 15, 0, 0 -- 93% of the retrieved context. The filter itself is
+      correct: adding each retrieved document back one word short, which is what an overlapping
+      chunker produces, puts every pair over the threshold and the same dedup recovers the added
+      copies
+    uses_reference:
+      - ContextEngine
+      - score_relevance
+      - count_tokens
+  - index: 3
+    slug: the_budget_truncates_fourteen_turns_before_the_manager_compresses
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a "context replay" tool. Given a conversation transcript, replay it through the ContextEngine and visualize how the budget allocation changes turn by turn. Plot token usage per component over time. Identify the turn where context starts getting compressed.
+    zh: |
+      做一個「上下文重播」工具。給定一份對話逐字稿，把它重播過 ContextEngine，並視覺化預算分配如何逐輪變化。畫出各元件的詞元用量隨時間變化的圖。找出上下文開始被壓縮的那一輪。
+    verifies: >-
+      the transcript is synthetic -- one user query per turn through ContextEngine.chat, which appends
+      its own simulated reply -- because the lesson ships none, and the replay records
+      budget.allocations and conversation.stats() after every turn. Compression starts at turn 147,
+      where _compress_if_needed summarises the two oldest turns and leaves 292 live turns and 1
+      summary. But the context was already being cut at turn 133: assemble passes max_tokens=5000 for
+      the history and allocate truncates silently above its cap, so from turn 133 the component books
+      4,999 tokens and the rest is dropped with no summary, no log line and no change in stats() -- 14
+      turns before the manager notices, so the exercise's question has two answers and only the later
+      one is observable. The two mechanisms count different strings: just after the pass the gate,
+      sum(count_tokens(turn['content'])), reads 4,980 and stops, while the string get_context() hands
+      the budget is 5,561, 112% of it, from the section headers and the 'role: ' prefix per turn. One
+      pass barely moves the number -- the history allocation over the compression turn and the next
+      three is 4,999 each time, pinned at the cap. Gating compression on token_count() instead moves
+      the first compression to turn 133, the same turn the truncation starts
+    uses_reference:
+      - ContextEngine
+      - ConversationManager
+      - count_tokens
+  - index: 4
+    slug: twenty_and_fifty_tools_do_not_exist_and_ten_are_free
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a priority-based tool selector. Instead of binary include/exclude, assign each tool a relevance score to the current query. Include tools in descending relevance order until the tool budget is exhausted. Compare task performance with 5, 10, 20, and 50 tools included.
+    zh: |
+      實作一個基於優先序的工具挑選器。不要做二元的納入／排除，而是為每個工具對當前查詢給一個相關性分數。依相關性遞減納入工具，直到工具預算用完。比較納入 5、10、20 和 50 個工具時的任務表現。
+    verifies: >-
+      relevance is scored against each tool's description and categories with the lesson's own
+      score_relevance, and the budget is the 2,000 tokens ContextEngine.assemble passes to
+      select_tools. Two of the four comparison points do not exist: TOOL_REGISTRY holds 10 tools, so
+      20 and 50 are unreachable and there is no larger registry in the lesson. The ten-tool point is
+      free -- all ten declare 1,580 tokens against the 2,000-token budget, so the accumulator in
+      select_tools is dead code, and per query it returns 5, 1, 1, 2 and 2 tools at 710, 180, 140, 360
+      and 360 tokens. The priority selector picks the same set as the shipped filter on all five
+      queries and a different order on two of them; the largest budget at which they disagree on the
+      set is 700 tokens, well below anything the lesson uses. classify_intent also falls back to
+      ['code'] when nothing matches, so 'Who won the 1998 World Cup?' ships read_file, run_command,
+      search_code, write_file and query_database -- 710 tokens of file, search and shell access --
+      which is a defaulting problem and not an include/exclude one. And task performance has no
+      observable: no task, no model, and the set never exceeds 5 tools for a real query
+    uses_reference:
+      - TOOL_REGISTRY
+      - select_tools
+      - classify_intent
+      - score_relevance
+  - index: 5
+    slug: the_lessons_summariser_is_a_character_truncation
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a multi-strategy context compressor. Implement three compression strategies (truncation, summarization, extraction of key sentences) and benchmark them on a set of 20 documents. Measure the tradeoff between compression ratio and information retention (does the compressed version still contain the answer to the query?).
+    zh: |
+      做一個多策略上下文壓縮器。實作三種壓縮策略（截斷、摘要、抽取關鍵句），並在一組 20 份文件上做基準測試。量測壓縮率與資訊保留度之間的取捨（壓縮後的版本還含有該查詢的答案嗎？）。
+    verifies: >-
+      the lesson ships 10 knowledge-base sentences, so the 20 documents are built by pairing them, and
+      'summarization' is implemented as the lesson's own ConversationManager._summarize_turns because
+      that is the only summariser in the codebase. Retention is whether the answer term survives,
+      measured over the 20 of 100 document-query pairs whose document contains its answer. At a
+      matched 20-token budget extraction wins both axes: ratio 0.518 and retention 18 of 20, against
+      truncation's 0.717 / 12 and the summariser's 0.891 / 16. Only extraction reads the query -- 0 of
+      the 20 documents change form with the query under truncation or the summariser, against 8 under
+      extraction -- so for two of the three strategies the retention question is settled before the
+      compressor is called. The summariser is content[:100] + '...', 16 words here, and it prepends
+      'Previous: doc: ', three words that are not in the document: a change of unit plus invented text
+      rather than a technique. Truncation's retention is entirely answer position, keeping 10 of the
+      10 pairs whose answer is in the opening fragment and 2 of the 10 where it is later, against
+      extraction's 10 and 8. And at natural settings the ranking inverts: truncating to half the words
+      gives the best ratio of the three, 0.479, and the worst retention, 10 of 20 -- same technique,
+      different budget, opposite verdict
+    uses_reference:
+      - ContextEngine
+      - ConversationManager
+      - score_relevance
+      - count_tokens
