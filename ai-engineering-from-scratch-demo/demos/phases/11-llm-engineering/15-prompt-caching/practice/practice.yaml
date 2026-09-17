@@ -1,0 +1,64 @@
+lesson: 15-prompt-caching
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/15-prompt-caching/docs/en.md
+exercises:
+  - index: 1
+    slug: the_token_bill_is_identical_and_only_the_price_changes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Take a 10-turn conversation with a 5,000-token system prompt against Claude. Run it without `cache_control` and then with. Report the input-token bill for each.
+    zh: |
+      **簡單。** 拿一段 10 輪對話、搭配 5,000 詞元的系統提示詞去打 Claude。先不帶 `cache_control` 跑一次，再帶著跑一次。報告兩者的輸入詞元帳單。
+    verifies: >-
+      a 10-turn conversation modelled the way one grows -- 400 tokens of transcript per turn on
+      top of the 5,000-token system prompt -- run with the breakpoint in both places a real client
+      would put it. The input-token bill is 72,000 either way, because caching changes the price
+      of a token and never the count. In dollars it is $1.0800 without cache_control and $0.4912
+      with, one write and nine reads, 54.5% saved. Move the breakpoint with the conversation,
+      which maximises the cached prefix, and the prefix key changes every turn: 10 writes, 0
+      reads, $1.3350, 23.6% worse than not caching at all. The two rates are 1.25x and 0.10x base,
+      so the break-even is two requests against one prefix inside the TTL, and
+      ProviderStats.misses is never incremented by any of the four simulators.
+  - index: 2
+    slug: the_cheapest_provider_reports_the_worst_savings
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Write a test harness that, given a prompt template and a request log, computes the expected hit rate and dollar savings per provider (Anthropic 5m, Anthropic 1h, OpenAI automatic, Gemini explicit).
+    zh: |
+      **中等。** 寫一套測試框架：給定一個提示詞模板和一份請求日誌，算出各供應商（Anthropic 5 分鐘、Anthropic 1 小時、OpenAI 自動、Gemini 明確）的預期命中率與省下的金額。
+    verifies: >-
+      the four arms over the lesson's own log -- 500 requests, three rotating 15,000-token
+      prefixes, four seconds apart. Anthropic 5m: 21 writes, hit 0.958, $19.6838, 83.0%. Anthropic
+      1h: 3 writes, hit 0.994, $15.5325, 86.6%. OpenAI: 3, 0.994, $19.8625, 48.4%. Gemini 1h: 3,
+      0.994, $2.6365, 72.6%. writes + reads == 500 in every arm and misses is never set, so the
+      hit rate is exactly 1 - writes/n and the exercise's two numbers are one measurement. The TTL
+      is never refreshed on a read, so the 5-minute arm rewrites on a 300s clock whatever the
+      traffic does; renewing it as Anthropic documents gives 3 writes and $15.0263, cheaper than
+      the 1-hour arm, so the shipped model prices the cheaper option as the dearer one. Gemini's
+      storage is billed once per surviving entry, simulate_openai hardcodes 3600, and each arm is
+      divided by its own baseline -- so Gemini, 5.9x cheaper in dollars, reports the worse saving.
+  - index: 3
+    slug: the_simulator_caches_a_prefix_the_endpoint_would_refuse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a layout optimizer: given a prompt and a list of fields marked `stable=True/False`, rewrite the prompt to put a single cache breakpoint at the maximum cache-friendly position without losing information. Verify on a real Anthropic endpoint.
+    zh: |
+      **困難。** 做一個排版最佳化器：給定一個提示詞和一份標了 `stable=True/False` 的欄位清單，在不損失資訊的前提下改寫提示詞，把唯一的快取斷點放在最有利於快取的位置。在真實的 Anthropic 端點上驗證。
+    verifies: >-
+      eight labelled fields totalling 8,255 tokens, four stable, ordered the way a prompt is
+      usually written. The cacheable prefix goes from 4,000 tokens to 6,100, +52.5%, with every
+      label and the token total preserved, and over 100 requests the bill goes $7.1205 to $4.3580
+      against a $12.3825 no-cache baseline -- 42.5% saved becoming 64.8%. No number of breakpoints
+      substitutes for the reorder: a breakpoint caches a prefix and the first unstable field
+      truncates every prefix after it, so the 2,100 stable tokens behind it are unreachable. The
+      simulator has no minimum cacheable prefix, so a 900-token block -- below Anthropic's
+      published 1,024 -- is modelled as two writes and 98 reads and reported as 9.6% saved. And
+      "without losing information" holds for the fields and not the order: two of the four stable
+      fields move in front of content they were written to follow. The live endpoint check is
+      documented rather than asserted, because no ANTHROPIC_API_KEY is set.
