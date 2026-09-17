@@ -5,9 +5,9 @@
 
 Reading of the exercise: both curves are swept with the lesson's own
 `checkpoint_cost` and `memory_after_checkpoint` over every k from 1 to L=64, and
-then the checkpointed path is timed against the full one on a real network,
-because "the knee of the curve" is a claim about a trade and only one side of it
-is modelled.
+then the layer-forwards each path actually performs are counted on a real
+network, because "the knee of the curve" is a claim about a trade and the
+modelled side of it does not match the code beside it.
 
 **ANSWER: there are two curves and the knee is at k=1.**
 
@@ -27,17 +27,18 @@ and bounded by 33.3%, and it is 75% of the way there by k=4.
 **FINDING: the formula charges (k-1)/k and the code recomputes k/k.**
 `model_backward_checkpointed` calls `model_forward` over the whole segment, all
 k layers; `checkpoint_cost` charges for k-1 of them, on the reasoning that the
-segment's first input was stored. So the real recompute is one full extra forward
-at **every** k -- a flat 33.3% -- and the rising curve the exercise asks to plot
-is exactly the n/k layer-forwards the model does not charge for. At k=1 that is
-the entire cost: the model says free and the code does a whole extra pass.
+segment's first input was stored. Counting `layer_forward` calls on a 24-layer
+network settles it: the full path performs 24 and the checkpointed one performs
+exactly **24 more at every k**, against a charge of
 
-**FINDING: measured, k=1 costs about 30%, not 0%.** Timing L=24 at hidden 256
-gives roughly +30% at k=1, +33% at k=4 and +49% at k=24 -- above the model at
-every k, and furthest above it exactly where the model says there is nothing to
-pay. The +30% at k=1 is the flat 33.3% arriving on schedule: one extra forward
-pass on a one-forward-two-backward budget, the figure the model only reaches at
-k=64.
+    k          1     2     4     8    12    24
+    charged    0    12    18    21    22    23
+    performed 24    24    24    24    24    24
+
+So the real cost is one whole extra forward whatever k is -- a flat 33.3% -- and
+the rising curve the exercise asks to plot is exactly the n/k layer-forwards the
+model never charges for. At k=1 that is the entire cost: the model says free and
+the code does a whole extra pass.
 
 **FINDING: the sqrt-L rule picks the dearest of the tied options.**
 `memory_after_checkpoint` is flat near its minimum -- at L=32 every k from 4 to 8
@@ -51,9 +52,6 @@ measures the same sweep on a real forward and backward.
 
 from __future__ import annotations
 
-import math
-import time
-
 import numpy as np
 
 from harness import parity, practice
@@ -61,8 +59,8 @@ from harness import parity, practice
 PHASE, LESSON = "10-llms-from-scratch", "34-gradient-checkpointing"
 DEPTH = 64
 SHOWN = (1, 2, 4, 8, 16, 32, 64)
-TIMED = (1, 2, 4, 8, 24)
-LAYERS, HIDDEN, INNER, BATCH, REPEATS = 24, 256, 512, 64, 5
+COUNTED = (1, 2, 3, 4, 6, 8, 12, 24)
+LAYERS, HIDDEN, INNER, BATCH = 24, 256, 512, 64
 COUNTS = (12, 16, 24, 32, 48, 64, 80, 96, 128)
 
 
@@ -72,33 +70,35 @@ def sweep(ref):
             for k in range(1, DEPTH + 1)}
 
 
-def best(fn, repeats=REPEATS):
-    fastest = math.inf
-    for _ in range(repeats):
-        start = time.perf_counter()
-        fn()
-        fastest = min(fastest, time.perf_counter() - start)
-    return fastest
+def count_calls(ref, run):
+    """Layer-forwards one path performs; model_forward resolves the global at call time."""
+    original, tally = ref.layer_forward, []
+    ref.layer_forward = lambda *args: (tally.append(1), original(*args))[1]
+    try:
+        run()
+    finally:
+        ref.layer_forward = original
+    return len(tally)
 
 
-def timings(ref):
-    """Wall clock for a full forward+backward against the checkpointed one."""
+def recomputed(ref):
+    """Layer-forwards each path performs, against the n*(k-1)/k the model charges."""
     params = ref.make_params(LAYERS, HIDDEN, INNER)
     rng = np.random.default_rng(0)
     x = rng.standard_normal((BATCH, HIDDEN)).astype(np.float32)
-    out, _ = ref.model_forward(x, params)
-    grad_out = rng.standard_normal(out.shape).astype(np.float32)
+    grad_out = rng.standard_normal((BATCH, HIDDEN)).astype(np.float32)
 
-    def run(k):
-        if k is None:
-            _, activations = ref.model_forward(x, params)
-            ref.model_backward(grad_out, activations, params)
-        else:
-            _, saved = ref.model_forward_checkpointed(x, params, k=k)
-            ref.model_backward_checkpointed(grad_out, saved, params, k=k)
+    def plain():
+        _, activations = ref.model_forward(x, params)
+        ref.model_backward(grad_out, activations, params)
 
-    baseline = best(lambda: run(None))
-    return {k: best(lambda k=k: run(k)) / baseline - 1 for k in TIMED}
+    def segmented(k):
+        _, saved = ref.model_forward_checkpointed(x, params, k=k)
+        ref.model_backward_checkpointed(grad_out, saved, params, k=k)
+
+    full = count_calls(ref, plain)
+    return {"full": full, "charged": {k: LAYERS * (k - 1) / k for k in COUNTED},
+            "extra": {k: count_calls(ref, lambda k=k: segmented(k)) - full for k in COUNTED}}
 
 
 def sqrt_rule(ref):
@@ -116,7 +116,7 @@ def sqrt_rule(ref):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    rows, timed = sweep(ref), timings(ref)
+    rows, calls = sweep(ref), recomputed(ref)
     baseline = ref.activation_memory_mb(DEPTH)
     floor = min(row["memory"] for row in rows.values())
     return {
@@ -128,8 +128,8 @@ def solve():
         "monotone": all(rows[k]["overhead"] <= rows[k + 1]["overhead"]
                         for k in range(1, DEPTH)),
         "argmin": min(rows, key=lambda k: rows[k]["memory"]),
-        "timed": timed,
-        "undercharged": [k for k, value in timed.items() if value > rows[k]["overhead"]],
+        "calls": calls,
+        "undercharged": [k for k in COUNTED if calls["extra"][k] > calls["charged"][k]],
         "rule": sqrt_rule(ref),
     }
 
@@ -150,7 +150,7 @@ def dearer(rule):
 
 
 def verify(result):
-    rows, share, timed = result["rows"], result["share"], result["timed"]
+    rows, share, calls = result["rows"], result["share"], result["calls"]
     rule, dear = result["rule"], dearer(result["rule"])
     return [
         practice.Check(
@@ -173,14 +173,16 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the formula charges (k-1)/k and the code recomputes k/k",
-            timed[1] > 0.1 and len(result["undercharged"]) == len(TIMED),
+            (len(result["undercharged"]) == len(COUNTED)
+             and set(calls["extra"].values()) == {LAYERS}),
             "model_backward_checkpointed calls model_forward over all k layers of the segment "
-            "while checkpoint_cost charges for k-1 of them, so the real recompute is one full "
-            "extra forward at every k. Measured: "
-            + ", ".join(f"k={k} {value:+.1%}" for k, value in timed.items())
-            + f" -- above the model at every one of {result['undercharged']}, and furthest "
-            f"above it at k=1, where the model says {rows[1]['overhead']:.1%} and the code does "
-            "a whole extra pass",
+            "while checkpoint_cost charges for k-1 of them. Counting layer_forward calls, the "
+            f"full path performs {calls['full']} and the checkpointed one performs exactly "
+            f"{LAYERS} more at every k -- "
+            + ", ".join(f"k={k} {value} vs {calls['charged'][k]:.0f} charged"
+                        for k, value in calls["extra"].items())
+            + ". So the real cost is one whole extra forward whatever k is, a flat 33.3%, and "
+            f"at k=1 the model charges {rows[1]['overhead']:.1%} for {LAYERS} recomputed layers",
         ),
         practice.Check(
             "FINDING: the sqrt-L rule picks the dearest of the memory-tied segment sizes",

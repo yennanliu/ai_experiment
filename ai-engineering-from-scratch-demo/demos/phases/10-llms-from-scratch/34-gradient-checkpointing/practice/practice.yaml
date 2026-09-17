@@ -56,10 +56,11 @@ exercises:
       points of compute at the k=8 minimum. The FLOP curve has no knee at all: it is monotone,
       bounded by 33.3%, and 75% of the way there by k=4. The formula charges (k-1)/k and the code
       recomputes k/k -- model_backward_checkpointed calls model_forward over the whole segment while
-      checkpoint_cost charges for k-1 of its layers, so the real recompute is one full extra forward
-      at every k, a flat 33.3%, and the rising curve the exercise asks to plot is exactly the n/k
-      layer-forwards the model does not charge for. Measured, k=1 costs about 30% rather than 0%,
-      above the model at every k and furthest above it where the model says there is nothing to pay.
+      checkpoint_cost charges for k-1 of its layers. Counting layer_forward calls settles it: the
+      full path performs 24 and the checkpointed one performs exactly 24 more at every k, against a
+      charge of 0 at k=1 rising to 23 at k=24, so the real cost is one whole extra forward whatever
+      k is -- a flat 33.3% -- and the rising curve the exercise asks to plot is exactly the n/k
+      layer-forwards the model never charges for.
       And the sqrt-L rule picks the dearest of the memory-tied options: memory_after_checkpoint is
       flat near its minimum -- at L=32 every k from 4 to 8 ties -- and optimal_segment returns the
       large end of the tie at 6 of the 9 layer counts swept, for up to 2.8 points of compute bought

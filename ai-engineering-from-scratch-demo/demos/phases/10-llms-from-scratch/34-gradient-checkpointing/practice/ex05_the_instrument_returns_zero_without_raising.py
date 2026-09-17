@@ -34,17 +34,18 @@ segment is recomputed exactly once, so the FLOP overhead is `fwd / (fwd + bwd)`
 `checkpoint_cost` plots. What k changes is only the memory.
 
 **FINDING: measured step time rises with k, which is the wrong direction for
-every model in the lesson.** The arms come out around +35% at k=1 and above
-+100% at k=12, and the number of `checkpoint` calls falls 12x over that range -- so it is
-not call overhead, and torch's recompute FLOPs are flat, so it is not FLOPs.
-With `use_reentrant=False` a segment's recomputed graph is materialised in full
-and held until that segment's backward finishes, so a larger k trades saved
-bytes for a larger transient. Both numbers the exercise asks for are unusable as
-stated: one is identically zero, and the other moves for a reason neither cost
-model contains.
+every model in the lesson.** Every arm is slower than no checkpointing, and the
+penalty grows from k=1 to k=12 -- +17% to +28% when the run has the machine to
+itself, +30% to +104% when it does not -- while the number of `checkpoint` calls
+*falls* 12x across that same range. So it is not call overhead, and torch's
+recompute FLOPs are flat, so it is not FLOPs either. With `use_reentrant=False`
+a segment's recomputed graph is materialised in full and held until that
+segment's backward finishes, so a larger k trades saved bytes for a larger
+transient. Both numbers the exercise asks for are unusable as stated: one is
+identically zero, and the other moves for a reason neither cost model contains.
 
-Structure: `saved_bytes` installs the pack hook around one step; `step_time`
-times the same step; `Block` is the transformer block both arms share.
+Structure: `measure` installs the pack hook around one step and then times the
+same step; `Block` is the transformer block both arms share.
 """
 
 from __future__ import annotations
@@ -180,8 +181,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: step time rises with k while the call count falls 12x",
-            (times[1] > 0.2 and times[max(SEGMENTS)] > times[1]
-             and max(times.values()) > 2 * flat),
+            (min(times.values()) > 0.05 and times[max(SEGMENTS)] > times[1]
+             and result["calls"][1] == LAYERS * result["calls"][max(SEGMENTS)]),
             "the arms measure " + listed(times, "+.0%") + f" against a flat {flat:.1%} of real "
             "recompute, while the checkpoint calls fall " + listed(result["calls"], "")
             + ". So it is neither call overhead nor FLOPs: with use_reentrant=False a segment's "

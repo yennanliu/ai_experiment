@@ -81,9 +81,16 @@ bounded by 33.3%, and 75% spent by k=4.
 full extra forward at **every** k — a flat 33.3% — and the rising curve the
 exercise asks to plot is the `n/k` layer-forwards the model never charges for.
 
-**FINDING: measured, k=1 costs about +30%, not 0%** (and about +49% at k=24) —
-above the model at every k, and furthest above it exactly where the model says
-there is nothing to pay.
+Counting `layer_forward` calls settles it. The full path performs 24; the
+checkpointed one performs exactly **24 more at every k**:
+
+| k | 1 | 2 | 4 | 8 | 12 | 24 |
+|---|---:|---:|---:|---:|---:|---:|
+| charged | **0** | 12 | 18 | 21 | 22 | 23 |
+| performed | **24** | 24 | 24 | 24 | 24 | 24 |
+
+At k=1 that is the whole cost: the model says free and the code does an entire
+extra pass.
 
 **FINDING: the sqrt-L rule picks the dearest of the memory-tied options.**
 `memory_after_checkpoint` is flat near its minimum — at L=32 every k from 4 to 8
@@ -175,8 +182,8 @@ overhead is `fwd / (fwd + bwd)` = **33.3% flat** — not the `(k-1)/k` curve
 `checkpoint_cost` plots. What k changes is only the memory; the gradients are
 identical at every k.
 
-**FINDING: measured step time rises with k anyway** — about +30% at k=1 to above
-+100% at k=12 — while the number of `checkpoint` calls falls 12x over that
-range. So it is neither call overhead nor FLOPs: with `use_reentrant=False` a
+**FINDING: measured step time rises with k anyway** — +17% to +28% when the run
+has the machine to itself, +30% to +104% when it does not — while the number of
+`checkpoint` calls *falls* 12x across that same range. So it is neither call overhead nor FLOPs: with `use_reentrant=False` a
 segment's recomputed graph is materialised in full and held until that segment's
 backward finishes, so a larger k trades saved bytes for a larger transient.
