@@ -1,0 +1,149 @@
+lesson: 06-rag
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/06-rag/docs/en.md
+exercises:
+  - index: 1
+    slug: tf_idf_and_binary_agree_on_every_top_hit
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the TF-IDF embeddings with a simple bag-of-words approach (binary: 1 if word present, 0 if not). Compare retrieval quality on the sample documents. TF-IDF should outperform because it weights rare words higher.
+    zh: |
+      把 TF-IDF 嵌入換成簡單的詞袋做法（二元：詞存在為 1，不存在為 0）。在樣本文件上比較檢索品質。TF-IDF 應該會勝出，因為它給罕見詞更高的權重。
+    verifies: >-
+      only the embedding changes -- the vocabulary, the cosine, the search and the pipeline are the
+      lesson's own -- and retrieval quality is scored by the rank-1 chunk and by the top-3 set, since
+      the exercise does not say which. The two embeddings return the same rank-1 chunk on all five
+      queries and both score 3 of 5 on rank-1 relevance; the top-3 sets differ on 2 of 5, at ranks 2
+      and 3 only. The prediction is not wrong, it is unmeasurable: compute_idf is
+      log((n+1)/(doc_count+1)) + 1 over n = 5 chunks, so the whole 270-word vocabulary lies between
+      1.000 and 2.099 -- rare words are weighted higher and the weight is at most doubled. TF is the
+      other half and it cancels: compute_tf divides by the chunk's word count, and at the default
+      chunk size every chunk is a whole document of 91 to 102 words, a spread of 1.12x. One of the
+      five queries scores 0.0 against every chunk under both embeddings, so the arms agree there for
+      the one reason that proves nothing. Splitting to 11 chunks widens the IDF band to 1.087-2.792,
+      drops rank-1 agreement to 3 of 5, and makes rank-1 relevance TF-IDF 3 against binary 1 -- the
+      claim is correct and five whole-document chunks cannot show it
+    uses_reference:
+      - RAGPipeline
+      - tfidf_embed
+      - search
+      - compute_idf
+      - SAMPLE_DOCUMENTS
+  - index: 2
+    slug: the_sweet_spot_is_flat_and_the_first_size_hangs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Experiment with chunk sizes: try 50, 100, 200, and 500 words on the same document set. For each size, run the same 5 queries and count how many return a relevant chunk in the top-3. Find the sweet spot where retrieval quality peaks.
+    zh: |
+      實驗切塊大小：在同一組文件上試 50、100、200、500 個詞。每種大小都跑同樣 5 個查詢，數一數有幾個在 top-3 裡回傳了相關的塊。找出檢索品質達到峰值的甜蜜點。
+    verifies: >-
+      the overlap is the pipeline's default 50 because the exercise names only the chunk size, and
+      'relevant' is made mechanical as the top-3 containing a chunk that holds the query's known
+      answer string. chunk_text is never called at (50, 50): its step is checked arithmetically and
+      reproduced with a bounded clone. Chunk size 50 does not terminate -- the step is chunk_size -
+      overlap = 0, the bounded clone emits 1,000 identical chunks with start still at 0, and
+      RAGPipeline(chunk_size=50) never returns from index(). Across 100, 200 and 500 the count is flat
+      at its ceiling, 5 of 5, with every query hitting at every size, so there is no peak in either
+      direction. Two of the three are the same index: the longest document is 102 words, so 200 and
+      500 both give 5 chunks of byte-identical text. And at the pipeline's own top_k the question is
+      empty -- RAGPipeline defaults to top_k=5 against a 5-chunk index, so it retrieves the whole
+      corpus for every query. What this pipeline is actually sensitive to is tokenisation:
+      build_vocabulary is doc.lower().split(), so 12 of the 270 entries are a trailing-punctuation
+      form of another entry
+    uses_reference:
+      - chunk_text
+      - RAGPipeline
+      - build_vocabulary
+      - SAMPLE_DOCUMENTS
+  - index: 3
+    slug: the_source_names_exist_and_never_reach_the_prompt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add metadata to each chunk (source document name, chunk position). Modify the prompt template to include source attribution so the LLM cites its sources.
+    zh: |
+      為每一塊加上元資料（來源文件名稱、塊的位置）。修改提示詞模板來納入來源歸屬，讓 LLM 引用它的出處。
+    verifies: >-
+      'add metadata' is read against what RAGPipeline already stores, and the prompt change is
+      measured twice: whether an attribution reaches the model, and whether it changes what the model
+      returns. Half of it already ships and the half that ships is unused -- index builds self.sources
+      (doc_0..doc_4) and query returns a source per hit, but query hands build_rag_prompt only the
+      chunk texts, so the document names appear in 0 of 5 prompts and the template labels sources
+      positionally as [Source 1], [Source 2], [Source 3]. Those labels are per-query: chunk 0 is
+      labelled 1, 2 and 3 across the five queries, so a citation identifies a rank rather than a
+      document. Chunk position is not stored and is one pass away -- the pipeline keeps chunks,
+      embeddings, vocab, idf and sources, and at chunk size 100 the global index coincides with the
+      in-document position for only 2 of the 11 chunks. A template carrying [doc_N, chunk M] puts the
+      name in 5 of 5 prompts and leaves the answer byte-identical in 5 of 5, because simple_generate
+      re-derives the query by splitting on 'question:' and then scans retrieved_chunks directly. So
+      the citation has to be attached by the pipeline: simple_generate returns a verbatim sentence,
+      which resolves to exactly one chunk for 5 of 5 queries, and query already knows that chunk's
+      source
+    uses_reference:
+      - RAGPipeline
+      - build_rag_prompt
+      - simple_generate
+      - SAMPLE_DOCUMENTS
+  - index: 4
+    slug: the_metric_it_names_and_the_metric_it_defines_disagree
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a simple evaluation: given 10 question-answer pairs, run each question through the RAG pipeline, and measure what percentage of retrieved chunks contain the answer. This is retrieval recall at k.
+    zh: |
+      實作一個簡單的評估：給定 10 組問答配對，把每個問題跑過 RAG 管線，量測有多少比例的檢索塊含有答案。這就是 k 處的檢索召回率。
+    verifies: >-
+      the 10 pairs are written against the lesson's own SAMPLE_DOCUMENTS with the gold chunk recorded
+      alongside the answer string, so both metrics come from one run, and k sweeps 1, 3 and 5 because
+      5 is the pipeline's own top_k. The sentence defines precision@k and calls it recall@k, and the
+      two disagree: recall -- was the gold chunk retrieved -- is 10 of 10 at every k, while precision
+      -- the percentage of retrieved chunks containing the answer -- is 1.000, 0.367, 0.220. Retrieval
+      is perfect and constant while the number the exercise asks for falls fivefold over the same
+      runs. The mechanism is that 9 of the 10 answer strings appear in exactly one of the 5 chunks,
+      putting the ceiling at 1.000, 0.367 and 0.220 -- the measured values exactly -- so the metric is
+      a measurement of k. At k = 5 it is vacuous in the other direction too, since top_k equals the
+      chunk count and the pipeline retrieves the whole corpus. And string containment cannot localise
+      an answer: '30 days' occurs in chunks 0 and 4, the refund window and the service-credit
+      deadline, so a question about either is scored correct by the other. The honest number is recall
+      at 1, and it is 10 of 10
+    uses_reference:
+      - RAGPipeline
+      - SAMPLE_DOCUMENTS
+  - index: 5
+    slug: the_follow_up_fails_on_a_question_mark
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a conversation-aware RAG pipeline: maintain a history of the last 3 exchanges and include them in the prompt alongside the retrieved chunks. Test with follow-up questions like "What about enterprise?" after asking about pricing.
+    zh: |
+      做一條有對話意識的 RAG 管線：維護最近 3 次交流的歷史，並和檢索到的塊一起放進提示詞。用追問測試它，例如問完定價之後再問「What about enterprise?」。
+    verifies: >-
+      history is kept as the last three (question, answer) pairs and injected into the prompt exactly
+      as written, and the test is the exercise's own follow-up after its own pricing question,
+      measured at retrieval because that is where a follow-up either resolves or does not. 'What about
+      enterprise?' scores 0.0 against every chunk and the history cannot help: query embeds the
+      question alone and calls search before build_rag_prompt is reached, so retrieval is
+      byte-identical with and without three turns of history in the prompt. The mechanism is the
+      question mark -- build_vocabulary is doc.lower().split(), so the corpus holds 'enterprise' and
+      'enterprise.' while the query holds 'enterprise?', a token in neither. Dropping that one
+      character takes the scores from 0.0 to [0.099, 0.093, 0.045], and even then the query embeds to
+      a single non-zero dimension: 'what', 'about' and 'tiers' are not in the vocabulary at all, and
+      'enterprise' occurs in all five chunks so its IDF is 1.000, the floor. The prompt is inert for a
+      second independent reason as well -- simple_generate scans retrieved_chunks and not the prompt,
+      leaving the answer unchanged on both follow-ups. Stripping trailing punctuation at tokenisation
+      takes the vocabulary 270 -> 258 and the follow-up as written, question mark included, to the
+      pricing chunk at rank 1
+    uses_reference:
+      - RAGPipeline
+      - build_vocabulary
+      - tfidf_embed
+      - search
+      - simple_generate
+      - SAMPLE_DOCUMENTS
