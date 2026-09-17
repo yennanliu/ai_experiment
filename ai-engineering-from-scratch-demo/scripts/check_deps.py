@@ -23,8 +23,11 @@ GROUP_MODULES = {
     "audio": {"numpy"},
     # phase 10 is the tokenizer phase: its lessons measure their own BPE against
     # cl100k_base, so tiktoken is a build input there and not an extra, and 10/02
-    # imports regex behind a try/except whose fallback silently drops non-ASCII
-    "llm": {"openai", "torch", "transformers", "jax", "jaxlib", "optax", "tiktoken", "regex"},
+    # imports regex behind a try/except whose fallback silently drops non-ASCII.
+    # phase 11's provider lessons name OpenAI and Anthropic by name, and checking a
+    # request payload against the SDK that has to accept it needs the SDK present
+    "llm": {"openai", "anthropic", "torch", "transformers", "jax", "jaxlib", "optax",
+            "tiktoken", "regex"},
     "agents": set(),
     "infra": set(),
 }
