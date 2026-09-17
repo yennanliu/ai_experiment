@@ -1,0 +1,95 @@
+lesson: 11-caching-cost
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/11-caching-cost/docs/en.md
+exercises:
+  - index: 1
+    slug: the_cache_holds_five_hundred_and_the_exercise_sends_a_hundred
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement LRU eviction for the semantic cache.** Replace the oldest-first eviction with least-recently-used. Track the last access time for each entry and evict the entry with the oldest access time when the cache is full. Compare hit rates between the two strategies over 100 queries.
+    zh: |
+      **為語意快取實作 LRU 淘汰。** 把「最舊優先」淘汰換成「最近最少使用」。追蹤每筆項目最後一次被存取的時間，快取滿時淘汰存取時間最舊的那一筆。在 100 次查詢上比較兩種策略的命中率。
+    verifies: >-
+      LRU built exactly as specified -- a last-access counter per entry, evict the oldest access
+      on insert -- and compared against the shipped oldest-first eviction over 100 queries. At the
+      lesson's own max_size=500 the comparison is empty: 100 queries can never fill a 500-entry
+      cache, so there are 0 evictions on either strategy and both report the identical hit rate of
+      0.78. Shrinking the cache to 10 entries makes the strategies differ at last: FIFO 0.58, LRU
+      0.63, a gain of 0.05. Lowering the similarity threshold from 0.85 to 0.70 and leaving the
+      eviction policy alone buys the same 0.05, so the exercise's chosen variable is worth exactly
+      as much as the one it does not mention.
+  - index: 2
+    slug: every_log_entry_lands_in_the_same_microsecond
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a cost projection tool.** Given a log of API calls (the CostTracker logs), project the monthly cost based on the trailing 7-day average. Account for weekday/weekend patterns. Trigger an alert if the projected monthly cost exceeds the budget by more than 20%.
+    zh: |
+      **做一個成本預估工具。** 給定一份 API 呼叫日誌（CostTracker 的紀錄），依過去 7 天平均推估月成本。要考慮平日／週末的模式。若推估月成本超出預算 20% 以上就發出警示。
+    verifies: >-
+      the projection tool built as specified -- trailing-7-day mean, weekday/weekend split, alert
+      above 120% of budget -- and then run against the logs the CostTracker actually produces.
+      1,000 calls span a few milliseconds of wall clock and one calendar day, so "trailing 7-day average" has
+      one day of data and the weekday/weekend split has one bucket. Backdating the same 1,000
+      calls over 14 days gives the split something to measure: $0.0118 per weekday against $0.0056
+      per weekend day, 2.12x, and three consecutive trailing-7 windows project $0.3152, $0.3175
+      and $0.3101 -- a 2.4% spread that is smaller than the weekday effect it is averaging over.
+  - index: 3
+    slug: the_medium_band_is_empty_for_any_query_under_twenty_words
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement tiered semantic caching.** Use two similarity thresholds: 0.98 for high-confidence hits (return immediately) and 0.90 for medium-confidence hits (return with a disclaimer: "Based on a similar previous question..."). Track which tier each hit came from and measure user satisfaction differences.
+    zh: |
+      **實作分層語意快取。** 用兩個相似度閾值：0.98 為高信心命中（立即回傳），0.90 為中信心命中（回傳時加上聲明：「Based on a similar previous question...」）。追蹤每次命中來自哪一層，並量測使用者滿意度的差異。
+    verifies: >-
+      both tiers built as specified, 0.98 for high confidence and 0.90 for medium, and then asked
+      which similarities can land between them. simple_embed is a bag of words over a fixed
+      vocabulary, so the cosine of two queries is exactly k/sqrt(m*n) for small integers: an
+      8-word query can only reach 0.0, 0.125, 0.25, ... 1.0 and none of those is in [0.90, 0.98).
+      The shortest query that can reach the medium band at all is 10 words (9/10 = 0.9). Across
+      all 190 pairs of the lesson's own 20-query set, 0 reach either tier, so the disclaimer
+      string is unreachable and "measure user satisfaction differences" has no hits to compare.
+  - index: 4
+    slug: the_length_test_fires_first_so_every_complex_query_is_simple
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a model routing classifier.** Replace the keyword-based classifier with an embedding-based one. Embed 50 labeled queries (simple/medium/complex), then classify new queries by finding the nearest labeled example. Measure classification accuracy against a test set of 20 queries.
+    zh: |
+      **做一個模型路由分類器。** 把基於關鍵字的分類器換成基於嵌入的。把 50 個已標註查詢（簡單／中等／複雜）嵌入，然後用「找最近的已標註樣本」來分類新查詢。用 20 個查詢的測試集量測分類正確率。
+    verifies: >-
+      1-NN over 50 labelled queries using the lesson's own simple_embed and cosine_similarity,
+      scored against a 20-query test set alongside the shipped classify_complexity. The keyword
+      classifier scores 14 of 20: it tests len(q.split()) <= 5 before COMPLEX_KEYWORDS, so 6 of
+      the 8 complex queries come back simple, and 'hi' and 'no' in SIMPLE_KEYWORDS match as
+      substrings of 'this' and 'architecture' in 5 of them. Nearest-neighbour scores 20 of 20 --
+      perfect because the labelled set carries the test set's vocabulary. It also costs more: the
+      same 1,000 queries price at $1.5976 under the keyword labels and $2.4357 under the embedding
+      ones. Swapping the two tests so keywords run first also scores 20 of 20, with no embedding
+      and no labelled set.
+  - index: 5
+    slug: the_degradation_removes_the_event_the_exercise_asks_you_to_verify
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement a circuit breaker with degradation levels.** At 70% budget, log a warning. At 85%, automatically switch all routing to the cheapest model (gpt-4o-mini). At 95%, serve only cached responses and reject new queries. Test by simulating 1,000 requests against a $1.00 budget and verify each threshold triggers correctly.
+    zh: |
+      **實作帶降級層級的斷路器。** 預算 70% 時記一筆警告。85% 時自動把所有路由切到最便宜的模型（gpt-4o-mini）。95% 時只提供快取回應並拒絕新查詢。用 $1.00 預算模擬 1,000 次請求來測試，驗證每道閾值都正確觸發。
+    verifies: >-
+      the breaker built exactly as specified -- warn at 70%, force gpt-4o-mini at 85%, reject at
+      95% -- and run over the lesson's own 10-query pipeline mix cycled to 1,000 requests against
+      a $1.00 budget, both with and without the mitigation. Unmitigated the run reaches $0.9516
+      and records all three alerts, at requests 739, 895 and 999. With the breaker on the 85%
+      switch works and the bill lands at $0.8700, 87% of budget, so the stop level never fires:
+      the mitigation removes the event the exercise asks to verify, and the 95% level had one
+      request of headroom to begin with. The 85% switch moves only the 2 medium queries, because 8
+      of the 10 already route to gpt-4o-mini; gpt-4o is never selected at all, because 'hi' is a
+      substring of 'architecture'. _check_budget uses elif, so one log_call('gpt-4o', 500000,
+      200000) totals $3.25 and records ['stop'] alone.
