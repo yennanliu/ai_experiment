@@ -1,0 +1,148 @@
+lesson: 16-differential-attention-v2
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/16-differential-attention-v2/docs/en.md
+exercises:
+  - index: 1
+    slug: the_crossover_runs_the_other_way
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Verify the signal-to-noise ratio reported for differential attention is higher than standard softmax attention on the synthetic query. Vary the noise amplitude and show the crossover point where standard attention becomes unusable.
+    zh: |
+      執行 `code/main.py`。確認在合成查詢上，差分注意力回報的訊噪比高於標準 softmax 注意力。改變雜訊振幅，指出標準注意力開始不堪用的交叉點。
+    verifies: >-
+      the toy is the lesson's own -- a 1024-token logit vector with a 4.0 signal at position 500 and
+      Gaussian noise elsewhere, scored with its own snr -- and the sweep is run on twelve seeds per
+      noise level rather than one, because main prints a single draw per level and the exercise asks
+      for a crossover, which is a claim about where two curves meet. There is a crossover and it
+      runs the other way: median SNR is 53.00 standard against 182.45 differential at noise 0.25,
+      48.37 against 91.27 at 0.5, 33.41 against 34.49 at 1.0, 18.24 against 13.75 at 1.5 and 7.78
+      against 4.75 at 2.0, so differential attention is 3.4x better at the quiet end and 0.61x --
+      that is, worse -- at noise 2.0, first falling below parity at 1.5. Standard attention also
+      never becomes unusable while differential attention is usable: both collapse together, 0.68
+      against 0.38 at noise 3.0 and 0.04 against 0.02 at 4.0, and differential is below standard at
+      every level where standard has stopped working. The mechanism is that the subtraction removes
+      a floor softmax has already removed -- at low noise the first branch's noise weights are a
+      nearly flat 1/n floor which the second branch also is, so the subtraction cancels it, while at
+      high noise those weights are the exponentials of a wide Gaussian and subtracting an
+      independent draw of the same kind adds variance. And the sweep main prints, 0.25 to 2.00 at
+      one seed per level, contains the crossing without naming it
+    uses_reference:
+      - softmax_row
+      - snr
+  - index: 2
+    slug: the_baseline_is_not_a_2025_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the parameter-count delta from baseline to DIFF V1 and from baseline to DIFF V2 for a 7B-class model (hidden=4096, heads=32, d_head=128, 32 layers). Show which components gained parameters and which stayed the same.
+    zh: |
+      為一個 7B 等級的模型（hidden=4096、heads=32、d_head=128、32 層），算出從基準到 DIFF V1、以及從基準到 DIFF V2 的參數量差額。指出哪些元件多了參數、哪些維持不變。
+    verifies: >-
+      the counts are the lesson's own compute_param_diff at the shape the exercise names, broken
+      back down into Q, K, V, O and lambda by calling the three attention_params_* functions
+      component by component, and the baseline those deltas are measured against is then checked,
+      because attention_params_baseline is 4 x hidden^2 -- multi-head attention -- and every other
+      model in this phase is grouped-query. Per layer V1 adds 8,192 parameters and V2 adds
+      8,404,992, or +0.01% and +12.5%, and the component split reproduces the lesson's totals
+      exactly: baseline 67,108,864, V1 67,117,056, V2 75,513,856. V1 is free, because halving d_head
+      to 64 and running two branches leaves Q and K exactly where they were and the only new
+      parameters are the four lambda vectors. But the baseline is multi-head and V2 is not -- V2's
+      own K and V are sized at kv_heads x d_head, 4,194,304 against the baseline's 16,777,216 -- so
+      the delta compares a grouped-query model against a multi-head baseline, and against a
+      like-for-like GQA baseline of 41,943,040 V2 costs +80% rather than +12.5%, understating it by
+      6.4x. The cost is entirely Q and O and it is exactly double, since V2's answer to where the
+      two branches come from is more heads rather than narrower ones, and K and V are untouched
+    uses_reference:
+      - compute_param_diff
+      - attention_params_baseline
+      - attention_params_diff_v1
+      - attention_params_diff_v2
+  - index: 3
+    slug: the_output_scale_varies_five_fold_across_heads
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3 of the DIFF V1 paper (arXiv:2410.05258) and Section 2 of the DIFF V2 Hugging Face blog. In two sentences, explain why the V1 per-head RMSNorm was necessary and why V2 could remove it without causing training divergence.
+    zh: |
+      讀 DIFF V1 論文（arXiv:2410.05258）的第 3 節，以及 DIFF V2 Hugging Face 部落格的第 2 節。用兩句話解釋為什麼 V1 的逐頭 RMSNorm 是必要的，以及 V2 為什麼能把它拿掉又不會讓訓練發散。
+    verifies: >-
+      the explanation is written as a measurement against the lesson's own attention, because the
+      quantity both papers are arguing about -- the magnitude a differential head hands to the
+      residual stream -- is computable from diff_attention directly, and heads are simulated by
+      varying the correlation between the two branches, which is the thing that differs from head to
+      head in a trained model and which lambda does not control. At a fixed lambda = 0.8 a head's
+      output norm ranges 4.9x: 0.655 at correlation 0.00, 0.518 at 0.60, 0.273 at 0.90 and 0.134 at
+      1.00, or 0.98x, 0.77x, 0.41x and 0.20x of what standard attention emits. A head whose two
+      branches have learned the same thing emits a fifth of what an uncorrelated head emits, through
+      the same lambda and into the same residual stream, and that spread is the argument for a
+      per-head RMSNorm in one table. The mechanism is that the attention weights no longer sum to
+      one -- A1 - lam * A2 has row sum exactly 1 - lam, so at lam = 1 the weights sum to zero and
+      the head emits a pure difference with no mean component at all, where standard attention's row
+      sum is 1.0 by construction. V2's removal is a width change rather than a normalisation change:
+      V1 concatenates two half-width branches back to exactly the baseline's 4,096, so the output
+      projection cannot absorb anything, while V2 hands that projection 8,192 inputs. And lambda
+      cannot do the RMSNorm's job, since the only setting at which every head emits the same
+      magnitude is lambda = 0, where there is no differential attention left
+    uses_reference:
+      - softmax_row
+  - index: 4
+    slug: the_best_lambda_is_zero_where_it_matters
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement an ablation: compute differential attention with `lambda = 0` (pure first softmax) and `lambda = 1` (full subtraction). On the synthetic query, measure how signal-to-noise changes across the sweep. Identify the `lambda` that maximizes signal-to-noise.
+    zh: |
+      做一個消融實驗：分別以 `lambda = 0`（純第一條 softmax）與 `lambda = 1`（完整減法）計算差分注意力。在合成查詢上量測訊噪比在整段掃描中如何變化，找出讓訊噪比最大的 `lambda`。
+    verifies: >-
+      the two endpoints the exercise names are the ablation and the sweep between them is the
+      answer, so lambda is stepped in 0.05 from 0 to 1.2 -- past 1, because nothing in
+      diff_attention requires lambda <= 1 and the optimum is a measured quantity rather than a
+      stipulated one -- with twelve seeds per setting, and the whole sweep repeated at the noise
+      level Exercise 1 shows the method losing at. The optimum is lambda = 0.75 at the lesson's own
+      noise of 0.5, where the curve runs 48.37, 83.84, 91.27, 84.42, 72.87 across lambda 0.0, 0.5,
+      0.8, 1.0, 1.2 and the peak is 91.68, and lambda = 0.00 at noise 2.0, where it runs 7.78, 5.78,
+      4.75, 4.27, 3.87 and the peak is the first point. The lesson's hard-coded 0.8 is within 0.4%
+      of optimal in the quiet case and 39% off in the loud one, where the optimising lambda is the
+      ablation's own "pure first softmax" endpoint. The curve is single-peaked at both noise levels
+      and the peak walks left as the context gets noisier until it hits the wall at zero, so a
+      lambda tuned at one noise level is not a constant of the architecture. The mechanism is that
+      lambda trades a shrinking signal against a shrinking noise floor, and when the second branch
+      matches the first badly the signal falls faster. And past lambda = 1 the weights go negative
+      while snr, which takes abs(weights[pos]), keeps reporting: at lambda = 1.2 it returns 72.87
+      for an attention row that sums to -0.20
+    uses_reference:
+      - softmax_row
+      - snr
+  - index: 5
+    slug: the_cache_matches_because_v2_never_touches_k_or_v
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the toy to GQA + DIFF V2. Pick 8 KV heads and 32 Q heads. Show that the KV cache size matches a baseline GQA model with the same (8, 32) configuration.
+    zh: |
+      把玩具擴充成 GQA + DIFF V2。取 8 個 KV 頭與 32 個 Q 頭。證明 KV 快取的大小，與同樣是 (8, 32) 設定的基準 GQA 模型相同。
+    verifies: >-
+      the claim is about k_params and v_params, which the lesson's own attention_params_diff_v2
+      already sizes at kv_heads x head_dim -- identical to a GQA baseline -- so the demonstration is
+      a comparison of the two counters, and the toy is extended by running diff_attention with 8
+      shared K/V heads against 32 Q heads so the equality is shown on the attention rather than only
+      on paper. The cache is 4,096 bytes per token per layer both ways, exactly: 2 x 8 KV heads x
+      128 head dim x 2 bytes, and V2 changes neither term, its k_params and v_params being 4,194,304
+      each just like the GQA baseline's. The exercise therefore asks to confirm the one thing V2
+      left alone -- its Q projection is 33,554,432 against the baseline's 16,777,216 and its output
+      projection is doubled to match, and those 1,074M parameters across 32 layers are not
+      mentioned. The mechanism is that the two branches share K and V, so there is one cache: 64
+      query heads read 8 shared KV heads, 32 in each branch, and run that way the attention still
+      differs from standard, with a row sum of 0.20 against 1.00. And the equality matters above 16k
+      context while the omission matters below it: at 128k the identical cache is 16.00 GB per
+      sequence against 2.00 GB of extra weights, and the two are equal at exactly 16,384 tokens
+    uses_reference:
+      - compute_param_diff
+      - diff_attention
+      - standard_attention

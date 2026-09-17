@@ -13,6 +13,7 @@ import importlib.util
 import io
 import os
 import pathlib
+import sys
 
 REFERENCE_DIRNAME = "ai-engineering-from-scratch"
 
@@ -69,8 +70,16 @@ def load_reference(phase: str, lesson: str, module: str):
     name = f"_aiefs_ref_{phase}_{lesson}_{module}".replace("-", "_")
     spec = importlib.util.spec_from_file_location(name, source)
     loaded = importlib.util.module_from_spec(spec)
-    with contextlib.redirect_stdout(io.StringIO()):
-        spec.loader.exec_module(loaded)
+    # register before executing: @dataclass resolves its own annotations through
+    # sys.modules[cls.__module__], so a reference module that uses dataclasses
+    # raises AttributeError on an unregistered module (10/13 does)
+    sys.modules[name] = loaded
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            spec.loader.exec_module(loaded)
+    except BaseException:
+        sys.modules.pop(name, None)
+        raise
     return loaded
 
 

@@ -1,0 +1,136 @@
+lesson: 21-jamba-hybrid-ssm-transformer
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/21-jamba-hybrid-ssm-transformer/docs/en.md
+exercises:
+  - index: 1
+    slug: the_eight_times_is_thirty_two_over_four
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` to compute KV cache at 256k context for a 32-layer pure Transformer (hidden 4096, 32 heads) and for a Jamba-1 hybrid of the same shape. Verify the ~8x memory reduction the AI21 paper claims.
+    zh: |
+      執行 `code/main.py`，算出 32 層純 Transformer（hidden 4096、32 個頭）與同樣形狀的 Jamba-1 混合架構在 256k 脈絡下的 KV 快取。驗證 AI21 論文宣稱的約 8 倍記憶體縮減。
+    verifies: >-
+      both figures come from the lesson's own kv_cache_bytes and ssm_state_bytes on its own
+      HybridConfig shapes, and the verification is then followed by asking what produced the 8,
+      because kv_cache_bytes is linear in attn_layers and the two configs differ in that field and
+      no other. At 256k the pure Transformer is 128.00 GB of KV cache and the 1:7 hybrid 16.00 GB, a
+      ratio of exactly 8.00 or 7.998 once the SSM state is added, and the 8 is 32 / 4: the AI21
+      paper's "~8x" is the attention-layer fraction, reproduced exactly because the formula cannot
+      do anything else. The SSM state is 3.50 MB against 16.00 GB, 0.0214%, and it is constant in
+      context while the cache is linear in it, so at 256k it rounds away entirely -- the hybrid's
+      memory story at long context is which layers were removed rather than what replaced them. The
+      Jamba configs also use MHA where Jamba uses GQA, setting n_kv_heads = 32 throughout: with
+      n_kv_heads = 8, as the lesson's own pure-Transformer GQA row does, the 1:7 hybrid is 4.00 GB
+      and the reduction 32x. The two savings multiply -- 8x from removing seven of every eight
+      attention layers and 4x from sharing KV heads -- and the exercise asks you to verify the first
+      while the file demonstrates the second on a different row
+    uses_reference:
+      - HybridConfig
+      - kv_cache_bytes
+      - ssm_state_bytes
+  - index: 2
+    slug: the_crossover_is_a_context_not_a_ratio
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the calculator to model a 1:3 hybrid (4 Mamba : 1 Attention) and a 1:15 hybrid (14 Mamba : 1 Attention). Plot KV cache vs ratio. At what ratio does the KV cache equal the SSM state memory?
+    zh: |
+      修改計算器，建模 1:3 混合架構（4 層 Mamba : 1 層注意力）與 1:15 混合架構（14 層 Mamba : 1 層注意力）。畫出 KV 快取對比例的曲線。在什麼比例下，KV 快取會等於 SSM 狀態記憶體？
+    verifies: >-
+      the two hybrids are built as HybridConfigs and swept with the lesson's own two functions, and
+      the closing question is solved rather than searched, because both quantities are linear -- one
+      in attn_layers and the context, the other in total_layers - attn_layers and nothing else.
+      There is no integer ratio at which they are equal: at 256k the KV cache runs 64.000, 32.000,
+      16.000, 8.000 and 4.000 GB across 16, 8, 4, 2 and 1 attention layers while the SSM state runs
+      2.00 to 3.88 MB, ratios of 32,768 down to 1,057, and solving for equality gives A = 0.00098
+      attention layers. The two memories scale in different variables: sweeping the ratio moves the
+      KV cache 16x and the state 1.94x, leaving three orders of magnitude, and the only variable
+      that could close the gap is the context the exercise holds fixed. The crossover is therefore a
+      context length -- with one attention layer and 31 Mamba layers the two are equal at 248
+      tokens, and at 256, 1024 and 8192 tokens the implied layer count is 0.97, 0.25 and 0.03, all
+      below one. And the SSM state grows as attention layers are removed while the KV cache falls,
+      so the term the exercise asks about moves in the opposite direction from the one that decides
+      the answer
+    uses_reference:
+      - HybridConfig
+      - kv_cache_bytes
+      - ssm_state_bytes
+  - index: 3
+    slug: one_integer_separates_the_two_mambas
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3 of the Jamba paper (arXiv:2403.19887). Explain why AI21 uses Mamba-1 rather than Mamba-2 despite Mamba-2 being faster. Hint: the hybrid ablation section documents this.
+    zh: |
+      讀 Jamba 論文（arXiv:2403.19887）的第 3 節。說明為什麼 AI21 在 Mamba-2 明明更快的情況下仍選用 Mamba-1。提示：混合架構的消融實驗那一節有記載。
+    verifies: >-
+      the explanation is written as an audit of what the lesson can express about the two, because
+      the reason Jamba gives is a claim about memory and this module is a memory calculator, so
+      every place the distinction could enter is enumerated and then swept. The only field that
+      distinguishes them is ssm_state_size, and raising it 16x changes nothing that matters: the SSM
+      total goes 3.50, 14.00, 28.00 and 56.00 MB across widths 16, 64, 128 and 256, which as a share
+      of the hybrid's KV cache is 0.0214% to 0.3418% -- still three decimal places below the number
+      the module exists to report. ssm_state_bytes takes no context argument at all, against
+      kv_cache_bytes' ctx, so at any context long enough for the hybrid to be interesting the
+      Mamba-1-versus-Mamba-2 decision is invisible to every figure the file prints. HybridConfig has
+      eight fields and none of them is a Mamba version: the discretisation, whether the state is
+      complex or real, the SSM's head structure and the outer convolution have no representation.
+      And the state would have to be 4,681 wide to reach 1 GB, at which point it is still 6.2% of
+      the 1:7 hybrid's cache
+    uses_reference:
+      - HybridConfig
+      - kv_cache_bytes
+      - ssm_state_bytes
+  - index: 4
+    slug: the_dense_half_is_always_active
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the parameter overhead of MoE-every-other-layer in Jamba 1.5 Large (398B total, 94B active). Compare the active ratio to DeepSeek-V3 (37B/671B) and explain why Jamba's architecture pushes the active ratio higher.
+    zh: |
+      計算 Jamba 1.5 Large（總參數 398B、活躍參數 94B）中「每隔一層 MoE」帶來的參數額外開銷。把活躍比例拿去和 DeepSeek-V3（37B/671B）比較，並解釋為什麼 Jamba 的架構會把活躍比例推得更高。
+    verifies: >-
+      the two published pairs are taken as given, because the lesson's calculator has no parameter
+      count in it at all -- HybridConfig holds layer counts and head dimensions and nothing that
+      could be summed into a model size -- and the explanation is made arithmetic by reconstructing
+      the active-parameter floor each architecture imposes. Jamba 1.5 Large's 94B of 398B is 23.6%
+      and DeepSeek-V3's 37B of 671B is 5.5%, a factor of 4.3. Jamba routes on half its layers and
+      DeepSeek routes on 95% of them: DeepSeek's first 3 of 61 layers are dense and the other 58 are
+      MoE, while Jamba alternates, and the Mamba layers filling Jamba's other half have no experts
+      to skip by construction, since a Mamba block is not an MLP with a router in front of it. The
+      share of layers with nothing to skip is 50.0% against 4.9%, ten times as much, so Jamba's
+      active ratio cannot fall below half the model in layer terms whatever its expert count is. And
+      the calculator cannot price any of this: its callables are fmt_bytes, kv_cache_bytes,
+      ssm_state_bytes and main, both of the computing ones return bytes of cache, and the exercise's
+      whole subject is outside the module it is attached to
+    uses_reference:
+      - HybridConfig
+  - index: 5
+    slug: a_real_diagonal_reaches_two_points_of_the_circle
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3 of the Mamba-3 paper (arXiv:2603.15569). Explain in three sentences why a complex-valued state update is equivalent to a data-dependent rotary embedding. Tie the answer to Phase 7 · Lesson 04's RoPE derivation.
+    zh: |
+      讀 Mamba-3 論文（arXiv:2603.15569）的第 3 節。用三句話說明為什麼複數值狀態更新等價於一個與資料相關的旋轉嵌入。請把答案扣回階段 7 · 單元 04 的 RoPE 推導。
+    verifies: >-
+      the equivalence is an algebraic identity, so it is checked rather than described -- multiply a
+      complex number by e^(i theta) and apply RoPE's 2x2 rotation to the same pair of reals, then
+      compare -- and the comparison against real-diagonal state matrices is run the same way, since
+      what the real simplification cost is the other half of the claim. The two operations agree
+      exactly: e^(i0.7) x (0.3 - 1.2i) is (1.0025138809, -0.7245453186) and RoPE's [[cos, -sin],
+      [sin, cos]] applied to (0.3, -1.2) is the same pair, with a worst disagreement of 0.0e+00
+      across five angles. A complex diagonal state matrix is a per-pair rotation, which is what RoPE
+      applies to Q and K, and "data-dependent" means the angle comes from the input rather than the
+      position index. Every multiplier has modulus 1, so the update rotates without scaling and a
+      sequence composes into another rotation -- e^(i0.5) e^(i1.1) equals e^(i1.6) to 1.1e-16 --
+      which is the state-tracking property. A real diagonal reaches two points of that circle: the
+      achievable phase shifts are exactly 0 and pi, against infinitely many, and Mamba-2's scaled
+      identity is the extreme case. And the lesson's calculator has no state matrix at all, though a
+      complex state of the same width would take exactly 2x the bytes

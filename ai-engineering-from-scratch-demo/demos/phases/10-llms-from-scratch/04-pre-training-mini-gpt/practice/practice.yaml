@@ -1,0 +1,156 @@
+lesson: 04-pre-training-mini-gpt
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/04-pre-training-mini-gpt/docs/en.md
+exercises:
+  - index: 1
+    slug: the_head_count_costs_nothing
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Modify the model to use 24 layers and 16 heads instead of 12/12. Count the parameters. How does doubling the depth compare to doubling the width (embedding dimension)?
+    zh: |
+      把模型改成 24 層、16 個頭，而不是 12/12。數一數參數量。加深一倍跟加寬一倍（嵌入維度）相比會怎麼樣？
+    verifies: >-
+      every count is MiniGPT's own count_parameters at the lesson's own defaults. 12 layers, 12 heads
+      and 768 dimensions gives 124,402,944 -- GPT-2 Small's published 124M, which is the check that
+      the counter is right -- and 24 layers with 16 heads gives 209,420,544, up 68.3%. The head count
+      contributes exactly none of it: 12 heads to 16 at the same width is a delta of 0 parameters,
+      because head_dim = embed_dim // num_heads leaves the four projections 768x768 whether they are
+      cut into 64-wide heads or 48-wide ones, so heads are a reshape of the same matrix and the
+      exercise moves two knobs where one is free. On the comparison, depth is 3.5x cheaper than
+      width: doubling the layers adds 68.3% and doubling embed_dim to 1536 with ff_dim following adds
+      236.5%, because per-block matrices are O(d^2) and there are six of them, and width also doubles
+      the 38,597,376-parameter embedding table -- 31% of the baseline -- which depth leaves untouched.
+      And "doubling the width" has two defensible readings 113,283,072 parameters apart, nearly a
+      whole GPT-2 Small: the constructor defaults ff_dim=3072 independently of embed_dim, so holding
+      ff_dim fixed gives +145.5% against +236.5% when it follows, and the exercise names neither
+    uses_reference:
+      - MiniGPT
+      - count_parameters
+  - index: 2
+    slug: the_gap_is_the_head_start
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement the GELU activation function (GELU(x) = x * 0.5 * (1 + erf(x / sqrt(2)))) and replace the ReLU in the feedforward network. Run training for 500 steps with each activation and compare the final loss.
+    zh: |
+      實作 GELU 激活函數（GELU(x) = x * 0.5 * (1 + erf(x / sqrt(2)))），取代前饋網路裡的 ReLU。用兩種激活各跑 500 步訓練，比較最終的 loss。
+    verifies: >-
+      the training loop is the lesson's own train_mini_gpt at its own defaults with only the
+      activation swapped, in both the forward and ffn_backward, because a GELU forward with a ReLU
+      derivative would train a model that does not exist; and the comparison runs at five seeds
+      rather than one. ReLU finishes at 4.2954 +/- 0.0887 and GELU at 4.3720 +/- 0.0938, a gap of
+      +0.0766 or 0.84 pooled standard deviations, so the exercise's one-run comparison is a coin flip
+      between them. That gap is the head start rather than the training: at identical initialisation
+      step 0 is 5.4744 under ReLU and 5.5522 under GELU, a difference of +0.0778 -- the same 0.08
+      that survives to step 500 -- because GELU(x) != ReLU(x) at random weights, and compared by drop
+      instead the two are 1.2559 against 1.2008, 4% apart. GELU costs 1.85x the wall clock for it,
+      erf running twice per step where ReLU is a comparison. And the comparison is running on 70% of
+      a model: train_mini_gpt updates token_embed, each block's ffn and ln2, and the final LayerNorm,
+      but never W_q, W_k, W_v, W_out, ln1 or pos_embed, because the backward pass takes the residual
+      path around the attention sub-block and never enters it -- the FFN being one of the two things
+      that does train is why this exercise has an answer at all
+    uses_reference:
+      - train_mini_gpt
+      - FeedForward
+      - ffn_backward
+      - MiniGPT
+  - index: 3
+    slug: the_cache_dies_at_token_49
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add a KV cache to the generation function. Store K and V tensors for each layer after the first forward pass, and reuse them for subsequent tokens. Measure the speedup: generate 200 tokens with and without the cache and compare wall-clock time.
+    zh: |
+      幫生成函式加上 KV 快取。第一次前向傳遞後把每一層的 K 與 V 存起來，之後的 token 直接重用。量測加速幅度：生成 200 個 token，比較有快取與沒快取的實際時間。
+    verifies: >-
+      the model is the one the lesson trains, so max_seq_len is 64, and generate's loop is
+      re-implemented with argmax in place of its sampling so the two arms can be compared token for
+      token. Inside the context window the cache is about 3x faster on 48 generated tokens and
+      produces an identical token sequence -- exactness being the thing to check first, since a cache
+      that changed the output would be a different model rather than a faster one. But only 48 of the
+      200 tokens the exercise asks for can use it: train_mini_gpt passes max_seq_len=seq_len=64 and
+      generate slices tokens[-64:], so a 16-token prompt leaves 48 positions before the window starts
+      sliding, and the measurement is available on 24% of the generation the exercise names. Sliding
+      the window invalidates every entry: positions here are learned absolute embeddings indexed
+      pos_embed[:seq_len] from zero, so one slide changes every surviving token's positional
+      embedding and every cached K and V was computed from an input that no longer exists -- the
+      cache must be rebuilt at each of the remaining 152 steps, which costs more than never caching.
+      Nothing about the cache is wrong; absolute position is, and RoPE or ALiBi would let the
+      surviving entries keep their indices when the window slides -- but that rescues layer 0 only.
+      Changing the token at position 0, holding every other token and every position fixed, moves
+      the surviving tokens' cached K by 0.00 at layer 0 and 0.27 to 0.35 at layers 1-3: layer 0's
+      entries depend on nothing but their own token and position, and every deeper layer's was
+      computed from a hidden state that attended over the token the window is about to evict, so it
+      carries context the rolling window no longer contains. Exact rolling-window attention needs
+      those entries rebuilt, and a relative position scheme buys a cache that is cheap and
+      approximate rather than one that is exact
+    uses_reference:
+      - train_mini_gpt
+      - MiniGPT
+      - generate
+  - index: 4
+    slug: the_nucleus_holds_227_of_256_tokens
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement top-k sampling (only consider the k highest-probability tokens) and top-p sampling (nucleus sampling: consider the smallest set of tokens whose cumulative probability exceeds p). Compare the output quality at temperature 0.8 with top-k=50 vs top-p=0.95.
+    zh: |
+      實作 top-k 取樣（只考慮機率最高的 k 個 token）與 top-p 取樣（nucleus sampling：取累積機率超過 p 的最小 token 集合）。在 temperature 0.8 下，比較 top-k=50 與 top-p=0.95 的輸出品質。
+    verifies: >-
+      both samplers are built around generate's own temperature-and-softmax step so the only
+      difference between the arms is which tokens survive truncation, and "output quality" is scored
+      as the share of generated bytes that are printable ASCII -- the training corpus being 100%
+      printable, anything else is the model failing. Averaged over five draws of 120 bytes, top-k=50
+      returns 82% printable against top-p=0.95's 52%, and neither decodes as valid UTF-8. The reason
+      is that top-p=0.95 is barely a filter here: the nucleus holds 227 of 256 tokens, removing 29
+      where top-k=50 removes 206, a factor of seven, and no truncation at all scores 56% -- the same
+      thing as top-p within noise, with top-k 26 points above both, so the exercise pairs two
+      settings as comparable and one of them is doing nothing. The mechanism is that the distribution
+      is nearly flat: entropy 4.941 nats against a maximum of ln(256) = 5.5452, 89% of uniform, and a
+      largest probability of 0.1341, so 95% of the mass needs nearly every token and the two rules
+      agree on only 50 of the 227 in their union, a Jaccard of 0.220. top-k=50 is the aggressive
+      setting rather than the safe one: its 50 tokens carry 0.4796 of the probability, discarding
+      more than half of what the model believes, and only 29 of them are printable bytes
+    uses_reference:
+      - train_mini_gpt
+      - MiniGPT
+      - generate
+  - index: 5
+    slug: there_are_not_three_phases
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build a training loss curve plotter. Train the model for 1000 steps and plot loss vs step. Identify the three phases: rapid initial descent (learning common bytes), slower middle phase (learning byte patterns), and plateau (overfitting on the small corpus). The shape of this curve is the same whether you are training a 128-dim model or GPT-4.
+    zh: |
+      做一個訓練 loss 曲線繪圖器。訓練 1000 步，畫出 loss 對 step 的曲線。找出三個階段：快速的初期下降（學會常見位元組）、較慢的中期（學會位元組模式）、以及平台期（在小語料上過擬合）。不管你訓練的是 128 維的模型還是 GPT-4，這條曲線的形狀都一樣。
+    verifies: >-
+      the curve is the one train_mini_gpt already prints every 20 steps at its own defaults, so
+      "build a plotter" is read as recording it and testing the three claims made about it, which are
+      falsifiable where a plot is not. There are not three phases: over 1000 steps the per-third drop
+      is 0.8135, 0.4694, 0.3771, decelerating monotonically by a shrinking factor of 1.73 then 1.24 --
+      one descent with no knee anywhere to put a boundary at. The third phase has not happened: the
+      minimum is at logged point 48 of 50, the last 100 steps move 0.1816 against a local spread of
+      0.0995, so the loss is still descending faster than it wobbles, and it ends at 3.7270 against
+      the uniform-byte baseline ln(256) = 5.5452 having covered 32% of the way to a byte entropy it
+      never reaches. The overfitting the plateau is named for is real, small, and on an axis the
+      plot does not have: measured at four checkpoints with the untrained model as a control for
+      corpus difficulty, the train/held-out gap runs -0.0372 at step 0, -0.0307, -0.0053, +0.0241
+      and +0.0522 at step 1000, so it is monotone and the model is beginning to fit the training
+      sentences specifically -- but the untrained model already scores -0.0372 on the same two
+      corpora purely because one is easier to predict, making the corpus-corrected figure +0.0894
+      against a training loss of 3.7052, or 2.4%. Every one of those numbers comes from a held-out
+      corpus the requested plot does not contain, so the third phase is named after a quantity that
+      is not on the axis, at a point where the loss is still falling. And the curve is produced with
+      30% of the model frozen at random initialisation: W_q, W_k, W_v, W_out and pos_embed are
+      bit-for-bit unchanged after 1000 steps, so "the shape of this curve is the same whether you are
+      training a 128-dim model or GPT-4" is claimed for a curve produced with attention frozen
+    uses_reference:
+      - train_mini_gpt
+      - MiniGPT
+      - cross_entropy_loss

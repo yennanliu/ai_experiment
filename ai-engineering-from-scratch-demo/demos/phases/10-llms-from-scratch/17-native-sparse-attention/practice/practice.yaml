@@ -1,0 +1,144 @@
+lesson: 17-native-sparse-attention
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/17-native-sparse-attention/docs/en.md
+exercises:
+  - index: 1
+    slug: the_papers_own_preset_costs_more_than_dense
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` on a 1024-token synthetic. Sweep `(l, k, w)` across three presets and print compute counts. Identify the preset that achieves the lowest key-count per query while keeping 95% recall against full attention on a needle-in-haystack test.
+    zh: |
+      在一段 1024 詞元的合成序列上執行 `code/main.py`。掃過三組 `(l, k, w)` 預設值並印出運算量。找出在大海撈針測試上相對完整注意力仍保有 95% 召回率的前提下，每個 query 的 key 數量最低的那組預設值。
+    verifies: >-
+      key counts come from the lesson's own count_nsa and are cross-checked against what nsa_step
+      actually reads, and recall is measured the way a needle-in-haystack test measures it -- did
+      the selected branch pick the block the needle is in -- on 40 placements per preset, with the
+      needle always placed outside the sliding window so the selection has to find it. The lowest
+      key count is l=64, k=4, W=256 at 528 keys, 51.6% of full attention, and the 95% recall
+      condition never binds: all four presets score 100%. The paper's own l=64, k=16, W=512 reads
+      1552 keys on a 1024-token sequence -- 151.6% of full attention -- because count_nsa is N/l +
+      k*l + W and two of its three terms do not depend on N at all, so at short context the fixed
+      cost dominates; that preset breaks even at N = 1560 and the exercise runs it at 1024. Recall
+      is 100% everywhere because synthesize_sequence fills the whole signal block with copies of one
+      unit pattern, so the block's mean is that pattern and its compressed score is the maximum
+      possible -- a needle that survives mean-pooling perfectly cannot discriminate between
+      compression ratios. And the three branches trade against each other: doubling l from 64 to 128
+      at k=4 cuts the compressed term from 16 keys to 8 and raises the selected term from 256 to
+      512, which is why the coarsest preset is not the cheapest
+    uses_reference:
+      - nsa_step
+      - NSAConfig
+      - synthesize_sequence
+      - count_nsa
+      - count_full_attention
+  - index: 2
+    slug: the_baseline_is_exact_and_cannot_be_beaten
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the mean-pool compressor with a tiny learned MLP (2-layer, hidden 32). Train it on a synthetic task where the signal is the average of a block. Measure the perplexity gap against the mean-pool baseline on held-out data.
+    zh: |
+      把平均池化的壓縮器換成一個小型的學習式 MLP（2 層，隱藏維度 32）。在一個訊號是區塊平均值的合成任務上訓練它。在留出資料上量測它與平均池化基準線之間的困惑度差距。
+    verifies: >-
+      the MLP is built at the size the exercise names and trained by hand-written backprop on the
+      task the exercise names -- predict the average of a block -- and the baseline it is measured
+      against is the lesson's own compress_mean, with the gap reported as mean squared error rather
+      than perplexity because the task produces a vector and not a distribution. Mean-pool scores
+      exactly 0.000e+00 on held-out blocks: it is not a baseline on this task but the closed-form
+      solution, since compress_mean computes the block average and the target is the block average,
+      so the gap the exercise asks to measure has its sign fixed before the experiment runs. The MLP
+      goes from 8.94e-02 to 1.19e-05 in 80 epochs, a 7,519x improvement, which is the network
+      successfully discovering that the answer is its own input -- every parameter it spends is
+      spent approximating the identity. NSA's learned compressor exists for a task this synthetic
+      does not contain: a real compressor maps l raw keys into one summary that preserves whatever
+      the router needs, which is a learned projection into the query's space rather than the mean.
+      And the comparison would need a different target to be a comparison at all -- if the signal
+      were the block's maximum, mean-pool would score 5.60e+00 on the same blocks
+    uses_reference:
+      - compress_mean
+  - index: 3
+    slug: the_gate_cannot_see_which_branch_found_anything
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the gate MLP. It takes the query as input and outputs three scalars. Show that the gate behaves sensibly: near-uniform weighting on random queries, heavy weight on the selected branch when the query hits a far-back block.
+    zh: |
+      實作閘門 MLP。它以 query 為輸入，輸出三個純量。證明閘門的行為是合理的：對隨機 query 給出接近均勻的權重，當 query 命中很久以前的區塊時，則把重量壓在選擇分支上。
+    verifies: >-
+      the gate is the lesson's own -- dot(q, Wg[i]) through a sigmoid, three of them -- and both
+      halves of "behaves sensibly" are measured rather than asserted, with the second half needing
+      two sequences that differ only in where the needle is. With the needle in block 1 the gates
+      are 0.719, 0.767, 0.733 and the picks are [1, 7, 11, 12]; with it in block 15 the gates are
+      0.719, 0.767, 0.733 and the picks are [7, 11, 12, 15]. The picks move and the gates do not
+      change in any decimal place, because gate(q, Wg) takes the query and nothing else: it never
+      sees K, V, the compressed attention scores, the selected blocks or the three branch outputs,
+      so there is no path by which "the query hits a far-back block" can reach it. The three gates
+      are also not a distribution -- three independent sigmoids sum to 1.643 on average and range
+      from 0.313 to 2.968 across 60 random queries, a factor of 9.5, so nsa_step's g[0]*cmp +
+      g[1]*sel + g[2]*win scales the same branch outputs by that factor depending only on which
+      query asked. And near-uniformity on random queries is a property of the initialisation rather
+      than of the gate: Wg is drawn once and never trained, each logit is dot(q, w) with q and w
+      independent and zero-mean, and a sigmoid of that averages 0.5 for any Wg at all
+    uses_reference:
+      - gate
+      - nsa_step
+      - NSAConfig
+      - synthesize_sequence
+  - index: 4
+    slug: the_fine_branch_equals_full_attention_at_1024
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the KV cache memory budget for an NSA-enabled 70B model at 128k context. KV heads are 8, head dim 128, BF16. Compare to full attention and to MLA (Phase 10 · 14 showed MLA's numbers). Identify the sequence length where NSA's fine-grained branch KV cache equals full attention.
+    zh: |
+      算出一個啟用 NSA 的 70B 模型在 128k 脈絡下的 KV 快取記憶體預算。KV 頭為 8，頭維度 128，BF16。與完整注意力以及 MLA 比較（階段 10 · 14 給過 MLA 的數字）。找出 NSA 的細粒度分支 KV 快取等於完整注意力的那個序列長度。
+    verifies: >-
+      the cache is priced with the same formula Lesson 14 uses -- 2 x layers x kv_heads x head_dim x
+      bytes x tokens -- so NSA, full attention and MLA are on one scale, with MLA's number coming
+      from DeepSeek V3's own kv_lora_rank of 512, and the crossover is solved rather than searched
+      because count_nsa's three terms make it a linear equation. At 128k context full attention is
+      40.00 GB and NSA's per-query total is 1.09 GB, split as 0.62 compressed, 0.31 selected and
+      0.16 window on 2,048, 1,024 and 512 keys. The selected branch is k * l keys whatever N is, so
+      the sequence length at which NSA's fine-grained branch equals full attention is N = 1024, and
+      below that it reads more than the whole sequence. NSA is 9.2x smaller than MLA at 128k and
+      1.6x larger at 4k, the two crossing at N = 6,554, so methods the exercise treats as
+      alternatives are not comparable at a single context length. The mechanism is that NSA caches
+      the whole sequence and reads part of it while MLA caches a compression of it: the 1.09 GB is
+      what NSA reads per query, and stored it is 40.62 GB, more than full attention -- the saving is
+      bandwidth rather than capacity, and the exercise asks for a memory budget. Only the compressed
+      branch grows, and it overtakes the two fixed terms at N = 98,304
+    uses_reference:
+      - count_nsa
+      - count_full_attention
+  - index: 5
+    slug: the_argmax_has_no_gradient_so_the_score_must_be_borrowed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 4 of the NSA paper (arXiv:2502.11089) and explain in three sentences why the compressed branch's attention scores are reused for top-k selection rather than computing a separate routing score. Tie the answer to gradient flow.
+    zh: |
+      讀 NSA 論文（arXiv:2502.11089）的第 4 節，用三句話解釋為什麼 top-k 選擇是重用壓縮分支的注意力分數，而不是另外算一個路由分數。把答案扣回梯度流。
+    verifies: >-
+      the explanation is written as a measurement of the lesson's own top_k_blocks, because "tie the
+      answer to gradient flow" is a claim about a derivative and the function whose derivative is at
+      issue is fifteen lines away. Sweeping one block's compressed score from 0.00 to 0.40 in 800
+      steps, top_k_blocks returns [1, 2, 4] throughout and switches to [1, 2, 3] at exactly 0.2000,
+      where it ties the block it displaces: one change point in 800 samples and two distinct outputs
+      in total, and perturbing the score by 1e-09 anywhere else returns the identical set. So a
+      separate routing score would receive no gradient at all -- the selection's derivative with
+      respect to its input is zero wherever it is defined and undefined where it is not, and a
+      routing head trained through it would get exactly 0 from every batch except the measure-zero
+      set where two blocks tie. Reusing the compressed branch's attention scores means the routing
+      signal is trained through that branch's own differentiable output path instead. The scores are
+      therefore used twice and differentiated once: nsa_step feeds cmp_w to top_k_blocks and cmp_out
+      to the gated sum, and the gradient reaches cmp_w only through the second. The same argument
+      rules out training the gate through the selection, since its gradient about sel_out is a
+      gradient about the contents of blocks that were already picked
+    uses_reference:
+      - top_k_blocks

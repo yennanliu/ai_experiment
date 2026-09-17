@@ -1,0 +1,154 @@
+lesson: 11-quantization
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/11-quantization/docs/en.md
+exercises:
+  - index: 1
+    slug: halving_the_group_buys_a_third_of_a_bit
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement group quantization. Instead of one scale per channel, use one scale per group of 128 weights within a channel. This is what GPTQ and AWQ actually use. Compare group sizes of 32, 64, 128, and 256 on the same weight matrix. Smaller groups give better quality but more storage overhead for scale factors.
+    zh: |
+      實作分組量化。不要一個通道一個縮放因子，改成通道內每 128 個權重一個縮放因子。這才是 GPTQ 與 AWQ 實際採用的做法。在同一個權重矩陣上比較 32、64、128、256 的組大小。組越小品質越好，但縮放因子的儲存開銷也越大。
+    verifies: >-
+      the matrix is the lesson's own full_quantization_comparison draw -- np.random.seed(42),
+      256x512, scaled by 0.02 -- and error is the lesson's own quantization_error. A group-512 row
+      is added to the sweep because at 512 the group is the channel, which makes
+      quantize_per_channel the bottom row of the same table rather than a rival method. The sweep is
+      monotone and the exchange rate is steady: 20.26 dB at group 32, 19.36 at 64, 18.63 at 128,
+      18.00 at 256 and 17.45 at 512, so each halving buys 0.55 to 0.90 dB and doubles the number of
+      scales. The curve is close to linear in log2(group), which means there is no knee -- "smaller
+      groups give better quality but more storage" has no setting at which the trade turns, and
+      nothing in the sweep identifies the 128 the exercise names as the right answer. The 12.5%
+      overhead at group 32 is a 16-bit scale per 32 4-bit weights measured against the 4-bit
+      payload, the same cost as moving from 4 bits to 4.5; against an fp16 baseline the same
+      quantity reads 3.1%, which is how it is usually reported and why group quantisation sounds
+      free. And what the groups buy is protection from the row maximum, so the size of the gain is
+      set by how uneven the rows are: here the largest per-row magnitude is 1.74x the smallest,
+      which is why the gain is a steady fraction of a bit rather than the order of magnitude group
+      quantisation buys on real weights
+    uses_reference:
+      - quantize_per_channel
+      - dequantize_per_channel
+      - quantization_error
+  - index: 2
+    slug: which_layers_get_the_bits_does_not_matter
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a mixed-precision quantizer. Quantize the first and last layers of a multi-layer network at INT8 while quantizing middle layers at INT4. Compare end-to-end output quality against uniform INT4 and uniform INT8. Measure the memory savings compared to all-INT8.
+    zh: |
+      打造一個混合精度量化器。把一個多層網路的第一層與最後一層量化到 INT8，中間層量化到 INT4。把端到端的輸出品質，拿去和全 INT4、全 INT8 相比。量測相對於全 INT8 省下多少記憶體。
+    verifies: >-
+      the network is a four-layer tanh stack of 64x64 matrices, each layer quantised with the
+      lesson's own quantize_per_channel, and end-to-end quality is the cosine of the final
+      activations against the unquantised forward pass. The exercise's plan is run and so is its
+      mirror image -- INT4 at the ends and INT8 in the middle -- because a claim about which layers
+      deserve the bits is only supported if the swap is worse. The mixed plan lands where its bit
+      budget says: 12288 bytes against all-INT8's 16384, or 75%, with mse 1.17e-03 between
+      all-INT4's 2.18e-03 and all-INT8's 6.81e-06. The swap is not worse. INT4 at the ends scores
+      1.13e-03 against the exercise's 1.17e-03 at identical memory, 3% apart with the sign the wrong
+      way, so the premise that the first and last layers are the ones needing precision does not
+      hold here. The mechanism is that tanh squashes every layer's output into (-1, 1) before the
+      next matmul, attenuating an early error rather than amplifying it; the ends are special in
+      real networks because the embedding and the output head carry outlier-heavy weights, not
+      because of their position, and four Gaussian 64x64 matrices have no such layer to protect. The
+      decision this network actually poses is not where to spend a half-precision budget: fp32 to
+      INT8 costs 6.81e-06 and INT8 to INT4 costs 320x that, so the question is whether 4 bits is
+      usable at all, and the mixed plan answers "not quite" while paying 75% of the price
+    uses_reference:
+      - quantize_per_channel
+      - dequantize_per_channel
+  - index: 3
+    slug: qat_closes_the_gap_and_loses_the_race
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement the straight-through estimator (STE) for quantization-aware training. Insert fake quantize/dequantize operations in the forward pass of a simple two-layer network trained on a regression task. Compare final loss between a model trained normally (then PTQ to INT4) versus a model trained with QAT from the start.
+    zh: |
+      為量化感知訓練實作直通估計器（STE）。在一個做迴歸任務的簡單兩層網路的前向傳播裡，插入假量化／反量化運算。比較「正常訓練後再 PTQ 到 INT4」與「一開始就用 QAT 訓練」兩者的最終損失。
+    verifies: >-
+      the STE is implemented as written -- the forward pass uses dequantize(quantize(W)) through the
+      lesson's own per-channel quantiser and the backward pass updates the fp32 master as though the
+      quantiser were the identity -- and both arms share an initialisation, a dataset and a step
+      count, so the only difference is whether the forward pass is quantised. On the number the
+      exercise asks for, PTQ wins: 0.0464 against QAT's 0.0574 at INT4, a 24% loss for the
+      quantisation-aware arm. QAT nonetheless does the job it exists for. Its quantisation gap --
+      the cost of going from its own fp32 weights to INT4 -- is 1.02x against PTQ's 1.51x, so 4-bit
+      inference became nearly free; it just optimised to a worse place while doing it, ending at
+      0.0563 fp32 against PTQ's 0.0307. The mechanism is that the STE lies about the gradient: the
+      backward pass pretends round() has derivative 1, so every step is computed at a point the
+      forward pass did not evaluate, and on a 4-bit grid the master can move without the quantised
+      forward changing at all. That is the right trade at scale and the wrong one on a two-layer
+      regression that fits in fp32 anyway. "Compare final loss between a model trained normally then
+      PTQ versus one trained with QAT" scores only the endpoints, so a method whose whole value is
+      shrinking a gap is measured on a quantity that includes its optimisation handicap; the two
+      numbers that answer the question are 1.51x and 1.02x
+    uses_reference:
+      - quantize_per_channel
+      - dequantize_per_channel
+  - index: 4
+    slug: no_channel_reaches_three_times_the_mean
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build an outlier-aware quantizer inspired by LLM.int8(). Detect channels where the activation magnitude exceeds 6x the mean. Keep those channels in FP16 and quantize everything else to INT8. Measure end-to-end quality on the transformer layer from Step 5 with varying outlier thresholds (3x, 6x, 10x).
+    zh: |
+      打造一個受 LLM.int8() 啟發的離群值感知量化器。偵測激活值大小超過平均值 6 倍的通道，把那些通道留在 FP16，其餘全部量化到 INT8。用步驟 5 的 Transformer 層，在不同的離群值門檻（3 倍、6 倍、10 倍）下量測端到端的品質。
+    verifies: >-
+      the detector is built as specified and applied to the activation entering the lesson's own
+      simulate_transformer_layer, with the outlier channels of the qkv projection left in fp16 and
+      the rest at INT8. Three activation distributions are tried -- Gaussian, lognormal, and one
+      with outliers planted deliberately -- because the exercise's 3x/6x/10x sweep only means
+      something if some threshold selects a different set from another. On the activation this layer
+      actually receives, all three select the same channels and that number is zero: the largest
+      per-channel magnitude is 1.3x the mean, so 3x, 6x and 10x each pick 0 of 256 and the
+      end-to-end cosine is 0.999948 at every threshold -- the outlier-aware quantiser is INT8
+      quantisation with extra bookkeeping. A heavier tail does not rescue it; a lognormal
+      activation, far more skewed than any LayerNorm output, peaks at 1.9x and still selects
+      nothing, because the mean of 256 absolute values is a stable number and beating it sixfold
+      needs genuinely separate scales rather than a long tail. Planting outliers does not separate
+      the thresholds either: scaling three channels by 12x gives a peak of 13.0x and then 3x, 6x and
+      10x all select the same 3 channels. Outliers that exist are above every threshold in the range
+      and outliers that do not exist are below all of them, so the sweep has one outcome either way
+      -- the cut only bites on channels sitting between 3 and 10 times the mean, and neither arm
+      produces one. LLM.int8()'s 6x describes a trained residual stream, where the same few hidden
+      dimensions carry large values across almost every token; a random matrix has no such
+      structure, so the detector is correct and its input has nothing in it
+    uses_reference:
+      - quantize_per_channel
+      - dequantize_per_channel
+      - simulate_transformer_layer
+  - index: 5
+    slug: the_worst_channel_is_just_the_biggest_one
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a quantization quality dashboard. Given a weight matrix, compute and display: the weight distribution histogram, the quantization error distribution, per-channel scale factors, the worst-quantized channels (highest reconstruction error), and the cosine similarity between original and quantized outputs across 100 random inputs. Identify which channels should be kept at higher precision.
+    zh: |
+      實作一個量化品質儀表板。給定一個權重矩陣，計算並顯示：權重分布直方圖、量化誤差分布、每通道的縮放因子、量化得最差的那些通道（重建誤差最高），以及在 100 組隨機輸入下，原始輸出與量化輸出之間的餘弦相似度。找出哪些通道應該保留較高精度。
+    verifies: >-
+      every panel is computed on the lesson's own 256x512 matrix through its own
+      quantize_per_channel and quantization_error, and the dashboard's closing instruction --
+      identify which channels to keep at higher precision -- is treated as a claim to test rather
+      than a panel to render, since it is the only part with an answer that can be wrong. The five
+      panels carry one number between them: per-row reconstruction RMSE correlates 0.987 with the
+      row's own scale factor, so "which channel quantised worst" and "which channel had the biggest
+      weights" are the same question and four of the panels are views of the fifth. There is barely
+      a range to rank either -- per-row RMSE runs 2.11e-03 to 3.68e-03 across 256 channels, a spread
+      of 1.74x, so a dashboard whose purpose is finding the outliers is looking at a distribution
+      with none. Acting on the ranking is a bad trade: keeping the worst 8 rows in fp16 takes mse
+      from 7.190e-06 to 6.802e-06, an improvement of 5%, for 9.4% more memory, while Exercise 1's
+      table buys 0.6 dB -- about 14% of mse -- for the same budget spent on a smaller group size.
+      And the panel closest to what a user cares about is the one with the least dynamic range:
+      across 100 random inputs the output cosine is 0.991166 plain and 0.991671 with the eight worst
+      channels upgraded, a difference of 5e-04 that the other four panels spend their space ranking
+    uses_reference:
+      - quantize_per_channel
+      - dequantize_per_channel
+      - quantization_error

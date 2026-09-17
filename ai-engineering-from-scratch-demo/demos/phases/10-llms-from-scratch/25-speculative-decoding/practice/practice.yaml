@@ -1,0 +1,147 @@
+lesson: 25-speculative-decoding
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/25-speculative-decoding/docs/en.md
+exercises:
+  - index: 1
+    slug: the_control_fails_the_threshold_too
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement the exact rejection rule and empirically verify it. Run 10K samples via `speculative_decode` and via plain target sampling; compute TV distance between the two output distributions. Should be < 0.01.
+    zh: |
+      實作精確的拒絕規則並用實證驗證它。分別用 `speculative_decode` 與單純的驗證模型取樣各跑 10K 個樣本，計算兩個輸出分布之間的 TV 距離。應該小於 0.01。
+    verifies: >-
+      the rejection rule is already exact in speculative_step and the lesson's own
+      verify_distribution already runs both arms, so the work is in the threshold: plain sampling is
+      scored against the target it was drawn from -- the control -- and a deliberately biased scheme
+      is run beside it, because a test that cannot separate correct from incorrect is not a
+      verification whatever number it reports. Both arms fail the 0.01 bar: at vocab 32 plain
+      sampling scores 0.0175 against its own distribution and the speculative arm 0.0163, and at
+      vocab 512 they are 0.0737 and 0.0722. The number is a sampling floor rather than a bias --
+      with 10,000 draws over 32 bins an empirical histogram sits about 0.018 from the distribution
+      it came from, and spreading the same draws over 16x as many bins raises that 4.2x. The test
+      does discriminate: accepting every draft token without the rejection rule scores 0.1201, 6.9x
+      the floor, so the right bar is "indistinguishable from the control", which both correct arms
+      pass at a margin of 0.0012. And the speculative arm scoring below plain sampling at every
+      vocabulary is also noise -- two unbiased estimators of the same distribution differ by their
+      draws
+    uses_reference:
+      - verify_distribution
+      - make_target
+      - make_draft
+      - sample
+      - total_variation
+      - empirical_dist
+  - index: 2
+    slug: there_is_no_cost_term_so_no_optimal_k
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Compute the speedup formula. Given fixed `α` and `K`, plot expected tokens per target-forward. Find the optimal K for α ∈ {0.5, 0.7, 0.9}.
+    zh: |
+      算出加速公式。固定 `α` 與 `K`，畫出每次驗證前向傳播的期望詞元數。對 α ∈ {0.5, 0.7, 0.9} 找出最佳的 K。
+    verifies: >-
+      the plot is the lesson's own expected_tokens across K, and "find the optimal K" is then asked
+      of it directly, since the function is non-decreasing in K and an optimum requires a cost on
+      the other side of the trade. The curve saturates and never turns: at alpha 0.5, 0.7 and 0.9 it
+      runs 1.50, 1.70 and 1.90 at K=1 to 2.00, 3.33 and 9.99 at K=64, against ceilings of
+      1/(1-alpha) of 2.00, 3.33 and 10.00, reaching 100.0%, 100.0% and 96.9% of them by K=32. There
+      is no cost term anywhere in the module -- expected_tokens takes (alpha, K) and no name
+      mentions cost, latency, time or speed -- so the draft's own K forward passes per round are not
+      represented and the exercise's question has no answer the lesson can supply. Charging the
+      draft 0.05 per token makes the wall-clock figure (1 + K*c) / expected_tokens(alpha, K), which
+      does have an interior minimum at K=3, K=6 and K=13 for the three alphas, and the optimum moves
+      with alpha, which is the shape the exercise is asking for. What saturates is the acceptance
+      run: alpha / (1 - alpha) is 1.0 at alpha 0.5, so half the drafts are rejected at the first
+      position and K=8 and K=64 agree to three decimal places
+    uses_reference:
+      - expected_tokens
+  - index: 3
+    slug: the_hint_is_not_the_acceptance_rate
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Train a tiny draft. Take a 124M GPT-2 target and distill a 30M GPT-2 draft on 100M tokens with KL loss. Measure `α` on held-out text. Expected: 0.6-0.7.
+    zh: |
+      訓練一個極小的草稿。拿 124M 的 GPT-2 當驗證模型，用 KL 損失在 100M 詞元上蒸餾出一個 30M 的 GPT-2 草稿。在留出文本上量測 `α`。預期：0.6 到 0.7。
+    verifies: >-
+      a 100M-token distillation is not available from here and the lesson already ships the stand-in
+      -- make_draft, whose docstring says it produces a draft "whose expected token-level acceptance
+      is near alpha_hint" -- so the measurement is run against that promise over the whole range,
+      using the lesson's own measure_alpha. The hint is not the acceptance rate: hints of 0.1, 0.3,
+      0.5, 0.7 and 0.9 give 0.617, 0.707, 0.791, 0.872 and 0.962, gaps of +0.517 down to +0.062.
+      Acceptance is sum_x min(p(x), q(x)) and the blend only moves part of it: make_draft returns
+      a*p + (1-a)*u, so where p(x) exceeds 1/V the draft is below the target and contributes q(x),
+      while where it is below the draft is above and contributes p(x) at full rate whatever a is --
+      so a uniform draft that knows nothing already accepts 0.571. The measurement agrees with the
+      closed form to 0.005 at every hint, so the simulator is right and the parameter's name is what
+      is wrong. And the exercise's expected 0.6-0.7 sits at the uniform floor: only hint 0.1 lands
+      in it, so a 30M draft agreeing with its target 57% of the time by accident would look like a
+      successful distillation
+    uses_reference:
+      - make_target
+      - make_draft
+      - measure_alpha
+  - index: 4
+    slug: the_tree_has_a_mask_and_no_acceptance
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement EAGLE-style tree drafting. Instead of a chain, have the draft output top-3 branches at each depth. Build the tree attention mask. Verify the target accepts the longest correct branch.
+    zh: |
+      實作 EAGLE 風格的樹狀起草。不要用鏈，改成讓草稿在每層深度輸出 top-3 分支。建出樹狀注意力遮罩。確認驗證模型接受的是最長的正確分支。
+    verifies: >-
+      the first two sentences are already in the lesson -- build_tree((3, 3)) is exactly "top-3
+      branches at each of two depths" and tree_attention_mask builds the mask -- so the work is the
+      third, and tree acceptance is written against speculative_step's own semantics and run,
+      because "verify the target accepts the longest correct branch" is a claim about an algorithm
+      the module does not contain. build_tree((3, 3)) gives 13 nodes, 9 leaves and a 13x13 mask
+      whose row sums are the ancestor counts including self, and the module's three tree functions
+      take no target, draft or token between them. The validator and the builder compute the same
+      traversal: both walk parent pointers to the root, so validate_tree_mask catches a mask that
+      disagrees -- an all-ones mask returns False -- and cannot catch a parent table that is wrong.
+      Walking the tree with the lesson's own accept rule, best-of-three per level with the longest
+      accepted path winning, takes 2.99 tokens per round at alpha 0.84 against a 3-token chain's
+      3.09, so the tree is worse for nine times the draft calls -- selecting without renormalising
+      the residual is the bias Lesson 15's Exercise 3 measures. And build_tree((3, 3, 3)) is 40
+      nodes and 1,600 mask entries against a chain's 9
+    uses_reference:
+      - build_tree
+      - tree_attention_mask
+      - validate_tree_mask
+      - speculative_step
+      - make_target
+      - make_draft
+      - measure_alpha
+      - sample
+  - index: 5
+    slug: alpha_rises_with_temperature
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Measure failure modes. Run speculative decode at temperature=1.5 (high stochasticity). Show α collapses and the algorithm is slower than plain decode due to draft overhead.
+    zh: |
+      量測失效模式。在 temperature=1.5（高隨機性）下跑推測式解碼。呈現 α 如何崩掉，以及演算法因為草稿開銷而比原味解碼更慢。
+    verifies: >-
+      the module has no temperature -- make_target hard-codes standard_normal(vocab) * 1.4 -- so one
+      is added the only way it can be, by dividing the logits, and the draft is rebuilt from each
+      temperature's target with the lesson's own make_draft. Acceptance rises with temperature,
+      monotonically: 0.769, 0.855, 0.896, 0.919 and 0.954 at T of 0.5, 1.0, 1.5, 2.0 and 4.0, so at
+      the 1.5 the exercise names alpha is 0.896 against 0.855 at T=1 and the algorithm gets faster,
+      not slower. The mechanism is that make_draft blends the target with a uniform while
+      temperature moves the target toward the uniform: at T=4 the target's entropy is 3.409 against
+      a uniform's ln(32) = 3.466, and any blend of two nearly identical distributions is nearly
+      identical to both, so the construction ties the draft's quality to the target's flatness in
+      the direction that flatters it. The effect the exercise means needs an independently trained
+      draft and is at the other end of the sweep -- holding the draft at its T=1 form gives 0.490,
+      0.855, 0.917, 0.873 and 0.789, non-monotone, peaking at T=1.5 and collapsing 0.427 on the cold
+      side. And the module has no cost term, so no configuration can be slower than plain decode
+    uses_reference:
+      - make_draft
+      - measure_alpha
+      - expected_tokens

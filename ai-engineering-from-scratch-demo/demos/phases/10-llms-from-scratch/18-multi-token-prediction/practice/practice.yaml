@@ -1,0 +1,155 @@
+lesson: 18-multi-token-prediction
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/18-multi-token-prediction/docs/en.md
+exercises:
+  - index: 1
+    slug: the_depth_two_loss_rises_as_the_signal_strengthens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Show the per-depth loss decreases monotonically as the synthetic signal strengthens. Modify the synthetic to use a fixed pattern and verify both depth-1 and depth-2 losses converge.
+    zh: |
+      執行 `code/main.py`。展示當合成訊號變強時，逐深度的損失會單調下降。把合成資料改成固定模式，並驗證深度 1 與深度 2 的損失都會收斂。
+    verifies: >-
+      the sweep is the one main runs -- the same backbone_hidden[i] = rms_norm(E[tokens[i]] + noise)
+      construction, the same modules, noise from 0.50 down to 0.01 -- extended past the lesson's
+      0.05 so that "as the signal strengthens" reaches its limit, and the construction is then
+      repeated with the backbone carrying E[tokens[i+1]] instead. Neither depth decreases
+      monotonically and depth 2 moves the wrong way: as the noise falls, L_1 goes 3.600, 3.563,
+      3.513, 3.489, 3.492 and L_2 goes 3.187, 3.203, 3.235, 3.287, 3.319, against a uniform-guess
+      reference of ln(32) = 3.466 -- every value within 0.15 nats of guessing, L_1 falling 0.11
+      before turning back up and L_2 rising 0.13. The mechanism is that the backbone hidden state is
+      the embedding of the current token while the target is the next one: mtp_loss scores
+      shared_head_logits(h_i, E) against tokens[i+1] and h_i converges on E[tokens[i]], so
+      strengthening the signal makes the model more confident about the one token that is certainly
+      wrong. Shift the backbone by one and depth 1 does what the exercise says -- 2.877, 2.558,
+      2.219, 2.026, 1.988, monotone and 1.48 nats below the reference -- while depth 2 still rises,
+      because no amount of signal about t_(i+1) is signal about t_(i+2). And a fixed pattern does
+      make both depths converge monotonically, to 2.339 and 3.311, on a sequence with one distinct
+      token in it
+    uses_reference:
+      - mtp_loss
+      - rand_matrix
+      - make_mtp_module
+      - rms_norm
+      - add
+  - index: 2
+    slug: the_counter_has_no_moe_term
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the parameter overhead for a dense 70B model (hidden 8192, 80 layers) with D=1 MTP module. Compare to the DeepSeek-V3 reported 14B overhead. Explain why DeepSeek's number is higher: the MTP transformer block inherits the same MoE structure, inflating the per-module parameter count.
+    zh: |
+      算出一個密集 70B 模型（隱藏維度 8192、80 層）在 D=1 個 MTP 模組下的參數額外開銷。與 DeepSeek-V3 回報的 140 億額外開銷比較。解釋為什麼 DeepSeek 的數字比較高：MTP 的 transformer 區塊沿用了同樣的 MoE 結構，把每個模組的參數量撐大了。
+    verifies: >-
+      the dense number comes from the lesson's own count_parameters and the explanation is then
+      checked rather than repeated -- the same counter is run on DeepSeek's own shape, and the MoE
+      term the exercise names is added by hand to see whether it accounts for the gap. The 70B gets
+      a 78.9B backbone and a 1.040B MTP module, 1.3% overhead; run on DeepSeek's hidden=7168,
+      ff=18432 the counter reports 0.653B against the 14B the exercise cites, a factor of 21, so the
+      explanation the exercise supplies is correct and the counter it supplies cannot express it.
+      per_mtp is hidden*hidden + 4*hidden*hidden + 3*hidden*ff and none of those terms is an expert
+      count: adding DeepSeek's actual MoE MLP, 256 routed experts plus 1 shared at 3 x 7168 x 2048 =
+      44.0M each, gives a module of 11.58B, the right order of magnitude, with the 257 experts 97.8%
+      of it. The dense overhead is also small because the main model is large rather than because
+      the module is -- the same module on the mini-GPT shape is 10.0M against 211.6M, 4.7%, three
+      and a half times the 70B's rate. And the module is one decoder layer plus one projection:
+      per_mtp is exactly hidden*hidden more than a layer's 4*hidden*hidden + 3*hidden*ff, so D=1 MTP
+      costs 1.0125 layers out of 80
+    uses_reference:
+      - count_parameters
+  - index: 3
+    slug: the_last_module_is_never_used
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement D=2 in the toy: add a second MTP module that takes h^(1) and predicts `t_{i+2}`. Verify the joint loss and the parameter accounting match the DeepSeek paper's equations 19-21.
+    zh: |
+      在玩具版裡實作 D=2：加上第二個 MTP 模組，它吃 h^(1) 並預測 `t_{i+2}`。驗證聯合損失與參數帳與 DeepSeek 論文的式 19-21 相符。
+    verifies: >-
+      mtp_loss already takes a list of modules and already loops k from 1 to D, so "implement D=2"
+      is a matter of passing two modules, which is what main does; the verification is the
+      interesting half and is done by replacing each module with a completely different one and
+      checking which losses move. D=2 works and the second module contributes nothing: replacing
+      modules[1] with a module built from a different seed leaves both per-depth losses
+      bit-identical at 3.5129 and 3.2347, while replacing modules[0] moves depth 2 to 3.3433 and
+      leaves depth 1 alone. The loop scores before it advances -- for each k it computes
+      shared_head_logits(h_prev, E) and then sets h_prev = mtp_forward(h_prev, ..., modules[k-1]) --
+      so the depth-k loss is read off h^(k-1) and the last module's output is never scored; at D=1
+      that means the module is not in the loss at all, and two completely unrelated modules both
+      give 3.579055. This is off by one against equations 19-21, where p_(i+k) = OutHead(h_i^(k))
+      takes the depth-k prediction from the depth-k module's output. And the accounting charges D
+      modules while the loss reads D-1, so at the D=1 the exercise's own parameter table uses, one
+      module is charged and none is used
+    uses_reference:
+      - mtp_loss
+      - make_mtp_module
+      - count_parameters
+      - rand_matrix
+      - rms_norm
+      - add
+  - index: 4
+    slug: the_sequential_path_is_teacher_forced
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Switch the toy to parallel MTP (Gloeckle-style): add D output heads on top of the main hidden state, each predicting a different offset. Measure how the losses per depth compare to the sequential version on the same synthetic signal. The sequential version should produce lower depth-k loss for k > 1 because it conditions on the intermediate predictions.
+    zh: |
+      把玩具版換成平行式 MTP（Gloeckle 風格）：在主隱藏狀態之上加 D 個輸出頭，各自預測一個不同的偏移量。在同一段合成訊號上，量測逐深度的損失與序列式版本相比如何。序列式版本在 k > 1 時應該產生更低的深度 k 損失，因為它條件化在中間的預測上。
+    verifies: >-
+      parallel MTP is built as the exercise describes -- D independent output matrices over the same
+      backbone hidden state, each scored against a different offset -- and compared with the
+      lesson's own mtp_loss on the same hidden states and tokens, over 40 seeds, because both arms
+      are untrained and a single draw cannot separate a structural effect from an initialisation.
+      Sequential's depth-2 loss is lower in 32 of 40 seeds, with a mean gap of +0.155 and a standard
+      deviation of 0.191; on seed 23 it is 3.374 against 3.844. The prediction holds with every
+      parameter in both arms drawn from a random number generator and never trained, because the
+      sequential path is fed the true next token rather than its own prediction: mtp_loss advances
+      with h_prev = mtp_forward(h_prev, E[tokens[i + k]], modules[k - 1]), and tokens[i+k] is the
+      ground-truth token whose loss was just computed. That is teacher forcing, and it is the one
+      thing the exercise's stated reason -- "because it conditions on the intermediate predictions"
+      -- does not describe; at inference there is no label, so the margin measured here is not the
+      margin the deployed model has. Depth 1 is also identical in both schemes to twelve decimal
+      places on all 40 seeds, since parallel MTP with the tied head is exactly what mtp_loss does at
+      k=1, so the comparison needs D >= 2 to exist
+    uses_reference:
+      - mtp_loss
+      - cross_entropy
+      - shared_head_logits
+      - rand_matrix
+      - make_mtp_module
+  - index: 5
+    slug: fifty_percent_is_the_floor_of_the_measurement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Use the trained MTP module as an EAGLE-style draft: call module k to propose `t_{i+k}` at inference. Measure the acceptance rate of these draft tokens against the main model's predictions on a held-out sequence. If you hit 50%+ on the toy, you have reproduced the empirical MTP-as-draft property.
+    zh: |
+      把訓練好的 MTP 模組當作 EAGLE 風格的草稿使用：推論時呼叫模組 k 來提議 `t_{i+k}`。在一段留出序列上，量測這些草稿詞元相對主模型預測的接受率。如果你在玩具版上打到 50% 以上，你就重現了 MTP 可當草稿的實證性質。
+    verifies: >-
+      acceptance is measured exactly as described -- the draft's proposal for offset k against what
+      the main model's head produces at that position, through the lesson's own mtp_forward and
+      shared_head_logits, on 40 held-out sequences -- with the main model's own next-token accuracy
+      measured beside it, because "acceptance against the main model's predictions" says nothing
+      about whether those predictions are right. Mean acceptance is 52.2%, above the exercise's 50%
+      mark on 40 of 40 seeds and never below 50.0%, from modules that were never trained; the
+      backbone those proposals are accepted against predicts the next token correctly 3.4% of the
+      time, against 3.1% for a uniform draw. Half the comparisons compare a hidden state with
+      itself: at k=1 the draft reads h = backbone[i] and the main model's prediction at offset 0 is
+      also read off backbone[i], so depth 1 scores 100.0% by construction and at D=2 the floor of
+      the metric is exactly 50% -- the exercise's pass mark is the floor. The depth-2 comparison,
+      the only real one, scores 4.5% against the 3.1% of guessing, so the headline is (100% + 4%) /
+      2. And acceptance against a wrong prediction is not speculative decoding: Leviathan acceptance
+      compares distributions and corrects the difference, while this compares two argmaxes and
+      reports a match rate
+    uses_reference:
+      - mtp_forward
+      - shared_head_logits
+      - rand_matrix
+      - make_mtp_module
+      - rms_norm

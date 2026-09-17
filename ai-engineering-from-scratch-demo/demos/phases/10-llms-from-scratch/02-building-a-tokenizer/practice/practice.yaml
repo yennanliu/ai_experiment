@@ -1,0 +1,91 @@
+lesson: 02-building-a-tokenizer
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/02-building-a-tokenizer/docs/en.md
+exercises:
+  - index: 1
+    slug: most_of_the_vocabulary_represents_nothing
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Easy:** Add a `get_token_bytes(id)` method that shows the raw bytes for any token ID. Use it to inspect what your most common merged tokens actually represent.
+    zh: |
+      **簡單：** 加一個 `get_token_bytes(id)` 方法，能顯示任一 token ID 的原始位元組。用它來檢視你最常見的合併 token 實際上代表什麼。
+    verifies: >-
+      the method is already shipped on ProductionTokenizer, so the exercise runs it on the lesson's
+      own demo_full_tokenizer corpus at its own 50 merges. The most common merged tokens are short
+      and generic -- b're' x5, b'in' x4, then b' la', b' d', b' learning', b' p', b'ge', b' tra',
+      b'ata', b'):' at 3 apiece -- and only one of the top ten is a whole word. 18 of the 50 merges
+      are never used on the corpus they were trained on, and they are not random: every one appears
+      as the left or right operand of a later merge, so BPE reaching b' learning' one byte at a time
+      leaves b' l', b' le', b' lea', b' learn' and b' learnin' as vocabulary entries the next merge
+      makes unreachable. Being eaten is not on its own fatal -- 13 of the 32 survivors were eaten
+      too, b'he' going into both b'The' and b' the' -- but it is the only way to die here, and 36%
+      of what was learned is scaffolding. The class also carries two unknown-ID policies and this
+      method is the honest one: get_token_bytes(999999) returns b'<?>' while decode([999999])
+      returns the empty string, decode skipping any ID it does not recognise, so
+      decode([72, 999999, 73]) is 'HI' -- a bad ID mid-sequence leaves no replacement character and
+      raises nothing, and the method the exercise asks you to add is the only place in the class
+      where an unknown ID is reported at all
+    uses_reference:
+      - ProductionTokenizer
+      - get_token_bytes
+  - index: 2
+    slug: the_corpus_has_one_number_in_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Medium:** Implement the Llama-style pre-tokenizer that splits on whitespace and digits but keeps leading spaces. Compare its vocabulary with the GPT-2 regex approach on the same corpus.
+    zh: |
+      **中等：** 實作 Llama 風格的 pre-tokenizer，依空白與數字切分，但保留前導空格。在同一份語料上，把它的詞彙表跟 GPT-2 的 regex 做法比較。
+    verifies: >-
+      the Llama rule is implemented literally -- \s*\S+ for the unit, then each digit cut off on its
+      own with its leading space -- and the GPT-2 arm is the lesson's own pre_tokenize rather than a
+      reimplementation. That arm is not GPT-2's regex unless the regex package happens to be
+      installed: code/main.py compiles p{L}/p{N} behind a try and falls back to [a-zA-Z]/[0-9] on
+      ImportError, under which CJK and Hangul match no alternative at all -- being \w, the
+      punctuation class excludes them -- and finditer simply drops them, losing 4 characters of
+      '你好世界 Hello World', 6 of '빠른 갈색 여우' and turning 'Café naïve' into 'Caf', ' na', 've'.
+      The lesson declares regex nowhere and its own demo prints Round-trip: FAIL without it. With
+      the real pattern, the comparison the exercise asks for is empty: 49 of 50 merges are identical
+      and the corpus encodes to 188 tokens against 187, because digit handling is the whole
+      difference between these two pre-tokenizers and the lesson's corpus is 3 digit characters in
+      358 -- the 100 in range(100), once -- so neither arm learns a single digit-bearing merge.
+      Given numbers the vocabularies split: on a corpus that is 64 digits in 235 characters, shared
+      merges fall to 37 of 50, GPT-2 learns 15 digit-bearing merges including ' 2024', ' 1250' and
+      '0000' against Llama's 3 single digits, and GPT-2 compresses to 131 tokens against 152, 16%
+      better -- which is the trade Llama takes deliberately, ten digit tokens that always mean the
+      same thing instead of ' 2024' being one token while ' 2025' is two
+    uses_reference:
+      - pre_tokenize
+      - apply_merge
+      - GPT2_PATTERN
+  - index: 3
+    slug: the_user_can_close_their_own_turn
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Hard:** Add a chat template method that takes a list of `{"role": ..., "content": ...}` messages and produces the correct token sequence for the Llama 3 chat format. Test it against the HuggingFace implementation.
+    zh: |
+      **困難：** 加一個 chat template 方法，吃一組 `{"role": ..., "content": ...}` 訊息，產生 Llama 3 chat 格式正確的 token 序列。拿它跟 HuggingFace 的實作對照測試。
+    verifies: >-
+      transformers is not installed so the HuggingFace implementation cannot be the oracle, and the
+      lesson prints the Llama 3 format verbatim two sections above the exercise, so that is the
+      oracle instead and the template is checked byte for byte against it. It matches exactly,
+      encodes to 59 tokens through the lesson's own encode() with the four control tokens where the
+      format says, carries one <|eot_id|> per message and decodes back to itself. The control tokens
+      are safe from BPE and not from the user: add_special_token assigns 306-309, above every merged
+      ID and after the merges are learned, so no pair can ever produce one -- but encode() runs
+      split_with_specials over all text including message content, so one user message whose content
+      contains the literal turn delimiters yields 2 <|eot_id|> and 2 <|start_header_id|>. The user
+      closed their own turn and opened an assistant one, and the model sees a transcript it was
+      trained to continue; tiktoken's encode raises on disallowed special tokens by default for
+      exactly this. decode carries the boundary back the other way too, returning '<|eot_id|>' as
+      ordinary text for token 309, so a model emitting the control token and a model emitting those
+      characters are indistinguishable after a roundtrip
+    uses_reference:
+      - ProductionTokenizer
+      - add_special_token
+      - SpecialTokenHandler

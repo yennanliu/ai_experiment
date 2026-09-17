@@ -1,0 +1,139 @@
+lesson: 05-scaling-distributed
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/05-scaling-distributed/docs/en.md
+exercises:
+  - index: 1
+    slug: checkpointing_saves_the_smallest_term
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Modify the memory calculator to include activation checkpointing. With checkpointing, only store activations at every K-th layer (typical K=1, meaning recompute all). Show the memory-compute tradeoff: how much memory does checkpointing save, and how much does it slow down training (roughly 33% more compute for full checkpointing)?
+    zh: |
+      修改記憶體計算器，把啟動值檢查點（activation checkpointing）納進來。有了檢查點，只在每第 K 層存啟動值（典型 K=1，意思是全部重算）。展示記憶體與計算之間的取捨：檢查點省下多少記憶體，又讓訓練慢了多少（全面檢查點大約多 33% 的計算量）？
+    verifies: >-
+      the model is a 70B at the shape the lesson's own demo uses -- hidden_dim=8192, num_layers=80,
+      sequence_length=2048 -- so memory_calculator takes its real activation branch rather than its
+      params*precision*0.5 fallback. The exercise's parenthetical contradicts its own definition:
+      "only store activations at every K-th layer" with K=1 stores every layer and recomputes
+      nothing, changing per-GPU memory by exactly 0 GB, so "recompute all" is K = num_layers = 80. At
+      the calculator's own default batch of 1, activations are 10.7 GB of 850.7 (1.3%) and full
+      recomputation returns 10.6 GB -- 1.2% of per-GPU memory -- for the stated 33% more compute,
+      while the model still does not fit an 80 GB card because weights, gradients and Adam states are
+      840 GB of the 850.7. The answer is really a statement about batch size, activations being the
+      only term that scales with it: the saving goes 1.2%, 2.5%, 4.8%, 9.2%, 16.8%, 28.7% as the
+      batch goes 1, 2, 4, 8, 16, 32, and activations do not equal the fixed 840 GB until batch size
+      79. And the calculator's fallback overstates the one term this exercise is about by 6.5x --
+      70 GB against 10.7 -- which is the difference between activations being 8% of memory and 1.3%
+    uses_reference:
+      - memory_calculator
+  - index: 2
+    slug: the_bubble_is_identical
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Extend the pipeline parallelism simulation to implement the 1F1B (one forward, one backward) schedule used by PipeDream. Compare the bubble fraction against the naive schedule for 4 stages and 8 micro-batches. The 1F1B schedule should have a smaller peak memory because it starts backward passes earlier.
+    zh: |
+      把管線平行的模擬擴充成 PipeDream 使用的 1F1B（一次前向、一次反向）排程。比較 4 個階段、8 個微批次下它與天真排程的氣泡比例。1F1B 排程的尖峰記憶體應該比較小，因為它更早開始反向傳遞。
+    verifies: >-
+      the naive arm is the lesson's own simulate_pipeline_parallelism and the 1F1B arm is scheduled
+      the same way -- event-driven, one unit of time per layer, the same dependencies -- so the only
+      difference between the two numbers is the order each stage runs its work in. The bubble
+      fractions are identical: at 4 stages and 8 micro-batches both finish at t=88 with a bubble of
+      0.2727, and they stay equal at 4 and 16 micro-batches, because 1F1B reorders the same work
+      without removing any of the pipeline fill and drain. The lesson's "naive" baseline is already
+      GPipe -- its bubble reproduces (n-1)/(m+n-1) to the digit at every micro-batch count tried --
+      so the comparison the exercise asks for is between a schedule and itself. Peak memory is where
+      1F1B wins: GPipe stashes all 8 micro-batches on every stage before any backward starts while
+      1F1B stashes at most num_stages - stage, 4, 3, 2, 1, a 2x reduction at 8 micro-batches and 4x
+      at 16, growing with the micro-batch count. So the exercise's two sentences ask for opposite
+      things: "compare the bubble fraction" has the answer no difference, and the added sentence
+      about peak memory is the real result and is not what the comparison measures
+    uses_reference:
+      - simulate_pipeline_parallelism
+  - index: 3
+    slug: identical_to_the_wrong_baseline
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement a gradient accumulation simulator. Instead of all-reducing after every micro-batch, accumulate gradients locally for K steps, then all-reduce. Show how this reduces communication by K times but produces identical final gradients (and thus identical training).
+    zh: |
+      實作一個梯度累積模擬器。不要每個微批次都做 all-reduce，改成在本地累積 K 步的梯度再做 all-reduce。展示這如何把通訊量減少 K 倍，卻產生完全相同的最終梯度（因此訓練結果也完全相同）。
+    verifies: >-
+      both schedules run in float32 -- what a gradient is in mixed-precision training, and the only
+      dtype in which "identical" is an interesting claim -- and differ only in when the division by K
+      happens and in what order the micro-batches arrive; float64 appears once, to compare the two float32
+      results, and communication is counted with the lesson's own communication_volume_calculator.
+      Communication does fall by exactly K: 8 accumulated micro-batches are 1 all-reduce against 8, each
+      moving the same 245.0 GB for a 70B model on 8 GPUs, so 1960.0 GB becomes 245.0 GB. But "identical
+      final gradients" is a fact about K rather than about accumulation. At K=8 and K=16 the two schedules
+      agree bitwise on all 100,000 coordinates, because 1/K is exact in binary there and the two summation
+      orders coincide; at K=6 and K=10 they disagree on 66,206 and 68,919 of them. How the disagreement is
+      summarised then changes it by 30,000x: the largest element-wise relative gap is 3.8e-03, four orders
+      of magnitude above float32 epsilon, while max|delta| / max|g| on the very same arrays reads 1.3e-07,
+      which is float32 epsilon and would have been quoted as "identical to rounding" -- the gap is largest
+      where the accumulated gradient nearly cancels, and dividing by the largest coordinate hides exactly
+      those coordinates. Arrival order breaks the bitwise result even at K=8: delivering the same eight
+      micro-batches in reverse, which is what a ring all-reduce does, makes 61,977 coordinates differ at
+      2.9e-03. And the baseline it is identical to is not the one the exercise describes -- accumulating K
+      micro-batches and stepping once is arithmetically one step at K times the batch size, not K steps at
+      batch size B, so the optimizer takes 1 step where the other schedule takes 8 and the learning-rate
+      schedule sees 8 times fewer points. Bytes per micro-batch of data are unchanged at 245.0 GB either
+      way; what falls is bytes per optimizer step, and the steps fall with it
+    uses_reference:
+      - communication_volume_calculator
+  - index: 4
+    slug: the_two_known_costs_use_different_rates
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Build a cost estimator. Given a model size, target token count, GPU type (A100 at $2/hr, H100 at $3.50/hr), and parallelism strategy, estimate the total training cost in dollars. Validate against known costs: Llama 3 405B reportedly cost ~$100M, DeepSeek V3 cost ~$5.6M.
+    zh: |
+      做一個成本估算器。給定模型大小、目標詞元量、GPU 型號（A100 每小時 2 美元、H100 每小時 3.50 美元）與平行化策略，估出以美元計的總訓練成本。拿已知數字驗證：Llama 3 405B 據報約 1 億美元，DeepSeek V3 約 560 萬美元。
+    verifies: >-
+      the estimator is the lesson's own training_cost_estimator and DeepSeek V3 is costed on its 37B
+      active parameters, because 6ND counts the parameters a token touches and V3 is a mixture of
+      experts with 671B total. The compute model is exact once utilisation is not guessed: the
+      published runs imply 34.5% MFU for Llama 3 at 30.84M H100-hours and 33.1% for DeepSeek V3 at
+      2.788M H800-hours, and feeding those back returns 3.0830e7 and 2.7852e6 GPU-hours, within 0.1%
+      of both. The lesson's default utilization=0.4 is the whole error, leaving the estimator 13.8%
+      and 17.3% low in the same direction on both runs. The two "known costs" are not measured the
+      same way: Llama 3's ~$100M over 30.84M hours implies $3.24/GPU-hour while DeepSeek's $5.576M
+      over 2.788M hours is exactly $2.00, their stated rental assumption for the final run only, so
+      the hardcoded $3.50 lands +7.9% on one and +74.8% on the other and no single estimator can
+      validate against both. And the 17.9x headline factors exactly as 11.1x GPU-hours times 1.62x
+      price, those hours being 11.5x FLOPs with the two runs within 4% of each other on MFU: costed
+      at its full 671B, DeepSeek V3 comes to $146.3M against Llama 3's $93.1M -- more, not less
+    uses_reference:
+      - training_cost_estimator
+  - index: 5
+    slug: the_optimizer_state_does_not_fit_the_node
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add ZeRO-Offload to the memory calculator. Assume CPU RAM is 512GB per node and NVMe is 2TB. Show how offloading optimizer states to CPU allows a 70B model to train on 4 GPUs instead of 16, at the cost of 30-50% slower optimizer steps.
+    zh: |
+      把 ZeRO-Offload 加進記憶體計算器。假設每個節點有 512GB CPU RAM、2TB NVMe。展示把優化器狀態卸載到 CPU 之後，700 億參數的模型如何用 4 張 GPU 而不是 16 張訓練，代價是最佳化器步驟慢上 30-50%。
+    verifies: >-
+      offloading is applied to the term the exercise names, the Adam states, and the GPU count is
+      derived from the lesson's own calculator rather than taken from the exercise, at the same 70B
+      shape used throughout so the activation term is the real one. The optimizer state does not fit
+      the node the exercise specifies: Adam's two fp32 moments are 8 bytes a parameter, so 70B is
+      560 GB, 48 GB more than the 512 GB of CPU RAM assumed -- the 2 TB of NVMe fits it, but that is
+      ZeRO-Infinity rather than ZeRO-Offload. The GPU counts are 5 and 13 rather than 4 and 16:
+      ZeRO-3 needs 840/N + 10.7 <= 80, first true at 13 GPUs (75.4 GB each), and leaving the Adam
+      state on the CPU makes it 5 (66.7 GB each). And 30-50% is not a slowdown but an overlap
+      assumption the exercise never states: at 5 GPUs offload moves gradients down and updated
+      parameters back every step, 56 GB per GPU or 2.24 s at a stated PCIe 4.0 x16 budget of
+      25 GB/s, against 2.17 s of compute by 6ND at 40% MFU, so serialised the step is 2.03x -- an
+      upper bound rather than a prediction -- and hidden perfectly behind compute it is 1.03x,
+      the transfer being the longer of the two. The exercise's 1.30-1.50x lies inside that window
+      and pins the overlap to 52-71%. What is bought is fewer cards at 1.03x to 2.03x the
+      card-seconds per token: 13 cards clear 26,624 tokens in one step time and 5 clear 10,240 in
+      1.03 to 2.03 of one, 1,008 to 1,986 tokens per card-second against 2,048
+    uses_reference:
+      - memory_calculator

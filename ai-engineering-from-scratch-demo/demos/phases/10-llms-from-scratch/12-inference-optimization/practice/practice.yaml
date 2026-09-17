@@ -1,0 +1,160 @@
+lesson: 12-inference-optimization
+phase: 10-llms-from-scratch
+source: phases/10-llms-from-scratch/12-inference-optimization/docs/en.md
+exercises:
+  - index: 1
+    slug: exactly_four_times_and_the_weights_never_move
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Modify the KV cache profiler to compare FP16 vs FP8 vs INT4 KV cache quantization. For Llama 3 70B at 4K context, compute the max concurrent users for each on 4xA100-80GB. KV quantization to INT4 should roughly 4x the user capacity.
+    zh: |
+      修改 KV 快取剖析器，比較 FP16、FP8 與 INT4 的 KV 快取量化。針對 4K 脈絡下的 Llama 3 70B，計算在 4 張 A100-80GB 上每種量化能支撐的最大並行使用者數。把 KV 量化到 INT4 大約能讓使用者容量變成 4 倍。
+    verifies: >-
+      the profiler is the lesson's own memory_budget, which already takes kv_dtype_bytes, so the
+      three arms are one call each at 2, 1 and 0.5 bytes on MODEL_CONFIGS["Llama-3-70B"] at a 4 x 80
+      GB card budget, and the model-weight arm is run beside it because the exercise's quantiser is
+      applied to one of the two terms in that budget and the other is larger. The answer is 126, 252
+      and 504 users -- exactly 2.000x and 4.000x, not roughly, because max_users_at_4k is
+      available_for_kv / per_token / 4096 and available_for_kv is the same 157.6 GB in all three
+      arms: the KV dtype appears only in the denominator, so the prediction restates the formula and
+      nothing a real server does is in it to spoil the ratio. The exercise also quantises the
+      smaller of the two terms: of the 320 GB the fp16 weights take 130.4 GB and the flat 10%
+      overhead 32.0 GB, so the weights are 41% of the card and are never touched -- quantising the
+      model instead, at fp16 KV, seats 126, 178 and 204, so INT4 weights alone buy 1.62x, and the
+      two are independent. The 10% overhead scales with the card rather than the work, booking 32.0
+      GB at 4 GPUs for activations, fragmentation and the CUDA context, none of which grow with the
+      card. The mechanism is that KV bytes per token is 2 x layers x kv_heads x head_dim x bytes, so
+      80 layers, 8 KV heads and 128 dims give 320, 160 and 80 KB per token, or 1.25, 0.62 and 0.31
+      GB per user at 4K
+    uses_reference:
+      - memory_budget
+      - kv_cache_memory
+      - MODEL_CONFIGS
+  - index: 2
+    slug: the_tail_the_exercise_names_breaks_its_own_claim
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Extend the continuous batching simulator to track GPU utilization (fraction of batch slots filled per step). Plot utilization over time for both static and continuous batching with 50 requests whose output lengths follow a Pareto distribution (shape=1.5, scale=20). Continuous batching should maintain >80% utilization.
+    zh: |
+      擴充連續批次模擬器，追蹤 GPU 使用率（每一步中被填滿的批次槽位比例）。用 50 個請求（輸出長度服從 Pareto 分布，shape=1.5、scale=20）分別跑靜態批次與連續批次，把使用率隨時間的變化畫出來。連續批次應該維持在 80% 以上。
+    verifies: >-
+      utilisation is slots filled over batch size at each step, which simulate_continuous_batching
+      computes implicitly in len(active) and never records, so both schedulers are re-run with that
+      one quantity logged; static batching is reconstructed rather than instrumented because
+      simulate_static_batching jumps a whole batch at once and has no per-step state to read.
+      Continuous batching holds 0.240, not the >0.80 the exercise predicts: it is exactly 1.000
+      while the queue still has work -- 262 of 2295 steps -- and 0.142 for the remaining 89% of the
+      timeline, so the scheduler is full whenever there is anything to fill it with and the metric
+      measures the workload after that. The distribution the exercise names is what breaks its own
+      prediction: same simulator, same 50 requests, same mean length, continuous utilisation is
+      0.240 on Pareto(1.5, 20), 0.858 on an exponential and 0.893 on a constant, at longest-request
+      lengths of 2275, 323 and 88 -- the >80% claim holds on any distribution without a tail and
+      fails on the one specified, which has infinite variance, so a draw where one request dwarfs
+      the rest is the expected case. The two schedulers also converge at both ends of the tail,
+      continuous over static being 1.20x, 2.01x and 1.00x: where every request is the same length
+      static batching is already optimal and where one request outlives the queue neither can do
+      anything. The mechanism is that refilling a slot cannot shorten the longest request -- 2275
+      tokens against a next-longest of 228 -- so occupancy is pinned at 1/8 for 83% of the timeline
+    uses_reference:
+      - simulate_continuous_batching
+      - simulate_static_batching
+      - Request
+      - batching_stats
+  - index: 3
+    slug: the_calculator_already_does_gqa_the_class_does_not
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a grouped-query attention (GQA) version of the KV cache where `num_kv_heads < num_query_heads`. Llama 3 70B uses 64 query heads but only 8 KV heads. Compute the memory savings vs full multi-head attention (8x reduction in KV cache size).
+    zh: |
+      實作 KV 快取的分組查詢注意力（GQA）版本，其中 `num_kv_heads < num_query_heads`。Llama 3 70B 用了 64 個 query 頭，但只有 8 個 KV 頭。計算相較於完整多頭注意力省下的記憶體（KV 快取大小縮為 1/8）。
+    verifies: >-
+      the thing to implement is the baseline, not the feature: kv_cache_memory already takes
+      num_kv_heads and MODEL_CONFIGS["Llama-3-70B"] already sets it to 8, so what has to be written
+      to make the comparison is the multi-head config the lesson does not ship, the same shape with
+      num_kv_heads = 64, and both arms then go through the lesson's own calculator and budget. The
+      saving is exactly 8.0x, 320 KB per token against 2560, and it is the head-count ratio and
+      nothing else -- 2 x layers x kv_heads x head_dim x bytes is linear in kv_heads, so the ratio
+      is identical at 4K, 32K and 128K and the "8x reduction" is 64 / 8 written out. GQA is not an
+      optimisation here but the deployment: on 4xA100-80GB at 4K the profiler seats 126 users with 8
+      KV heads and 15 with 64, since one MHA user needs 10.0 GB of cache against 1.25. The lesson
+      also ships two KV-cache models that disagree -- KVCache takes one num_heads and allocates
+      k_cache and v_cache at that width, so a cache built for this model's 64 query heads is 8x the
+      size the calculator reports; the class is multi-head, the calculator is grouped-query, and the
+      exercise asks you to add GQA to the one that already has it. The mechanism is that the query
+      heads are not an input at all: a model config has no query-head field, because queries are
+      consumed in the step that produces them and only K and V persist, so cost per KV head is 40 KB
+      per token in both arms
+    uses_reference:
+      - kv_cache_memory
+      - memory_budget
+      - MODEL_CONFIGS
+      - KVCache
+  - index: 4
+    slug: the_field_it_never_reads_is_the_one_that_works
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a prefix cache that uses LRU eviction. Set max_entries to 500 and generate 1,000 requests where 60% share one of 5 common prefixes. Measure hit rate and compare to unlimited cache. With good eviction, hit rate should stay above 55%.
+    zh: |
+      建一個採用 LRU 淘汰的前綴快取。把 max_entries 設為 500，生成 1,000 個請求，其中 60% 共用 5 種常見前綴之一。量測命中率，並與無上限的快取比較。淘汰策略夠好的話，命中率應該維持在 55% 以上。
+    verifies: >-
+      the eviction has to be written, because the lesson's PrefixCache has none -- when
+      total_entries reaches max_entries its insert returns early and the trie freezes on whatever
+      arrived first -- so two policies are built on the lesson's own trie: LRU, which the exercise
+      names, and LFU on TrieNode.hit_count, which the lesson already maintains on every lookup and
+      never reads. LRU scores 0.451, below the 0.484 of evicting nothing at all, and LFU scores
+      0.601 and clears the 55% bar, recovering 96% of the unlimited cache's 0.623 from 1.4% of its
+      35,774 nodes. The reference has no eviction and fails silently when it fills: insert returns
+      the index it stopped at and nothing reads that value, so a second 1,000-token prompt into a
+      full 500-entry cache adds 0 nodes and total_entries sits at 500 forever -- that this still
+      scores 0.484 is the point, since freezing the first few prompts is a policy and it beats
+      recency here. Recency is the wrong key for a workload that churns its leaves: every request
+      appends 20 unique tokens, so the unique prompts churn tens of thousands of leaf insertions
+      through a 500-node budget and recency cannot tell a shared prefix from the tail of the request
+      that just used it, while the five shared prefixes are 200 of the 500 nodes and keeping exactly
+      those is worth +0.150. And the reported hit rate counts a single shared token as a hit, since
+      lookup records one whenever depth > 0 -- at a 5,000-token vocabulary that nearly agrees with
+      the share of requests matching a full 40-token prefix, but with a small vocabulary every first
+      token collides and the reported rate goes to 1.0 with nothing reused
+    uses_reference:
+      - PrefixCache
+      - TrieNode
+  - index: 5
+    slug: every_tree_is_slower_than_the_chain
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Extend the speculative decoding simulator to implement tree-based speculation (EAGLE-2 style). Instead of a single chain of K draft tokens, generate a tree of candidates (e.g., 2 branches at each of 3 levels = 8 leaf candidates). Compare total tokens accepted per verification round vs linear speculation.
+    zh: |
+      擴充推測式解碼模擬器，實作樹狀推測（EAGLE-2 風格）。不要只生成單一條 K 個草稿詞元的鏈，而是生成一棵候選樹（例如 3 層、每層 2 個分支 = 8 個葉節點候選）。比較每一輪驗證所接受的詞元總數與線性推測的差異。
+    verifies: >-
+      the tree is built on the acceptance rule speculative_decode uses -- np.random.random() <
+      acceptance_rate, one independent draw per drafted token -- because that is what "extend the
+      simulator" means, and the cost is the lesson's own draft_cost per drafted node plus one flat
+      verify_cost per round, with the linear arm being the reference function itself checked against
+      its own closed form. Every tree accepts more per round and is slower than the best chain:
+      linear K=3, K=5 and K=8 accept 1.952, 2.689 and 3.329 from 3, 5 and 8 drafted nodes for 1.97x,
+      2.17x and 2.16x, while tree 2x3, 4x3 and 2x5 accept 2.766, 2.990 and 4.431 from 14, 84 and 62
+      nodes for 1.45x, 0.42x and 0.73x -- the exercise's own 2-branch, 3-level tree buys +0.077
+      accepted tokens over a 5-token chain for 9 more drafted ones, and tree 4x3 is slower than not
+      speculating at all. The mechanism is that acceptance here is a coin rather than a comparison:
+      speculative_decode computes draft_model.get_probs and target_model.get_probs and then decides
+      with r < acceptance_rate, discarding both, so a branch is one more independent draw that
+      raises per-level survival from 0.800 to 0.960 at two branches and 0.998 at four, for b drafts
+      per node. What makes EAGLE-2's trees work is not in the model: real tree speculation branches
+      where the draft model is uncertain, so the extra candidates sit at the positions the chain
+      would have lost, while here every draw is independent of the tokens and the optimal tree has
+      no branches. And the flat verify_cost is 12 of a 17-unit K=5 round, 71%, which is why the
+      linear speedup is nearly flat from K=5 to K=8
+    uses_reference:
+      - speculative_decode
+      - DraftModel
+      - TargetModel
