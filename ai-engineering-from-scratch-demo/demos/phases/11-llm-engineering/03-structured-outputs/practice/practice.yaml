@@ -1,0 +1,138 @@
+lesson: 03-structured-outputs
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/03-structured-outputs/docs/en.md
+exercises:
+  - index: 1
+    slug: a_schema_with_no_type_validates_everything
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the schema validator to support `oneOf` (the data must match exactly one of several schemas). This handles polymorphic outputs -- for example, a field that can be either a `Product` or a `Service` object with different shapes.
+    zh: |
+      擴充 schema 驗證器來支援 `oneOf`（資料必須剛好符合數個 schema 中的一個）。這能處理多型輸出 —— 例如某個欄位可以是形狀不同的 `Product` 或 `Service` 物件。
+    verifies: >-
+      oneOf is implemented on top of the lesson's own validate_schema -- a branch matches exactly when
+      the validator reports no errors -- and scored against 12 labelled documents, Product-shaped,
+      Service-shaped, both-shaped and neither-shaped. The state the extension replaces is worse than
+      unsupported: _validate dispatches on schema.get('type') with no else, so a schema carrying only
+      oneOf matches no branch and appends no error, and validate_schema accepts 12 of 12 documents
+      plus the string 'anything'. With the extension the branch-match counts equal the labelled counts
+      and acceptance goes 12 -> 7, five documents changing verdict and all five having been let
+      through. 'Exactly one' is the hard half because the objects are open: 3 of the 12 match both
+      branches, since the validator ignores unknown keys and anything carrying both a price and a rate
+      satisfies Product and Service at once, while 2 match neither. A required `kind` with a one-value
+      enum per branch takes ambiguity 3 -> 0 and acceptance 7 -> 10. The other standard fix is
+      unavailable: additionalProperties is not implemented by _validate at all, so a discriminator is
+      the only lever
+    uses_reference:
+      - validate_schema
+  - index: 2
+    slug: three_breaking_changes_the_validator_cannot_feel
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a "schema diff" tool that compares two schemas and identifies breaking changes (removed required fields, changed types) versus non-breaking changes (added optional fields, relaxed constraints). This is essential for versioning your extraction schemas in production.
+    zh: |
+      做一個「schema diff」工具，比較兩份 schema，指出哪些是破壞性變更（移除必填欄位、改了型別），哪些是非破壞性變更（新增選用欄位、放寬約束）。這對在生產環境為抽取 schema 做版本管理是必要的。
+    verifies: >-
+      breaking is read in the producer direction -- a document accepted by v1 that v2 rejects --
+      because that is the direction a versioned extraction schema breaks in and the only one with a
+      mechanical witness, so every labelled change ships one. The diff classifies 10 of 10 changes
+      correctly from the schema pair alone. On 2 of the 10 the diff is right and the validator does
+      not agree: the witness gets the identical verdict from both versions for a raised minimum on an
+      integer field and an enum added to an integer field, so deploying those versions changes nothing
+      and rolling them back changes nothing. The mechanism is that the constraints live inside the
+      type branches -- minimum and maximum are read only where schema_type == 'number' and enum only
+      where it is 'string' -- so {'type': 'integer', 'minimum': 0} accepts -5 and {'type': 'integer',
+      'enum': [1, 2]} accepts 99. Narrowing number to integer therefore loosens the schema: -5 is
+      rejected by {'type': 'number', 'minimum': 0} and accepted by {'type': 'integer', 'minimum': 0},
+      a change the diff calls breaking that is in fact a relaxation. Hoisting the range and enum
+      checks out of the type dispatch takes agreement 8 -> 10 of 10 with no other verdict moving
+    uses_reference:
+      - validate_schema
+  - index: 3
+    slug: the_decoder_stops_where_the_validator_fails
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a more realistic constrained decoding simulator. Given a JSON Schema and a vocabulary of 100 tokens (letters, digits, punctuation, keywords), walk through generation step by step, masking invalid tokens at each position. Measure what percentage of the vocabulary is valid at each step.
+    zh: |
+      實作一個更真實的受約束解碼模擬器。給定一份 JSON Schema 和一個 100 個詞元的詞彙表（字母、數字、標點、關鍵字），一步一步走過生成過程，在每個位置遮掉不合法的詞元。量測每一步有多少比例的詞彙表是合法的。
+    verifies: >-
+      masking invalid tokens needs a decidable notion of invalid, so the mask is a prefix automaton
+      over an enumerated language: every serialisation of PRODUCT_SCHEMA over a fixed value set and
+      every key ordering, 30 documents, with a token valid after a prefix exactly when some document
+      starts with prefix + token and <EOS> exactly when the prefix is a whole document. Over a
+      100-token vocabulary the valid fraction along the canonical path is exactly 1 token at 21 of 27
+      positions, peaking at 7% right after the opening quote where more than one property name could
+      still begin, and mean 1.63%. The lesson's next_valid_tokens never reads its schema argument --
+      its output is identical for PRODUCT_SCHEMA and {} at every state -- so it is a JSON-grammar
+      masker that cannot know which keys the schema has. It also stops where the validator fails: for
+      '{"product": "Sony"}' it returns ['<EOS>'] because the string parses, while validate_schema
+      reports two required fields missing, and the schema-aware mask refuses the end token there. Five
+      states on the path return ['any'], which is 100% of the vocabulary, and its 0-9 and a-z classes
+      expand to 10 and 26 tokens, giving it a mean permitted fraction of 30.46% against 1.63%. Over
+      the path plus the early-closing prefix the end token is permitted once by the schema-aware mask
+      and twice by the character one
+    uses_reference:
+      - next_valid_tokens
+      - validate_schema
+      - PRODUCT_SCHEMA
+  - index: 4
+    slug: type_compliance_is_100_percent_and_exact_match_is_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build an extraction eval suite. Create 50 product descriptions with hand-labeled JSON outputs. Run your extraction pipeline on all 50 and measure exact match, field-level accuracy, and type compliance. Identify which fields are hardest to extract correctly.
+    zh: |
+      建一套抽取評估組。做出 50 段商品描述，並手工標註它們的 JSON 輸出。把抽取管線跑過全部 50 筆，量測完全匹配率、欄位層級正確率與型別合規率。找出哪些欄位最難正確抽出。
+    verifies: >-
+      the 50 descriptions are generated from a labelled template table so the label is the generator's
+      input and cannot drift from the text, and the pipeline run is the lesson's own
+      extract_with_retry with its printing swallowed. Type compliance is 50 of 50 and exact match is 0
+      of 50: every output validates and every one is wrong, one metric at its ceiling and the other at
+      its floor. The mechanism is that simulate_llm_extraction branches on three substring groups plus
+      a fallback, so 50 distinct descriptions produce 4 distinct documents. The fallback {'product':
+      'Unknown', 'price': 0, 'in_stock': false} is itself schema-valid -- every required field, a
+      non-negative price -- and is returned for 20 of the 50, so the pipeline's failure mode is a
+      valid document. The hardest field is price at 0 of 50, because no digit in any description
+      reaches the output: the branch documents carry hard-coded prices and the fallback carries 0.
+      product scores 15, exactly the five descriptions each of the three hard-coded names; categories
+      20; in_stock leads at 25 by accident, a coin flip scored against a constant. And the retry path
+      is dead: all four branch documents validate, so the only attempt value ever requested across the
+      50 runs is 0, and the attempt>=1 Sony variant that drops categories is unreachable
+    uses_reference:
+      - extract_with_retry
+      - simulate_llm_extraction
+      - validate_schema
+      - PRODUCT_SCHEMA
+  - index: 5
+    slug: resampling_measures_the_branch_table_not_the_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add "confidence scores" to your extraction pipeline. For each extracted field, estimate how confident the model is (based on token probabilities, or by running extraction 3 times and measuring consistency). Flag low-confidence fields for human review.
+    zh: |
+      為抽取管線加上「信心分數」。對每個抽出的欄位，估計模型有多少信心（依據詞元機率，或抽取跑 3 次再量測一致性）。把低信心的欄位標記出來給人工複核。
+    verifies: >-
+      the exercise's first option is closed -- simulate_llm_extraction returns a str and no function
+      in the lesson carries logprobs -- so the second is implemented as written: three extractions per
+      input, per-field majority agreement as the confidence, anything below 1.00 flagged, over 20
+      labelled descriptions of which ten the branch table matches. Nothing is ever flagged: the
+      extractor is a pure function of (text, attempt), so three runs collapse to one distinct document
+      and all 80 fields score 1.00. Sweeping attempt 0-1-2, the only variation the simulator has,
+      moves exactly one field on exactly one family -- the Sony branch drops categories at attempt >=
+      1, scoring 0.67 -- and flags 4 of 80. Consistency cannot see a confidently wrong field: 50 of
+      the 80 are wrong, 0 are flagged and the overlap is 0, because on the descriptions the branch
+      table misses the fallback returns 'Unknown' three times of three. The control is to perturb the
+      input rather than the model: three paraphrases -- lowercased, brand removed, distractor category
+      appended -- flag 32 fields of which 28 are wrong, four false positives against resampling's zero
+      true ones
+    uses_reference:
+      - simulate_llm_extraction
+      - PRODUCT_SCHEMA
