@@ -1,0 +1,102 @@
+lesson: 13-production-app
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/13-production-app/docs/en.md
+exercises:
+  - index: 1
+    slug: one_word_apart_scores_lower_than_completely_unrelated
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add RAG integration.** Build a simple in-memory vector store with 20 documents. When the template is `rag_answer`, embed the query, find the 3 most similar documents, and inject them as context. Measure how response quality changes with and without RAG context. Track retrieval latency separately from LLM latency.
+    zh: |
+      **加上 RAG 整合。** 建一個含 20 份文件的簡易記憶體內向量儲存。當模板是 `rag_answer` 時，把查詢嵌入、找出最相似的 3 份文件，把它們當上下文注入。量測有無 RAG 上下文時回應品質的變化。把檢索延遲和 LLM 延遲分開追蹤。
+    verifies: >-
+      a 20-document store and 10 queries each with one right answer, retrieved with the lesson's
+      own simple_embedding and cosine_similarity. recall@3 is 3 of 10 and the mean rank of the
+      right document is 8.8 of 20 against 10.5 for a coin, because simple_embedding is sha256 of
+      the whole string: six single-word rewrites of the first document score 0.7427 against it
+      while the nineteen that share nothing score 0.7560, and the ranges overlap. All 190 document
+      pairs sit at 0.7561 with sd 0.0371 and a maximum of 0.8480, below SemanticCache's 0.92, so
+      the cache can only hit an exact repeat. "Quality with and without RAG" compares two
+      constants, because call_llm_with_retry returns SIMULATED_RESPONSES['rag'] whenever the
+      prompt contains "context". Retrieval takes under a tenth of a millisecond against 130.2 ms
+      of asyncio.sleep for the model call.
+  - index: 2
+    slug: the_tool_runs_and_the_answer_is_byte_identical
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement real function calling.** Add a tool registry (from Lesson 09) to the service. When a user asks a question that requires external data (weather, calculation, search), the pipeline should detect this, execute the tool, and include the result in the prompt. Add a `tools_used` field to the response.
+    zh: |
+      **實作真正的函數呼叫。** 把工具註冊表（來自第 09 課）加進這個服務。當使用者問的問題需要外部資料（天氣、計算、搜尋）時，管線該偵測到、執行工具，並把結果放進提示詞。在回應裡加一個 `tools_used` 欄位。
+    verifies: >-
+      three tools with a regex trigger each and 20 labelled queries, 12 needing a tool and 8 not.
+      The router is 20 of 20 -- the ceiling for a keyword router scored on a set written beside it
+      -- and 0 of 20 answers change once the tool has fired and its result has been prepended to
+      the prompt, because call_llm_with_retry picks one of three constants by testing the prompt
+      for "code" or "review" and then "context". A search result mentioning the context of a
+      treaty flips the reply to the RAG constant and one mentioning a code snippet to the
+      code-review constant, both by accident of vocabulary. tools_used has to be added in three
+      places: the normal, cache-hit and blocked responses carry 10, 6 and 5 keys and share only
+      three. The three templates have only query, context and code between them, and the round
+      trip costs 5.3% more for a byte-identical answer.
+  - index: 3
+    slug: the_hundred_dollar_threshold_is_a_hundred_and_thirteen_thousand_requests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a cost alerting system.** Track cost per user per day. When a user exceeds $0.50/day, switch them to `gpt-4o-mini`. When total daily cost exceeds $100, activate emergency mode: cache-only responses for repeated queries, `gpt-4o-mini` for everything else, reject requests over 2,000 input tokens. Test with a simulated traffic spike.
+    zh: |
+      **做一個成本警示系統。** 追蹤每使用者每日成本。當某個使用者超過每天 $0.50 時，把他切到 `gpt-4o-mini`。當每日總成本超過 $100 時，啟動緊急模式：重複查詢只回快取、其他一律用 `gpt-4o-mini`、拒絕輸入超過 2,000 詞元的請求。用一次模擬的流量尖峰來測試。
+    verifies: >-
+      both thresholds priced against what the service charges for one request: 28 input and 81
+      output tokens on gpt-4o is $0.00088, so $0.50 is 569 requests from one user and $100 is
+      113,637 from everybody -- 6.3 hours of the lesson's own 0.2 s per call. Switching that user
+      to gpt-4o-mini cuts 94.0% and moves their next crossing to 9,470 requests. CostTracker has
+      no day in it: its seven fields are keyed by name alone, so per-user-per-day has to be built
+      on RequestLog.timestamp. PRIMARY_MODEL is claude-sonnet-5 but PromptTemplate.model defaults
+      to gpt-4o, so 1 of the 3 templates uses the configured primary and routing general_chat to
+      it would have raised the bill 47.6%. Emergency mode's cache-only rule leaks: four users with
+      four different SSNs redact to one string, giving one cache entry, three hits at similarity
+      1.0 and one shared answer.
+  - index: 4
+    slug: every_error_is_filed_under_a_version_that_does_not_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement prompt versioning with rollback.** Store all prompt versions with timestamps. Add an endpoint that shows quality metrics (latency, user ratings, error rate) per prompt version. Implement automatic rollback: if a new prompt version has 2x the error rate of the previous version over 100 requests, automatically revert.
+    zh: |
+      **實作帶回滾的提示詞版本管理。** 把所有提示詞版本連時間戳一起存起來。加一個端點，顯示各提示詞版本的品質指標（延遲、使用者評分、錯誤率）。實作自動回滾：如果某個新版本在 100 次請求內的錯誤率是前一版的 2 倍，就自動回退。
+    verifies: >-
+      400 requests, one user each so the A/B bucketing splits, one in twenty an injection so that
+      errors exist. The per-version error rate is 0.000 for both arms and cannot be anything else:
+      all 20 errors are guardrail blocks and _blocked_response files them with
+      prompt_version="blocked", a version in no template dict, while the only other way error is
+      set is the whole fallback chain failing, p = 6.59e-15. eval_results has seven keys and none
+      is an error or a rating. output_length has sd 0.00 and mean 421.0 in both arms, and the
+      arms' mean latency differs by less than one standard deviation of either. PromptTemplate has
+      five fields and no timestamp. The experiment gives 205 of 2,000 users the variant, so at one
+      request each v2 reaches 100 requests at user 915 -- and all 7 users in the lesson's own demo
+      land in v1.
+  - index: 5
+    slug: the_span_that_is_ninety_nine_point_nine_percent_of_the_trace_is_a_random_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add OpenTelemetry tracing.** Instrument every component (cache lookup, guardrail check, LLM call, cost calculation) as a separate span. Each span records its duration. Export traces to the console. Show the full trace for a single request, with each component's contribution to total latency visible.
+    zh: |
+      **加上 OpenTelemetry 追蹤。** 把每一個元件（快取查詢、護欄檢查、LLM 呼叫、成本計算）都做成獨立的 span，每個 span 記錄自己的耗時。把 trace 匯出到 console。展示單一請求的完整 trace，讓每個元件對總延遲的貢獻都看得見。
+    verifies: >-
+      the four named components timed over 2,000 repetitions each: input_guardrail 0.003 ms,
+      cache_lookup 0.012 ms, output_guardrail 0.017 ms, cost_calculation 0.0003 ms -- 0.032 ms
+      together -- against 130.2 ms of asyncio.sleep for the model call, which is 99.98% of the
+      trace. That span's duration is random.uniform(0.1, 0.3) plus a retry tail: over 200 seeded
+      calls its median is 207.0 ms, its mean 417.3, its p95 1781.9, its maximum 4569.7, and 28 of
+      the 200 take over a second. The input guardrail runs before the cache, so a hit pays for it,
+      and latency_ms stops before the streaming starts: a 61-token streamed response spends 2.87 s
+      that appears in neither latency_ms nor eval_results.
