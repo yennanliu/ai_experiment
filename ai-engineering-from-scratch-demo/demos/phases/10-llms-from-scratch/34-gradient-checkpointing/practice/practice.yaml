@@ -122,10 +122,11 @@ exercises:
       to leave cache. There is no breakeven inside the toy: copying a layer's input is 15x to 120x
       cheaper than recomputing that layer at every hidden size from 8 to 512, and the ratio grows
       with width, because recompute is O(h*inner) and the copy is O(h) -- the sweep runs away from
-      the crossing rather than toward it. bytes/time measures this machine's cache hierarchy and
-      moves about 4x with the array size: the 6.8 MB of segment inputs copy at about 75 GB/s and a
-      single 67 MB array at about 20 GB/s, straddling the 25 GB/s of the PCIe gen4 link the exercise
-      names. The traffic is also unmeasurable in place -- the copies are 0.24% of the checkpointed
+      the crossing rather than toward it. bytes/time answers with the array size and the
+      machine rather than with any link: the same memcpy reports 89 GB/s on a 0.26 MB array and 25
+      GB/s on a 67 MB one, 3.6x apart on one machine for no reason but what fits in cache, and the
+      exercise's own 6.8 MB of segment inputs land at 72 GB/s here against 15 GB/s on a CI runner --
+      PCIe gen4 x16 is a fixed 25 GB/s, so the figure is above it, below it or neither by host. The traffic is also unmeasurable in place -- the copies are 0.24% of the checkpointed
       forward's time against 8.6% run-to-run jitter on the forward itself, a factor of 36 -- so the
       figures above come from timing them in isolation. The breakeven has to be written as h = F /
       (6 * BW), which lands at hidden 2,080 on PCIe gen4, 812 on gen5, 173 on NVLink 3 and 58 on

@@ -131,17 +131,20 @@ layer at seq=8192 against a modelled 1,611 MB** — and is not in the model.
 
 | hidden | 8 | 16 | 32 | 64 | 128 | 256 | 512 |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| recompute ÷ copy | 17x | 15x | 30x | 24x | 50x | 67x | **120x** |
+| recompute ÷ copy | 17x | 15x | 30x | 23x | 48x | 68x | **123x** |
 
 **ANSWER: there is no breakeven inside the toy.** Copying a layer's input is 15x
 to 120x cheaper than recomputing it at every width, and the ratio *grows* with
 width: recompute is `O(h·inner)`, the copy is `O(h)`. The sweep runs away from
 the crossing.
 
-**FINDING: bytes/time measures this machine's cache hierarchy.** The 6.8 MB of
-segment inputs copy at ~75 GB/s; a single 67 MB array at ~20 GB/s — about 4x
-apart, straddling the 25 GB/s of the PCIe gen4 link the exercise names. A list in
-the same address space cannot be slower than memcpy.
+**FINDING: bytes/time answers with the array size and the machine, not with a
+link.** The same memcpy reports 89 GB/s on a 0.26 MB array and 25 GB/s on a
+67 MB one — **3.6x apart on one machine**, for no reason but what fits in cache.
+The exercise's own 6.8 MB of segment inputs land at 72 GB/s here and at 15 GB/s
+on a CI runner. PCIe gen4 x16 is a fixed 25 GB/s; this measurement is above it,
+below it, or neither, depending on the host. A list in the same address space
+cannot be slower than memcpy.
 
 **FINDING: the traffic is unmeasurable in place.** The copies are **0.24%** of the
 checkpointed forward's time against **8.6%** run-to-run jitter on the forward
