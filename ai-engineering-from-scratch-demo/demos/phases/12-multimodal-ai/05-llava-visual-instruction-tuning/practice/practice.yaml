@@ -1,0 +1,73 @@
+lesson: 05-llava-visual-instruction-tuning
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/05-llava-visual-instruction-tuning/docs/en.md
+exercises:
+  - index: 1
+    slug: the_twenty_two_million_is_a_different_encoder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the trainable-parameter count for the 2-layer MLP projector at `1024 → 4096 → 4096`. With GELU and bias, what fraction of LLaVA-13B does it represent?
+    zh: |
+      算出 `1024 → 4096 → 4096` 這個兩層 MLP 投影器的可訓練參數量。含 GELU 與偏置，它佔 LLaVA-13B 的多少比例？
+    verifies: >-
+      20,979,712 parameters at 1024 -> 4096 -> 4096 with bias, 0.161% of LLaVA-13B, with the formula
+      checked against the lesson's own MLPProjector.num_params() at three small shapes. GELU
+      contributes 0 and the biases 8,192. The lesson's takeaway prints 22M, which only a 1408-wide
+      encoder produces (22,552,576) -- the EVA/BLIP-2 width, not the CLIP ViT-L 1024 the exercise
+      names; SigLIP's 1152 gives 21,504,000. The second layer is 4096 -> 4096 and holds 16,781,312 of
+      the total, 80%, while the first already performs the only mapping the projector exists for, so a
+      single linear would be 5.0x smaller. And the fraction is the wrong measure: the same projector
+      emits 576 tokens an image, 28.1% of a 2,048-token context.
+  - index: 2
+    slug: a_refusal_prompt_and_what_would_reinforce_it
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Construct a LLaVA prompt for a "refusal" case — the image contains a private individual. Write the expected assistant response. Why should LLaVA refuse this zero-shot and what training data would be needed to reinforce the refusal?
+    zh: |
+      為一個「拒答」情境建一段 LLaVA 提示詞 —— 影像中有一位私人個體。寫出預期的助理回應。LLaVA 為什麼應該零樣本就拒絕這件事？又需要什麼訓練資料來強化這種拒答？
+    cites: >-
+      The prompt format
+  - index: 3
+    slug: the_only_nonlinearity_in_anyres_is_the_thumbnail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the AnyRes section of the LLaVA-NeXT blog. Compute the visual token count for a 1344x672 image at AnyRes. Compare to base 576 tokens at 336x336.
+    zh: |
+      讀 LLaVA-NeXT 部落格文章中談 AnyRes 的段落。算出一張 1344x672 的影像在 AnyRes 之下的視覺詞元數。與 336x336 之下的基礎 576 個詞元做比較。
+    verifies: >-
+      5,184 tokens for 1344x672 -- 8 tiles plus one thumbnail at 576 -- against the base 576, a 9x
+      increase for 8x the pixels. Across the lesson's whole AnyRes table the token ratios are 1, 3, 5,
+      9, 17 against pixel ratios 1, 2, 4, 8, 16, so the count is exactly (pixels + 1) x 576 and the
+      thumbnail is the only non-linearity; its share of the bill falls from 33.3% to 5.9% as tiles
+      grow. The lesson's own takeaway says 'up to 2880 tokens', which is the 672x672 row three above
+      the last, while the table reaches 9,792 -- 3.4x higher. And visualize_context, captured from the
+      lesson itself, prints 'image 253.1% | text 1.5% | remain 0 tokens' for the 2,048 window, because
+      the remainder is clamped with max(remain, 0).
+  - index: 4
+    slug: what_happens_if_stage_one_is_skipped
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      The LLaVA stage-1 projector is trained with LM loss on captions. What happens if you skip stage 1 and go straight to stage 2 (visual instruction tuning)? Cite the Prismatic VLMs ablation (arXiv:2402.07865) for the answer.
+    zh: |
+      LLaVA 的第 1 階段投影器是用字幕上的 LM 損失訓練的。如果你跳過第 1 階段直接進第 2 階段（視覺指令微調）會怎樣？答案請引用 Prismatic VLMs 的消融研究（arXiv:2402.07865）。
+    cites: >-
+      Stage 1: projector alignment
+  - index: 5
+    slug: a_four_step_domain_instruction_pipeline
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      LLaVA-Instruct-150k uses GPT-4 with COCO captions to generate instructions. For a new domain (medical X-rays, satellite imagery), describe the four-step data pipeline to generate domain instructions. What could go wrong at each step?
+    zh: |
+      LLaVA-Instruct-150k 用 GPT-4 搭配 COCO 字幕來生成指令。針對一個新領域（醫療 X 光片、衛星影像），描述生成領域指令的四步驟資料管線。每一步各可能出什麼錯？
+    cites: >-
+      Stage 2: visual instruction tuning
