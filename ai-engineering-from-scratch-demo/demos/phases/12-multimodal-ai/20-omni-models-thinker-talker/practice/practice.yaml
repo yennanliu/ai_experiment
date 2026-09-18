@@ -1,0 +1,79 @@
+lesson: 20-omni-models-thinker-talker
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/20-omni-models-thinker-talker/docs/en.md
+exercises:
+  - index: 1
+    slug: the_floor_is_fifty_five_percent_of_the_target
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your target TTFAB is 300ms. On a 7B Thinker and 300M Talker, write out every component's latency.
+    zh: |
+      你的目標 TTFAB 是 300ms。在一個 7B 的 Thinker 與 3 億參數的 Talker 上，把每個元件的延遲都寫出來。
+    verifies: >-
+      310 ms against a 300 ms target -- mic 50, prefill 100, first text 40, Talker 20, residual-VQ 30,
+      waveform 70 -- and 390 with vision. Of that, 165 ms takes neither size parameter: 53.2% of the
+      total and 55% of the target, so a free Thinker and a free Talker still cost 165 ms. Both
+      model-scaled terms carry thinker_b / 7, so the total is 165 + 20 x thinker_b and the largest
+      Thinker that fits the target is 6B; the Talker is nearly irrelevant, spanning 52 ms from 100M to
+      1,000M. And the lesson's code disagrees with its own prose at both ends: the docs say 320-510 ms
+      at 7B and 600-900 at 70B, while ttfab returns 310 and 1,690.
+  - index: 2
+    slug: what_tmrope_sees_at_one_second_and_one_point_two
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Qwen2.5-Omni uses TMRoPE. Describe what the model sees for a prompt where the user starts speaking at t=1s and the camera catches a gesture at t=1.2s.
+    zh: |
+      Qwen2.5-Omni 用了 TMRoPE。描述在使用者於 t=1s 開始說話、鏡頭於 t=1.2s 捕捉到一個手勢的提示詞中，模型看到的是什麼。
+    cites: >-
+      TMRoPE — time-aligned multimodal positions
+  - index: 3
+    slug: the_format_is_two_streams_and_a_quarter_of_it_is_silence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Full-duplex support requires the model to emit audio while listening. Propose a training data format that teaches this.
+    zh: |
+      支援全雙工要求模型能一邊聽一邊吐音訊。提出一種能教會這件事的訓練資料格式。
+    verifies: >-
+      two aligned token streams at one frame rate with silence made explicit, so
+      speaking-while-listening is representable rather than special-cased and a turn boundary is a run
+      of silence ending rather than a delimiter. At a stated 12.5 Hz with 8 codebooks a ten-minute
+      conversation is 7,500 frames and 120,000 tokens -- 200 a second, 62x the 1,950 text tokens of
+      the same exchange. Under a stated 50% speaking share with independent streams the frame split is
+      25% both silent, 50% exactly one, 25% both speaking -- so the entire full-duplex signal is the
+      smallest bucket. And that bucket is 0% of any turn-based corpus, so the hard part is the
+      recording setup rather than the format.
+  - index: 4
+    slug: why_the_inner_monologue_avoids_the_split
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Moshi's paper Section 4. Describe the "inner monologue" separation and why it avoids the Thinker-Talker split.
+    zh: |
+      讀 Moshi 論文第 4 節。描述那個「內心獨白」的分離機制，以及它為什麼避開了 Thinker-Talker 的分工。
+    cites: >-
+      Thinker and Talker
+  - index: 5
+    slug: the_rate_is_fifty_for_the_transformer_and_four_hundred_for_the_head
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the throughput budget: how fast must a Talker emit tokens to keep up with 16kHz speech at 50 base-layer tokens/sec?
+    zh: |
+      算出吞吐量預算：要跟上 16kHz 語音、每秒 50 個基礎層詞元，Talker 得多快吐出詞元？
+    verifies: >-
+      50 tokens a second for the base layer and 400 for all eight residual codebooks -- one every 2.5
+      ms against the base layer's every 20 -- and the lesson states only the 50. The 400 is not a
+      transformer rate: Lesson 12.16 measures the residual levels at 4.3 ms each against a 40 ms
+      first-token cost, 9.3x cheaper, so the transformer runs at 50 and a depth head supplies the
+      other 350. And the lesson's own cited 30-80 tok/s fails its own requirement at the bottom: the
+      real-time factors are 1.67, 1.0 and 0.62, so at 30 tok/s the stream falls 0.67 seconds behind
+      per second spoken and only two of the three cited points keep up. The range straddles 1, which
+      is the real argument for a dedicated small Talker.
