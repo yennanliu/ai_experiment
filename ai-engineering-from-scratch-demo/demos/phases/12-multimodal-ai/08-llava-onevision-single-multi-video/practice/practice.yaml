@@ -1,0 +1,88 @@
+lesson: 08-llava-onevision-single-multi-video
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/08-llava-onevision-single-multi-video/docs/en.md
+exercises:
+  - index: 1
+    slug: the_saving_the_exercise_asks_about_does_not_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your product supports 80% single-image, 10% multi-image (2-4 images), 10% video (8-16 frames). Design the token budget. Where would you put the extra budget you save from not doing heavy multi-image?
+    zh: |
+      你的產品有 80% 單影像、10% 多影像（2 到 4 張）、10% 影片（8 到 16 個畫格）。設計那份詞元預算。既然不必做吃重的多影像，省下來的預算你會放到哪裡？
+    verifies: >-
+      the lesson's three planners return 1,690 / 1,352 / 2,592 at a 4,096-token budget, and the
+      80/10/10 mix weights them to 1,746.4 per sample -- 57.4% of the budget never spent, so there is
+      nowhere to put a saving. Multi-image is also the CHEAPEST of the three, so dropping it moves the
+      expected cost by +43.8 rather than freeing anything. The planners maximise count rather than
+      tokens: their loops run count outer and resolution inner, so single-image returns 9 pooled tiles
+      at 41.3% of budget when 4 unpooled tiles at 89.0% also fit, and multi-image 33.0% against 71.2%.
+      The three plans span 1,240 tokens, 30.3% of the budget, printed directly above a line requiring
+      under 30%.
+  - index: 2
+    slug: a_fourth_emergent_skill
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read LLaVA-OneVision Section 4.3 (emergent capabilities). Propose a fourth emergent skill the curriculum would likely unlock but the paper did not report.
+    zh: |
+      讀 LLaVA-OneVision 第 4.3 節（浮現能力）。提出第四項這套課程很可能解鎖、但論文沒有回報的浮現技能。
+    cites: >-
+      Emergent cross-scenario skills
+  - index: 3
+    slug: the_function_the_exercise_wants_to_perturb_has_no_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the curriculum order — train multi-image first, then single-image, then video. Predict which benchmarks degrade and why.
+    zh: |
+      把課程順序調換 —— 先訓多影像，再訓單影像，最後訓影片。預測哪些基準會退步，以及為什麼。
+    verifies: >-
+      curriculum_stages takes only mix and holds three literal stage rows, of which only the last
+      reads the argument, so the permutation the exercise asks for is not expressible in the planner
+      the lesson ships. What the swap does change is cumulative exposure, summed over the stage mixes:
+      the shipped order gives single-image 1.9 stage-units, multi 0.6, video 0.5; multi-image first
+      gives 0.9 / 1.6 / 0.5, so single-image loses 53% of its exposure and multi gains 167% while
+      video does not move at all. MMMU and DocVQA are what degrades. There are six orderings and the
+      lesson's printed note covers one of them -- video-first, at 2-4 MMMU -- which leaves
+      single-image at the same 0.9, so that penalty is the best available estimate for a permutation
+      nobody measured.
+  - index: 4
+    slug: temporal_reasoning_breaks_six_point_two_five_times_earlier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The paper reports video benchmarks trained on only 8 frames per sample. Does that generalize to 30-second videos at inference? What breaks first — the token budget or the temporal reasoning?
+    zh: |
+      論文回報的影片基準，訓練時每個樣本只用了 8 個畫格。這能類推到推論時的 30 秒影片嗎？先崩掉的會是什麼 —— 詞元預算，還是時序推理？
+    verifies: >-
+      a frame costs 81 tokens at the lesson's own video plan, so a 4,096 budget holds 50 frames
+      against the 8 training saw: extrapolation begins at frame 9 and the budget is untouched until
+      frame 51, a factor of 6.25, so temporal reasoning breaks first. But 30 seconds is not a frame
+      count -- 30 frames and 2,430 tokens at 1 FPS, 60 and 4,860 at 2 FPS, 900 and 72,900 at 30 FPS,
+      17.8x over -- so the two failure modes swap places between 1 and 2 FPS. plan_video(4096) already
+      returns 32 frames, 4x the training length, chosen by a loop that stops at the first fit. And of
+      the 7 (frames, tokens-per-frame) pairs that fit, the best at the trained 8 frames spends 1,352
+      tokens, 33% of the budget.
+  - index: 5
+    slug: the_grid_the_lesson_actually_pools_is_odd
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Bilinear pooling of 24x24 patches to 12x12 is a 4x reduction per dim. Implement the pooling in stdlib Python and verify that the mean over each 2x2 block matches the bilinear output.
+    zh: |
+      把 24x24 的 patch 雙線性池化到 12x12，每個維度縮小 4 倍。用 stdlib Python 實作這個池化，並驗證每個 2x2 區塊的平均值與雙線性輸出一致。
+    verifies: >-
+      at 24 -> 12 the 2x2 block mean and a half-pixel bilinear resample agree to 0.0 on all 144
+      outputs, because at an integer factor of 2 each output's sample point lands on its block's
+      centre and the four corner weights are 0.25 each. '4x reduction per dim' is 2x per dim and 4x in
+      tokens. The lesson's own default grid is 27: per_tile_tokens(384, 14, 2) floors to 27 then to
+      13, covering 676 of 729 patches and dropping 53 -- 7.3% -- for a reduction of 4.31x rather than
+      4x, and the clean 24x24 case the exercise names is the (336, 14, 2) entry the planner lists
+      third and never reaches. At 27 -> 13 the two methods disagree by up to 0.439 on a unit-scale
+      grid, so the verification passes on a grid the lesson does not use and fails on the one it does.
