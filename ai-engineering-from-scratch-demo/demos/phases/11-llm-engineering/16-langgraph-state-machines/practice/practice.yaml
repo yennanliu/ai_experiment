@@ -1,0 +1,63 @@
+lesson: 16-langgraph-state-machines
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/16-langgraph-state-machines/docs/en.md
+exercises:
+  - index: 1
+    slug: ten_checkpoints_against_a_threshold_of_four
+    kind: code
+    tier: T1
+    deps_group: agents
+    en: |
+      **Easy.** Implement the four-node ReAct graph above with a calculator tool and a web-search tool. Verify that `list(app.get_state_history(config))` returns at least four checkpoints for a two-turn conversation.
+    zh: |
+      **簡單。** 用一個計算器工具和一個網頁搜尋工具，實作上面那個四節點 ReAct 圖。驗證兩輪對話下 `list(app.get_state_history(config))` 至少回傳四個檢查點。
+    verifies: >-
+      the lesson's graph wired as it wires it -- agent -> tools -> agent, add_messages as the
+      reducer, a MemorySaver and interrupt_before=["tools"] -- with a scripted AIMessage in place
+      of ChatAnthropic, because the claim is about checkpoints and there is no API key. A two-turn
+      conversation leaves 10 checkpoints and the history grows 3, 5, 8, 10 across the four stream
+      calls the two turns need, so "at least four" is satisfied before the first turn has
+      finished. "Four-node" counts the two nodes LangGraph adds: the compiled graph reports
+      ['__end__', '__start__', 'agent', 'tools'] with four edges, two conditional. Exactly 2 of
+      the 10 snapshots are paused at tools. web_lookup matches its facts dict by exact equality,
+      so the demo's own "Where is Anthropic headquartered?" returns "unknown", and the
+      calculator's character allow-list admits ** because * is in it.
+  - index: 2
+    slug: the_resume_keeps_the_plan_and_the_node_throws_it_away
+    kind: code
+    tier: T1
+    deps_group: agents
+    en: |
+      **Medium.** Add a `planner` node that runs before `agent` and writes a structured `plan: list[str]` into state. Have `agent` mark plan steps as done. Fail the test if `plan` is lost across a checkpoint resume (wrong reducer).
+    zh: |
+      **中等。** 加一個跑在 `agent` 之前的 `planner` 節點，把一份結構化的 `plan: list[str]` 寫進狀態。讓 `agent` 把計畫步驟標記為完成。如果 `plan` 在檢查點恢復後遺失（reducer 用錯），就讓測試失敗。
+    verifies: >-
+      planner -> agent -> quiet, interrupted before agent, compiled three times with three
+      reducers for plan. With a merge keyed by step index the plan survives at three steps with
+      one marked done. With no reducer the default channel is last-write-wins, so an agent
+      returning only the step it changed takes the plan from 3 steps to 1. With operator.add it
+      goes from 3 to 4 with a duplicate. And nothing is lost across the resume: all three
+      compilations hold the identical three steps at the interrupt, and re-reading the interrupt's
+      own checkpoint config after the resume returns them byte-for-byte -- the checkpointer is not
+      the mechanism, the node's update is. Reusing add_messages for a list[str] raises
+      NotImplementedError naming ChatPromptTemplate, a class the state never contained.
+  - index: 3
+    slug: a_checkpoint_is_a_point_in_time_not_a_branch
+    kind: code
+    tier: T1
+    deps_group: agents
+    en: |
+      **Hard.** Build a supervisor graph that routes between three subgraphs (`researcher`, `writer`, `reviewer`) using `Send`. Each subgraph has its own state and checkpointer. Add an `interrupt_before=["writer"]` on the outer graph so a human can approve the research brief. Confirm that time-travel from a prior checkpoint re-runs only the forked branch.
+    zh: |
+      **困難。** 用 `Send` 建一個監督者圖，在三個子圖（`researcher`、`writer`、`reviewer`）之間路由。每個子圖有自己的狀態與 checkpointer。在外層圖上加 `interrupt_before=["writer"]`，讓人類可以核准研究摘要。確認從先前檢查點做時光回溯時，只有分岔出去的那條分支被重跑。
+    verifies: >-
+      the supervisor graph built as written: three compiled subgraphs each with its own StateGraph
+      and MemorySaver, added as nodes, routed by a conditional edge returning Send, compiled with
+      interrupt_before=["writer"]. Eight node executions, nine checkpoints, and the interrupt does
+      fire through a Send, holding the research brief for approval. Send(node, state)
+      double-counts every accumulating channel: the whole state as payload takes the log from 7
+      entries to 22 for the same eight executions. Each subgraph's own checkpointer holds 0
+      entries -- the parent's owns all nine. Time travel re-runs the whole suffix rather than a
+      branch: forking at the writer checkpoint re-runs writer, supervisor, reviewer, supervisor.
+      And the fan-out Send exists for cannot be used here at all: a narrow payload raises
+      KeyError('brief') and a wide one InvalidUpdateError at key 'topic'.
