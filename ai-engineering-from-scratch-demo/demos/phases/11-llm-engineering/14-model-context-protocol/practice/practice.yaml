@@ -1,0 +1,99 @@
+lesson: 14-model-context-protocol
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/14-model-context-protocol/docs/en.md
+exercises:
+  - index: 1
+    slug: sorted_is_codepoint_order_so_a_capital_s_precedes_a
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `subtract` tool and confirm `tools/list` remains alphabetically ordered.
+    zh: |
+      加一個 `subtract` 工具，確認 `tools/list` 仍然維持字母排序。
+    verifies: >-
+      subtract registered on a server carrying the lesson's own primitives: tools/list returns
+      ['add', 'delete_user', 'subtract'] and is ordered, because the handler sorts on every call
+      and registration order cannot reach it. Push the claim and it breaks: adding Subtract,
+      _hidden and 2fa gives ['2fa', 'Subtract', '_hidden', 'add', 'delete_user', 'subtract'] --
+      still sorted(), no longer alphabetical, and key=str.casefold is the fix. Nothing validates
+      inputSchema: tools/list publishes integer for both of add's arguments and add(a='x', b='y')
+      returns {"sum": "xy"} with isError False. A missing required argument arrives as -32603
+      "tool handler failed" while an unknown tool name one line earlier is -32602, and registering
+      a name twice replaces it silently.
+  - index: 2
+    slug: discovery_is_gated_on_the_version_it_exists_to_report
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove the protocol-version key and verify Invalid Params (`-32602`). Then send the well-formed but unsupported version `2025-11-25`, verify `-32022`, confirm `requested` echoes that revision, and choose from `supported`.
+    zh: |
+      拿掉協定版本那個鍵，驗證會拿到 Invalid Params（`-32602`）。接著送出格式正確但不受支援的版本 `2025-11-25`，驗證 `-32022`，確認 `requested` 原樣回送那個修訂版本，然後從 `supported` 裡挑一個。
+    verifies: >-
+      all three readings of "remove the key" return -32602 with three distinct messages --
+      params._meta is required, protocolVersion is required, protocolVersion must be a string --
+      and 2025-11-25 returns -32022 with data {"supported": ["2026-07-28"], "requested":
+      "2025-11-25"}; retrying with supported[0] is accepted. server/discover is not exempt: the
+      method that exists to report supported versions is refused with the same -32022 unless the
+      client already knows one, so for a client with no prior knowledge the error body is the
+      discovery mechanism. None of the three -32602 responses carries a data field,
+      SUPPORTED_VERSIONS has one entry so "choose from supported" is not a choice, and a
+      notification carrying the version 1999-01-01 is dropped without validation.
+  - index: 3
+    slug: the_draft_id_travels_in_the_arguments_and_the_protocol_never_sees_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a server-minted `draftId` to a create operation, then require it as an argument to update. Explain why that is application state rather than a protocol session.
+    zh: |
+      在一個建立操作裡加上由伺服器鑄造的 `draftId`，然後在更新時把它列為必要參數。說明為什麼那是應用狀態，而不是協定工作階段。
+    verifies: >-
+      create_draft mints draft-0001 and update_draft requires it, with the id on the wire in
+      exactly one place -- params.arguments.draftId -- minted and interpreted by the handler while
+      handle, _validate_metadata and _complete never read it. It is unscoped: a second MCPClient
+      with its own counter updates the first client's draft, and both clients send request id 1
+      first. There is nowhere to put a session: a request's _meta has three keys and a response's
+      one, MCPServer holds name, server_info and the three registries, and MCPClient exposes only
+      request, rebuilding the metadata every call. resources/read is cacheable unconditionally, so
+      a draft comes back with ttlMs 30000 and cacheScope private, and both a missing and an
+      unknown draftId arrive as -32603.
+  - index: 4
+    slug: the_destructive_hint_is_published_and_unenforced
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Return `input_required` from a tool that needs user confirmation. Retry the original call with a new ID, an `inputResponses` entry, and the exact `requestState` instead of inventing a server-to-client JSON-RPC request.
+    zh: |
+      讓一個需要使用者確認的工具回傳 `input_required`。用新的 ID、一筆 `inputResponses`，以及原封不動的 `requestState` 重試原本的呼叫，而不是自創一個伺服器到客戶端的 JSON-RPC 請求。
+    verifies: >-
+      delete_user behind a confirmation gate: the ask returns resultType input_required with one
+      inputRequests entry and a requestState and deletes nothing; the retry, with a fresh id, an
+      inputResponses entry and the same state, returns complete and deletes once. input_required
+      cannot come from a handler -- _complete writes resultType into every result and all six
+      methods answer complete, tools/call hardcodes isError False, and the handler's return value
+      is JSON-encoded into content[0].text -- so elicitation is a change to the result builder.
+      The server never validates the extra params, replaying the retry with the original id
+      deletes a second time, MCPClient has no channel for a reverse request, and tools/list
+      publishes destructiveHint True for a tool whose call path never reads tool.destructive.
+  - index: 5
+    slug: four_of_the_five_recognized_errors_are_standard_json_rpc
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sketch a dual-era stdio client. Treat a result or recognized modern error as modern, and permit fallback to `initialize` only for an unrecognized error or timeout.
+    zh: |
+      勾勒一個橫跨兩個時代的 stdio 客戶端。把結果或可辨識的現代錯誤視為現代，只在遇到無法辨識的錯誤或逾時時，才允許退回 `initialize`。
+    verifies: >-
+      the rule implemented as stated and run over seven probes: five classify modern (a result,
+      -32602, -32022, -32601, -32600) and two fall back (a notification, which draws no response,
+      and a hand-built -32000). Only two probes return a version and the first of them needs the
+      answer to ask the question, so server/discover at a deliberately wrong revision is the one
+      probe that settles the era and the version in one round trip. initialize answers -32601, a
+      recognized modern error, so probing with the legacy handshake detects a JSON-RPC server
+      rather than an old one. A notification is indistinguishable from a timeout. And four of the
+      five recognized codes are in the JSON-RPC 2.0 pre-defined block, so only -32022 is an era
+      signal.

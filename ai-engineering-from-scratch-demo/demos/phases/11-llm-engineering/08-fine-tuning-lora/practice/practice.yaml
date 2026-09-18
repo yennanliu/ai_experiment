@@ -1,0 +1,159 @@
+lesson: 08-fine-tuning-lora
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/08-fine-tuning-lora/docs/en.md
+exercises:
+  - index: 1
+    slug: the_task_is_random_labels_so_the_loss_never_halves
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Rank ablation study.** Run the demo with ranks 2, 4, 8, 16, 32, and 64. Plot final loss vs. rank. Find the point of diminishing returns where doubling the rank no longer halves the loss. For a simple classification task on 256-dim features, this should be around r=8-16.
+    zh: |
+      **秩的消融研究。** 用秩 2、4、8、16、32、64 各跑一次示範。畫出最終損失對秩的關係圖。找出報酬遞減的那一點 —— 秩加倍不再讓損失減半的地方。對 256 維特徵上的簡單分類任務，這應該在 r=8-16 附近。
+    verifies: >-
+      the demo is the lesson's own -- create_demo_model, create_demo_data, inject_lora on all three
+      linear layers, train_lora at its defaults -- with the seed fixed before each model so the six
+      runs differ only in rank, plus a held-out split, which is the only way to tell a rank effect
+      from a capacity effect. The loss never halves: final training loss for ranks 2 to 64 is 0.0855,
+      0.0759, 0.0612, 0.0579, 0.0578, 0.0612, the largest consecutive ratio is 1.24x against the 2.0x
+      the exercise looks for, and the curve turns up at the last doubling. The mechanism is that
+      create_demo_data draws x = torch.randn(n, d) and y = torch.randint(0, n_classes, (n,))
+      independently, so the targets' variance -- 0.0900 exactly -- is the MSE a constant 0.1
+      prediction scores and the floor for any model that has not memorised the sample. Every loss
+      below that is memorisation, and the held-out split says so: training loss falls to 0.0578 while
+      held-out stays between 0.1000 and 0.1062 at every rank and drifts upward rather than down. The
+      rank is really varying the trainable-parameter count, 4,628 to 148,096 against a
+      403,998-parameter total, 1.1% to 27.1% -- not a low-rank method any more at the top of the
+      sweep. With the targets set to a fixed random linear map of the inputs the loss falls
+      monotonically with rank and held-out follows it down
+    uses_reference:
+      - create_demo_model
+      - create_demo_data
+      - inject_lora
+      - train_lora
+      - count_parameters
+  - index: 2
+    slug: the_three_layers_differ_in_shape_not_in_role
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Target module comparison.** Modify inject_lora to target only layer "0", only layer "2", only layer "4", and all three. Train each variant for 20 epochs. Compare convergence speed and final loss. This mirrors the real decision of targeting q_proj vs v_proj vs all linear layers.
+    zh: |
+      **目標模組比較。** 修改 inject_lora，分別只針對層「0」、只針對層「2」、只針對層「4」，以及三層全上。每個變體訓練 20 個 epoch。比較收斂速度與最終損失。這對應到真實世界裡「該選 q_proj、v_proj 還是全部線性層」的決策。
+    verifies: >-
+      inject_lora already takes the target list, so the four variants are four calls and no
+      modification is needed; the seed is fixed before each model and a held-out split is added
+      because exercise 1 showed the training loss on this fixture measures memorisation. All three
+      wins and wins on parameters: final training loss after 20 epochs is 0.0542 for layer 0, 0.0619
+      for layer 2, 0.0879 for layer 4 and 0.0157 for all three, against trainable counts of 6,144,
+      8,192, 4,176 and 18,512 -- 2.3x the next best. The ranking is not stable in the parameter count
+      either: layer 0's 6,144 beats layer 2's 8,192, and layer 4 has the fewest because its output
+      dimension is 10. The analogy to q_proj against v_proj does not hold, because the three layers
+      are (256, 512), (512, 512) and (512, 10) -- different shapes and positions, none interchangeable
+      -- so the comparison measures where capacity was added. Convergence speed measured against each
+      run's own endpoint inverts the ranking: epochs to within 10% of the final loss are 16, 14, 2 and
+      19, so layer 4 'converges' fastest by never getting anywhere, while against the shared 0.09
+      threshold the epochs are 3, 2, 15, 2. And none of it survives held-out: 0.1039, 0.1049, 0.1010
+      and 0.1439, all above 0.09, with the best training arm the worst held-out one
+    uses_reference:
+      - inject_lora
+      - create_demo_model
+      - create_demo_data
+      - train_lora
+      - count_parameters
+  - index: 3
+    slug: the_function_named_nf4_is_a_fifteen_level_int4
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Quantization error analysis.** Take the trained model's weight matrices before and after quantize_to_nf4 / dequantize_from_nf4. Compute the mean squared error, max absolute error, and the correlation between original and reconstructed weights. Experiment with block_size values of 32, 64, 128, and 256.
+    zh: |
+      **量化誤差分析。** 拿訓練好的模型權重矩陣，在 quantize_to_nf4 / dequantize_from_nf4 前後各取一份。計算均方誤差、最大絕對誤差，以及原始與重建權重之間的相關係數。試試 block_size 為 32、64、128、256。
+    verifies: >-
+      the matrix analysed is the first frozen weight of a trained model, 512x256, with the seed fixed,
+      and all three statistics are computed over the whole matrix because the exercise asks for one
+      number each. The error is about 7% of the weight RMS and the block size is worth 4% of it: MSE
+      over block sizes 32, 64, 128 and 256 is 6.054e-06, 6.335e-06, 6.480e-06 and 6.559e-06, an 8.3%
+      spread for an 8x change, with relative RMS error 0.0682 to 0.0709 and correlation 0.9977
+      throughout, and the max absolute error identical to five decimal places at every block size. One
+      of the sixteen levels is unreachable: scales is max|block| / 7.0 while the quantiser clamps to
+      (-8, 7), so only the 15 codes -7..7 ever appear -- a 4-bit format used at 3.91 bits. And it is
+      not NF4: NF4 is a fixed 16-value codebook, so a dequantised tensor could hold 16 distinct
+      numbers, while this one holds 28,080 because every block carries its own scale. The block size
+      cannot matter here because nn.Linear's default initialisation is uniform and frozen, so every
+      block's max|x| comes from one distribution; interleaving runs of 32 elements at 100x makes the
+      fraction of small elements reconstructed as exactly 0.0 go from 0.069 at block 32 to 1.000 at
+      block 64 and 256
+    uses_reference:
+      - quantize_to_nf4
+      - dequantize_from_nf4
+      - create_demo_model
+      - create_demo_data
+      - inject_lora
+      - train_lora
+  - index: 4
+    slug: the_loader_reads_two_of_the_four_keys_it_saved
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Multi-adapter serving.** Train two LoRA adapters on different subsets of the data (even indices vs odd indices). Save both adapters. Load the base model once, then swap adapters and verify that each produces different outputs on the same input. This is how production systems serve multiple fine-tuned models from one base.
+    zh: |
+      **多適配器服務。** 在資料的不同子集上（偶數索引對奇數索引）訓練兩個 LoRA 適配器。把兩個都存下來。基座模型只載入一次，然後切換適配器，並驗證同樣的輸入會得到不同的輸出。這就是生產系統怎麼用一個基座服務多個微調模型。
+    verifies: >-
+      the two subsets are [0::2] and [1::2] of the lesson's own demo data, both adapters train from
+      the same seeded initialisation so only the data differs, and the swap goes through
+      save_lora_adapter and load_lora_adapter unmodified. It works: the two adapters produce outputs
+      differing by up to 0.5044 on the same input and every frozen parameter is bit-identical before
+      and after both loads. But save_lora_adapter writes four keys per layer -- A, B, rank, alpha --
+      and load_lora_adapter reads two, so the scaling that governs the adapter's magnitude is taken
+      from the host and not from the file. Loading a rank-4 adapter into a rank-8 host therefore
+      succeeds and is wrong: module.A.data = state[key] rebinds the tensor, so A goes (256, 8) ->
+      (256, 4) with no error while self.rank stays 8 and self.scaling stays 2.0 where the adapter was
+      trained at 4.0, and the adapter then differs from itself in a correctly sized host by up to
+      0.2067. LoRALayer.__init__ captures scaling once and forward multiplies by it, so nothing
+      re-derives it from A.shape[1]. Restoring rank and alpha from the state the saver already wrote,
+      and recomputing scaling, makes the mismatched load bit-identical: max difference 0.0
+    uses_reference:
+      - save_lora_adapter
+      - load_lora_adapter
+      - LoRALayer
+      - inject_lora
+      - create_demo_model
+      - create_demo_data
+      - train_lora
+  - index: 5
+    slug: the_merge_is_fifty_percent_faster_for_five_percent_fewer_macs
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Merge vs. unmerged inference.** Compare the output of the LoRA model before and after merge_lora_weights on the same 100 inputs. Verify the outputs are identical (within floating-point tolerance of 1e-5). Then benchmark inference speed for both -- merged should be slightly faster since it's a single matrix multiply instead of two.
+    zh: |
+      **併入對未併入的推論。** 對同樣 100 筆輸入，比較 merge_lora_weights 前後 LoRA 模型的輸出。驗證輸出一致（在 1e-5 的浮點容差內）。然後為兩者做推論速度基準測試 —— 併入後應該稍快一些，因為它是一次矩陣乘法而不是兩次。
+    verifies: >-
+      the 100 inputs are one seeded batch, the model is trained first because an unmerged adapter at
+      initialisation has B = 0 and merging it is a no-op, and speed is measured twice: as wall clock,
+      which is what a benchmark reports, and as multiply-accumulates and tensor operations, which are
+      what a benchmark is a proxy for. The outputs agree to 5.4e-07 against a 1e-5 tolerance, so the
+      merge is exact up to float32 rounding on a 512-wide accumulation. Merged inference is about 1.5x
+      faster and it is not the arithmetic: the unmerged model does 416,848 multiply-accumulates per
+      sample against 398,336, only 4.6% more, so a 4.6% arithmetic saving cannot buy a 50% speedup --
+      the per-operation dispatch does. The tensor operations drop from 9 to 3, because each of the
+      three LinearWithLoRA layers runs one nn.Linear plus the two matmuls inside LoRALayer.forward, so
+      the exercise's 'a single matrix multiply instead of two' undercounts by one. The overhead is
+      concentrated in the narrowest layer: the adapter's MACs are 4.7%, 3.1% and 81.6% of the layers
+      they adapt, because the adapter's cost depends on the rank and not on the output width. And
+      merging is not reversible -- it writes into linear.weight.data in place and replaces the
+      wrapper, leaving 0 adapters -- so speed and the swapability exercise 4 needs are exclusive
+    uses_reference:
+      - merge_lora_weights
+      - LinearWithLoRA
+      - LoRALayer
+      - inject_lora
+      - create_demo_model
+      - create_demo_data
+      - train_lora

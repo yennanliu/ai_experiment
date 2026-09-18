@@ -1,0 +1,99 @@
+lesson: 12-guardrails
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/12-guardrails/docs/en.md
+exercises:
+  - index: 1
+    slug: it_blocks_half_the_benign_prompts_and_a_third_of_the_unsafe_ones
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a LlamaGuard-style classifier.** Create a keyword + regex classifier that maps inputs and outputs to 13 safety categories (from the MLCommons AI Safety taxonomy: violent crimes, non-violent crimes, sex-related crimes, child sexual exploitation, specialized advice, privacy, intellectual property, indiscriminate weapons, hate, suicide, sexual content, elections, code interpreter abuse). Return the category code and confidence. Test on 50 hand-written prompts and measure precision/recall.
+    zh: |
+      **做一個 LlamaGuard 風格的分類器。** 建一個關鍵字 + 正規表達式分類器，把輸入與輸出映射到 13 個安全類別（取自 MLCommons AI Safety 分類法：暴力犯罪、非暴力犯罪、性相關犯罪、兒童性剝削、專業建議、隱私、智慧財產、無差別武器、仇恨、自殺、性內容、選舉、程式碼解譯器濫用）。回傳類別代碼與信心值。在 50 個手寫提示詞上測試，量測 precision/recall。
+    verifies: >-
+      the 13 MLCommons codes built as a keyword-plus-regex classifier and tested on 50
+      hand-written prompts -- 26 unsafe, two per code, and 24 written in developer English,
+      because that is the traffic a guardrail in front of a coding assistant sees. The new
+      classifier reaches macro precision 0.949 and macro recall 1.000; the lesson's own
+      classify_topic blocks 12 of the 24 benign prompts and 8 of the 26 unsafe ones, 50% against
+      31%, because `kw in text_lower` matches "shoot" inside "troubleshoot" and "hack" inside
+      "hackathon". TOPIC_KEYWORDS ships 5 categories against the taxonomy's 13 and only 6 of the
+      13 see any hit at all, and the lesson's confidence takes exactly two values over the 50, 0.0
+      and 0.75, so with `passed = confidence < 0.75` the field restates "any keyword matched".
+  - index: 2
+    slug: the_evasion_signal_sits_five_hundredths_below_its_own_threshold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement the encoding evasion detector.** Attackers encode injection attempts in base64, ROT13, hex, leetspeak, Unicode zero-width characters, and morse code. Build a detector that decodes each encoding and runs injection detection on the decoded text. Test with 20 encoded versions of "ignore previous instructions."
+    zh: |
+      **實作編碼規避偵測器。** 攻擊者會把注入嘗試編碼成 base64、ROT13、十六進位、火星文、Unicode 零寬字元與摩斯電碼。做一個偵測器，把每種編碼解開，再對解開後的文字跑注入偵測。用「ignore previous instructions」的 20 種編碼版本測試。
+    verifies: >-
+      20 encodings of the payload across the six schemes the exercise names, each decoded and
+      re-run through the lesson's own detect_injection. Unaided it blocks 0 of the 20 and notices
+      4, while the plain payload blocks at 0.95: the encoding_evasion detection is appended at
+      confidence 0.70 and the function returns `passed = max_confidence < 0.75`, so a detection
+      that fires can never block. The four it notices are noticed for naming their own encoding --
+      the checks are count("base64"), "rot13", "hex:" and a zero-width class -- and raw base64 of
+      the payload scores 0.0. Five decoders and no new pattern reach 19 of 20, and a second decode
+      round reaches 20, the survivor being base64 applied twice. Ten benign prompts, including
+      "base64 this greeting" and a hex string, flag 0 times.
+  - index: 3
+    slug: the_fixed_window_the_exercise_forbids_scores_the_same_on_its_test
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add rate limiting with sliding window.** Implement a per-user rate limiter that allows 10 requests per minute using a sliding window (not fixed window). Track the timestamp of each request. Block requests that exceed the limit and return a retry-after header. Test with a burst of 15 requests in 30 seconds.
+    zh: |
+      **加上滑動視窗的速率限制。** 用滑動視窗（不是固定視窗）實作每使用者每分鐘 10 次請求的速率限制器。追蹤每次請求的時間戳。超限的請求要擋下，並回傳 retry-after 標頭。用 30 秒內 15 次請求的突發來測試。
+    verifies: >-
+      the sliding window built as specified over an injected clock: 15 requests two seconds apart
+      against 10 per minute give 10 allowed, 5 blocked and retry-after 40, 38, 36, 34, 32 seconds.
+      The fixed window the exercise says not to build returns the same numbers to the tenth of a
+      second on the same burst, because a burst from t=0 to t=28 never crosses a minute boundary
+      and a boundary is the only place the two disagree. Moved to start at t=45 the fixed window
+      allows all 15, and ten timestamps at 59.9 with ten at 60.0 allow 20 inside 0.1 seconds.
+      Neither number can be reported: process(self, user_input, model_fn=None) takes no user id,
+      and GuardrailResult has no field for a header.
+  - index: 4
+    slug: at_twenty_percent_it_catches_one_of_six_and_at_ninety_five_all_six
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a hallucination detector for RAG.** Given a source document and a model response, check that every factual claim in the response can be traced to the source. Use sentence-level comparison: split both into sentences, compute word overlap between each response sentence and all source sentences, flag any response sentence with <20% overlap as potentially hallucinated. Test on 10 response/source pairs.
+    zh: |
+      **為 RAG 做一個幻覺偵測器。** 給定來源文件與模型回應，檢查回應裡每一個事實主張都能追溯到來源。用句子層級比對：把兩邊都切成句子，計算每個回應句與所有來源句之間的詞重疊，把重疊低於 20% 的回應句標記為可能幻覺。在 10 組回應／來源配對上測試。
+    verifies: >-
+      the detector built exactly as written -- sentence split, best word overlap against any
+      source sentence, flag below 0.20 -- over 10 pairs carrying 15 response sentences, 9
+      supported and 6 hallucinated by one changed digit or word. At 0.20 it flags 1 of the 6 and 0
+      of the 9; the one it catches is the only one that changes the subject. "2.4 million" for
+      "4.2 million" scores 0.857 and "100 requests" for "1000" scores 0.917. Dropping 29 stop
+      words changes nothing. Supported sentences score exactly 1.000, so 0.95 catches 6 of 6 with
+      no false positives -- and flags all three faithful paraphrases, which score 0.500, 0.364 and
+      0.429. check_relevance is the same computation and fails the same 1 of 10 pairs; comparing
+      digit strings catches 2 of the 6 for one regex.
+  - index: 5
+    slug: four_input_guardrails_and_one_of_them_carries_the_suite
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement a full red-team suite.** Create 100 attack prompts across 5 categories: direct injection (20), indirect injection (20), jailbreak (20), PII extraction (20), and prompt extraction (20). Run all 100 through your guardrail pipeline. Measure per-category detection rates. Identify which category has the lowest detection rate and write 3 additional rules to improve it.
+    zh: |
+      **實作完整的紅隊測試組。** 做 100 個攻擊提示詞，分成 5 類：直接注入（20）、間接注入（20）、越獄（20）、個資抽取（20）、提示詞抽取（20）。把 100 個全部跑過你的護欄管線。量測各類別的偵測率。找出偵測率最低的那一類，並多寫 3 條規則來改善它。
+    verifies: >-
+      100 attacks in five categories of 20 through the lesson's own GuardrailPipeline, unmodified,
+      scored as per-category recall with an attack counting as detected if any rule fires.
+      Baseline: direct injection 1.00, indirect 0.65, jailbreak 0.60, prompt extraction 0.40, PII
+      extraction 0.20 -- the strictly lowest is unique, and all four of its catches are detect_pii
+      firing on a sample email, phone number, SSN or card the attacker supplied, so against the 16
+      that only ask no guardrail fires at all. Exactly 3 new registry entries matching the request
+      shape take PII extraction 0.20 -> 0.90, +0.70 absolute, with no other category falling and
+      no new false positive on the benign control. detect_injection accounts for 53 of the 57
+      baseline blocks and the five remaining guardrails fire 0 times, while the pipeline blocks 4
+      of 10 ordinary questions.

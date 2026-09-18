@@ -1,0 +1,152 @@
+lesson: 02-few-shot-cot
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/02-few-shot-cot/docs/en.md
+exercises:
+  - index: 1
+    slug: the_grader_marks_the_lessons_own_answers_wrong
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Measure the gap**: Take 10 GSM8K problems. Solve each with zero-shot, few-shot, zero-shot CoT, and few-shot CoT. Record accuracy for each. Which technique gives the biggest lift on your model?
+    zh: |
+      **量測落差**：拿 10 道 GSM8K 題目。分別用零樣本、少樣本、零樣本 CoT 與少樣本 CoT 各解一次。記下每種的正確率。哪個技術在你的模型上提升最多？
+    verifies: >-
+      no key is available, so the gap between the four techniques is not measured; the instrument that
+      would measure it is, and it is the same extract_answer plus str(answer) == str(expected) that
+      run_comparison applies to all four arms. It fails 5 of the 5 reference answers the lesson writes
+      into its own prompts: build_cot_prompt emits 'A: {reasoning} The answer is {answer}.' and
+      feeding that exact line back gives '18.', '3.', '70000.', '624.', '5.' against '18', '3',
+      '70000', '624', '5'. The mechanism is that ([\d,]+\.?\d*) makes the decimal point optional and
+      the digits after it optional too, so the group matches the number and then swallows the
+      sentence-final full stop -- while every system prompt in the lesson orders 'End with: The answer
+      is [number]'. The damage is technique-specific: over 16 labelled reply shapes the grader gets 8
+      right, all six few-shot-CoT shapes fail and all six zero-shot shapes pass, and re.search returns
+      the first match so 'Initially the answer is 60, but the answer is 72' grades as 60 --
+      self-correction being what CoT produces. Separately, GSM8K_EXAMPLES[3]['question'] is
+      TEST_QUESTIONS[4]['question'] verbatim with its answer, outside the default examples[:3] slice
+      and inside it at num_examples >= 4. The control is two edits -- ([\d,]+(?:\.\d+)?) and the last
+      match rather than the first -- which score the exemplars 5 of 5, the corpus 16 of 16 and the
+      self-corrector 72
+    uses_reference:
+      - extract_answer
+      - build_cot_prompt
+      - GSM8K_EXAMPLES
+      - TEST_QUESTIONS
+  - index: 2
+    slug: the_pool_is_five_and_quality_selection_retrieves_the_test
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Example selection experiment**: For the same 10 problems, compare random example selection vs hand-picked similar examples. Measure accuracy difference. At what point does example quality matter more than example quantity?
+    zh: |
+      **範例挑選實驗**：對同樣 10 道題，比較隨機挑範例與手工挑選相似範例。量測正確率差異。從哪個點開始，範例的品質比數量更重要？
+    verifies: >-
+      accuracy needs a key, so what is measured is what decides it: which examples each arm puts in
+      the prompt and what that costs. Both arms go through the lesson's own build_cot_prompt and
+      'hand-picked similar' is made mechanical as Jaccard over shared operation words between the test
+      question and the exemplar question. There is no selection hook -- build_cot_prompt takes
+      examples[:num_examples], a slice and not a choice, so the rendered prompt is exactly the first
+      three exemplars and every strategy is a reordering of the pool. The pool is five and one is
+      broken: exemplar #5's reasoning is 1,356 characters against a mean of 179 for the other four,
+      with 5 backtracking markers and 2 question marks against 0 everywhere else, and it is the only
+      one that models the visible self-correction extract_answer mis-parses. Random selection draws it
+      in 6 of the 10 three-subsets, and those prompts average 2,566 characters against 1,098, a factor
+      of 2.34 for the same three slots. Hand-picking well retrieves the test question itself:
+      TEST_QUESTIONS[4] scores similarity 1.0 because its nearest exemplar is itself with the answer
+      attached, and TEST_QUESTIONS[1] scores 0.0 against all five, so the quality arm either leaks or
+      abstains. Quantity saturates at 5 and prompt length by k is 460, 699, 1,132, 1,462, 3,293
+      characters: k=4 admits the duplicate and k=5 costs +125% for the one broken exemplar, so above
+      k=3 there is no count at which more is better, which is a fact about this pool and not about the
+      method
+    uses_reference:
+      - build_cot_prompt
+      - GSM8K_EXAMPLES
+      - TEST_QUESTIONS
+  - index: 3
+    slug: the_cost_is_a_straight_line_and_the_vote_splits_on_a_full_stop
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Self-consistency cost curve**: Run self-consistency with N=1, 3, 5, 7, 10 on 20 GSM8K problems. Plot accuracy vs cost (total tokens). Where is the knee of the curve for your model?
+    zh: |
+      **自我一致性的成本曲線**：對 20 道 GSM8K 題目跑 N=1、3、5、7、10 的自我一致性。畫出正確率對成本（總詞元數）的曲線。你的模型的曲線膝點在哪裡？
+    verifies: >-
+      cost is measurable exactly and accuracy is not, so cost is measured exactly with cl100k_base
+      over the prompt build_cot_prompt renders, times the samples self_consistency_solve draws, and
+      the vote logic is exercised end to end through a scripted client -- the seam the lesson already
+      has, since every solver takes client as a parameter. There is no knee: the prompt is rebuilt and
+      re-sent whole with no shared prefix, so totals at N = 1, 3, 5, 7, 10 are 482, 1446, 2410, 3374
+      and 4820 tokens, exactly 482 per sample at every N, and any knee in the exercise's plot comes
+      from the accuracy axis alone. The prompt is 447 tokens against a 35-token completion, 92.7% of
+      every call, paid N times -- and the lesson ships 5 test questions, not the 20 asked for.
+      Self-consistency then splits its own vote on a full stop: ten samples that all say 72, five
+      ending the sentence, vote {'72.': 5, '72': 5} at confidence 0.50, and Counter.most_common(1) is
+      insertion-ordered so the answer is sample 1's spelling. Confidence is computed over parsed
+      answers rather than samples, so eight replies that parse to None and two that agree give
+      confidence 1.00 from 2 votes -- and solve_with_escalation escalates only below 0.80, so it skips
+      Tree-of-Thought on the collapsed run and fires it on the unanimous one
+    uses_reference:
+      - build_cot_prompt
+      - self_consistency_solve
+      - GSM8K_EXAMPLES
+      - TEST_QUESTIONS
+  - index: 4
+    slug: the_answer_line_is_checked_before_the_action_line
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **Build a ReAct loop**: Extend the pipeline with a calculator tool. When the model generates a math expression, execute it with Python's `eval()` (in a sandbox) and feed the result back. Measure if tool-grounded reasoning outperforms pure CoT.
+    zh: |
+      **做一個 ReAct 迴圈**：為管線加上一個計算器工具。當模型生成數學表達式時，用 Python 的 `eval()`（放在沙箱裡）執行它，再把結果餵回去。量測以工具為依據的推理是否勝過純 CoT。
+    verifies: >-
+      react_solve already is the loop the exercise asks for -- calculator, eval, observation fed back
+      -- so the exercise is read as an audit of the shipped loop, driven through the client parameter
+      with four scripted replies, one per branch. The tool never fires for a model that also states
+      its answer: the loop tests Answer: before Action: and returns on the first hit, so a reply
+      holding a Thought, an Action and an Answer ends in 1 call with 0 observations, and the arm
+      labelled tool-grounded ran pure chain-of-thought. When the tool does fire it hands back a float,
+      eval('48 + 48/2') being 72.0 under true division, so the observation reads 'Observation: 72.0'
+      and the run answers '72.' -- either spelling graded wrong against '72' by Exercise 1's
+      comparison. The parenthesised sandbox is not one: under eval(expr, {'__builtins__': {}}, {})
+      verbatim, ().__class__.__mro__[1].__subclasses__() evaluates to roughly 600 classes and 9**9**9
+      parses as a valid BinOp the guard has no view of, because the guard removes names and not
+      capability. A turn with neither Action nor Answer appends nothing to the conversation, so the
+      loop re-sends the same messages for all 5 steps and the fallback then returns '3', the last
+      number in the words 'the 3 parts of this'. And the three exits are indistinguishable from the
+      return value: all return (str, str), and the tool-grounded trace is the final assistant turn,
+      which holds no observation
+    uses_reference:
+      - react_solve
+      - extract_answer
+  - index: 5
+    slug: the_beam_discards_its_best_node_and_returns_a_number
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      **ToT for creative tasks**: Adapt the Tree-of-Thought solver for a creative writing task: "Write a 6-word story that is both funny and sad." Use the LLM as evaluator. Does branching exploration produce better creative outputs than single-shot generation?
+    zh: |
+      **把 ToT 用在創意任務上**：把思維樹解題器改用在一個創意寫作任務上：「Write a 6-word story that is both funny and sad.」用 LLM 當評估者。分支式探索產出的創意輸出，會比單次生成更好嗎？
+    verifies: >-
+      the adaptation is a prompt swap, so it is done as one: tree_of_thought_solve driven through the
+      client parameter with a scripted generator returning six-word stories and a scripted evaluator
+      standing in for 'use the LLM as evaluator'. The adapted solver returns a number or the empty
+      string, because it ends with extract_answer(best_thought): the three stories come back as ['',
+      None, ''] -- the [\d,]+ class matches the comma in the prose -- and a story with digits as
+      '1947.'. '' is not None, so Exercise 3's vote counts it as an answer, and the story survives
+      only in the discarded second return value. The search replaces its frontier rather than
+      extending it: with an evaluator scoring the three initial stories 0.95 and every continuation
+      0.40, the function returns a 0.40 continuation, because scored = sorted(next_thoughts, ...)
+      keeps only the children and the beam carries no incumbent. The evaluator's parser reads the
+      first number and clamps up, measuring [0.9, 0.9, 0.4, 1.0, 1.0, 0.5] against an intended [0.9,
+      0.9, 0.4, 0.9, 0.8, 0.5] over six labelled replies, so 'Approach #2. Score: 0.9' reads as 2.0
+      and 'Score: 8/10' as 8.0 and both land on the maximum. A reply with no number scores 0.5, every
+      thought ties, sorted is stable and the lineage returned is the first generated. All of which
+      costs 30 calls -- 3 generations, 15 evaluations, 12 extensions -- against 1 for single-shot
+    uses_reference:
+      - tree_of_thought_solve
+      - extract_answer

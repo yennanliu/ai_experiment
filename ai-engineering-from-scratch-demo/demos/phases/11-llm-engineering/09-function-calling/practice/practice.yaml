@@ -1,0 +1,154 @@
+lesson: 09-function-calling
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/09-function-calling/docs/en.md
+exercises:
+  - index: 1
+    slug: the_sixth_tool_is_registered_and_unreachable
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add a 6th tool: database query.** Implement a simulated SQL tool with an in-memory table. The tool accepts a table name and filter conditions (not raw SQL). Validate that the table name is in an allowlist and that filter operators are restricted to `=`, `>`, `<`, `>=`, `<=`. Return matching rows as JSON.
+    zh: |
+      **加上第 6 個工具：資料庫查詢。** 用一張記憶體內的表實作一個模擬 SQL 工具。這個工具接受資料表名稱與過濾條件（而不是原始 SQL）。驗證表名在白名單裡，且過濾運算子限定為 `=`、`>`、`<`、`>=`、`<=`。把符合的列以 JSON 回傳。
+    verifies: >-
+      the tool is registered through the lesson's own register_tool with a JSON-Schema definition like
+      the other five, and both allowlists are enforced inside the function body, which is where they
+      have to live. It works and nothing can call it: TOOL_REGISTRY goes 5 -> 6 and query_db answers
+      correctly, but 0 of 8 database-shaped queries route to it, because simulate_model_decision is a
+      fixed if-chain over five keyword branches with a return [] fallback. The validation has to live
+      in the function because the execution path never validates -- validate_tool_arguments is called
+      once in the whole module, inside run_demo, while execute_tool_call runs func(**args) directly.
+      And the schema expresses one allowlist and not the other: of six invalid payloads the validator
+      catches the two bad table names via enum and passes the four filter problems, since filters: []
+      and filters: [{'anything': 1}] are both arrays to it, while the body rejects all six with codes
+      FILTER, OPERATOR and TABLE. run_function_calling_loop rebuilds tool_definitions from the
+      registry on every call, so all six definitions reach a decision function that never reads its
+      tools parameter. One ('table', 'query', 'rows', 'where') branch at the front of the chain routes
+      8 of 8
+    uses_reference:
+      - register_tool
+      - register_all_tools
+      - TOOL_REGISTRY
+      - simulate_model_decision
+      - validate_tool_arguments
+      - execute_tool_call
+  - index: 2
+    slug: no_query_can_make_any_tool_return_an_error
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement retry with error feedback.** When a tool call fails (e.g., city not found), feed the error message back to the model decision function and let it correct its arguments. Track how many retries each call takes. Set a maximum of 3 retries per tool call.
+    zh: |
+      **實作帶錯誤回饋的重試。** 當工具呼叫失敗時（例如找不到城市），把錯誤訊息餵回模型決策函數，讓它修正引數。追蹤每次呼叫花了幾次重試。每個工具呼叫最多重試 3 次。
+    verifies: >-
+      the retry loop is built exactly as specified -- catch the error, append it to the history, ask
+      the decision function again, up to 3 retries -- and run over labelled queries so the error rate
+      is measured rather than assumed. There is nothing to retry: 15 queries produce 14 tool calls and
+      0 of them return an error, so the exercise's own example, city not found, cannot occur. The
+      weather branch cannot emit a city outside the database -- it scans WEATHER_DB for a substring,
+      then the words for a capitalised match, then falls back to ['tokyo'] -- so 'the weather in
+      Atlantis' and 'the weather in paris' both return Tokyo's weather with no error. Every other
+      branch has the same shape: read_file falls back to README.md which exists, the calculator to
+      expression '0' which evaluates, web_search returns {'results': [], 'total': 0} rather than an
+      error, and run_code sends a fixed literal. The retry could not use the feedback anyway:
+      simulate_model_decision mentions conversation_history once, in its own signature, and calling it
+      again with the error appended returns byte-identical calls on all 15 queries. Called directly
+      with bad arguments the tools return structured errors -- CITY_NOT_FOUND, NOT_FOUND, FORBIDDEN,
+      SECURITY_VIOLATION and a division-by-zero message -- so every piece the exercise needs exists
+      except a decision function that reads its third argument
+    uses_reference:
+      - simulate_model_decision
+      - execute_tool_call
+      - WEATHER_DB
+      - register_all_tools
+  - index: 3
+    slug: the_loop_ends_its_body_with_an_unconditional_break
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a multi-step agent.** Some queries require chaining tool calls: "Read the config file and tell me what model is configured, then search the web for that model's pricing." Implement a loop that runs until the model decides no more tools are needed, passing accumulated results into each decision step. Limit to 10 iterations to prevent infinite loops.
+    zh: |
+      **做一個多步驟代理。** 有些查詢需要串接工具呼叫：「Read the config file and tell me what model is configured, then search the web for that model's pricing.」實作一個迴圈，一直跑到模型判定不再需要工具為止，並把累積的結果帶進每一次決策。上限 10 輪以防無窮迴圈。
+    verifies: >-
+      the loop already exists as run_function_calling_loop(user_message, max_iterations=5), so the
+      exercise is read as make it iterate, and the chaining query is the exercise's own. The shipped
+      loop cannot iterate: its body ends with an unconditional break, so max_iterations is dead and
+      iterations is 1 for any query that produces a call and 0 for any that does not, never 2.
+      Removing the break does not help, because the decision is re-asked with user_message rather than
+      the conversation. The exercise's chaining query routes to one tool and the wrong one: it hits
+      the search/find branch before read/file, calls web_search with the whole sentence, gets 0
+      results, and never reads the config file. A working chain needs one decision per clause plus the
+      result -- splitting on 'then' and substituting the previous result gives read_file on
+      data/config.json, yielding model 'gpt-4o', then web_search for it. With the break removed and
+      the decision unchanged the loop runs the full 10-iteration cap on every query that produces a
+      call, so the limit is load-bearing rather than a safety margin. And 'iterations' reads the for
+      index, which the break pins at 0, so the field takes two values and cannot distinguish a
+      one-step answer from a ten-step one
+    uses_reference:
+      - run_function_calling_loop
+      - simulate_model_decision
+      - execute_tool_call
+      - register_all_tools
+  - index: 4
+    slug: the_if_chain_order_is_the_whole_classifier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Measure tool selection accuracy.** Create 30 test queries with expected tool names. Run your decision function on all 30 and measure what percentage of the time it selects the correct tool. Identify which queries cause the most confusion between tools.
+    zh: |
+      **量測工具挑選正確率。** 做 30 個帶預期工具名稱的測試查詢。把決策函數在全部 30 個上跑一遍，量測它挑對工具的比例。找出哪些查詢最容易讓工具之間混淆。
+    verifies: >-
+      the 30 queries are labelled with the tool that should answer them, including seven that should
+      select none, because return [] is a reachable outcome and a classifier that cannot decline is
+      not measurable; accuracy is exact match on the first selected tool. The answer is 25 of 30,
+      83.3%, and all five failures have one cause: the if-chain returns on the first branch whose
+      keyword appears anywhere in the message. The (expected, selected) tally is two web_search
+      queries to get_weather because the weather branch is first, two decline queries to calculator
+      because 'what is' and 'how much' are its keywords, and 'find the config file' to web_search
+      because search is tested before read. The calculator cannot decline: its branch ends with
+      expression '0', so 'what is the capital of France' produces a tool call that returns 0.0
+      successfully. There are 21 keywords across five branches and no scoring, and 5 of the 7 decline
+      queries decline. Requiring a branch to bind an argument before it fires -- a city in WEATHER_DB,
+      an arithmetic expression, a known path, a SEARCH_DB key -- takes accuracy to 30 of 30 with the
+      same keywords in the same order, once the path matcher is made case-insensitive, since the
+      lesson compares 'README' against a lowercased message
+    uses_reference:
+      - simulate_model_decision
+      - execute_tool_call
+      - WEATHER_DB
+      - FILE_SYSTEM
+      - SEARCH_DB
+      - register_all_tools
+  - index: 5
+    slug: the_key_the_exercise_specifies_cannot_hold_the_tool_it_asks_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement tool call caching.** If the same tool is called with identical arguments within 60 seconds, return the cached result instead of re-executing. Use a dictionary keyed by `(tool_name, frozenset(args.items()))`. Measure cache hit rates across a conversation with 20 queries.
+    zh: |
+      **實作工具呼叫快取。** 如果同一個工具在 60 秒內被以完全相同的引數呼叫，就回傳快取結果而不重新執行。用一個以 `(tool_name, frozenset(args.items()))` 為鍵的字典。在一段 20 次查詢的對話裡量測快取命中率。
+    verifies: >-
+      the key is the one the exercise specifies verbatim, the 20 queries run through
+      simulate_model_decision so the workload is the lesson's own, and the 60-second window is
+      exercised by injecting a clock rather than by sleeping. The result is 5 hits in 20 calls, 25%,
+      over 15 distinct keys -- and the hit rate measures the decision function, since 2 of the 5 hits
+      are the Tokyo fallback and the rest are the README.md fallback and the fixed run_code literal,
+      every one a query the router collapsed onto an argument it had already produced. The specified
+      key also raises on the tool exercise 1 asks you to build: frozenset(args.items()) needs hashable
+      values, and a database tool takes filter conditions, which are lists, so frozenset over
+      {'table': 'users', 'filters': [['age', '>', 30]]} raises TypeError. The window is never tested
+      by its own fixture -- all 20 queries run in under a second -- and driving the same conversation
+      through an injected clock at +61s per query takes the hits 5 -> 0. The key cannot tell which
+      tools are safe to cache either: reading README.md, mutating FILE_SYSTEM and reading again
+      returns the stale content. json.dumps(args, sort_keys=True) gives the same 5 hits over the same
+      15 keys and additionally keys the database tool
+    uses_reference:
+      - simulate_model_decision
+      - execute_tool_call
+      - FILE_SYSTEM
+      - register_all_tools

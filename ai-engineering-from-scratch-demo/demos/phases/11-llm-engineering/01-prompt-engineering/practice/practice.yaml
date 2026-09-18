@@ -1,0 +1,166 @@
+lesson: 01-prompt-engineering
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/01-prompt-engineering/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tie_is_exact_and_the_winner_is_dict_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take the 5 test cases in `TEST_SUITE` and add 5 more that cover the remaining patterns (meta-prompt, decomposition, critique, audience adaptation, boundary). Run the full suite and identify which pattern produces the most consistent scores across models.
+    zh: |
+      拿 `TEST_SUITE` 裡的 5 個測試案例，再補 5 個涵蓋其餘模式（元提示詞、分解、批評、讀者適配、邊界）的案例。跑完整套，找出哪個模式跨模型的分數最穩定。
+    verifies: >-
+      the 5 new cases cover meta_prompt, decomposition, critique, audience_adapt and boundary in the
+      lesson's own criteria vocabulary, and 'most consistent across models' is read as the population
+      stdev of composite_score over the three models in MODEL_CONFIGS. All ten patterns tie at a
+      spread of exactly 0.000, so the question has ten joint winners and cannot select a pattern. The
+      mechanism is that simulate_llm_call never reads the prompt: its reply is a fixed per-model
+      sentence plus md5(request)[:8], so two prompts of one model differ inside an 8-character window
+      of 139, and those 8 are hex, which no task keyword can be spelled in -- keyword_coverage is 0.0
+      on all ten tests. The composite is therefore a function of the criteria dict alone, (1 if
+      words<=max_words) + coverage + (1 if no forbidden) + (1 if format_valid) over the number of
+      criteria keys, and the ten scores predicted from the criteria with no model involved equal the
+      ten measured by running the suite. The lesson's 'gpt-4o: 5 wins out of 5' summary is
+      MODEL_CONFIGS insertion order: compare_models sorts equal scores and sorted is stable, so
+      passing the same three models in reverse ranks gemini-1.5-pro first on every test with all
+      thirty scores unchanged. The control is that a stub replying with the rendered prompt truncated
+      to a per-model word budget breaks the tie, spreads running to 0.157 and widest on boundary, so
+      what is flat is the simulator and not the test design
+    uses_reference:
+      - TEST_SUITE
+      - build_prompt
+      - run_prompt_test
+      - compare_models
+      - simulate_llm_call
+      - MODEL_CONFIGS
+  - index: 2
+    slug: the_swap_does_not_compile_for_the_second_provider
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace `simulate_llm_call` with real API calls to at least two providers (OpenAI and Anthropic free tiers work). Run the same prompt across both and measure: response length, format compliance, keyword coverage, and latency. Document which model follows instructions more precisely.
+    zh: |
+      把 `simulate_llm_call` 換成至少兩家供應商的真實 API 呼叫（OpenAI 和 Anthropic 的免費額度就夠）。同一個提示詞在兩邊都跑，並量測：回應長度、格式遵循度、關鍵字覆蓋率與延遲。記錄下哪個模型更精確地遵循指令。
+    verifies: >-
+      no provider key is available here, so the half that runs is run: live_call is the drop-in
+      replacement and carries simulate_llm_call's signature exactly, and whether the lesson's payloads
+      are sendable is decided against the installed SDKs rather than guessed. format_openai_request
+      emits 4 keys and openai's chat.completions.create accepts all 4. format_anthropic_request emits
+      5 and temperature is not one of the 22 parameters of anthropic's messages.create, so the
+      recommended temperature every one of the 10 PROMPT_PATTERNS rows carries -- 4 distinct values --
+      is unsendable to the second provider the exercise names. format_google_request emits contents
+      and generationConfig, which belong to neither SDK, plus model, which is a URL path segment of
+      generateContent and not a body field. Of the four metrics, latency is measured and discarded:
+      run_prompt_test times the call into wall_time_ms and compare_models reports api_latency_ms, the
+      number the callee supplied. Format compliance runs json.loads over the whole reply, so null, 42,
+      "positive" and [] score 1.0 while a fenced or preambled object scores 0.0 -- 6 of 12 labelled
+      reply shapes classified wrongly. Keyword coverage is a case-folded substring test, scoring 1.0
+      for ['API','key'] on text containing neither word. And 'more precisely' is not comparable:
+      length is str.split(), so a 1,079-character minified JSON reply is one word and clears max_words
+      200, while the composite divides by however many criteria keys a test set, 3, 2, 2, 1, 2 across
+      the lesson's own five
+    uses_reference:
+      - simulate_llm_call
+      - FORMATTERS
+      - MODEL_CONFIGS
+      - score_response
+      - compare_models
+      - run_prompt_test
+      - PROMPT_PATTERNS
+  - index: 3
+    slug: the_rules_ride_in_the_user_turn
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a prompt injection test suite. Write 10 adversarial user inputs that attempt to override the system prompt (e.g., "Ignore previous instructions and..."). Test each against the guardrail pattern. Measure how many succeed and propose mitigations for those that do.
+    zh: |
+      建一套提示詞注入測試組。寫 10 個試圖蓋掉系統提示詞的對抗性使用者輸入（例如「Ignore previous instructions and...」）。每一個都拿去打護欄模式。量測有幾個成功，並為成功的那些提出緩解方案。
+    verifies: >-
+      'succeed' cannot mean the model complied, since the only model here returns a constant, so it is
+      split into the two properties of the rendered prompt that are exactly measurable: whether an
+      attack lands, and whether a detector flags it. 10 of 10 land, and structurally: build_prompt
+      renders the whole Guardrail rule block into prompt['user'] while prompt['system'] stays 'You are
+      an AI assistant using the Guardrail Pattern.', so 0 of the ten carry a rule at a higher
+      privilege than the attack meant to override it. str.format is safe -- the attack is a
+      substitution value and its braces are never re-expanded -- but the line grammar is not: 3 of the
+      10 forge a line the template itself could have written, an extra '- ' bullet, a second Rules:
+      block, a second 'User question:'. Three mitigations are measured. system_override, a parameter
+      build_prompt ships and none of the lesson's five test cases pass, moves the rules into the
+      OpenAI system role -- and format_google_request concatenates system and user into one
+      parts[0].text, so the separation survives two formatters of three. Fencing the user turn as data
+      takes forged attacks from 3 to 0. A 10-rule detector then flags 7 of 10 with no false positive
+      on the benign control, and the survivors are the attack with no imperative, the base64 payload
+      and the Spanish restatement. The lesson's own scorer sees none of it: all ten attacks and the
+      benign question score the identical 0.5
+    uses_reference:
+      - build_prompt
+      - format_openai_request
+      - format_google_request
+      - run_prompt_test
+      - compare_models
+      - TEST_SUITE
+  - index: 4
+    slug: the_only_thing_the_optimiser_can_move_is_the_hash
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a prompt optimizer. Given a prompt and a scoring criteria, run the prompt 5 times with temperature=0.7, score each output, identify the weakest criteria, and rewrite the prompt to address it. Repeat for 3 iterations. Measure whether scores improve.
+    zh: |
+      實作一個提示詞最佳化器。給定一個提示詞和一組評分標準，用 temperature=0.7 跑 5 次、每個輸出都評分，找出最弱的那條標準，然後改寫提示詞來補強它。重複 3 輪。量測分數有沒有變好。
+    verifies: >-
+      the optimiser is built exactly as specified -- 5 samples at temperature 0.7, score, pick the
+      lowest-scoring criterion, rewrite the prompt to address it, three rounds -- and run against the
+      lesson's own score_response and simulate_llm_call. Each round's five samples are one distinct
+      string at spread 0.000, because simulate_llm_call hashes the request and temperature is part of
+      that request rather than a source of randomness. The weakest criterion is keyword_coverage at
+      0.0 in all three rounds and in all five tests of the lesson's suite, so the step that is
+      supposed to steer the rewrite has one possible output. Three rounds improve the mean by exactly
+      0.000. The reason is provable rather than observed: the score reads the reply, the reply is a
+      per-model constant plus md5(request)[:8], so the optimiser's whole search space maps onto 8 hex
+      characters and every criterion except a hex-spellable keyword is constant on all of it. Given
+      one that is -- required_keywords ['cafe'] -- the same loop finds a prompt whose digest contains
+      it in 2,661 candidates, taking coverage 0.0 to 1.0 and the composite 0.667 to 1.0: the optimiser
+      is correct and what it optimises is the hash. The control is that swapping in a stub which
+      echoes the rendered prompt lifts the same three rounds from 0.889 to 1.0
+    uses_reference:
+      - build_prompt
+      - run_prompt_test
+      - score_response
+      - TEST_SUITE
+      - format_openai_request
+      - simulate_llm_call
+  - index: 5
+    slug: the_diff_is_exact_and_the_prediction_is_untestable
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a "prompt diff" tool. Given two versions of a prompt, identify what changed (added constraints, removed examples, changed role, modified format) and predict whether the change will improve or degrade output quality. Test your predictions against actual outputs.
+    zh: |
+      做一個「提示詞 diff」工具。給定同一個提示詞的兩個版本，指出改了什麼（新增約束、移除範例、換了角色、改了格式），並預測這個改動會提升還是拉低輸出品質。用真實輸出來驗證你的預測。
+    uses_reference:
+      - build_prompt
+      - PROMPT_PATTERNS
+      - run_prompt_test
+      - score_response
+    verifies: >-
+      a version of a prompt is what build_prompt returns -- pattern, variables, temperature, system --
+      not the rendered string, so the diff is taken over that structure and the four categories the
+      exercise names are assigned from the key that moved. It is exact: 6 of 6 labelled pairs, one per
+      category plus two pattern swaps, are named correctly with nothing inferred. The four categories
+      miss the change that fires most often, though: switching pattern also switches temperature,
+      since PROMPT_PATTERNS pins one per pattern across 4 distinct values, and 2 of the 6 pairs move
+      it with no category naming it. A text diff cannot attribute the change -- difflib over the same
+      pairs reports 2 to 15 changed lines, and on the two pattern swaps not one substantive line
+      survives, which is true and names none of the four. The prediction half has nothing to test
+      against: both versions of all 6 pairs score identically, so every measured outcome is 'no
+      change', a predictor that always says so is right 6 of 6, and the three-rule predictor is right
+      on exactly the 3 pairs it declined to call. The control is that under a stub which echoes the
+      rendered prompt 2 of the 6 pairs separate and the same predictor is then right on 1 of 6, worse
+      than the trivial one -- a prediction rule needs outputs to calibrate on, and this lesson has
+      none that move

@@ -1,0 +1,141 @@
+lesson: 10-evaluation
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/10-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: random_vectors_score_an_unrelated_token_at_zero_point_37
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add BERTScore.** Implement a simplified BERTScore using word embedding cosine similarity. Create a dictionary of 100 common words mapped to random 50-dimensional vectors. Compute the pairwise cosine similarity matrix between reference and hypothesis tokens. Use greedy matching (each hypothesis token matches its most similar reference token) to compute precision, recall, and F1.
+    zh: |
+      **加上 BERTScore。** 用詞嵌入的餘弦相似度實作一個簡化版 BERTScore。做一個 100 個常用詞映射到隨機 50 維向量的字典。計算參考與假設詞元之間的兩兩餘弦相似度矩陣。用貪婪匹配（每個假設詞元對上最相似的參考詞元）算出 precision、recall 與 F1。
+    verifies: >-
+      built exactly as specified -- 100 common words, 50 dimensions, Gaussian entries from a fixed
+      seed, greedy max-similarity matching in both directions -- and then scored against the lesson's
+      own word_overlap_score on its own test suite, because adding a metric is only useful if it says
+      something the existing ones do not. On random vectors it is exact match with a floor: two
+      different words have mean cosine -0.0021 with sd 0.1433 and an identical pair scores 1.0, but
+      greedy matching takes the maximum over the reference tokens and the maximum of twenty such draws
+      averages 0.4157, so every hypothesis token is credited two fifths of a match. 100 common words
+      cover a third of the corpus: 66 of the suite's 200 tokens are in the dictionary, and skip, zero
+      and random are three different metrics for the rest. Across 8 cases and 3 models the F1
+      correlates 0.787 with word_overlap_score, most of the signal plus the floor's noise. The floor
+      is a property of the dimension: cosines between independent 50-dimensional Gaussians have sd
+      1/sqrt(50) = 0.1414, measured 0.1433. Placing synonyms near each other takes a paraphrase from
+      F1 0.5338 to 0.9825 while word overlap scores it 0.3333 on the shared stopwords -- the gap
+      random vectors cannot produce
+    uses_reference:
+      - build_test_suite
+      - run_model
+      - word_overlap_score
+      - rouge_l_score
+  - index: 2
+    slug: twenty_three_of_thirty_two_comparisons_are_ties
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build pairwise comparison.** Modify the judge to compare two model outputs side-by-side instead of scoring individually. Given the same input and two outputs, the judge should return which output is better and why. Run pairwise comparison across your test suite with baseline-v1 vs baseline-v2 and compute the win rate with confidence intervals.
+    zh: |
+      **做成對比較。** 修改評審，讓它並排比較兩份模型輸出，而不是各自評分。給定同樣的輸入和兩份輸出，評審該回傳哪一份更好、以及為什麼。用 baseline-v1 對 baseline-v2 在你的測試組上跑成對比較，並計算帶信賴區間的勝率。
+    verifies: >-
+      the pairwise judge is built on the lesson's own simulate_judge_score -- score both outputs under
+      the same criterion, return the higher, with the rubric line as the why -- over 8 cases and 4
+      criteria, and the interval is the lesson's own Wilson. The record is 4 wins, 23 ties, 5 losses:
+      a win rate of 0.444 excluding ties with a Wilson interval of (0.1888, 0.7334), 0.545 wide and
+      spanning 0.5, on 9 decisive comparisons. 72% of the comparisons tie and the exercise's judge has
+      no tie option, because an integer 1-5 score ties whenever both outputs land in the same bucket.
+      The judge scores length: baseline-v2's template is longer on 32 of 32 comparisons and the base
+      score is a bucket on len(output) > len(input) * 0.5, with md5(input + output + criterion) % 100
+      as the only other term. It is not invariant to whitespace either -- padding baseline-v1's output
+      with spaces to match the length changes 11 verdicts and moves the record to 6-21-5, flipping the
+      sign. And the interval depends on a denominator the exercise does not name: Wilson over wins/32
+      gives (0.0497, 0.2807) and over wins/9 gives (0.1888, 0.7334), an upper bound 2.6x higher
+    uses_reference:
+      - simulate_judge_score
+      - generate_judge_reasoning
+      - run_model
+      - build_test_suite
+      - wilson_confidence_interval
+  - index: 3
+    slug: the_bootstrap_draws_eight_distinct_resamples_out_of_a_thousand
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Implement stratified analysis.** Group test cases by category (factual, technical, safety, coding, summarization) and compute per-category scores with confidence intervals. Identify which categories improved and which regressed between prompt versions. A system can improve overall while regressing on a specific category.
+    zh: |
+      **實作分層分析。** 把測試案例依類別分組（事實、技術、安全、程式、摘要），計算每類別的分數與信賴區間。找出在兩個提示詞版本之間，哪些類別改善、哪些退化。一個系統可以在整體改善的同時，在某個特定類別上退化。
+    verifies: >-
+      the grouping is by TestCase.category, the scores are every criterion of every case in the group,
+      and the interval is the lesson's own bootstrap_confidence_interval. The effect the exercise
+      describes is present in its own fixture: overall improves 3.844 -> 3.875 while factual regresses
+      4.750 -> 4.375 and summarization 4.000 -> 3.500, with technical and safety improving and coding
+      unchanged. But the intervals behind those numbers come from 8 distinct resamples, not 1,000: the
+      index is (seed + j * 31) % n under an LCG with modulus 2**31, so when n divides a power of two
+      the index depends only on seed % n. Measured, the same code gives 993 distinct resamples at n =
+      5 and exactly n at n = 8, 16 and 32 -- and every group size in this lesson is a power of two, 4
+      or 8 per category and 32 per criterion. The 16 scores of the two largest categories collapse to
+      4 distinct means. The reported interval is also wider than a real one: (3.5, 4.25, 4.75) against
+      a genuine bootstrap's (3.875, 4.25, 4.625), 1.7x the width, so the analysis errs toward 'no
+      significant change'. And bootstrap_confidence_interval([4]) returns (0.0, 0.0, 0.0), which
+      prints as a score of zero rather than a refusal
+    uses_reference:
+      - build_test_suite
+      - run_eval_suite
+      - bootstrap_confidence_interval
+  - index: 4
+    slug: three_raters_give_identical_ratings_so_kappa_is_undefined
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Add inter-rater reliability.** Run the LLM judge 3 times on each test case (simulating different judge "raters"). Compute Cohen's kappa or Krippendorff's alpha between the three runs. If agreement is below 0.7, your rubric is too ambiguous -- rewrite it.
+    zh: |
+      **加上評分者間信度。** 對每個測試案例把 LLM 評審跑 3 次（模擬不同的評審「評分者」）。計算三次之間的 Cohen's kappa 或 Krippendorff's alpha。如果一致度低於 0.7，你的評分準則太含糊 —— 重寫它。
+    verifies: >-
+      'run the judge 3 times' is taken literally first, and then two ways of actually getting three
+      raters are tried, because the literal reading has no variance. The three runs are byte-identical
+      -- observed agreement 1.0 on all 32 case-criterion cells -- because simulate_judge_score is a
+      pure function of (input, output, criterion): a length bucket, a reference-overlap adjustment and
+      md5(...) % 100. Cohen's kappa is therefore 1.0 on all four criteria, which is a statement about
+      the function rather than the rubric, and the rubric is barely exercised: relevance emits only 4
+      and 5, correctness 2, 3 and 4, helpfulness 3, 4 and 5, safety 1, 4 and 5 -- two or three of five
+      levels each. The rule the exercise states, rewrite below 0.7, can never fire. Three raters made
+      by appending 1, 2 and 3 spaces -- semantically identical documents -- disagree on 17 of the 32
+      cells, agreement 0.4688, because the md5 seed is over the raw string. Paraphrasing instead
+      agrees on 29 of 32, so the judge is more stable under a rewrite than under a space; and 16 of
+      the 17 whitespace disagreements are one point apart, which the nominal kappa the exercise names
+      charges exactly as much as a 1-versus-5
+    uses_reference:
+      - simulate_judge_score
+      - run_model
+      - build_test_suite
+  - index: 5
+    slug: the_exercise_overstates_the_judge_prompt_five_fold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Build a cost tracker.** Track the token usage and cost of every judge call. Each input to the judge includes the original prompt, the model output, and the rubric (~500 tokens input, ~100 tokens output). Compute the total eval cost across your test suite and project the monthly cost assuming 10 eval runs per week.
+    zh: |
+      **做一個成本追蹤器。** 追蹤每一次評審呼叫的詞元用量與成本。每次送進評審的輸入包含原始提示詞、模型輸出與評分準則（約 500 詞元輸入、約 100 詞元輸出）。算出你整個測試組的總評估成本，並以每週跑 10 次評估來推估月成本。
+    verifies: >-
+      a judge call is one (test case, criterion) pair, which is what score_with_llm_judge does, and
+      the input is measured rather than assumed -- the case's input text, the model output and that
+      criterion's rubric, at 1.3 tokens per word since the lesson imports no tokenizer. The suite is
+      32 calls, 3,216 input tokens and 3,200 output tokens per run: at $2.50 and $10.00 per million
+      that is $0.04 a run and $1.74 a month at 10 runs a week, too small to decide anything. The
+      exercise's 500 input tokens is five times the measured mean of 100, which would put the input
+      bill at 16,000 tokens against 3,216. The rubric is 62% of the prompt against the model output's
+      28% and the input text's 10%, so the thing being judged is the smallest part of what the judge
+      reads. 28% of the input is the same text sent four times -- the case content is 304 tokens and
+      the four criteria differ only in their rubric block -- and batching them into one call gives
+      2,304 input tokens, a 28% cut for the same 32 scores. Scaled to 1,000 cases the run costs $5.00
+      and $216.88 a month, which is the number the per-suite framing hides
+    uses_reference:
+      - build_test_suite
+      - run_model
+      - RUBRICS
