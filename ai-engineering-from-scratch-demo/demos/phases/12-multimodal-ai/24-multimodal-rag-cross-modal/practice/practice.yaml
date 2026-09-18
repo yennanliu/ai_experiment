@@ -1,0 +1,81 @@
+lesson: 24-multimodal-rag-cross-modal
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/24-multimodal-rag-cross-modal/docs/en.md
+exercises:
+  - index: 1
+    slug: a_medical_triage_multimodal_rag
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Propose a medical-triage multimodal RAG: query = photo of injury + text symptoms. What modalities retrieve from what KB?
+    zh: |
+      提出一套醫療檢傷的多模態 RAG：查詢 = 傷處照片 + 文字症狀。哪些模態要從哪些知識庫檢索？
+    cites: >-
+      Cross-modal retrieval
+  - index: 2
+    slug: a_modality_with_no_opinion_still_takes_its_weight
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Score fusion is a simple weighted sum. What failure mode does it have that MoE fusion avoids?
+    zh: |
+      分數融合就是一個簡單的加權和。它有什麼失敗模式是 MoE 融合能避開的？
+    verifies: >-
+      a constant score is indistinguishable from a low one: on a query with no audio cue the lesson's
+      audio_retrieve returns 0.5 for all five restaurants, a constant that shifts every fused score
+      and changes no ranking while consuming its share of the weight budget. The same query makes
+      image_retrieve return 0.0 for all five, so two of the three modalities are mute and the fusion
+      is still a three-term weighted average. The three scores are also on three different scales:
+      spans of 0.4286, 1.0 and 0.425, so effective weighting is the nominal weight times the spread
+      and nobody computes the product. And doubling every weight cannot change a ranking but takes the
+      top fused score from 0.6861 to 1.3721 -- which is the number agentic_loop compares against its
+      floor.
+  - index: 3
+    slug: the_three_canonical_sub_problems
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Abootorabi et al.'s taxonomy (Section 3). What are the three canonical sub-problems and how do they map to your chosen product?
+    zh: |
+      讀 Abootorabi 等人的分類法（第 3 節）。那三個典型的子問題是什麼？它們如何對應到你選定的產品？
+    cites: >-
+      The 2025 surveys
+  - index: 4
+    slug: the_weakest_retriever_carries_thirty_percent_of_the_weight
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an eval spec for a trip-planner multimodal RAG. What metrics cover image recall, audio recall, and composite correctness?
+    zh: |
+      為一個行程規劃的多模態 RAG 設計一份評測規格。哪些指標涵蓋影像召回、音訊召回與綜合正確性？
+    verifies: >-
+      four metrics -- per-retriever recall@k, fused recall@k, fused precision@k and citation coverage
+      -- run on the lesson's own corpus against a gold set re-derived from it rather than asserted.
+      Fused recall@2 is 1.00 and precision@3 0.67, while standalone recall@2 is image 1.00, audio 1.00
+      and text 0.50: the composite hides a retriever finding half the gold set. Text is the weakest
+      and carries 0.3 of the weight against image's 0.4, and it is weak because four of the five
+      restaurants tie at 0.2857 and the tie-break is sorted's stability. Citation coverage is 3 of 3
+      modalities on every result, 100%, and is worth measuring because it degrades silently -- drop a
+      retriever and its evidence line is still printed.
+  - index: 5
+    slug: the_second_round_changes_no_ranking_so_the_tax_buys_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Agentic multi-hop RAG has a latency tax per round-trip. At what query difficulty does the accuracy gain justify the latency?
+    zh: |
+      代理式多跳 RAG 每來回一次就要繳一筆延遲稅。查詢要難到什麼程度，準確率的提升才划得過那份延遲？
+    verifies: >-
+      the lesson's own second round ranks ['r1', 'r4', 'r3'], identical to its first, moving the top
+      score 0.6861 -> 0.7336 and the recall by 0.00. The trigger fires on a number the reformulation
+      is guaranteed to raise: round 2 shifts 0.1 of weight into the image retriever, whose span is 1.0
+      against 0.4286 and 0.425, so the top fused score rises by construction -- a thermostat wired to
+      its own heater. At a floor of 0.99 the loop runs two rounds, reaches 0.7336 and returns with no
+      signal that the threshold was never met. And the real condition is first-round recall, which
+      exercise 4 measures at 1.00 here, so every extra round is pure tax and difficulty is not the
+      variable.
