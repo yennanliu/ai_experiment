@@ -1,0 +1,87 @@
+lesson: 09-qwen-vl-family-dynamic-fps
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/09-qwen-vl-family-dynamic-fps/docs/en.md
+exercises:
+  - index: 1
+    slug: three_bands_one_schedule_so_the_axes_are_interchangeable
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute M-RoPE rotations for a patch at (t=3, h=5, w=7) with hidden 48 (16 per band, base theta 10000). Show the rotation angles for the first three pairs in each band.
+    zh: |
+      算出一個位在 (t=3, h=5, w=7) 的 patch 在隱藏維度 48（每個頻帶 16，theta 基數 10000）之下的 M-RoPE 旋轉。列出每個頻帶前三對座標的旋轉角度。
+    verifies: >-
+      the first three pairs of each band at (t, h, w) = (3, 5, 7) are (3.0, 0.948683, 0.3), (5.0,
+      1.581139, 0.5) and (7.0, 2.213594, 0.7), with mrope_rotate used as an independent check --
+      rotating e0 and reading atan2 back gives 3.0, matching. All three bands are 16-dimensional so
+      they share one theta schedule: a patch three frames later and one three rows down give the
+      identical triple, and only the hidden-state slice tells them apart. The eight pairs span
+      wavelengths 6.28 to 19,869 positions, a range of 3,162x, and a 27-wide grid wraps pair 0 4.3
+      times. MRoPEConfig.hidden is never read by either function, so hidden=999 with the same bands
+      gives byte-identical angles.
+  - index: 2
+    slug: the_sampler_would_never_have_chosen_one_fps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 10-minute security-camera recording at 1 FPS produces how many frames? At 384 resolution with 3x pool, how many total tokens? Does Qwen2.5-VL's default 32k context handle it?
+    zh: |
+      一段 10 分鐘的監視器錄影以 1 FPS 取樣會產生多少畫格？在 384 解析度、3 倍池化之下，總共多少詞元？Qwen2.5-VL 預設的 32k 脈絡吃得下嗎？
+    verifies: >-
+      600 frames, 48,600 tokens at 81 a frame (384/14 = 27, pooled by 3 gives 9x9), and no -- 1.48x a
+      32,768 context. But the lesson's own VideoPlan computes fps_max = 0.674 for this clip and the
+      low-motion ladder returns 0.5: 300 frames, 24,300 tokens, 74.2% of the context, so the
+      configuration the exercise asks about is one the lesson's logic rejects. The ladder discards the
+      26% of budget between 0.674 and 0.5, and across the four demo clips utilisation is 59.3, 29.7,
+      74.2 and 59.3% -- never above three quarters. Each ladder's top rung only binds beyond 50.6s at
+      high motion, 101.1s at medium and 404.5s at low.
+  - index: 3
+    slug: two_of_the_three_get_the_same_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick FPS for a 30-second tennis rally vs a 30-second recipe demo vs a 30-second UI-agent recording. Justify each with the dynamic-FPS logic.
+    zh: |
+      分別為一段 30 秒的網球來回、一段 30 秒的食譜示範，以及一段 30 秒的 UI 代理程式錄影挑出 FPS。用動態 FPS 的邏輯為每一個辯護。
+    verifies: >-
+      8 FPS for the rally, 4 for the recipe and 4 for the UI replay -- 240 frames and 19,440 tokens
+      against 120 and 9,720 twice, so the lesson's logic cannot separate the second from the third. At
+      30 seconds fps_max is 13.48 for all three, above every ladder top, so all three answers are
+      ladder tops and the budget arithmetic changes nothing; the motion label is the whole decision
+      and nothing computes it. Relabelling the UI clip high gives 8 FPS and 19,440 tokens, a 2.0x cost
+      swing from a string. And frame_times is exactly uniform -- one distinct gap of 0.25s -- so on a
+      stated model where the events occupy 5 of the 30 seconds, 20 of 120 frames land on them: 16.7%,
+      exactly the time share.
+  - index: 4
+    slug: why_an_mlp_works_in_2025_and_not_2023
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Qwen2.5-VL drops the Q-Former entirely. Why does a simple MLP work in 2025 but not in 2023? (Hint: data scale and encoder quality.)
+    zh: |
+      Qwen2.5-VL 徹底捨棄了 Q-Former。為什麼一個簡單的 MLP 在 2025 年行得通，在 2023 年卻不行？（提示：資料規模與編碼器品質。）
+    cites: >-
+      Qwen2-VL (September 2024) — M-RoPE and native resolution
+  - index: 5
+    slug: the_fallback_recovers_none_of_the_failure_it_is_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Parse three Qwen2.5-VL JSON tool-call outputs into Python dicts. What fails for malformed JSON and what recovery strategy does the Qwen cookbook recommend?
+    zh: |
+      把三段 Qwen2.5-VL 的 JSON 工具呼叫輸出解析成 Python dict。格式錯誤的 JSON 會在哪裡失敗？Qwen 的 cookbook 建議什麼樣的復原策略？
+    verifies: >-
+      three of the lesson's four examples parse -- two directly, one recovered by slicing from the
+      first brace to the last -- and the truncated one returns {'tool': 'PARSE_ERROR', 'raw': ...}.
+      The slice fails on any prose containing a brace: a string holding a valid tool call after the
+      word {here} returns PARSE_ERROR. Swept over every prefix of a valid call it recovers 0 of 63,
+      and 0 of 32 for a call with a nested object, because a prefix almost never ends at a closing
+      brace -- so the fallback covers the failure constrained decoding already solves and none of the
+      truncation that survives it. And the sentinel occupies the tool field a dispatcher switches on,
+      distinguishable from a legitimate emission only by the raw key, while brace depth (1 against 0)
+      would separate the cases outright and is never computed.
