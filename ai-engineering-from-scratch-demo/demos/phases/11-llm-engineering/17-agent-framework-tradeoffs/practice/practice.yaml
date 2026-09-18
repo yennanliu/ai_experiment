@@ -1,0 +1,63 @@
+lesson: 17-agent-framework-tradeoffs
+phase: 11-llm-engineering
+source: phases/11-llm-engineering/17-agent-framework-tradeoffs/docs/en.md
+exercises:
+  - index: 1
+    slug: the_extra_node_runs_when_the_transcript_is_shortest
+    kind: code
+    tier: T1
+    deps_group: agents
+    en: |
+      **Easy.** Take the same task — "research Anthropic's headquarters, write a 200-word brief, cite sources" — and implement it in LangGraph (four nodes: plan, search, write, cite) and in CrewAI (three roles: researcher, writer, editor). Report token cost per run and lines of code.
+    zh: |
+      **簡單。** 拿同一個任務 ——「研究 Anthropic 的總部、寫一份 200 字摘要、附上出處」—— 分別用 LangGraph（四個節點：plan、search、write、cite）和 CrewAI（三個角色：researcher、writer、editor）實作。報告每次執行的詞元成本與程式碼行數。
+    verifies: >-
+      the LangGraph arm is the real library -- a compiled four-node StateGraph whose nodes record
+      the prompt they are handed -- and the CrewAI arm is a transcription of the documented
+      three-role shape, because CrewAI is not installed here. Both produce the same four artifacts
+      from the same strings. LangGraph: 4 calls, prompts of 29, 42, 53 and 213 tokens, 337 in
+      total, 9 lines. CrewAI: 3 calls, 283 tokens, 7 lines. 19% apart on tokens and two lines
+      apart on code, and 160 of those tokens are the 200-word brief itself -- 47% of one total and
+      57% of the other. The extra node is nearly free because plan runs when the transcript is one
+      line long, so 33% more calls buys 19% more input. And "cite sources" has no channel: the
+      state schema has one key, messages, so the citation is a sentence inside a reply.
+  - index: 2
+    slug: the_cheapest_arm_is_the_one_that_can_do_neither
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Build the same task in AutoGen (researcher ↔ writer chat, editor joins via `GroupChat`) and Agno (a single agent with `search_tools` and `write_tools`, plus a session store). Rank the four implementations on (a) cost per run, (b) ability to resume after a crash, (c) ability to inject a human approval before the write step.
+    zh: |
+      **中等。** 用 AutoGen（researcher ↔ writer 聊天，editor 透過 `GroupChat` 加入）和 Agno（一個帶 `search_tools` 與 `write_tools` 的單一代理，加上一個 session 儲存）做同樣的任務。就 (a) 每次執行成本、(b) 崩潰後恢復的能力、(c) 在 write 步驟前插入人類核准的能力，把四種實作排名。
+    verifies: >-
+      all four shapes transcribed from the same task and the same replies, with the LangGraph
+      transcription checked against exercise 1's measurement of the real library -- both 337 input
+      tokens. Cost per run: agno 56 (1 call), crewai 283 (3), langgraph 337 (4), autogen 1,579
+      (10), a 28.2x spread. AutoGen is 4.7x LangGraph because GroupChat's default selector is an
+      LLM call, so five content turns become ten calls and the 160-token brief lands in six of the
+      ten prompts. Agno's 56 is a floor: its single prompt carries 0 of the four replies, so the
+      tool round trips are uncounted. Resume and human approval both rank langgraph alone -- for
+      all 384 descriptors with needs_resume or needs_human_interrupt the lesson's own recommend
+      returns langgraph -- so the cheapest arm is the one that can do neither, and doubling the
+      brief moves AutoGen by 1,280 tokens and Agno by 0.
+  - index: 3
+    slug: the_tree_returns_langgraph_for_ninety_three_percent_of_its_input_space
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Build a decision-tree script `pick_framework.py` that takes a short problem description (JSON: `{has_typed_state, has_roles, has_dialogue, has_parallel_fanout, needs_resume}`) and returns a recommendation with one-sentence justification. Verify it on six cases you design yourself.
+    zh: |
+      **困難。** 寫一個決策樹腳本 `pick_framework.py`，接受一段簡短的問題描述（JSON：`{has_typed_state, has_roles, has_dialogue, has_parallel_fanout, needs_resume}`），回傳一個建議並附一句話理由。用你自己設計的六個案例驗證它。
+    verifies: >-
+      the tree enumerated over its whole input space: 7 boolean fields and four call counts give
+      512 descriptors, and the answers are langgraph 476, autogen 16, plain python 8, crewai 8,
+      agno 4 -- 93.0% one answer. The smallest-first branch reads five flags and never
+      has_typed_state or needs_session_memory, so a two-call task with a state schema and durable
+      memory is told to use plain Python. crewai and autogen both require has_typed_state False,
+      so the 256 descriptors that declare a schema can never reach them. The final fallback is
+      reachable for exactly 2 descriptors. And on six cases designed against those seams the tree
+      agrees three times: it differs on the two-call typed-state case, on a role pipeline that
+      must remember the user between runs (crewai, dropping the session store), and on a single
+      call that needs approval (langgraph for one call).
