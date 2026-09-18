@@ -1,0 +1,79 @@
+lesson: 17-video-language-temporal-grounding
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/17-video-language-temporal-grounding/docs/en.md
+exercises:
+  - index: 1
+    slug: the_budget_parameter_cannot_reach_the_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      For a 3-minute cooking demo, pick uniform vs dynamic FPS. Justify with a token count.
+    zh: |
+      對一段 3 分鐘的烹飪示範，在均勻與動態 FPS 之間做選擇。用詞元數為你的選擇辯護。
+    verifies: >-
+      uniform, by 5.6x -- 32 frames is 2,592 tokens at Lesson 12.08's pooled 81 a frame, while the
+      dynamic sampler asked for the same 32 returns 180 frames and 14,580 tokens, 44.5% of a 32k
+      context. total_budget bounds nothing: the per-second allocation is min(fps_cap, max(1,
+      round(raw))), so at 180 seconds the reachable range is 180 to 720 frames -- 1 to 4 FPS -- and
+      budgets of 8 and 32 both return 180. The lesson's own demo overshoots its stated budget by 25%,
+      returning 15 frames for a printed 12, because six of its ten seconds round to 0 and are lifted
+      by the max. So the justification is the floor, not the motion: a low-motion video is exactly the
+      case the floor protects.
+  - index: 2
+    slug: what_tmrope_adds_over_an_embedding_table
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      TMRoPE adds what specifically that a simple temporal embedding table cannot do?
+    zh: |
+      TMRoPE 具體多做到了什麼，是簡單的時間嵌入表辦不到的？
+    cites: >-
+      Qwen2.5-VL and TMRoPE
+  - index: 3
+    slug: sixty_guesses_score_one_point_zero_and_the_honest_three_score_a_third
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a JSON schema for temporal grounding that a VLM can learn to emit. Include error cases.
+    zh: |
+      為時間接地寫一份 VLM 學得會吐出來的 JSON schema。要涵蓋錯誤情境。
+    verifies: >-
+      a four-field schema inside an events/duration envelope under three constraints, each justified
+      by running the lesson's own evaluator on the case it rules out. A zero-length event scores 0.0
+      when it is exactly right, because iou returns 0 on a zero union. A reversed interval scores 0.0
+      and raises nothing. One prediction is credited for two ground-truth events -- a single jump at
+      [4.1, 4.6] scores 0.667 against both [4.0, 4.5] and [4.2, 4.7], recall 1.0 -- because matching
+      is by label with no assignment step. And the whole metric is recall: 60 half-second windows with
+      no model involved score 1.0 while the lesson's own three honest predictions score 0.333 on its
+      own demo, and a prediction matching no ground truth costs nothing.
+  - index: 4
+    slug: why_alignment_before_projection_beats_two_encoders
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Video-LLaVA's Section 3 on "Alignment Before Projection." Why is this better than training separate image and video encoders?
+    zh: |
+      讀 Video-LLaVA 第 3 節的「投影之前先對齊」。這為什麼比分別訓練影像與影片編碼器更好？
+    cites: >-
+      VideoChat and Video-LLaVA
+  - index: 5
+    slug: the_lesson_names_four_benchmarks_and_reports_zero_scores
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Given the VideoMME leaderboard, what is the gap between the top open model and the top proprietary model as of 2026? How much of that gap is attributable to temporal encoding vs base LLM scale?
+    zh: |
+      看 VideoMME 排行榜，截至 2026 年，最強的開放模型與最強的專有模型之間差距多大？這道落差有多少能歸因於時間編碼、多少歸因於基礎 LLM 的規模？
+    verifies: >-
+      the gap cannot be computed here: the lesson names four benchmarks and carries 0 two-decimal
+      scores anywhere in its text, and its arch_compare table has 5 rows and no benchmark column. Its
+      one numeric column spans 4x -- 8 to 32 frames, or 648 to 2,592 visual tokens at Lesson 12.08's
+      pooled rate -- and every row also differs in compressor, so no two of the five isolate anything.
+      By Lesson 12.07's variance weights the attribution splits 4 to 1 toward tokens, 60% against 15%,
+      as a stated extrapolation. But those weights are 6 additive terms with 0 products of any two, so
+      a question about how the two axes interact has no term to land in -- and they sum to 115%.
