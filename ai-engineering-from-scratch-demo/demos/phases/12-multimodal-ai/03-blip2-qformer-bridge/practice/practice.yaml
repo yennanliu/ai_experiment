@@ -1,0 +1,80 @@
+lesson: 03-blip2-qformer-bridge
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/03-blip2-qformer-bridge/docs/en.md
+exercises:
+  - index: 1
+    slug: the_row_sum_test_cannot_fail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the cross-attention block in PyTorch. Verify that with 32 queries and 256 keys/values, the attention-weight matrix is 32 x 256 and each row sums to 1 after softmax.
+    zh: |
+      用 PyTorch 實作那個交叉注意力區塊。驗證在 32 個 query 與 256 個 key/value 之下，注意力權重矩陣是 32 x 256，且經過 softmax 後每一列加總為 1。
+    verifies: >-
+      the lesson's own cross_attention run at the 32 x 256 shape the exercise names. The matrix is 32
+      x 256 and every row sums to 1 to 2.2e-16 -- which is a property of softmax and would hold for an
+      untrained, permuted or constant block. Untrained, mean row entropy is 0.321 nats against the
+      uniform 256-way maximum of 5.545 (5.8%) and the mean top weight is 0.8762 against 0.0039, so the
+      attention is already almost one-hot at initialisation. The cause is the lesson's init: mat()
+      draws N(0,1), so W_q q has entries of std 3.65 -- sqrt(d) = 4, not 1 -- and the logits after the
+      1/sqrt(d) division have std 14.53, which is d = 16; rescaling the weights by 1/sqrt(d) gives
+      entropy 5.066 and by 1/d 5.543, within 0.002 of uniform. And the module ships NUM_QUERY 8 over
+      NUM_PATCH 64, so the exercise's shape is 16x the attention entries it actually builds.
+  - index: 2
+    slug: which_loss_needs_the_text_encoder_path
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      In BLIP-2 stage 1 the Q-Former runs three losses simultaneously: ITC, ITM, ITG. Write the forward signature for each in pseudo-code. Which one requires the text encoder path to be active?
+    zh: |
+      在 BLIP-2 第 1 階段，Q-Former 同時跑三個損失：ITC、ITM、ITG。用虛擬碼寫出各自的前向簽章。哪一個需要文字編碼器路徑是啟用的？
+    cites: >-
+      Two-stage training
+  - index: 3
+    slug: the_bridge_pays_back_at_a_twenty_million_parameter_llm
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare parameter counts: Q-Former (12 layers, 768 hidden) vs a 2-layer MLP projector (1408 → 4096, two layers). At what LLM scale does the 188M Q-Former cost pay back in training efficiency?
+    zh: |
+      比較參數量：Q-Former（12 層、隱藏維度 768）對上一個兩層的 MLP 投影器（1408 → 4096，兩層）。在多大的 LLM 規模下，1.88 億參數的 Q-Former 成本能在訓練效率上回本？
+    verifies: >-
+      parameter counts built from the lesson's own stated shapes rather than quoted. The Q-Former
+      totals 152,229,376 -- 23.5% short of the paper's 188M -- and the every-other-layer reading gives
+      132,156,928, further away, so neither assumption in the lesson closes the gap. The 2-layer
+      projector is 22,552,576, a ratio of 6.75x, of which 23.8M of the Q-Former is the BERT embedding
+      table and 125.2M the blocks. Priced in training FLOPs per image at 6 per parameter per token,
+      the bridge saves the LLM 224 tokens and charges 129.7M extra parameters over 32 queries, so
+      break-even is an 18.5M-parameter LLM: OPT-2.7B is 146x past it and 11B is 594x. At LLaVA's 576
+      visual tokens break-even falls to 7.6M.
+  - index: 4
+    slug: why_bert_base_initialisation_converges_faster
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3.2 of the BLIP-2 paper (arXiv:2301.12597) on how the Q-Former is initialized. Explain why initializing from BERT-base (not random) accelerates convergence.
+    zh: |
+      讀 BLIP-2 論文（arXiv:2301.12597）第 3.2 節關於 Q-Former 如何初始化的部分。說明為什麼從 BERT-base 初始化（而不是隨機）能加速收斂。
+    cites: >-
+      Architecture
+  - index: 5
+    slug: both_of_them_fit_so_the_question_starts_at_227_frames
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      For a 10-minute video at 1 FPS sampled to 60 frames, compute the per-frame token cost at (Q-Former → 32 tokens/frame) vs (MLP projector → 576 tokens/frame). Which fits into a 128k-token LLM context window?
+    zh: |
+      對一段 10 分鐘、以 1 FPS 取樣成 60 個畫格的影片，算出（Q-Former → 每畫格 32 詞元）與（MLP 投影器 → 每畫格 576 詞元）之下每畫格的詞元成本。哪一個塞得進 128k 詞元的 LLM 脈絡視窗？
+    verifies: >-
+      60 frames is 1,920 tokens through the Q-Former (1.5% of a 128k window) and 34,560 through the
+      576-token projector (26.4%) -- both fit, so the question the exercise asks does not
+      discriminate. 10 minutes at 1 FPS is 600 frames, so '60 frames' is a 10x decimation applied
+      before either bridge is chosen; unsampled, the projector needs 345,600 tokens, 2.64x the window,
+      and only the Q-Former survives. The question begins at 227 frames -- 3m47s of video against the
+      Q-Former's 4,096 frames and 68m16s, a span of 18.04x. And 576 is LLaVA's 24x24 grid, not this
+      lesson's 256-token ViT, which caps the video at 512 frames instead.
