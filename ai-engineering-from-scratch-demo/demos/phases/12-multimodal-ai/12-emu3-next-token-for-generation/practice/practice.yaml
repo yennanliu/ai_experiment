@@ -1,0 +1,87 @@
+lesson: 12-emu3-next-token-for-generation
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/12-emu3-next-token-for-generation/docs/en.md
+exercises:
+  - index: 1
+    slug: a_video_frame_costs_four_times_the_same_sized_still
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Emu3 produces 4096 tokens per 512x512 image at 8x8 reduction. Compute the equivalent for 1024x1024 and 2048x2048. What happens to inference latency?
+    zh: |
+      Emu3 在 8x8 縮減之下，每張 512x512 影像產生 4096 個詞元。算出 1024x1024 與 2048x2048 的對應數字。推論延遲會怎麼變化？
+    verifies: >-
+      16,384 and 65,536 tokens, which at the lesson's own 30 tokens per second is 2:16, 9:06 and 36:24
+      -- quadratic in the side. The constant rate is the optimistic bound: an autoregressive decode of
+      N tokens touches N(N+1)/2 attention pairs, 8,390,656 at 4,096 and 2,147,516,416 at 65,536, so a
+      16x token count carries 255x the attention work. One 2048x2048 image is 32.0 GiB of KV cache at
+      512 KiB a token. And the lesson's video rows pass reduction 4 where its image rows pass 8, a 4x
+      spatial factor before any frame arithmetic, so a 4-second 512x512 clip is 131,072 tokens -- 2.0x
+      the 2048x2048 image and 32x the 512x512 still.
+  - index: 2
+    slug: why_the_video_patch_is_four_by_four_by_four
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Emu3 Section 3.3 on the video tokenizer. Describe the 3D VQ patch shape and why it is 4x4x4 not 8x8x1.
+    zh: |
+      讀 Emu3 第 3.3 節關於影片分詞器的部分。描述 3D VQ 的 patch 形狀，以及它為什麼是 4x4x4 而不是 8x8x1。
+    cites: >-
+      The Emu3 tokenizer
+  - index: 3
+    slug: two_of_the_five_settings_are_not_guidance_at_all
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Classifier-free guidance weight 5.0 vs 3.0: what visual effect? Trace the math in `code/main.py`.
+    zh: |
+      無分類器引導權重 5.0 對 3.0：視覺效果有何差異？在 `code/main.py` 中追一遍那段數學。
+    verifies: >-
+      on the lesson's own logits through its own cfg_mix and softmax, gamma 3.0 -> 5.0 moves the top
+      probability 0.7398 -> 0.8438 (+14%), the margin over second 0.4936 -> 0.6896, and the entropy
+      0.6293 -> 0.4445 (-29%). The top-two logit margin is 0.2 + 0.3*gamma -- affine, with the
+      unconditional margin as a nonzero intercept -- so it grows 1.55x rather than the 5/3 a
+      proportional term would give, while the probability margin grows 1.4x because the softmax
+      saturates. Two of the five rows the lesson prints are not guidance settings: gamma 1.0 returns
+      the conditional logits exactly and 0.0 the unconditional ones. And five classes cap entropy at
+      1.6094, of which the conditional alone keeps 66%, so gamma 1-to-3 removes 0.4256 nats against
+      3-to-5's 0.1848.
+  - index: 4
+    slug: the_comparable_is_exact_and_what_is_left_is_the_parameter_count
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute training FLOPs for Emu3-7B at 300B tokens and compare to Stable Diffusion 3. Which was more expensive to train?
+    zh: |
+      算出 Emu3-7B 在 3000 億詞元上的訓練 FLOPs，並與 Stable Diffusion 3 比較。哪一個訓練起來比較貴？
+    verifies: >-
+      6ND gives 1.26e22 FLOPs for Emu3-7B at 300B tokens and 1.475e22 for an 8B SD3 -- a ratio of
+      1.17, so SD3 is dearer and only just. Applying 6ND to a DiT is a stated assumption. The lesson's
+      'comparable' is exact once converted: 300M image-steps at 1,024 latent tokens is 307.2B tokens,
+      1.024x Emu3's 300B, so the two figures in its parenthetical are the same number in different
+      units. The entire remaining difference is the parameter count -- 1.143 x 1.024 = 1.17 exactly --
+      so nothing about diffusion against autoregression appears in the answer. And at Lesson 12.10's
+      corpus split as a stated reference, Emu3's image-bearing share is 60%, 176M images against SD3's
+      300M steps: equal compute, 1.71x the image exposure for the specialist.
+  - index: 5
+    slug: the_premise_is_backwards_on_the_lesson_own_numbers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Emu3 beats SDXL on FID but not on VQAv2 vs specialized VLMs. Explain why the unified-loss approach shows different strengths vs specialists on different benchmarks.
+    zh: |
+      Emu3 在 FID 上勝過 SDXL，但在 VQAv2 上比不過專門的 VLM。說明為什麼統一損失的路線，在不同基準上相對於專才會展現出不同的強項。
+    verifies: >-
+      the lesson's own three benchmark pairs contradict the exercise's premise: Emu3 BEATS LLaVA-1.6
+      on VQAv2, 75.1 against 72.4, and LOSES GenEval to SDXL, 0.54 against 0.55, so the one benchmark
+      where the unified model goes backwards is a generation benchmark. Normalised as percentages of
+      the rival's score the margins are +3.6% FID, -1.8% GenEval and +3.7% VQAv2 -- the widest is the
+      one the exercise says does not exist. Two margins of the same size are described differently:
+      1.8% is called a statistical tie and 3.6% a win, with no variance estimate for either. The three
+      occupy a 5.5-point band centred at 1.8%, which is the signature of a unified loss -- near the
+      specialist everywhere, past it nowhere by much.
