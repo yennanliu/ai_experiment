@@ -11,7 +11,9 @@ math   = ["numpy>=1.26", "scikit-learn>=1.4"]  # phases 01-03
 vision = ["numpy>=1.26", "pillow>=10", "scikit-learn>=1.4", "torch>=2.2", "torchvision>=0.17", "pydantic>=2"]  # phases 04, 12
 audio  = ["numpy>=1.26"]                       # phase 06
 llm    = ["openai>=1.40", "anthropic>=0.40", "torch>=2.2", "jax>=0.4", "optax>=0.2", "tiktoken>=0.7", "regex>=2024.5"]  # 03/11-13, 07, 10, 11  (§8 Q3)
-agents = []                                    # phases 13-16
+# phase 11's lesson 16 imports langgraph, langchain-core and langchain-anthropic at
+# module scope, so the graph, its reducers and its checkpointer are build inputs there
+agents = ["langgraph>=0.2.50", "langchain-core>=0.3", "langchain-anthropic>=0.3"]  # 13-16
 infra  = []                                    # phase 17
 dev    = ["pytest>=8"]
 

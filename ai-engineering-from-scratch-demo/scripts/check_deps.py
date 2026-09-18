@@ -28,7 +28,9 @@ GROUP_MODULES = {
     # request payload against the SDK that has to accept it needs the SDK present
     "llm": {"openai", "anthropic", "torch", "transformers", "jax", "jaxlib", "optax",
             "tiktoken", "regex"},
-    "agents": set(),
+    # 11/16 builds a StateGraph with the lesson's own reducer and checkpointer; the
+    # graph mechanics are what the exercises measure, so langgraph is a build input
+    "agents": {"langgraph", "langchain_core", "langchain_anthropic"},
     "infra": set(),
 }
 STDLIB = set(sys.stdlib_module_names)
