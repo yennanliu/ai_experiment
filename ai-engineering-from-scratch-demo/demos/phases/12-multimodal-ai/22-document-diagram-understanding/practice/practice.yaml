@@ -1,0 +1,79 @@
+lesson: 22-document-diagram-understanding
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/22-document-diagram-understanding/docs/en.md
+exercises:
+  - index: 1
+    slug: the_table_has_one_numeric_column_and_the_question_needs_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your project is 10M invoices per day. Which stack minimizes cost-per-page without losing accuracy?
+    zh: |
+      你的專案是每天 1000 萬張發票。哪套堆疊能在不犧牲準確率的前提下，把每頁成本壓到最低？
+    verifies: >-
+      the OCR pipeline with LayoutLMv3 at 512 tokens a page: 10M invoices is 5.12 billion input
+      tokens, $1,280 a day at a stated $0.25 per million, against $30,000 for the frontier row -- a
+      23.4x span. The lesson's table is not monotone in era: the cheapest era-2 row is 4,096 tokens
+      and the cheapest era-3 row is 2,916, 28.8% less. And 'without losing accuracy' cannot be
+      evaluated at all -- 6 rows, 1 numeric column, 0 accuracy figures. The 512 also does not cover
+      the lesson's own three-stream input: layoutlm_input returns 8 text ids and 256 patch ids for an
+      eight-word page, so the 16x16 grid alone is 50% of the row's budget and 97.0% of the positions.
+  - index: 2
+    slug: the_bbox_stream_gives_up_scale_invariance
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Why does LayoutLMv3 outperform pure-CLIP-VLMs on form QA but underperform at scene-text? What does the bbox stream give up?
+    zh: |
+      為什麼 LayoutLMv3 在表單問答上勝過純 CLIP 式的 VLM，卻在場景文字上落後？那條 bbox 串流放棄了什麼？
+    verifies: >-
+      a form's answer is a spatial relation between two text spans, which the one-box-per-token stream
+      states directly, and a scene has no layout grammar for a box to encode. What the stream gives up
+      is scale, rotation and crop invariance: the boxes are absolute pixel corners, so (100, 50, 300,
+      80) becomes (200, 100, 600, 160) at twice the DPI and all 8 change, while a patch grid does not
+      move. The lesson's own text stream is also not reproducible between runs -- layoutlm_input
+      builds ids with hash(t.text) % 10000 and Python salts string hashing per process. And the three
+      streams are 97.0% patches with no alignment stream anywhere, so the box-to-patch correspondence
+      is exactly what the model must infer.
+  - index: 3
+    slug: where_nougat_wins_and_where_a_vlm_does
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Nougat generates LaTeX. Propose a test case where VLM-native output beats Nougat on LaTeX fidelity, and a case where Nougat wins.
+    zh: |
+      Nougat 生成 LaTeX。提出一個 VLM 原生輸出在 LaTeX 保真度上勝過 Nougat 的測試案例，以及一個 Nougat 勝出的案例。
+    cites: >-
+      Math equations and LaTeX output
+  - index: 4
+    slug: what_paligemma_two_added
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read PaliGemma 2 paper (Google, 2024). What was the key training-data addition that lifted document accuracy vs PaliGemma 1?
+    zh: |
+      讀 PaliGemma 2 論文（Google，2024）。相對於 PaliGemma 1，讓文件準確率提升的關鍵訓練資料增補是什麼？
+    cites: >-
+      Era 3 — VLM-native (2024+)
+  - index: 5
+    slug: a_naive_cross_check_escalates_five_million_fields_a_day
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a regulatory-safe hybrid: OCR pipeline as primary, VLM as secondary cross-check. How do you resolve disagreement?
+    zh: |
+      設計一套法規上安全的混合方案：OCR 管線為主，VLM 為輔做交叉核對。兩者不一致時你要怎麼裁決？
+    verifies: >-
+      agree-and-accept, disagree-and-escalate, and never resolve by confidence, because an OCR
+      character posterior and a VLM token log-probability are different quantities on different
+      scales. At a stated 2% OCR and 5% VLM per-field error with 10 plausible wrong values,
+      primary-only leaves 2.000% silently wrong and the cross-check leaves 0.010% -- 200x better. But
+      the disagreement rate is 6.9%, and 10M invoices at the 7 leaf fields of the lesson's own Donut
+      schema is 70M fields, so a naive policy escalates 4,823,000 a day: 13,397 reviewer-hours at 10
+      seconds each. Gating to the two fields that carry the risk is 1,378,000, 71% fewer -- so the
+      design question is which disagreements can be afforded.
