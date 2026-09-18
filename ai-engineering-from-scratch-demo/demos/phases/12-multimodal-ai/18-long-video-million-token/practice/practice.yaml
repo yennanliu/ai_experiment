@@ -1,0 +1,78 @@
+lesson: 18-long-video-million-token
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/18-long-video-million-token/docs/en.md
+exercises:
+  - index: 1
+    slug: the_agentic_row_is_cheaper_than_the_one_million_row
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 45-minute lecture at 1 FPS, 81 tokens per frame. Total tokens? Fits in which models' contexts?
+    zh: |
+      一場 45 分鐘的講座，1 FPS、每畫格 81 個詞元。總詞元數是多少？塞得進哪些模型的脈絡？
+    verifies: >-
+      218,700 tokens -- 83.4% of a 256k context, 1.67x a 128k one and 1.09x a 200k one, so a 45-minute
+      lecture misses Claude-class context by 9%. Checking every row of the lesson's own budget table
+      against the context ladder, the smallest context that actually holds each is 8k, 32k, 64k, 256k,
+      512k, 1024k and 256k -- and 3 of the 5 labels that name a size disagree, with the 1-hour row
+      labelled 1M while fitting 512k. The row labelled 'agentic retrieval' is 230,400 tokens and the
+      row labelled '1M / LongVILA' is 291,600, so the recommendation column is not ordered by the
+      token column. And the 45-minute case sits between two rows whose labels are 256k and 1M; the
+      true answer is the lower one.
+  - index: 2
+    slug: the_simulator_puts_the_hardest_position_at_the_end
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a needle-in-a-haystack test: at what minute do you inject the marker, and what is the exact query format?
+    zh: |
+      設計一次大海撈針測試：你要在第幾分鐘注入標記，查詢的確切格式又是什麼？
+    verifies: >-
+      a design of eleven depths from 0% to 100% with N trials at each and a query that admits one
+      string. Swept over those depths the lesson's own recall model is monotone -- 0.95, 0.95, 0.85
+      x4, 0.75 x5 -- with its minimum first reached at depth 0.6 and never recovering, while a
+      lost-in-the-middle curve bottoms at 0.5 and recovers; the two disagree by 0.23 at depth 1.0,
+      where the lesson is most confident. nih_trial returns recall_prob and never draws against it, so
+      a trial produces no hit and no miss. And nih_simulation calls it once per model at a random
+      depth, so its four printed probabilities are four different depths on four different curves.
+  - index: 3
+    slug: the_brute_arm_does_not_fit_so_there_is_no_recall_to_compare
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare brute-context Qwen2.5-VL-72B (80k context) to VideoAgent (Claude 3.5 + retrieval) on a 1-hour video. Which wins on recall? Which wins on latency?
+    zh: |
+      在一段 1 小時的影片上，比較暴力脈絡的 Qwen2.5-VL-72B（8 萬脈絡）與 VideoAgent（Claude 3.5 + 檢索）。回想率誰贏？延遲誰贏？
+    verifies: >-
+      an hour at 1 FPS and 81 tokens a frame is 291,600 tokens against an 80k context -- 3.65x over,
+      and the context holds 16.4 minutes -- so VideoAgent wins recall by forfeit. Fitting an hour
+      needs 0.274 FPS, one frame every 3.65 seconds, at which point a one-second event is in no frame.
+      The agent spends 7,490 tokens, 38.9x fewer and 97.4% cheaper, but pays 3 sequential round trips
+      against a parallel prefill, so it wins on latency only if each retrieval costs under 24,170
+      tokens of prefill time. Flat against linear, the two cross at 92 seconds of video. And the
+      lesson's '99% cheaper' is 98.7% at two hours and 97.4% at one.
+  - index: 4
+    slug: why_ring_attention_scales_and_what_the_rotation_buys
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Ring attention's memory cost scales linearly in sequence length and linearly in device count. Explain why and what fails if you drop the ring-rotation phase.
+    zh: |
+      環狀注意力的記憶體成本，隨序列長度線性成長，也隨裝置數線性成長。說明為什麼，以及如果你拿掉環狀輪轉那個階段會壞在哪裡。
+    cites: >-
+      Path 2: Ring attention (LWM, LongVILA)
+  - index: 5
+    slug: what_gemini_found_at_the_one_million_boundary
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Gemini 1.5 Section 5 on needle-in-a-haystack. What did the paper find about recall at the 1M vs 10M token boundary?
+    zh: |
+      讀 Gemini 1.5 第 5 節關於大海撈針的部分。論文對 100 萬與 1000 萬詞元交界處的回想率，發現了什麼？
+    cites: >-
+      Needle-in-a-haystack benchmarks
