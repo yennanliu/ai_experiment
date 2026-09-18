@@ -1,0 +1,79 @@
+lesson: 16-mio-any-to-any-streaming
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/16-mio-any-to-any-streaming/docs/en.md
+exercises:
+  - index: 1
+    slug: the_first_line_of_the_streaming_model_is_not_streaming
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your product accepts speech input and returns speech output. What's the end-to-end latency budget target? List the components that spend time.
+    zh: |
+      你的產品接受語音輸入並回傳語音輸出。端到端的延遲預算目標是多少？列出會花掉時間的各個元件。
+    verifies: >-
+      under 500 ms time-to-first-audio-byte by the lesson's own threshold table, and its
+      five-component model lands at 270 -- 40 + 80 + 40 + 30 + 80. The first term is
+      prompt_audio_seconds * 20, which scales with the whole utterance rather than one frame, so a
+      30-second turn costs 600 ms alone and the total reaches 830, sluggish by the lesson's own scale.
+      Only prefill and first token carry model_size_b / 8, so the total is 165, 270 and 1,200 ms at
+      1B, 8B and 70B and only 44.4% of the default moves with the model. And 110 ms -- the residual-VQ
+      levels plus the speech decoder, 41% of the budget -- is spent after the model has decided what
+      to say and cannot be reduced by any model choice.
+  - index: 2
+    slug: sequential_residual_decoding_runs_at_four_times_real_time
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      SpeechTokenizer residual-VQ uses 8 codebooks. Propose why parallel-decoding the residual levels is necessary (vs sequential) and what latency savings it brings.
+    zh: |
+      SpeechTokenizer 的殘差 VQ 用了 8 個碼本。提出為什麼殘差各層必須平行解碼（而非循序），以及這能省下多少延遲。
+    verifies: >-
+      replacing the lesson's 30 ms residual term with seven per-level decode steps at its own 40 ms
+      first-token cost takes the total 270 -> 520 ms: a saving of 250, 48.1%, and the difference
+      between conversational and acceptable on the lesson's own scale. Necessity is a separate
+      argument in real-time factor: at a stated 12.5 Hz frame rate parallel decoding is RTF 0.5 and
+      sequential is 4.0, so the decoder falls three seconds behind per second spoken. The frame rate
+      decides it and the lesson names none -- at SpeechTokenizer's own 50 Hz even parallel decoding is
+      RTF 2.0. And 7 levels in 30 ms is 4.3 ms each, 9.3x cheaper than a model pass, so the figure
+      prices a small depth head rather than the transformer.
+  - index: 3
+    slug: the_seven_residual_levels_share_one_codebook_slot
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your vocabulary has 32k text + 4k image + 4k speech. Add 8k music and ~10 separators. What is the embedding-matrix parameter cost at hidden dim 4096?
+    zh: |
+      你的詞彙表有 32k 文字 + 4k 影像 + 4k 語音。再加上 8k 音樂與約 10 個分隔符。在隱藏維度 4096 之下，嵌入矩陣的參數成本是多少？
+    verifies: >-
+      48,394 entries at 4,096 wide is 198,221,824 parameters -- 198.2M tied, 396.4M untied, 2.83% and
+      5.66% of a 7B model. The lesson's own build_vocab allocates 52,486 instead: two 4,096-entry
+      speech slots and six separators rather than ten, 215.0M parameters, 8.5% above the exercise's
+      figure. And 'speech L1..L7' is a single 4,096-entry slot for seven residual codebooks, so either
+      they are tied or it is seven times too small -- allocating all eight separately gives 77,062
+      entries and 315.6M parameters, 46.8% above what the lesson prints. The music slot alone is
+      33.6M, 1.49x LLaVA's entire two-layer projector from Lesson 12.05.
+  - index: 4
+    slug: which_questions_chain_of_visual_thought_helps
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Chain-of-visual-thought emits an intermediate image. What kinds of questions benefit? What kinds are hurt by the extra tokens?
+    zh: |
+      視覺思維鏈會吐出一張中間影像。哪類問題會因此受益？哪類問題會被那些額外詞元拖累？
+    cites: >-
+      Chain-of-visual-thought
+  - index: 5
+    slug: moshi_inner_monologue_against_chain_of_visual_thought
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Moshi (arXiv:2410.00037). Describe its "inner monologue" technique and compare to MIO's chain-of-visual-thought.
+    zh: |
+      讀 Moshi（arXiv:2410.00037）。描述它的「內心獨白」技巧，並與 MIO 的視覺思維鏈做比較。
+    cites: >-
+      Competitors in any-to-any
