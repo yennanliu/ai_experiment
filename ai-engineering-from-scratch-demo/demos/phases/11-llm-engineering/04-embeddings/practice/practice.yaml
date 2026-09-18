@@ -12,20 +12,24 @@ exercises:
     zh: |
       **度量比較**：對樣本文件用餘弦相似度、點積和歐幾里得距離各跑同樣 5 個查詢。記下每一種的 top-3 結果。哪些查詢上這些度量意見不一致？為什麼？
     verifies: >-
-      the engine is the lesson's default SemanticSearchEngine() over SAMPLE_DOCUMENTS and 'disagree'
-      is read as the top-3 index lists differing, not the scores, which are on three different scales
-      by construction. Two of the five queries disagree and neither disagreement is about similarity:
-      SimpleEmbedder.embed divides by the L2 norm, so cosine and the dot product agree to 5.6e-17 over
-      every query-chunk pair and euclidean matches sqrt(2 - 2 cos) to 1e-16 over the four queries that
-      normalise -- one ranking on three scales. Re-run the identical scoring with ties broken by index
-      and all five queries agree. What separates the metrics is the tie-break: cosine and dot keep
-      insertion order because sort is stable, while euclidean scores -||q - v|| and the stored norms
-      take 2 distinct values spanning 1.1e-16, so it orders tied chunks by the last bit of their
-      normalisation. One of the five queries, 'how do I reset my password', embeds to the zero vector
-      -- 0 of 270 dimensions non-zero, not one of its words in the vocabulary -- and for it the
-      euclidean identity is off by 0.41 because the query never normalised. The correspondence is
-      exact: chunks scoring exactly 0.0 per query are [0, 5, 0, 0, 4], the queries with a non-zero
-      count are indices 1 and 4, and the queries that disagree are indices 1 and 4
+      the engine is the lesson's default SemanticSearchEngine() over SAMPLE_DOCUMENTS and
+      'disagree' is read as the top-3 index lists differing, not the scores, which are on three
+      different scales by construction. The metrics disagree only on queries that contain a tie,
+      and which of the tied queries actually disagrees depends on the processor: two of the five
+      queries have tied scores, at indices 1 and 4, and on arm64 both differ while on the x86_64
+      CI runner only index 1 does, because the tied block's order comes from norms that differ by
+      one unit in the last place. The assertion is therefore the subset relation, which holds on
+      any machine, together with the control: re-run the identical scoring with ties broken by
+      index and all five queries agree. The reason there is nothing else to disagree about is
+      algebraic -- SimpleEmbedder.embed divides by the L2 norm, so cosine and the dot product
+      agree to 5.6e-17 over every query-chunk pair and euclidean matches sqrt(2 - 2 cos) to
+      2.2e-16 over the four queries that normalise -- and the smallest gap between two distinct
+      cosine scores is 0.00249, thirteen orders of magnitude above that noise. For the all-tied
+      query euclidean scores -||v||, so its top-3 is exactly the three smallest-norm chunks while
+      cosine keeps insertion order. That query, 'how do I reset my password', embeds to the zero
+      vector -- 0 of 270 dimensions non-zero, not one of its words in the vocabulary -- so the
+      euclidean identity is off by 0.41 for it, and it supplies 5 of the 9 tied scores; the
+      exact-zero counts per query are [0, 5, 0, 0, 4].
     uses_reference:
       - SemanticSearchEngine
       - SAMPLE_DOCUMENTS

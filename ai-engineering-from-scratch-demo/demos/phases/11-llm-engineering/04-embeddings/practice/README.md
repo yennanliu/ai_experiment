@@ -38,33 +38,44 @@ The fifth — chunk size 50 — cannot be run at all.
 | **how do I reset my password** | `[0, 1, 2]` | `[0, 1, 2]` | `[4, 0, 1]` | **differ** |
 | what is the SLA uptime guarantee | `[4, 1, 3]` | `[4, 1, 3]` | `[4, 1, 3]` | agree |
 | data retention and deletion | `[2, 1, 3]` | `[2, 1, 3]` | `[2, 1, 3]` | agree |
-| **api rate limits** | `[3, 0, 1]` | `[3, 0, 1]` | `[3, 1, 2]` | **differ** |
+| **api rate limits** | `[3, 0, 1]` | `[3, 0, 1]` | `[3, 1, 2]` | **differ** on arm64 |
 
-**ANSWER: two of five, and neither is about similarity.**
-`SimpleEmbedder.embed` divides by the L2 norm, so on the stored vectors
+**ANSWER: the metrics disagree only on queries that contain a tie — and which
+of those queries disagrees depends on the processor.** Two of the five have
+tied scores, at indices 1 and 4. On arm64 both differ; on the x86_64 CI runner
+only index 1 does, because the tied block's order comes from norms that differ
+by one unit in the last place and the two platforms round the dot product
+differently. So the durable claim, and the one this solution asserts, is the
+*subset* relation: disagreement ⊆ ties, on any machine.
+
+**MECHANISM: one ranking, three scales.** `SimpleEmbedder.embed` divides by the
+L2 norm, so on the stored vectors
 
 ```text
 cosine(q, v) == dot(q, v)                agree to 5.6e-17
-euclidean(q, v) == sqrt(2 - 2 cos)       agree to 1e-16
+euclidean(q, v) == sqrt(2 - 2 cos)       agree to 2.2e-16
 ```
 
-One ranking, three scales. Re-run the identical scoring with ties broken by
-index and all five queries agree.
+Re-run the identical scoring with ties broken by index and **all five** queries
+agree, on both platforms.
 
-**MECHANISM: the metrics differ only in how they break ties.** `sort` is stable,
-so cosine and dot keep insertion order. Euclidean scores `-||q - v||`, and the
-stored norms take **two** distinct values spanning **1.1e-16** — so it orders
-tied chunks by the last bit of their normalisation.
+**FINDING: no disagreement can be about similarity.** Across the three queries
+with no tie, the smallest gap between two distinct cosine scores is **0.00249**
+— thirteen orders of magnitude above the noise that separates the metrics. A
+reordering of distinct scores is arithmetically impossible.
+
+**MECHANISM: euclidean ranks a tie by the stored norm.** For the all-tied query
+it scores `-||v||`, so its top-3 is exactly the three smallest-norm chunks,
+while cosine keeps insertion order (`[0, 1, 2]`, because `sort` is stable). The
+stored norms take more than one value spanning about **1e-16**, and both the
+spread and the number of distinct values are platform-dependent.
 
 **FINDING: one query embeds to the zero vector.** `"how do I reset my password"`
 has 0 of 270 dimensions non-zero — not one of its six words is in the
-vocabulary. Cosine returns 0.0 for every chunk; euclidean returns `-||v||` and
-ranks float noise. For that query the `sqrt(2 - 2 cos)` identity is off by
+vocabulary. It reports three results with a score of 0.0, which is where 5 of
+the 9 tied scores come from; the exact-zero counts per query are
+`[0, 5, 0, 0, 4]`. For that query the `sqrt(2 - 2 cos)` identity is off by
 **0.41**, because the query never normalised.
-
-**FINDING: the correspondence is exact.** Chunks scoring exactly 0.0 per query
-are `[0, 5, 0, 0, 4]`. The queries with a non-zero tie count are indices 1 and 4.
-The queries that disagree are indices 1 and 4. No tie, no disagreement.
 
 ### 2 — the first chunk size the exercise asks for cannot terminate
 
