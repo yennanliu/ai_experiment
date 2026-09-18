@@ -1,0 +1,85 @@
+lesson: 11-chameleon-early-fusion-tokens
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/11-chameleon-early-fusion-tokens/docs/en.md
+exercises:
+  - index: 1
+    slug: three_of_the_four_images_get_the_same_codes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Chameleon uses K=8192 codebook entries and 1024 tokens per 512x512 image. Estimate the compression ratio vs a 24-bit RGB image. Is it lossy? How lossy?
+    zh: |
+      Chameleon 用 K=8192 個碼本項目，每張 512x512 影像 1024 個詞元。估算它相對於一張 24 位元 RGB 影像的壓縮比。這有損嗎？損多少？
+    verifies: >-
+      472.6x -- 6,291,456 bits of 24-bit RGB against 1,024 tokens of 13 bits, which is 0.0508 bits per
+      pixel and about 19.7x below a 1-bit-per-pixel JPEG taken as a stated reference. Yes it is lossy,
+      and the lesson's own quantizer shows how much: red, green and gray all map to (34, 36, 36, 36)
+      and only blue differs, so four visually distinct images produce 2 distinct code sequences. Mean
+      absolute error per patch against its chosen codebook entry is 3.188, 1.562, 1.562 and 1.688 on a
+      scale whose whole range is 0-9 -- the nearest entry to [8, 7, 7, 8] is [6, 1, 4, 7]. And the toy
+      compresses 32.0x against Chameleon's 472.6x, so the collisions happen at a fifteenth of the real
+      compression.
+  - index: 2
+    slug: context_breaks_at_exactly_one_megapixel
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 4K image (3840x2160) at the same VQ-VAE density produces how many image tokens? Can a Chameleon-style model generate a 4K image in one inference call? What breaks first — context, tokenizer quality, or KV cache?
+    zh: |
+      一張 4K 影像（3840x2160）在同樣的 VQ-VAE 密度下會產生多少影像詞元？一個 Chameleon 風格的模型能在單次推論呼叫中生成一張 4K 影像嗎？先崩掉的會是什麼 —— 脈絡、分詞器品質，還是 KV 快取？
+    verifies: >-
+      32,400 tokens at one token per 256 pixels, 7.9x a 4,096-token context, so no. Context breaks
+      first and it breaks at exactly 1024x1024 -- 4,096 tokens is 1.0 megapixels to the pixel -- while
+      a 16 GiB KV budget holds 32,768 tokens, 8x more, or 2896x2896. Tokenizer quality never breaks
+      because it does not depend on resolution: the rate is 0.0508 bits per pixel at 512, 1024, 2048
+      and 3840. And the 4K cache is 15.82 GiB at 512 KiB a token -- more than the 13.04 GiB a 7B model
+      costs in bf16 weights, so the image is not a large input but a second model.
+  - index: 3
+    slug: qk_norm_makes_the_logit_invariant_to_its_input_scale
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement QK-Norm in pure Python. Given a 64-dim query and key, show the dot product before and after LayerNorm. Why is magnitude control important at depth?
+    zh: |
+      用純 Python 實作 QK-Norm。給定一個 64 維的 query 與 key，列出 LayerNorm 前後的點積。為什麼在深層處控制量級很重要？
+    verifies: >-
+      -1.9794 before and -1.7674 after on a standard-normal 64-dim pair -- barely a change, because
+      the fixture is already unit-variance, which is why one pair demonstrates nothing. Swept over
+      input scales 1, 2, 10 and 100 the raw dot is -1.979, -7.918, -197.939 and -19,793.943, growing
+      as s^2 since both operands scale, while the normalised one stays at -1.767434 within 2e-05.
+      After normalisation every vector has norm exactly 8.0 = sqrt(64), so the logit is 64*cos(theta),
+      bounded in [-64, 64] and [-8, 8] after the 1/sqrt(d) scale. At depth the scale is not constant:
+      5% growth a layer is 10.4x over 48 layers and 108.2x in the logit; 10% over 32 layers is 21.11x
+      and 445.8x; 50% is 4.3e5 and 1.9e11.
+  - index: 4
+    slug: the_norm_explosion_signature_at_34b
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Chameleon Section 2.3 on training stability. Describe the exact failure mode the paper observed at 34B without QK-Norm. What was the "norm explosion" signature?
+    zh: |
+      讀 Chameleon 第 2.3 節關於訓練穩定性的部分。描述論文在 34B、未使用 QK-Norm 時觀察到的確切失敗模式。那個「範數爆炸」的特徵長什麼樣？
+    cites: >-
+      Training stability — QK-Norm, dropout, LayerNorm ordering
+  - index: 5
+    slug: no_generation_ever_puts_text_after_the_image
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the toy decoder to emit a mixed-modality response given a text-only prompt. Measure how often the model picks image-first vs text-first given training-data distribution 60% text-first / 40% image-first.
+    zh: |
+      擴充那個玩具解碼器，讓它在純文字提示詞下吐出混合模態回應。在訓練資料分布為 60% 先文字／40% 先影像的條件下，量測模型選擇先出影像與先出文字的頻率。
+    verifies: >-
+      1,000 generations from a text-only prompt through the lesson's own bigram. All 1,000 are
+      text-first -- forced, since the prompt is text -- all 1,000 open an image, and 0 emit any text
+      after it closes, because generate breaks on SEP_CLOSE whenever the output holds a text token and
+      a text prompt always does. So the 40% of the corpus that is image-then-text contributes its
+      bigrams and can never be reproduced. The realised corpus split is 0.379 rather than 0.400 over
+      1,000 draws, and at the lesson's own n=40 the same coin has a standard error of 7.7 points.
+      Samples run 7 to 25 tokens against max_len 30 and 0 reach it, so the caller's one knob does not
+      bind.
