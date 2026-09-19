@@ -48,7 +48,9 @@ budget in one case, the token rate in the other.
 still cost 165 ms.
 
 **FINDING: the target admits a 6B Thinker and no more.** Both model-scaled terms
-carry `thinker_b / 7`, so the total is `165 + 20 × thinker_b`:
+carry `thinker_b / 7`, so at the shipped 300M Talker the total is
+`170 + 20 × thinker_b` — 5 ms above the 165 ms floor, because the Talker sits on
+its `max(15, …)` floor only when the Talker is free:
 
 | Thinker | 1B | 5B | **6B** | 7B | 8B |
 |---|---:|---:|---:|---:|---:|

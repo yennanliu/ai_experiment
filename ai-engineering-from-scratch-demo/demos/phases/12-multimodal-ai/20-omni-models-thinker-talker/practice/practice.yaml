@@ -15,7 +15,9 @@ exercises:
       310 ms against a 300 ms target -- mic 50, prefill 100, first text 40, Talker 20, residual-VQ 30,
       waveform 70 -- and 390 with vision. Of that, 165 ms takes neither size parameter: 53.2% of the
       total and 55% of the target, so a free Thinker and a free Talker still cost 165 ms. Both
-      model-scaled terms carry thinker_b / 7, so the total is 165 + 20 x thinker_b and the largest
+      model-scaled terms carry thinker_b / 7, so at the shipped 300M Talker the total is 170 + 20 x
+      thinker_b -- 5 ms above the floor, since the Talker sits on its max(15, ...) floor only when the
+      Talker is free -- and the largest
       Thinker that fits the target is 6B; the Talker is nearly irrelevant, spanning 52 ms from 100M to
       1,000M. And the lesson's code disagrees with its own prose at both ends: the docs say 320-510 ms
       at 7B and 600-900 at 70B, while ttfab returns 310 and 1,690.

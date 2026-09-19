@@ -18,8 +18,10 @@ decode and the waveform decoder are constants -- **53.2%** of the 310, and
 **55%** of the 300 ms target. A free Thinker and a free Talker still cost 165 ms.
 
 **FINDING: the target admits a 6B Thinker and no more.** Both model-scaled terms
-carry `thinker_b / 7`, so the total is 165 + 20 x thinker_b: **290** ms at 6B and
-**310** at 7B. The Talker is almost irrelevant by comparison -- 100M to 1,000M
+carry `thinker_b / 7`, so at the shipped 300M Talker the total is 170 + 20 x
+thinker_b -- **290** ms at 6B and **310** at 7B. The intercept is 5 ms above the
+165 ms floor, because the Talker sits on its `max(15, ...)` floor only when the
+Talker is free. The Talker is almost irrelevant by comparison -- 100M to 1,000M
 moves the total by **52** ms while 7B to 8B moves it by 20.
 
 **FINDING: the lesson's code disagrees with its own prose at both ends.** The
@@ -61,6 +63,12 @@ def floor(ref):
     return round(sum(step.ms for step in ref.ttfab(config(ref, thinker=0, talker=0))))
 
 
+def line_through(by_thinker):
+    """Intercept and slope fitted to the sweep, so the closed form is derived."""
+    slope = by_thinker[8] - by_thinker[7]
+    return by_thinker[7] - 7 * slope, slope
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     shipped = total(ref)
@@ -77,6 +85,11 @@ def solve():
         "by_thinker": by_thinker,
         "largest_fitting": max(size for size, ms in by_thinker.items() if ms <= TARGET),
         "per_billion": by_thinker[8] - by_thinker[7],
+        "intercept": line_through(by_thinker)[0],
+        "closed_form_holds": all(
+            ms == line_through(by_thinker)[0] + line_through(by_thinker)[1] * size
+            for size, ms in by_thinker.items()),
+        "intercept_over_floor": line_through(by_thinker)[0] - fixed,
         "by_talker": by_talker,
         "talker_span": by_talker[1000] - by_talker[100],
         "big": total(ref, thinker=72, talker=300, vision=True),
@@ -110,11 +123,16 @@ def verify(result):
         practice.Check(
             "FINDING: the target admits a 6B Thinker and no more",
             all([result["by_thinker"] == {1: 190, 5: 270, 6: 290, 7: 310, 8: 330},
-                 result["largest_fitting"] == 6, result["per_billion"] == 20]),
-            f"both model-scaled terms carry thinker_b / 7, so the total is 165 + 20 x "
-            f"thinker_b: {result['by_thinker']} ms. The largest that fits "
+                 result["largest_fitting"] == 6, result["per_billion"] == 20,
+                 result["intercept"] == 170, result["closed_form_holds"],
+                 result["intercept_over_floor"] == 5]),
+            f"both model-scaled terms carry thinker_b / 7, so at the shipped {TALKER}M Talker "
+            f"the total is {result['intercept']} + {result['per_billion']} x thinker_b, which "
+            f"reproduces every swept point: {result['by_thinker']} ms. The largest that fits "
             f"{result['target']} is {result['largest_fitting']}B, and each further billion "
-            f"costs {result['per_billion']} ms",
+            f"costs {result['per_billion']} ms. Note the intercept is "
+            f"{result['intercept_over_floor']} ms above the {result['floor']} ms floor: the "
+            "Talker sits on its max(15, ...) floor only when the Talker is free",
         ),
         practice.Check(
             "FINDING: the lesson's code disagrees with its own prose at both ends",
