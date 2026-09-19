@@ -42,6 +42,8 @@ cross-examined against.
 
 from __future__ import annotations
 
+from collections import Counter
+
 from harness import parity, practice
 
 PHASE, LESSON = "12-multimodal-ai", "01-vision-transformer-patch-tokens"
@@ -49,6 +51,7 @@ PATCH = 14
 BATCH = (("poster 224x224", 224, 224), ("slide 336x448", 336, 448),
          ("photo 630x392", 630, 392), ("icon 154x322", 154, 322))
 TOY = ((2, 3), (1, 2), (3, 1))
+TWIN = ((2, 2), (2, 2), (1, 3))   # two images of equal token count, on purpose
 
 
 def pack(images, patch=PATCH):
@@ -65,10 +68,18 @@ def pairs(counts):
             "unmasked": total * total, "padded": len(counts) * widest * widest}
 
 
-def row_sums(counts, segments):
-    """Each row of the block-diagonal mask sums to its own image's token count."""
-    sizes = dict(enumerate(counts))
-    return {sizes[segment] for segment in segments}
+def row_sums(segments):
+    """The same sums without materialising: a row sums to its own segment's size."""
+    occupancy = Counter(segments)
+    return [occupancy[segment] for segment in segments]
+
+
+def twin_evidence(twin=TWIN):
+    """Row sums where two images share a token count -- a set would collapse them."""
+    mask, segments = dense_mask(twin)
+    counts = [rows * cols for rows, cols in twin]
+    return {"twin_counts": counts, "twin_tally": sorted(Counter(row_sums(segments)).items()),
+            "twin_formula_holds": [sum(row) for row in mask] == row_sums(segments)}
 
 
 def dense_mask(grids):
@@ -97,6 +108,7 @@ def solve():
     counts, segments = pack(BATCH)
     cost = pairs(counts)
     mask, toy_segments = dense_mask(TOY)
+    toy_sums = [sum(row) for row in mask]
     tables = sorted(ref.seq_length(cfg) for cfg in ref.ZOO)
     shapes = grids(ref, BATCH)
     packed, widest = sum(counts), max(counts)
@@ -109,7 +121,9 @@ def solve():
         "density_pct": round(cost["masked"] / cost["unmasked"] * 100, 2),
         "mask_vs_padded_pct": round((1 - cost["masked"] / cost["padded"]) * 100, 1),
         "unmasked_vs_padded_pct": round((cost["unmasked"] / cost["padded"] - 1) * 100, 1),
-        "row_sums": sorted(row_sums(counts, segments)),
+        "row_sum_tally": sorted(Counter(row_sums(segments)).items()),
+        "toy_dense_sums": toy_sums, "formula_holds": toy_sums == row_sums(toy_segments),
+        **twin_evidence(),
         "tables": tables, "too_small": [seq for seq in tables if seq < packed],
         "qwen_table": ref.pos_embed_params(ref.ZOO[-1]),
         "toy_cells": len(mask) * len(mask),
@@ -155,12 +169,18 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the block structure is exactly the segment identity",
-            all([result["row_sums"] == sorted(result["counts"]), result["toy_agrees"],
-                 result["toy_cells"] == 121, result["toy_true"] == 49]),
-            f"every one of the {result['packed']:,} rows sums to its own image's token count "
-            f"({result['row_sums']}), and the toy batch's materialised "
-            f"{result['toy_cells']}-cell mask matches seg[i] == seg[j] in every cell, "
-            f"{result['toy_true']} of them True",
+            all([result["row_sum_tally"] ==
+                 [(253, 253), (256, 256), (768, 768), (1260, 1260)],
+                 result["formula_holds"], result["toy_agrees"],
+                 result["toy_cells"] == 121, result["toy_true"] == 49,
+                 result["twin_formula_holds"],
+                 result["twin_tally"] == [(3, 3), (4, 8)]]),
+            f"summing the toy's {result['toy_cells']}-cell mask row by row gives "
+            f"{result['toy_dense_sums']} -- its segment occupancy exactly, so a row sums to "
+            f"its own segment's size. The batch tally is {result['row_sum_tally']}: one "
+            f"block per image, each contributing as many rows as it has tokens. Tallying "
+            f"rather than setting is what makes it a measurement -- two equally sized "
+            f"images ({result['twin_counts']}) still tally to {result['twin_tally']}",
         ),
     ]
 

@@ -127,6 +127,8 @@ def solve():
 
 def verify(result):
     rankings, dominants = result["rankings"], result["dominant"]
+    # Indexed eagerly when the Check is built, so guard it rather than raise.
+    top_at_80 = dominants[80][0] if dominants[80] else None
     return [
         practice.Check(
             "ANSWER: pick_recipe(2, 'agent') returns nothing",
@@ -144,7 +146,7 @@ def verify(result):
                  rankings[10]["ocr"] == rankings[10]["reasoning"]]),
             f"at budgets {list(PROBED)} all {result['profiles']} profiles return the same "
             f"top-3 in the same order -- {rankings[10]['agent']} and "
-            f"{rankings[80]['agent']}. At 80B {dominants[80][0]} is the maximum on all three "
+            f"{rankings[80]['agent']}. At 80B {top_at_80} is the maximum on all three "
             f"benchmarks at once, so no weighting can move it. At 10B nothing dominates, and "
             f"the ranking still holds because the benchmark spreads are {result['spreads']}: "
             f"a 1.2-against-0.8 weight cannot overcome a 30-point DocVQA gap, and the "
