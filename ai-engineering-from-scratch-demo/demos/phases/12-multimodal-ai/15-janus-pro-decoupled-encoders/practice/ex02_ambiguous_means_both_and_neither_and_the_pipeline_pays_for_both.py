@@ -107,6 +107,16 @@ def compare(ref):
             for prompt, want in CASES]
 
 
+def double_encoding(ref, rows, ambiguous):
+    """Prompts whose run_pipeline trace shows both encoders, by route verdict."""
+    def both(prompt):
+        marker = str(ref.run_pipeline(prompt).get("input_len", ""))
+        return "SigLIP:" in marker and "VQ:" in marker
+    elsewhere = [row[0] for row in rows if row[2] != "ambiguous"]
+    return {"double_encoded": sum(both(p) for p in ambiguous), "routed_elsewhere":
+            len(elsewhere), "single_encoded": sum(both(p) for p in elsewhere)}
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     rows = compare(ref)
@@ -126,7 +136,7 @@ def solve():
         "still_wrong": [row[0] for row in wrong if row[3] != row[1]],
         "word_correct": word_correct,
         "word_accuracy": round(word_correct / len(rows) * 100, 1),
-        "double_encoded": len(ambiguous),
+        **double_encoding(ref, rows, ambiguous),
         "genuine_both": buckets.count("both"),
         "saving_pct": round((1 - buckets.count("both") / len(ambiguous)) * 100),
     }
@@ -155,11 +165,14 @@ def verify(result):
         practice.Check(
             "FINDING: run_pipeline runs both encoders for all five",
             all([result["double_encoded"] == result["ambiguous"],
+                 result["double_encoded"] == 5, result["single_encoded"] == 0,
+                 result["routed_elsewhere"] == 9,
                  result["genuine_both"] == 2, result["saving_pct"] == 60]),
-            f"the else branch encodes with SigLIP and with VQ and calls the body twice, so "
-            f"all {result['double_encoded']} pay double while only {result['genuine_both']} "
-            f"need to. Splitting the verdict would cut double-encoded requests by "
-            f"{result['saving_pct']}% on this set",
+            f"reading run_pipeline's own trace, all {result['double_encoded']} ambiguous "
+            f"prompts run SigLIP and VQ both, against {result['single_encoded']} of the "
+            f"{result['routed_elsewhere']} routed elsewhere. Only {result['genuine_both']} "
+            f"need it, so splitting the verdict would cut double-encoded requests by "
+            f"{result['saving_pct']}%",
         ),
         practice.Check(
             "FINDING: the substring bug is load-bearing",

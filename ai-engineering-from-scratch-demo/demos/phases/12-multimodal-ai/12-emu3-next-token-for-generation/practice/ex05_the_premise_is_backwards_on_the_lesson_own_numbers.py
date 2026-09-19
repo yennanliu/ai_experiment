@@ -78,6 +78,8 @@ def solve():
 
 def verify(result):
     margins, pairs = result["margins"], result["pairs"]
+    # Indexed and split eagerly in the detail below, so guard rather than raise.
+    worst = result["losses"][0].split(" vs ")[0] if result["losses"] else None
     return [
         practice.Check(
             "ANSWER: the premise is backwards -- Emu3 wins VQAv2 and loses GenEval",
@@ -87,7 +89,7 @@ def verify(result):
                  len(result["wins"]) == 2]),
             f"the lesson reports {pairs}. Emu3 beats LLaVA-1.6 on VQAv2, 75.1 against 72.4, "
             f"and loses GenEval to SDXL, 0.54 against 0.55 -- so the one benchmark where the "
-            f"unified model goes backwards is {result['losses'][0].split(' vs ')[0]}, a "
+            f"unified model goes backwards is {worst}, a "
             "generation benchmark, not a perception one",
         ),
         practice.Check(

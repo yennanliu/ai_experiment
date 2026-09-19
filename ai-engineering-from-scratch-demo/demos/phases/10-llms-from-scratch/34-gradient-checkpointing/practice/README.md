@@ -146,9 +146,13 @@ on a CI runner. PCIe gen4 x16 is a fixed 25 GB/s; this measurement is above it,
 below it, or neither, depending on the host. A list in the same address space
 cannot be slower than memcpy.
 
-**FINDING: the traffic is unmeasurable in place.** The copies are **0.24%** of the
-checkpointed forward's time against **8.6%** run-to-run jitter on the forward
-itself — a factor of 36. The figures above come from timing them in isolation.
+**FINDING: the traffic is unmeasurable in place.** Timed in isolation the copies
+are well under **1%** of the checkpointed forward. Timed in place they disappear
+into run-to-run jitter, which runs from **2%** on a quiet CI runner to **35%** on
+a busy laptop: adding the copies leaves the fastest run inside the plain
+forward's own min-to-max envelope, and on a quiet host the offload arm comes out
+*faster* than the plain one — which a real cost cannot do. The figures above come
+from timing them in isolation.
 
 **MECHANISM: the breakeven is `h = F / (6·BW)`.**
 

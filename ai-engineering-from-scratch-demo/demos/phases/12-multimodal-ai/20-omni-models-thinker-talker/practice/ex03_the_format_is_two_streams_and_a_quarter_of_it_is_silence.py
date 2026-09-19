@@ -81,7 +81,8 @@ def solve():
         "signal_share": split["both speaking"],
         "smallest": min(split, key=split.get),
         "wasted": split["both silent"],
-        "turn_based_overlap": 0,
+        "turn_based_overlap": 0,          # half-duplex capture, by construction
+        "turn_based_loss": split["both speaking"],
         "channels_needed": STREAMS,
     }
 
@@ -119,12 +120,17 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: and that bucket is 0% of any turn-based corpus",
-            all([result["turn_based_overlap"] == 0, result["channels_needed"] == 2]),
+            all([result["turn_based_overlap"] == 0,
+                 result["turn_based_loss"] == result["signal_share"],
+                 result["turn_based_loss"] == 25, result["signal_share"] > 0]),
             f"half-duplex recordings are segmented by turn, so overlapping speech is "
             f"discarded or was never captured on separate channels -- "
-            f"{result['turn_based_overlap']}% of a turn-based corpus contains the phenomenon. "
-            f"The format needs {result['channels_needed']} channels recorded simultaneously, "
-            "so 'propose a format' is really 'propose a recording setup'",
+            f"{result['turn_based_overlap']}% of a turn-based corpus contains the "
+            f"phenomenon. That is exactly the {result['turn_based_loss']}% of frames this "
+            f"format exists to carry, measured off the same split, so a turn-based corpus "
+            f"cannot supply any of its training signal. The format needs "
+            f"{result['channels_needed']} channels recorded simultaneously: 'propose a "
+            "format' is really 'propose a recording setup'",
         ),
     ]
 

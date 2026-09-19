@@ -126,8 +126,9 @@ exercises:
       machine rather than with any link: the same memcpy reports 89 GB/s on a 0.26 MB array and 25
       GB/s on a 67 MB one, 3.6x apart on one machine for no reason but what fits in cache, and the
       exercise's own 6.8 MB of segment inputs land at 72 GB/s here against 15 GB/s on a CI runner --
-      PCIe gen4 x16 is a fixed 25 GB/s, so the figure is above it, below it or neither by host. The traffic is also unmeasurable in place -- the copies are 0.24% of the checkpointed
-      forward's time against 8.6% run-to-run jitter on the forward itself, a factor of 36 -- so the
+      PCIe gen4 x16 is a fixed 25 GB/s, so the figure is above it, below it or neither by host. The traffic is also unmeasurable in place -- timed in isolation the copies are under 1% of
+      the checkpointed forward, and timed in place they fall inside its own min-to-max envelope,
+      with the offload arm coming out faster than the plain one on a quiet host -- so the
       figures above come from timing them in isolation. The breakeven has to be written as h = F /
       (6 * BW), which lands at hidden 2,080 on PCIe gen4, 812 on gen5, 173 on NVLink 3 and 58 on
       NVLink 4: a 36x range set entirely by the one quantity a list in the same address space does

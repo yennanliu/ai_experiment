@@ -61,6 +61,14 @@ def gb(value):
     return round(value / 1e9, 1)
 
 
+FIRST_STAGE_RECALL = 0.95
+
+
+def end_to_end(first_recall, rerank_quality):
+    """Recall after reranking. The second stage reorders candidates; it never adds one."""
+    return round(first_recall * rerank_quality, 4)
+
+
 def solve():
     parity.load_reference(PHASE, LESSON, "main")
     full = maxsim_ops(CORPUS)
@@ -79,6 +87,10 @@ def solve():
         "rerank_k": RERANK_K,
         "stages": ("VisRAG pooled ANN", "ColQwen2 MaxSim rerank"),
         "recall_gate": "first stage recall@100",
+        "first_recall": FIRST_STAGE_RECALL,
+        "perfect_rerank": end_to_end(FIRST_STAGE_RECALL, 1.0),
+        "half_rerank": end_to_end(FIRST_STAGE_RECALL, 0.5),
+        "capped": end_to_end(FIRST_STAGE_RECALL, 1.0) <= FIRST_STAGE_RECALL,
     }
 
 
@@ -117,13 +129,17 @@ def verify(result):
         practice.Check(
             "ANSWER: the justification is the recall hand-off",
             all([result["recall_gate"] == "first stage recall@100",
-                 len(result["stages"]) == 2]),
+                 len(result["stages"]) == 2, result["capped"],
+                 result["perfect_rerank"] == 0.95, result["half_rerank"] == 0.475]),
             "VisRAG's single vector per page asks whether a page is ABOUT the query -- what "
             "Exercise 2 shows a mean similarity does -- which is the right question for a "
             "stage that must not miss. ColQwen2's MaxSim then asks whether the answer is ON "
             f"the page, the right question once there are {RERANK_K} candidates. The number "
-            f"to watch is {result['recall_gate']}, because nothing downstream recovers a page "
-            "it did not return",
+            f"to watch is {result['recall_gate']}, because nothing downstream recovers a "
+            f"page it did not return: at a first stage of {result['first_recall']:.0%}, a "
+            f"perfect reranker ends at {result['perfect_rerank']:.0%} and a half-useless one "
+            f"at {result['half_rerank']:.1%}. The second stage reorders candidates and never "
+            "adds one, so its quality can only subtract",
         ),
     ]
 

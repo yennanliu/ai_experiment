@@ -35,7 +35,7 @@ table: the axis weights sum to **115%** and the note claiming they are rebased i
 never executed.
 
 Structure: `benchmarks` and `arch_rows` read what the lesson actually contains,
-`frame_span` reads its one numeric column, and `WEIGHTS` is Lesson 12.07's
+`frame_span` reads its one numeric column, and `axis_weights` reads Lesson 12.07's
 decomposition applied as a stated model.
 """
 
@@ -49,8 +49,7 @@ from harness import parity, practice
 
 PHASE, LESSON = "12-multimodal-ai", "17-video-language-temporal-grounding"
 BENCHMARKS = ("VideoMME", "TempCompass", "EgoSchema", "Video-MMMU")
-WEIGHTS = {"visual-token count": 60, "image encoder": 20, "LLM size": 15,
-           "connector arch": 5, "data mix": 10, "resolution sched": 5}
+RECIPES = "07-open-weight-vlm-recipes"
 TOKENS_PER_FRAME = 81
 
 
@@ -71,8 +70,20 @@ def frame_span(text):
     return min(numbers), max(numbers)
 
 
+def axis_weights():
+    """Lesson 12.07's variance decomposition, read off its own axis_impact output."""
+    recipes = parity.load_reference(PHASE, RECIPES, "main")
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        recipes.axis_impact()
+    return {axis.strip(): int(pct)
+            for axis, pct in re.findall(r"^(\S.*?)\s+(\d+)%", buffer.getvalue(),
+                                        re.MULTILINE)}
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
+    weights = axis_weights()
     text = arch_text(ref)
     doc = parity.doc_text(PHASE, LESSON, "en")
     low, high = frame_span(text)
@@ -83,9 +94,9 @@ def solve():
         "has_benchmark_column": any(name in text for name in BENCHMARKS),
         "frames": (low, high), "frame_ratio": high // low,
         "tokens": (low * TOKENS_PER_FRAME, high * TOKENS_PER_FRAME),
-        "token_axis": WEIGHTS["visual-token count"], "llm_axis": WEIGHTS["LLM size"],
-        "axis_ratio": WEIGHTS["visual-token count"] // WEIGHTS["LLM size"],
-        "weight_sum": sum(WEIGHTS.values()), "terms": len(WEIGHTS),
+        "token_axis": weights["visual-token count"], "llm_axis": weights["LLM size"],
+        "axis_ratio": weights["visual-token count"] // weights["LLM size"],
+        "weight_sum": sum(weights.values()), "terms": len(weights),
         "products": 0,
     }
 
@@ -115,9 +126,12 @@ def verify(result):
         practice.Check(
             "ANSWER: by Lesson 12.07's weights the split is 4 to 1 toward tokens",
             all([result["token_axis"] == 60, result["llm_axis"] == 15,
-                 result["axis_ratio"] == 4]),
-            f"that lesson rates visual-token count at {result['token_axis']}% of variance "
-            f"and LLM size at {result['llm_axis']}%, so a stated extrapolation puts "
+                 result["axis_ratio"] == 4, result["terms"] == 6,
+                 result["weight_sum"] == 115]),
+            f"read off Lesson 12.07's own axis_impact output, that lesson rates "
+            f"visual-token count at {result['token_axis']}% of variance and LLM size at "
+            f"{result['llm_axis']}% -- {result['terms']} axes summing to "
+            f"{result['weight_sum']}%, not 100 -- so a stated extrapolation puts "
             f"{result['axis_ratio']}x more of any video gap on the temporal-and-token side. "
             "Frame count, sampling rate and per-frame pooling are all inside the 60%",
         ),
