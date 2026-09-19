@@ -116,11 +116,16 @@ def verify(result):
         practice.Check(
             "ANSWER: the split is whether the DOM is authoritative",
             all([len(result["tree_wins"]) == 4, len(result["pixel_wins"]) == 4,
-                 "canvas" in result["pixel_wins"]]),
+                 "canvas" in result["pixel_wins"], result["tree_columns"] == 0,
+                 set(result["tree_wins"]).isdisjoint(result["pixel_wins"])]),
             f"the tree wins on {list(result['tree_wins'])} -- a text label is exact where a "
             f"click coordinate is approximate -- and screenshots win on "
             f"{list(result['pixel_wins'])}, where the page is rendered rather than marked up "
-            "and the DOM either omits the element or misdescribes its state",
+            f"and the DOM either omits the element or misdescribes its state. This split is "
+            f"reasoned rather than measured: the lesson's table carries "
+            f"{result['tree_columns']} accessibility-tree columns, so nothing in the evidence "
+            f"tests it. What is checkable is that the two sets are disjoint and that the "
+            "benchmark which would settle it does not exist here",
         ),
         practice.Check(
             "FINDING: and ten tasks cannot answer the question",

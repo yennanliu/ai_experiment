@@ -44,7 +44,8 @@ PHASE, LESSON = "12-multimodal-ai", "23-colpali-vision-native-rag"
 DIM, FLOAT_BYTES = 128, 4
 PATCHES, WORDS = 729, 500
 PQ_FACTOR = 8
-OCR_ERROR = 0.02          # Lesson 12.22's stated per-field rate
+OCR_ERROR = 0.02          # Lesson 12.22 ex05's stated assumption, not a
+                          # figure the lesson itself measures
 
 
 def index_bytes(units, dim=DIM, size=FLOAT_BYTES):
@@ -53,6 +54,16 @@ def index_bytes(units, dim=DIM, size=FLOAT_BYTES):
 
 def kib(value):
     return round(value / 1024, 1)
+
+
+def surviving_rows(unreadable):
+    """Index rows left when `unreadable` of the page cannot be OCR'd.
+
+    A patch grid is laid over the page geometrically, so every region yields a
+    vector however illegible. A word index has a row only where OCR produced a
+    token, so an unread word is an absent row rather than a poor one.
+    """
+    return {"patches": PATCHES, "words": round(WORDS * (1 - unreadable))}
 
 
 def solve():
@@ -72,6 +83,9 @@ def solve():
         "unrepresentable": ("checkbox", "stamp", "table rule", "chart bar",
                            "signature", "column alignment"),
         "graceful": "patches", "discrete": "words",
+        "rows_clean": surviving_rows(0.0), "rows_tenth": surviving_rows(0.1),
+        "rows_illegible": surviving_rows(1.0),
+        "nontext_rows": 0,
     }
 
 
@@ -99,19 +113,29 @@ def verify(result):
             "FINDING: the unit change costs everything not in the text stream",
             all([len(result["unrepresentable"]) == 6,
                  "checkbox" in result["unrepresentable"],
-                 result["ocr_error"] == 0.02]),
-            f"a word vector cannot encode {list(result['unrepresentable'])}. Lesson 12.22 "
-            f"measures the alternative: LayoutLMv3's bbox stream restores position and gives "
-            f"up scale invariance, and its text ids come from an OCR pass whose per-field "
-            f"error that lesson states at {result['ocr_error']:.0%}",
+                 result["ocr_error"] == 0.02, result["nontext_rows"] == 0,
+                 result["rows_clean"]["words"] == WORDS]),
+            f"a word vector cannot encode {list(result['unrepresentable'])}: on a perfectly "
+            f"read page the word index still holds {result['rows_clean']['words']} rows and "
+            f"{result['nontext_rows']} of them describe any of those six, because the index "
+            f"has no unit for them. Lesson 12.22 covers the alternative -- LayoutLMv3's bbox "
+            f"stream restores position and gives up scale invariance -- and its exercise 5 "
+            f"assumes an OCR per-field error of {result['ocr_error']:.0%}; the lesson itself "
+            "measures no such rate",
         ),
         practice.Check(
             "FINDING: and the failure modes invert",
-            all([result["graceful"] == "patches", result["discrete"] == "words"]),
-            "patches degrade gracefully -- a blurred region still yields vectors, just less "
-            "distinctive ones. Words fail discretely: OCR either produces a token or it does "
-            "not, and a word never extracted is unretrievable at any recall. MaxSim over "
-            "patches has no equivalent of a missing row",
+            all([result["graceful"] == "patches", result["discrete"] == "words",
+                 result["rows_tenth"] == {"patches": PATCHES, "words": 450},
+                 result["rows_illegible"] == {"patches": PATCHES, "words": 0},
+                 result["rows_illegible"]["patches"] == result["rows_clean"]["patches"]]),
+            f"losing a tenth of the page to illegibility leaves {result['rows_tenth']} index "
+            f"rows and losing all of it leaves {result['rows_illegible']} -- the patch count "
+            f"never moves, because the grid is laid over the page geometrically and a "
+            f"blurred region still yields vectors, just less distinctive ones. Words fail "
+            f"discretely: OCR either produces a token or it does not, and a word never "
+            "extracted is unretrievable at any recall. MaxSim over patches has no equivalent "
+            "of a missing row",
         ),
     ]
 
