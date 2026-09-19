@@ -38,7 +38,9 @@ toy's two closed-form losses at a step index.
 
 from __future__ import annotations
 
+import inspect
 import math
+import re
 
 from harness import parity, practice
 
@@ -65,6 +67,25 @@ def trajectory(ref, step):
             round((0.8 + 0.02 * step - 1) ** 2, 5))
 
 
+def shipped_weights(ref):
+    """The loss weights train() hard-codes, read out of its own source."""
+    source = inspect.getsource(ref.train)
+    return {key: float(value)
+            for key, value in re.findall(r'"(text_w|img_w)":\s*([\d.]+)', source)}
+
+
+def weight_keys(ref):
+    """Every weights[...] key two_loss_step reads."""
+    source = inspect.getsource(ref.two_loss_step)
+    return sorted(set(re.findall(r'weights\["(\w+)"\]', source)))
+
+
+def total_line(ref):
+    """The line in two_loss_step that combines the two losses."""
+    return next(line.strip() for line in inspect.getsource(ref.two_loss_step).splitlines()
+                if line.strip().startswith("total ="))
+
+
 def raw_text_loss(step):
     """The same text loss without the toy's lower clamp."""
     probability = 0.3 + 0.05 * step
@@ -73,15 +94,19 @@ def raw_text_loss(step):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    shipped = 0.1
+    weights, combine = shipped_weights(ref), total_line(ref)
+    shipped = weights["img_w"]
     return {
         "magnitude": magnitude_weight(), "contribution": contribution_weight(),
-        "shipped": shipped,
+        "shipped": shipped, "shipped_text_w": weights["text_w"],
+        "weight_keys": weight_keys(ref), "total_line": combine,
         "shipped_contributions": contributions(shipped),
         "balanced_contributions": contributions(contribution_weight()),
         "text_gradient_share": round(contributions(shipped)[0]
                                      / sum(contributions(shipped)) * 100),
-        "uses_mix": "0.7" in ref.two_loss_step.__doc__ if ref.two_loss_step.__doc__ else False,
+        "uses_mix": any(term in combine
+                        for term in ("share", "count", "len(", str(TEXT_SHARE),
+                                     str(IMAGE_SHARE))),
         "trajectory": {step: trajectory(ref, step) for step in (0, 5, DEMO_STEPS)},
         "image_zero_at": next(step for step in range(30)
                               if trajectory(ref, step)[1] == 0.0),
@@ -108,10 +133,15 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson ships the first answer and never asks the second",
-            all([result["shipped"] == result["magnitude"], not result["uses_mix"]]),
-            f"train sets img_w = {result['shipped']} exactly, and two_loss_step computes "
-            "text_w * text_loss + img_w * img_loss with no token-count term anywhere. The "
-            "70/30 mix the exercise is built on cannot enter the calculation",
+            all([result["shipped"] == result["magnitude"],
+                 result["shipped_text_w"] == 1.0, not result["uses_mix"],
+                 result["weight_keys"] == ["img_scale", "img_w", "text_scale", "text_w"]]),
+            f"read out of train's own source, it hard-codes img_w = {result['shipped']} and "
+            f"text_w = {result['shipped_text_w']} -- the magnitude reading exactly. "
+            f"two_loss_step combines them with `{result['total_line']}` and reads only "
+            f"{result['weight_keys']} from the weights dict, so there is no token-count term "
+            f"and the {TEXT_SHARE:.0%}/{IMAGE_SHARE:.0%} mix the exercise is built on cannot "
+            "enter the calculation",
         ),
         practice.Check(
             "FINDING: neither loss in the toy depends on the data",

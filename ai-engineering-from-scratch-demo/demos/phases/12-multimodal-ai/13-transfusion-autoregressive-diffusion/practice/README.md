@@ -141,11 +141,13 @@ one new position; a denoise pass processes all 256.
 one token at a time is 256 passes and 256 positions. The trade is parallelism,
 not total compute — and the factor is the denoise-step count in both directions.
 
-**FINDING: the breakeven is 256 steps.** Below it Transfusion wins on passes; at
-it the two arms match on both counts; above it loses on both. The shipped 20
-steps is 12.8 patches per step, and that number — which the exercise treats as a
-given — is what decides whether the architecture is cheaper than Chameleon's at
-all.
+**FINDING: there is a breakeven on passes, and none on work at all.** The image
+arm costs S passes and 256S positions against the autoregressive arm's 256 and
+256. On passes the two meet at S = **256** and the shipped 20 sits **12.8×**
+inside it; on positions they meet at S = **1**, so from the second denoise step
+onward Transfusion does strictly more work — at the pass breakeven, **65,536**
+positions against 256. That step count — which the exercise treats as a given —
+is what decides whether the architecture is cheaper than Chameleon's at all.
 
 ### 5 — why rectified flow needs fewer steps
 

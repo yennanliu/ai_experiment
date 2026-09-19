@@ -15,7 +15,9 @@ exercises:
       0.1 balances the per-token magnitudes and 0.2333 balances the contributions -- weighted by the
       70/30 mix, img_w = 0.1 leaves contributions of 0.7 and 0.3, so text carries 70% of the gradient.
       The lesson ships the first answer exactly and cannot ask the second: two_loss_step computes
-      text_w*text_loss + img_w*img_loss with no token-count term anywhere. Neither loss depends on the
+      text_w*text_loss + img_w*img_loss -- read out of the lesson's own source, which hard-codes
+      img_w 0.1 and text_w 1.0 and passes two_loss_step only scale and weight keys, so there is no
+      token-count term anywhere. Neither loss depends on the
       data -- text_loss is -log(0.3 + 0.05k) and img_loss is (0.8 + 0.02k - 1)^2 times the noise,
       closed forms in the step counter -- and the image loss reaches exactly 0 at step 10, the last
       one the demo runs. The text loss goes negative at step 14, where 0.3 + 0.05k passes 1.0 and
@@ -70,9 +72,11 @@ exercises:
       positions instead the split inverts: 50 of text against 5,120 of image, so the image is 99.0% of
       the work in 28.6% of the calls. Against the same 256 patches generated one token at a time --
       256 passes, 256 positions -- Transfusion is 12.8x fewer calls for 20x the position-work, so the
-      trade is parallelism and not total compute. The breakeven is 256 denoise steps; the shipped 20
-      is 12.8 patches per step, and that number, which the exercise treats as a given, decides whether
-      the architecture is cheaper than Chameleon's at all.
+      trade is parallelism and not total compute. There is a breakeven on passes at 256 denoise steps
+      -- the shipped 20 sits 12.8x inside it -- and none on work at all: the two arms meet on
+      positions at a single step, so from the second denoise step onward Transfusion does strictly
+      more work, and at the pass breakeven it is 65,536 positions against 256. That step count, which
+      the exercise treats as a given, decides whether the architecture is cheaper than Chameleon's.
   - index: 5
     slug: why_rectified_flow_needs_fewer_steps
     kind: explain
