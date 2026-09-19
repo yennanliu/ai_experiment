@@ -1,0 +1,130 @@
+lesson: 10-mcp-resources-and-prompts
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/10-mcp-resources-and-prompts/docs/en.md
+exercises:
+  - index: 1
+    slug: validating_a_variable_is_a_character_class_not_a_presence_check
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `notes://projects/{project}/notes/{id}` resource template and validate both variables.
+    zh: |
+      加一個 `notes://projects/{project}/notes/{id}` 資源模板，並驗證兩個變數。
+    verifies: >-
+      [^/]+ for both variables, matched after decoding, accepts apollo/7 and rejects an empty
+      project, an empty id, an embedded slash and a trailing segment -- 1 acceptance against 4,
+      with the accepted pair round-tripping back through expand. A presence check does not
+      merely over-accept, it is ambiguous: on notes://projects/x/notes/y/notes/z a greedy (.+)
+      reads project=x/notes/y and a lazy (.+?) reads project=x, both non-empty, so the template
+      no longer determines which values it accepted, while [^/]+ has one reading or none.
+      Percent-encoding puts the ambiguity back if you decode too late -- a%2Fb satisfies [^/]+
+      and unquotes to a/b -- so the two steps are ordered. And the grammar is unreachable: an
+      expanded URI answers -32602 from resources_read's exact NOTES lookup, HANDLERS has no
+      templates method, and the advertised resources capability is ['listChanged', 'subscribe']
+      with no key to announce a template under.
+  - index: 2
+    slug: the_cursor_has_to_be_the_sort_key_or_a_page_repeats_itself
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add pagination to `resources/list` while preserving deterministic order.
+    zh: |
+      為 `resources/list` 加上分頁，同時保住確定性的排序。
+    verifies: >-
+      six seeded notes at two per page give three full pages whose concatenation equals the
+      unpaginated resources_list exactly, with the cursor being the last URI served. Six divides
+      evenly, so no page can say it is the last and a fourth request returns 0 rows --
+      exhaustion is a round trip rather than a flag. An offset cursor is wrong under insertion
+      and wrong by repeating: inserting notes://note-1a between page 1 and page 2, the key
+      cursor still yields note-3/note-4 while the offset cursor 2 yields note-2/note-3, serving
+      note-2 twice. The ordering the exercise asks you to preserve was already there --
+      reversing NOTES leaves every page unchanged, because resources_list sorts NOTES.items() --
+      and paging is what makes it load-bearing. And the cache hint does not survive being split:
+      every page inherits ttlMs 300000 and cacheScope public with nothing naming its generation,
+      so a cache may hold page 1 from before an insert and page 2 from after.
+  - index: 3
+    slug: zero_is_a_ttl_and_a_truthiness_test_turns_it_into_a_default
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change one resource to `cacheScope: "private"` with `ttlMs: 0`, add a host-level no-store policy, and explain the threat that justifies both controls.
+    zh: |
+      把某個資源改成 `cacheScope: "private"` 搭配 `ttlMs: 0`，加上宿主層級的 no-store 政策，並說明是什麼威脅同時證成了這兩道控制。
+    verifies: >-
+      the sensitive read returns cacheScope private with ttlMs 0 and the strict host refuses to
+      store it, holding 1 entry after reading both notes. The threat needing both controls is a
+      shared host cache over a private resource: private stops the copy reaching a second
+      subject, ttlMs 0 stops the same subject being served it after the note changed or access
+      was revoked. ttlMs 0 is not ttlMs absent and `or` cannot tell them apart --
+      `result.get('ttlMs') or 60000` assigns 60000 and stores, `result.get('ttlMs', 60000)`
+      gives 0. The two ablations leak in different directions: keyed on the URI alone the
+      ordinary private note read by alice is served to mallory, and honouring the scope but not
+      the zero alice is served her own stale copy after the text changed. Neither control is
+      enforced by the server -- resources_read emits the hints and the module has 0 cache-shaped
+      names, so both live entirely in the host.
+  - index: 4
+    slug: no_event_is_sent_is_a_claim_about_the_caller_not_the_stream
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a prompt-list change subscription and prove no event is sent when the filter omits `promptsListChanged`.
+    zh: |
+      加一個提示詞清單變更的訂閱，並證明當過濾條件裡沒有 `promptsListChanged` 時不會送出任何事件。
+    verifies: >-
+      with promptsListChanged the send site carries the acknowledgement and
+      notifications/prompts/list_changed tagged with the subscription id; with the key absent it
+      carries the acknowledgement alone -- 1 change event against 0. The method cannot enforce
+      it but the caller can: prompts_list_changed() returns None rather than declining, so an
+      unfiltered transmitter carries one extra frame, the JSON literal null, and the lesson's
+      own demo() ends with `if item is not None`. Only the literal True subscribes --
+      subscriptions_listen tests `value is True`, so of True, 1 and 'yes' exactly one is
+      accepted even though 1 == True. And a typo unsubscribes you silently: promptListChanged is
+      not in SUPPORTED_NOTIFICATION_FIELDS so the agreed filter is {}, with the acknowledgement
+      the only place it shows -- and that acknowledgement is rebuilt alphabetically rather than
+      echoed, so comparing it with what was sent is the check.
+  - index: 5
+    slug: simultaneous_is_the_clients_bookkeeping_and_the_server_has_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create two simultaneous subscriptions and prove each event carries the correct request ID.
+    zh: |
+      同時建立兩個訂閱，並證明每個事件都帶著正確的請求 ID。
+    verifies: >-
+      two streams with overlapping filters produce four notification frames plus two closes, all
+      six tagged with the id of the stream that produced them and none cross-tagged; the filters
+      overlap so a mis-tag would have been plausible rather than obvious. The fan-out is the
+      caller's loop, not a broadcast -- resource_updated consults only its own subscription and
+      the module's subscription-shaped names are a class and a constructor, nothing holding open
+      streams. Two streams may share an id and the server cannot tell: the id is an argument
+      rather than an allocation, a frozen dataclass of (notifications, subscription_id) has
+      nothing else to differ by, and two objects built with sub-1 produce equal acknowledgements
+      -- only a null id is refused, -32602. And the terminal frame's _meta carries 2 keys where
+      every notification carries 1, because close() merges the subscription meta with
+      response_meta().
+  - index: 6
+    slug: the_subject_cannot_come_from_the_request_that_is_using_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an authorization subject to the read handler and prove a cache entry cannot cross subjects.
+    zh: |
+      在讀取處理器裡加上授權主體，並證明快取條目無法跨主體。
+    verifies: >-
+      read(params, subject) against a grant table, with a cache keyed on (subject, uri): alice
+      granted both notes and mallory one, the keyed cache holds 3 entries and mallory's lookup
+      of alice's note misses, where keying on the URI alone holds 2 and serves it. The subject
+      cannot come from the request -- validate_request_meta accepts any clientInfo.name, so a
+      caller naming itself user:alice is believed exactly as far as it asked to be, and the
+      subject must arrive beside the message from whatever authenticated the transport. The hint
+      was always there and the parameter never was: resources_read's signature is ('params',)
+      and it returns cacheScope private for every note. And a distinct denial code is an
+      enumeration oracle -- -32003 for a note that exists but is not granted against -32602 for
+      one that does not exist lets mallory tell them apart in one request, while answering
+      -32602 for both makes the two responses identical.
