@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | A 200-page annual report at 729 patches per page, 128-dim emb, 4-byte floats. Compute raw sto… | code | T0 | `ex01_the_index_size_is_a_vision_tower_choice.py` |
-| 2 | MaxSim is Σ_i max_j cos(q_i, p_j). What does this sum capture that a simple mean similarity d… | code | T0 | `ex02_maxsim_is_invariant_to_padding_and_linear_in_query_length.py` |
+| 2 | MaxSim is Σ_i max_j cos(q_i, p_j). What does this sum capture that a simple mean similarity d… | code | T0 | `ex02_maxsim_is_invariant_to_padding_and_additive_per_query_token.py` |
 | 3 | ColPali indexes pages as patch sets. What changes if we instead index at the word level (as C… | code | T0 | `ex03_word_level_is_smaller_and_costs_the_thing_colpali_removed.py` |
 | 4 | Design the end-to-end pipeline for a 1M-page corpus with a latency budget of 500ms per query.… | code | T0 | `ex04_two_stage_or_ten_thousand_times_the_budget.py` |
 | 5 | Read M3DocRAG (arXiv:2411.04952). Describe the multi-page attention pattern and how it differ… | explain | T0 | prose, below |
@@ -51,7 +51,7 @@ patches (Lesson 12.01), **6.37×** the storage at **2.27 MiB** a page.
 The lesson reports 8× and **zero** recall figures. The same shape as Lesson
 12.21's FAST tokenizer, which reports a ratio and ships no inverse.
 
-### 2 — MaxSim is invariant to padding and linear in query length
+### 2 — MaxSim is invariant to padding and additive per query token
 
 | page patches | 4 | 8 | 20 | 68 | **729** |
 |---|---:|---:|---:|---:|---:|
@@ -66,8 +66,12 @@ the answer is *on* it.
 The invariance is the feature; its cost is that a 729-patch page and a 4-patch
 page are scored on one scale with no normalisation for how many chances each had.
 
-**FINDING: the score is linear in query length** — 0.774, 1.478, 2.955, 14.776 at
-1, 2, 4, 20 tokens (**0.7388** each). A fixed relevance threshold is a different
+**FINDING: the score is additive per query token, not linear in query length** —
+token 0 scores **0.774**, token 1 **0.7036**, and every total is their running
+sum: 0.774, 1.478, 2.252, 2.955, 14.776 at 1, 2, 3, 4, 20 tokens. The per-token
+average takes three distinct values (**0.774**, **0.7388**, **0.7505**) and
+tracks *which* tokens the query has, not how many; the apparent linearity of 2,
+4 and 20 is an artifact of repeating the same two-token block. A fixed threshold is a different
 threshold for every query.
 
 **FINDING: one patch can serve every query token** — **1.481** for one shared

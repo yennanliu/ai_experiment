@@ -19,7 +19,7 @@ exercises:
       6.37x the storage at 2.27 MiB a page, so the index size is chosen when the encoder is. And PQ is
       a lossy codec on exactly what MaxSim maximises over: the lesson reports 8x and 0 recall figures.
   - index: 2
-    slug: maxsim_is_invariant_to_padding_and_linear_in_query_length
+    slug: maxsim_is_invariant_to_padding_and_additive_per_query_token
     kind: code
     tier: T0
     deps_group: none
@@ -32,8 +32,11 @@ exercises:
       patches to 729 with irrelevant ones leaves MaxSim at 1.4776 and takes the mean to 0.0522, a 9.6x
       collapse. So a mean asks whether a page is about the query and a max asks whether the answer is
       on it -- and the cost of that invariance is that pages of different sizes are scored on one
-      scale. The score is also linear in query length: 0.774, 1.4776, 2.9551 and 14.7755 at 1, 2, 4
-      and 20 tokens, 0.7388 each, so a fixed threshold is a different threshold per query. And one
+      scale. The score is additive per query token rather than linear in query length: token 0 scores
+      0.774 and token 1 0.7036, and every total is their running sum -- 0.774, 1.4776, 2.2515, 2.9551,
+      14.7755 at 1, 2, 3, 4 and 20 tokens -- so the per-token average takes three distinct values
+      (0.774, 0.7388, 0.7505) and tracks which tokens the query has, not how many. A fixed threshold
+      is wrong per query in both length and composition. And one
       patch matching both query tokens scores 1.4807 against 2.0 for two specialised patches -- a max
       with no assignment step.
   - index: 3
