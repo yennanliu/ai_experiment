@@ -99,6 +99,9 @@ def solve():
 
 def verify(result):
     versus_max, versus_mean, gaps = result["versus_max"], result["versus_mean"], result["gaps"]
+    # Indexed eagerly by both the ok-expression and the detail below, so an empty
+    # list must fail the check rather than raise out of Check construction.
+    worst = result["losses"][0] if result["losses"] else None
     return [
         practice.Check(
             "ANSWER: CV-Bench gains, DocVQA loses, MMMU gains slightly",
@@ -108,7 +111,7 @@ def verify(result):
             f"against the better single encoder the concat is {versus_max}. The exercise's "
             f"premise is that it 'adds no signal on MMMU'; the lesson's own table says "
             f"{versus_max['MMMU']:+}, and the benchmark that actually goes backwards is "
-            f"{result['losses'][0]}",
+            f"{worst}",
         ),
         practice.Check(
             "FINDING: against the mean of its parts the concat wins everywhere",
@@ -123,7 +126,7 @@ def verify(result):
             "FINDING: the DocVQA gap is where the two encoders disagree most",
             all([gaps == {"MMMU": 4.0, "CV-Bench": 5.0, "DocVQA": 23.0},
                  result["widest_gap"] == "DocVQA",
-                 result["widest_gap"] == result["losses"][0]]),
+                 result["widest_gap"] == worst]),
             f"the two singles differ by {gaps}. DocVQA is a {gaps['DocVQA']}-point gap -- "
             f"SigLIP {result['siglip'][2]} against DINOv2 {result['dinov2'][2]} -- and it is "
             "the one benchmark where the concat fails to beat the better part. Adding a weak "
