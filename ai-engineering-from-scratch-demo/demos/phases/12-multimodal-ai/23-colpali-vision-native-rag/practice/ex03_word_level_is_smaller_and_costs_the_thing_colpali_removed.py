@@ -14,10 +14,10 @@ same order, because a word and a patch are about the same size on a page. What
 changes is that word-level needs the text extracted first, which is the step
 ColPali exists to delete.
 
-**FINDING: the storage saving is worth 1.5 KiB a page more than PQ already
-gives.** Word-level raw is 250.0 KiB; ColPali at PQ 8x is **45.6 KiB**. If
-storage is the concern, quantisation beats changing the unit by **5.5x**, and it
-does not require reading the page.
+**FINDING: quantisation beats changing the unit by 5.5x.** Word-level raw is
+**250.0 KiB**; ColPali at PQ 8x is **45.6 KiB**. So the unit change is the more
+expensive of the two ways to shrink the index, and it is the one that requires
+reading the page first.
 
 **FINDING: what the unit change actually costs is everything not in the text
 stream.** A word vector cannot encode a checkbox, a stamp, a line in a table, a

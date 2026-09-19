@@ -23,7 +23,8 @@ belong to different modules.
 bottom.** It cites "30-80 tok/s on an H100" and calls a small Talker "fast
 enough". At **30** tok/s against a 50/s requirement the real-time factor is
 **1.67** -- the stream falls **0.67 seconds behind for every second spoken** --
-and only the top **60%** of the cited range keeps up at all.
+and only **67%** of the cited points -- 50 and 80 of {30, 50, 80} -- keep up
+at all.
 
 **FINDING: and the margin at the top is thin.** At 80 tok/s the real-time factor
 is **0.62**, so the whole cited range spans RTF **0.62 to 1.67** and straddles 1.
