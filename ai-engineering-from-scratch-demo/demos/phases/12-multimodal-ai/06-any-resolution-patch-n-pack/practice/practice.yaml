@@ -1,0 +1,87 @@
+lesson: 06-any-resolution-patch-n-pack
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/06-any-resolution-patch-n-pack/docs/en.md
+exercises:
+  - index: 1
+    slug: the_loss_is_anisotropic_and_the_receipt_is_landscape
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A receipt is 600x1500 (1:2.5). At patch size 14, how many native-resolution tokens? How many after square-resize to 336? Which loses more OCR accuracy in practice?
+    zh: |
+      一張收據是 600x1500（1:2.5）。在 patch 大小 14 之下，原生解析度有多少詞元？方形縮放到 336 之後又有多少？實務上哪一種在 OCR 準確率上損失更多？
+    verifies: >-
+      4,494 native tokens against 576 after square-resize, a 7.80x reduction -- 600 and 1500 are not
+      multiples of 14, so the lesson crops to 588 x 1498 and the grid is 42 x 107. The token ratio and
+      the area ratio are the same 7.80, and neither is why OCR breaks: the two axes are scaled by
+      0.5714 and 0.2243, a 2.548x anisotropy, so a glyph taller than wide comes out wider than tall.
+      The lesson's own receipt is landscape -- Image(name, h, w) takes height first, so anyres_cost
+      tiles it 1 x 2 as given and 2 x 1 with the sides swapped, and the one strategy that depends on
+      orientation is reading it backwards. The crop alone discards 2.0% of the short side and 0.13% of
+      the long one.
+  - index: 2
+    slug: six_point_seven_million_cells_to_express_five_integers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build the block-diagonal mask for a batch of four images with lengths 256, 576, 729, 1024. Verify the attention matrix is 2585x2585 and has exactly `256^2 + 576^2 + 729^2 + 1024^2` non-zero entries.
+    zh: |
+      為一批長度分別是 256、576、729、1024 的四張影像建出區塊對角遮罩。驗證注意力矩陣是 2585x2585，且恰好有 `256^2 + 576^2 + 729^2 + 1024^2` 個非零元素。
+    verifies: >-
+      pack_batch reports 2585 x 2585 = 6,682,225 cells with 1,977,329 non-zero, exactly 256^2 + 576^2
+      + 729^2 + 1024^2 and 29.59% dense, and build_dense_mask reproduces it on the lesson's own
+      14-token toy (100 of 196). The same mask is five integers: cu_seqlens is [0, 256, 832, 1561,
+      2585], what FlashAttention's varlen kernels take, and the dense form is 1,336,445x larger for no
+      extra information -- the lesson materialises 196 cells in its demo, 1/34,092 of what this
+      exercise asks for. The density is (1 + CV^2)/k in closed form: four equal blocks give 25.00%,
+      these have CV 0.4285, and 1.1836/4 reproduces 29.59% to the digit -- 18.4% more attention than
+      the same budget evenly split.
+  - index: 3
+    slug: the_thumbnail_is_what_breaks_the_square_law
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      For a 1792x896 image at patch 14, compare: (a) square-resize to 336 then encode, (b) AnyRes 2x1 + thumbnail, (c) M-RoPE at native. Which uses fewest tokens? Which preserves most detail?
+    zh: |
+      對一張 patch 14 的 1792x896 影像，比較：(a) 方形縮放到 336 再編碼、(b) AnyRes 2x1 + 縮圖、(c) 原生解析度的 M-RoPE。哪一個用的詞元最少？哪一個保留最多細節？
+    verifies: >-
+      square-resize 576, AnyRes 1,728, native 8,192, all from the lesson's own square_cost,
+      anyres_cost and Image.seq -- fewest is square, most detail is native, a span of 14.2x, and the
+      lesson's scorer independently picks the 2 x 1 grid the exercise names. Excluding the thumbnail
+      the relationship is exact: 1,152 tile tokens against 8,192 is 7.111x, and each tile downscales a
+      896x896 region to 336, a linear ratio of 2.6667 whose square is 7.111. Add the 576-token
+      thumbnail and the ratio becomes 4.74 and means nothing. Square-resize is also the only one of
+      the three that distorts: per-axis resolutions are (0.1875, 0.375) against (0.375, 0.375) and
+      (1.0, 1.0).
+  - index: 4
+    slug: dropping_half_the_tokens_leaves_the_sparsity_where_it_was
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement fractional patch dropping: given a packed sequence, drop 50% of tokens uniformly at random, and update the block-diagonal mask accordingly. Measure the mask's sparsity change.
+    zh: |
+      實作分數式 patch 丟棄：給定一條打包序列，均勻隨機丟掉 50% 的詞元，並相應更新區塊對角遮罩。量測遮罩稀疏度的變化。
+    verifies: >-
+      the mask is 29.591% dense before the drop and 29.609% averaged over 200 uniform 50% drops -- a
+      shift of 0.019 points inside a seed-to-seed range of 28.36% to 30.75% -- because Sum(n^2)/(Sum
+      n)^2 is scale-free and halving every block cancels. What moves is the absolute cost: attended
+      cells fall from 1,977,329 to 493,968, a ratio of 4.003, while the sequence goes 2,585 to 1,292,
+      so dropping half the tokens buys three quarters of the attention. Halving each image exactly
+      gives 29.592%, within 0.001 of the undropped mask, so uniform and stratified dropping differ
+      only in a 2.38-point variance. The quantity the exercise asks about is invariant to the
+      operation it asks about.
+  - index: 5
+    slug: what_min_pixels_and_max_pixels_control
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3.2 of the Qwen2-VL paper (arXiv:2409.12191). Describe in two sentences what `min_pixels` and `max_pixels` control and why both bounds matter.
+    zh: |
+      讀 Qwen2-VL 論文（arXiv:2409.12191）第 3.2 節。用兩句話描述 `min_pixels` 與 `max_pixels` 各自控制什麼，以及為什麼上下界兩者都重要。
+    cites: >-
+      Token budgets

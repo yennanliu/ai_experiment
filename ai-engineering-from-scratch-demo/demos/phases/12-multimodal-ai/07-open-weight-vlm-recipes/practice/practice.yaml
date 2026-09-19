@@ -1,0 +1,92 @@
+lesson: 07-open-weight-vlm-recipes
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/07-open-weight-vlm-recipes/docs/en.md
+exercises:
+  - index: 1
+    slug: the_table_has_no_llm_axis_to_flip_along
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read MM1 Section 3.2. For a fixed 2B LLM at budget 50M images, which encoder wins? Would the answer flip at 13B LLM? Why?
+    zh: |
+      讀 MM1 第 3.2 節。在固定 2B LLM、預算 5000 萬張影像的條件下，哪個編碼器勝出？換成 13B LLM 答案會翻盤嗎？為什麼？
+    verifies: >-
+      the lesson's own compare_encoders table, parsed back out of its printed form, is fixed at one 7B
+      LLM and names no image budget -- neither 2B nor 13B appears in it, so the question cannot be
+      answered here. Within the one setting it reports, the winner is benchmark-dependent:
+      SigLIP+DINOv2 concat on CV-Bench, InternViT-6B on MMMU and DocVQA. The five encoders span 6.0
+      MMMU, 11.0 CV-Bench and 26.0 DocVQA, so encoder choice matters 4.3x more for one benchmark than
+      another and a single 20%-of-variance figure is task-blind. And axis_impact's weights are [60,
+      20, 5, 10, 15, 5], summing to 115% -- it computes the total, prints a note claiming the weights
+      are rebased to ~100%, and prints the unrebased numbers.
+  - index: 2
+    slug: the_concat_beats_the_mean_everywhere_and_the_max_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Cambrian-1 finds that concatenating DINOv2 + SigLIP outperforms either alone on vision-centric benchmarks but adds no signal on MMMU. Predict which benchmarks gain and which stay flat.
+    zh: |
+      Cambrian-1 發現，把 DINOv2 + SigLIP 串接起來，在以視覺為核心的基準上勝過任一單獨使用，但在 MMMU 上沒有帶來額外訊號。預測哪些基準會提升、哪些會持平。
+    verifies: >-
+      against the better single encoder the concat is +1.0 MMMU, +2.0 CV-Bench and -1.0 DocVQA -- so
+      the exercise's premise that it 'adds no signal on MMMU' is contradicted by the lesson's own
+      table, and the benchmark that goes backwards is DocVQA. Against the MEAN of its two parts the
+      concat wins everywhere and by much more: +3.0, +4.5, +10.5. The two singles differ by 4.0, 5.0
+      and 23.0 points, and the 23-point DocVQA gap is exactly where the concat fails to beat the
+      better part. DINOv2 beats SigLIP on CV-Bench and nowhere else, which is the whole of the
+      prediction the exercise asks for.
+  - index: 3
+    slug: the_picker_returns_nothing_and_the_weights_change_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your target is a mobile UI agent on a 2B LLM. Pick encoder, connector, resolution, and data mix. Justify each choice with a specific ablation table.
+    zh: |
+      你的目標是一個跑在 2B LLM 上的行動 UI 代理程式。挑出編碼器、連接器、解析度與資料配方。用一張具體的消融表為每項選擇辯護。
+    verifies: >-
+      pick_recipe(2, 'agent') returns zero candidates -- the smallest recipe in the table is MM1-3B --
+      so the target the exercise sets is below its evidence. At budgets 10 and 80 all four task
+      profiles return the same top-3 in the same order: at 80B Molmo-72B is the maximum on all three
+      benchmarks at once, and at 10B nothing dominates yet the ranking holds anyway because the
+      benchmark spreads are 6.7, 9.8 and 30.4 points and the narrowest winning margin is 10.9.
+      Candidates by budget are 0, 1, 4, 5, 7, 8, 9 at 2, 3, 7, 8, 13, 30 and 72B, so the filter is the
+      picker and the score first has a choice at 7B. Three of the four axes the exercise asks about
+      have a table; the connector's is a table saying the question does not matter.
+  - index: 4
+    slug: the_plateau_is_a_property_of_the_benchmark
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Molmo ships 4B and 72B models. The 4B is competitive with closed 7B VLMs; the 72B beats Llama-3.2-90B-Vision on 11/11 benchmarks. What does that tell you about the LLM-size plateau hypothesis?
+    zh: |
+      Molmo 出貨了 4B 與 72B 兩種模型。4B 與封閉的 7B VLM 有得拼；72B 則在 11 項基準中的 11 項都勝過 Llama-3.2-90B-Vision。這對「LLM 大小會遇到高原」這個假說說明了什麼？
+    verifies: >-
+      the two same-recipe-different-LLM families in RECIPES. A decade of LLM buys +8.8 MMMU in the
+      Molmo family and +6.1 in MM1, with no flattening -- but the same Molmo pair moves DocVQA by only
+      +1.1, an 8.0x difference between two benchmarks on the same two checkpoints. DocVQA is at 92.4
+      and 93.5 with 6.5 points of headroom left; MMMU is at 45.3 and 54.1 with 45.9 above it. The
+      lesson's own plateau figure, 'around MMMU 55', sits just above the highest MMMU in the table
+      (54.1), so nothing here can falsify it. And compare_data moves MMMU 40.0 -> 47.0 at a fixed
+      encoder and a fixed 7B LLM -- the same size as a decade of LLM, weighted 10% against 15%.
+  - index: 5
+    slug: four_runs_and_the_lesson_ran_nine_of_the_wrong_ones
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an ablation table to isolate data-mix quality from encoder quality on a 7B VLM. How many training runs minimum? Propose the four axis settings.
+    zh: |
+      設計一張消融表，在一個 7B 的 VLM 上把資料配方品質與編碼器品質區分開來。最少需要幾次訓練？提出那四組軸的設定。
+    verifies: >-
+      four runs -- a 2x2 factorial -- because three measure both main effects and assume additivity
+      while the fourth cell turns the interaction into a measurement. The lesson's own evidence is the
+      three-run shape at scale: compare_encoders is 5 encoders at one data mix, compare_data is 5
+      mixes at one encoder, 9 distinct cells laid out as a cross with 0 off both axes. And the cell
+      they share reads three different ways -- 41.0 in compare_encoders, 42.0 in compare_data, 40.0 as
+      Prismatic-7B default in RECIPES -- a 2.0-point spread, 80% of the 2.5-point encoder effect the
+      first table exists to report, so the two tables' deltas cannot be added. The proposed settings
+      are {SigLIP, CLIP} x {LLaVA-Inst-150k, PixMo}, worth 2.5 and 5.3 MMMU.

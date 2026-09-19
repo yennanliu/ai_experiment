@@ -1,0 +1,90 @@
+lesson: 01-vision-transformer-patch-tokens
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/01-vision-transformer-patch-tokens/docs/en.md
+exercises:
+  - index: 1
+    slug: both_dimensions_the_exercise_names_raise
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the patch-token sequence length for Qwen2.5-VL at native 1280x720 input with patch size 14. How does that compare to a CLS-only representation?
+    zh: |
+      算出 Qwen2.5-VL 在原生 1280x720 輸入、patch 大小 14 之下的 patch 詞元序列長度。這跟只用 CLS 的表徵相比如何？
+    verifies: >-
+      91 x 51 = 4,641 patch tokens against 1 for CLS-only, and 5,940,480 floats against 1,280 -- the
+      ratio is 4,641 either way, so the CLS vector is 0.02% of what the grid holds. The lesson cannot
+      express the input: grid_shape raises on both 1280 and 720 (each leaves a remainder against patch
+      14) and ViTConfig has a single square image_size, so the count is floor division by hand. Floor
+      and ceil disagree by 143 tokens, 3.1% of sequence length, and the exercise names neither
+      convention. Qwen2.5-VL's own answer is 1,125: the 2x2 merge needs multiples of 28, so 1280x720
+      is first cropped to 1260x700, 4,500 patches becoming 1,125 tokens. And ZOO[-1], the entry named
+      after that model, is a square 896 crop at 4,097 tokens.
+  - index: 2
+    slug: nothing_that_keeps_the_frames_fits_a_128k_context
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 1080p frame (1920x1080) at patch 14 produces how many tokens? At 30 FPS over a 5-minute video, how many total visual tokens? Which cost saves you most: pooling, frame sampling, or token merging?
+    zh: |
+      一張 1080p 的畫格（1920x1080）在 patch 14 之下會產生多少詞元？以 30 FPS 跑一段 5 分鐘的影片，總共有多少視覺詞元？pooling、畫格取樣、詞元合併，哪一種省得最多？
+    verifies: >-
+      10,549 tokens a frame (a 137x77 crop at patch 14) and 94,941,000 over 9,000 frames. Measured
+      against that baseline, pooling to one vector saves 10,549x, frame sampling to 1 FPS 30x, and 2x2
+      token merging 4.08x -- pooling wins by 352x over its nearest rival and is the one answer that
+      cannot be used, since a vector per frame cannot say where anything is. Across the 10-point
+      sampling and merging grid nothing fits a 128K context: the cheapest is 193,800 tokens at 0.25
+      FPS merged, 1.48x over, and fitting needs 50 merged frames of the 9,000 -- one every 6.0
+      seconds. All three ratios are constants, so duration cancels out and the ranking never moves.
+      One 1080p frame is 2.6x ZOO[-1]'s whole 4,097-token sequence, and grid_shape refuses both 1920
+      and 1080.
+  - index: 3
+    slug: the_registers_move_the_mean_by_fifty_two_degrees
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement mean pooling over patch tokens in pure Python. Verify that mean-pool over 196 tokens of a DINOv2 output matches what the model's `forward` returns when you ask for a pooled embedding.
+    zh: |
+      用純 Python 實作對 patch 詞元的 mean pooling。驗證對 DINOv2 輸出的 196 個詞元做 mean-pool 的結果，與你向模型的 `forward` 索取 pooled 嵌入時拿到的一致。
+    verifies: >-
+      196 is not a DINOv2 count: grid_shape(224, 14) is 16x16 = 256 patches and seq_length is 261 with
+      CLS and 4 registers, while 196 is grid_shape(224, 16), ViT-B/16 -- the exercise names one
+      model's token count and another model's patch size. The pure-Python mean over 256 tokens of
+      1,536 dimensions agrees with an fsum reference to within 1e-15 on every dimension, and pooling
+      196 copies of one vector returns it unchanged. On a labelled synthetic output whose 4 registers
+      carry 10x the median patch norm -- the artifact magnitude the lesson describes -- including them
+      drops the cosine against the patch-only mean to 0.6191, 51.8 degrees, and inflates the pooled
+      norm by 58%, from 1.5% of the sequence. And pool-then-project agrees with project-then-pool to
+      4.4e-16, which is why a forward can return the pooled embedding for free.
+  - index: 4
+    slug: what_the_registers_absorb
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3 of "Vision Transformers Need Registers" (arXiv:2309.16588). Describe in two sentences what artifact the registers absorb and why it matters for downstream dense prediction.
+    zh: |
+      讀〈Vision Transformers Need Registers〉（arXiv:2309.16588）的第 3 節。用兩句話說明 register 吸收掉的是什麼假影，以及這對下游的密集預測為什麼重要。
+    cites: >-
+      CLS token, pooled output, and register tokens
+  - index: 5
+    slug: packing_without_the_mask_costs_more_than_padding
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify `code/main.py` to support patch-n'-pack: given a list of images of different resolutions, produce a single packed sequence and the block-diagonal attention mask. Verify against Lesson 12.06 when you reach it.
+    zh: |
+      修改 `code/main.py` 以支援 patch-n'-pack：給定一串解析度各異的影像，產出單一的打包序列與對應的區塊對角注意力遮罩。等你讀到單元 12.06 時，再拿它來驗證。
+    verifies: >-
+      four images of different resolutions -- 256, 768, 1,260 and 253 patch tokens -- pack to 2,537
+      against 5,040 padded, so padding wastes 49.7% of the sequence. Attention over the packed
+      sequence touches 6,436,369 query-key pairs, 1.4% MORE than the padded batch's 6,350,400; masked
+      to the block diagonal it is 2,306,969, 35.84% of the packed square and 63.7% below padding -- so
+      the mask is not an optimisation of packing, it is the whole of it. The packed sequence also has
+      no positions to be embedded with: pos_embed_params is a table of exactly seq_length rows and
+      2,537 exceeds four of the five ZOO entries (197, 261, 577, 733). The block structure is verified
+      by row sums over all 2,537 rows and cross-examined against a materialised 11x11 toy mask, 49
+      cells True.

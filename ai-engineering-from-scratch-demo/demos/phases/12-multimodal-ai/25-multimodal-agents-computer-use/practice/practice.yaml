@@ -1,0 +1,87 @@
+lesson: 25-multimodal-agents-computer-use
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/25-multimodal-agents-computer-use/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tool_is_already_in_the_schema_and_not_in_the_simulator
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the action schema with a `screenshot_region` tool (crop + zoom). What tasks benefit?
+    zh: |
+      用一個 `screenshot_region` 工具（裁切 + 縮放）擴充那份動作 schema。哪些任務會因此受益？
+    verifies: >-
+      screenshot_region is already in ACTION_SCHEMA, one of 10 entries, so the exercise's premise is
+      wrong and the gap is one level down: apply_action names 4 of the 10 and changes state for 3,
+      while scroll, drag, hover, navigate, wait and screenshot_region fall through to an unchanged
+      copy with no error -- 60% of the schema is a declaration. What benefits from crop-and-zoom is
+      anything smaller than a patch: a 1920x1080 screenshot is 10,549 tokens, fitting 2,048 downscales
+      it by 0.4406, and a 14-pixel label lands at 6.2 pixels, under half a patch, while a 200x100 crop
+      is 98 patches at native resolution. And run_task has 0 branches and reads no observation, so the
+      simulator has no input for the tool to produce.
+  - index: 2
+    slug: the_hardest_agentvista_category
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read AgentVista (arXiv:2602.23166). Describe the hardest task category and why frontier models still fail.
+    zh: |
+      讀 AgentVista（arXiv:2602.23166）。描述最困難的那類任務，以及前沿模型為什麼仍然失敗。
+    cites: >-
+      Why it's still hard
+  - index: 3
+    slug: four_screenshots_buy_one_thousand_seven_hundred_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Long-horizon memory compression: design a summary-chain with ≤4 screenshots kept live, any number logged.
+    zh: |
+      長時程記憶壓縮：設計一條摘要鏈，最多只保留 4 張截圖為活躍狀態，日誌則不限筆數。
+    verifies: >-
+      four live frames, a full action log and a summary every ten steps: 42,196 + 1,500 + 1,000 =
+      44,696 tokens over fifty steps against 527,450 for keeping every frame, 11.8x. Keeping every
+      screenshot exhausts a 128k context at step 12, and neither of the lesson's own benchmark tasks
+      is longer than six steps, so its simulator never meets the constraint. The compressed scheme is
+      constant in step count after step 4 and the log is what grows, so the remaining budget buys
+      1,779 more steps at 50 tokens each (the summary chain amortises to 20 a step), a slope 211x shallower. And the four slots are first, previous, current and
+      last state-changing -- not the last four, because a sliding window loses the last real action
+      during any run of failed clicks.
+  - index: 4
+    slug: there_is_no_failure_to_hook_because_nothing_fails
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build an error-recovery hook: on action failure (button not found), what does the agent do next?
+    zh: |
+      做一個錯誤復原掛鉤：動作失敗時（找不到按鈕），代理程式下一步該做什麼？
+    verifies: >-
+      a five-rung ladder -- re-ground, scroll and retry, screenshot_region on the expected area,
+      alternative descriptor, back out and re-plan -- with a per-rung cap and a global budget. But the
+      lesson's loop cannot fail: clicking 'NoSuchButton' leaves the page at home and raises nothing,
+      run_task has 0 branches and executes all its planned steps, and the only failure signal is the
+      final page compared after the plan is exhausted. On a five-step plan that is 2.0 steps late on
+      average, all run against the wrong state, and apply_action has no per-action postcondition. And
+      each rung costs a fresh 10,549-token screenshot, so five rungs is 52,745 -- 40.2% of a 128k
+      window and 1.18x the entire fifty-step budget of exercise 3.
+  - index: 5
+    slug: the_gap_is_five_points_on_seeing_and_twenty_five_on_doing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare screenshot-only Claude 4.7 to hybrid screenshot + accessibility-tree Qwen2.5-VL on 10 web tasks. Which wins on which tasks?
+    zh: |
+      在 10 項網頁任務上，比較純截圖的 Claude 4.7 與「截圖 + 無障礙樹」混合式的 Qwen2.5-VL。哪一個在哪些任務上勝出？
+    verifies: >-
+      the lesson's own leaderboard separates grounding from multi-step execution: ScreenSpot-Pro is 85
+      against 90, a 5-point 1.06x gap, and WebArena is 35 against 60, 25 points and 1.71x -- so
+      whatever separates the two models is 5x more visible once actions are chained. All 5 rows
+      compare open against frontier and 0 carry an accessibility-tree column, so the comparison the
+      exercise names is not in the evidence. The split is whether the DOM is authoritative -- the tree
+      wins on form fields, links, labelled buttons and ARIA roles, screenshots on canvas, custom
+      widgets, images-as-buttons and visual-only state. And at AgentVista's rates one standard error
+      over 10 tasks is 1.4 tasks, so ten tasks cannot answer the question.

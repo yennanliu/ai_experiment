@@ -1,0 +1,79 @@
+lesson: 19-audio-language-whisper-to-af3
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/19-audio-language-whisper-to-af3/docs/en.md
+exercises:
+  - index: 1
+    slug: the_dimension_does_not_change_at_forty_eight_kilohertz
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the log-Mel spectrogram dimension for a 30-second clip at 16kHz, 25ms window, 10ms hop, 80 Mel bins. How does this change at 48kHz?
+    zh: |
+      算出一段 30 秒、16kHz、25ms 窗、10ms 跳距、80 個梅爾頻帶的片段，其對數梅爾頻譜圖的維度。換成 48kHz 會怎麼變？
+    verifies: >-
+      2998 x 80 at 16 kHz and 2998 x 80 at 48 kHz -- the shape does not change, because tripling the
+      sample rate triples the window (400 to 1,200 samples) and the hop (160 to 480) and leaves the
+      ratio that sets the frame count untouched. What changes is bandwidth: Nyquist goes 8 kHz to 24
+      kHz over the same 80 bins, so a bin spans 100 Hz against 300 Hz, which is why Whisper resamples
+      to 16 kHz. The lesson's window_frames runs while i + win <= len(x), so it gives 2998 where
+      Whisper pads to 3,000 -- the last 20 ms of every clip discarded. And its own demo prints 98
+      frames beside a comment saying 'should be ~99 at 1s'.
+  - index: 2
+    slug: why_whisper_underperforms_on_music
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Why does Whisper underperform on music? What audio features does BEATs capture that Whisper does not?
+    zh: |
+      Whisper 為什麼在音樂上表現不佳？BEATs 捕捉到哪些 Whisper 沒捕捉到的音訊特徵？
+    cites: >-
+      BEATs and audio-specific encoders
+  - index: 3
+    slug: at_initialisation_every_query_returns_the_frame_mean
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Audio Q-former with 64 queries vs 32: at what task complexity does 64 pay off? 32 save compute for what?
+    zh: |
+      64 query 的音訊 Q-former 對上 32 query：任務複雜到什麼程度，64 才划算？32 又替什麼省下了計算？
+    verifies: >-
+      32 saves exactly half -- 126,720 multiply-adds against 253,440 on the lesson's own 99-frame,
+      20-dim fixture -- and sends half the tokens into the LLM. But at initialisation the queries
+      barely differentiate: mean attention entropy is 4.411 nats against a uniform 4.595, 96.0%, so
+      every query is nearly averaging the whole clip and the mean pairwise cosine between output
+      tokens is 0.3299. Doubling the query count moves that cosine from 0.3381 to 0.3299, a gap of
+      0.0082, so the doubling buys 2x the compute for a fourth-decimal difference. The answer is
+      therefore about the training signal rather than task complexity: an untrained 64 is a strictly
+      worse 32.
+  - index: 4
+    slug: three_audio_tasks_where_thinking_helps
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read AF3 Section 4 on on-demand thinking. Propose three audio tasks where chain-of-thought helps the most.
+    zh: |
+      讀 AF3 第 4 節關於隨選思考的部分。提出三項思維鏈幫助最大的音訊任務。
+    cites: >-
+      The arc — SALMONN, Qwen-Audio, AF3
+  - index: 5
+    slug: swapping_two_labels_costs_a_hundred_percent_or_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a minimal diarization pipeline using AF3's output. How do you signal speaker changes?
+    zh: |
+      用 AF3 的輸出實作一條最小的說話者分段標記管線。你要怎麼標示說話者的切換？
+    verifies: >-
+      a four-field turn schema whose turns tile the timeline with no gaps and whose consecutive turns
+      carry different speakers, scored under the best label permutation. Without that permutation a
+      perfect transcript with S1 and S2 swapped scores a naive DER of 100.0% and a matched DER of
+      0.0%, so a literal comparison measures a naming convention. The metric is boundary-sensitive in
+      seconds rather than turns: one boundary moved 0.5 s in a 10-second clip costs 5.0% with the turn
+      count, speaker count and order all correct. And the lesson's own table calls cascaded
+      diarization 'partial' because Whisper supplies three of the four fields free and must infer the
+      fourth from the words.

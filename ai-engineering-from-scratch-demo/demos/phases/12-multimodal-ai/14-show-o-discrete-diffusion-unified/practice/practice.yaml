@@ -1,0 +1,78 @@
+lesson: 14-show-o-discrete-diffusion-unified
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/14-show-o-discrete-diffusion-unified/docs/en.md
+exercises:
+  - index: 1
+    slug: one_step_and_eight_agree_on_all_sixteen_tokens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Masked discrete diffusion samples in ~16 steps. Why not 1? What breaks if you unmask everything at step 0?
+    zh: |
+      遮罩式離散擴散大約 16 步就取樣完。為什麼不是 1 步？如果你在第 0 步就把全部解開，會壞在哪裡？
+    verifies: >-
+      one step samples every position from its own marginal, so the joint becomes a product of
+      marginals and all cross-position structure is lost. But the lesson's own sampler cannot show
+      that: mock_logits reads the index i and the token at that same index and nothing else -- no
+      neighbour, no window, no attention -- so one step and eight produce identical output, 16 of 16
+      matching tokens, both the deterministic cycle (prompt_seed + i) % 8. Eight forward passes buy
+      nothing. The one place a decided token is read is to add 3.0 to that same position's own value,
+      which is a commitment device preventing a revisit rather than conditioning.
+  - index: 2
+    slug: where_inpainting_beats_a_specialist
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Inpainting is free with masked diffusion. Propose a product use case (real or hypothetical) where Show-o's inpainting beats a specialist model.
+    zh: |
+      修補在遮罩擴散下是免費的。提出一個產品使用情境（真實或假想的），在其中 Show-o 的修補能力勝過專門的模型。
+    cites: >-
+      Tasks in one checkpoint
+  - index: 3
+    slug: the_floor_is_doing_the_balancing_not_the_cosine
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Cosine schedule vs linear schedule: trace the number of unmasked tokens per step for T=8. Which is more balanced?
+    zh: |
+      餘弦排程對線性排程：在 T=8 之下，追一遍每一步未被遮住的詞元數。哪一個比較均衡？
+    verifies: >-
+      run through the lesson's own integer arithmetic, cosine unmasks 2, 2, 2, 2, 3, 3, 1, 1 and
+      linear 2, 3, 4, 3, 2, 1, 1 -- standard deviations 0.707 against 1.030, so cosine is more
+      balanced, and it uses all 8 steps where linear finishes in 7. The first two cosine steps are the
+      max(0.15, ...) floor rather than the cosine: raw keep ratios are 0.0192 and 0.0761, and without
+      the floor the first step would unmask int(16 x 0.0192) = 0 tokens. Linear's peak is step 2, 4
+      tokens with 11 still hidden, against cosine's step 4, 3 tokens with 8 hidden -- the schedule
+      that commits hardest does so with the least context. And both reach a final keep ratio of 1.0,
+      so sample()'s trailing while-loop is unreachable at T=8.
+  - index: 4
+    slug: doubling_the_codebook_buys_one_bit_and_nine_hundredths_of_a_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 512x512 Show-o image is 1024 tokens. At vocab K=16384, the model emits 1024 * log2(16384) = 14,336 bits (~1.75 KiB) of data. Stable Diffusion outputs 512*512*24 bits = 6,291,456 bits (~768 KiB) of raw pixels. What is the compression ratio and what quality does it buy?
+    zh: |
+      一張 512x512 的 Show-o 影像是 1024 個詞元。在詞彙表 K=16384 之下，模型吐出 1024 * log2(16384) = 14,336 位元（約 1.75 KiB）的資料。而 Stable Diffusion 輸出的是 512*512*24 位元 = 6,291,456 位元（約 768 KiB）的原始像素。壓縮比是多少？這換來了什麼品質？
+    verifies: >-
+      438.9x -- 14,336 bits (1.75 KiB) against 6,291,456 (768.0 KiB), and the exercise's own byte
+      figures are exact. Against Lesson 12.11's K=8192 at the same token count, Show-o's larger
+      codebook compresses 7.1% LESS: 14 bits a token against 13, 438.9x against 472.6x. And the extra
+      bit buys almost nothing -- a vector quantizer's distortion scales as K^(-2/d) and a 16x16x3
+      patch has d=768, so doubling K multiplies the RMS error by 0.99910, a 0.0902% reduction, and
+      halving it would need 2^768 times the codebook. What the compression buys is a sequence a
+      language model can predict, not fidelity.
+  - index: 5
+    slug: how_llamagen_differs_from_show_o
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read LlamaGen (arXiv:2406.06525). How is LlamaGen's class-conditional autoregressive image model different from Show-o's masked approach?
+    zh: |
+      讀 LlamaGen（arXiv:2406.06525）。LlamaGen 的類別條件式自迴歸影像模型，與 Show-o 的遮罩路線有何不同？
+    cites: >-
+      Where Show-o sits

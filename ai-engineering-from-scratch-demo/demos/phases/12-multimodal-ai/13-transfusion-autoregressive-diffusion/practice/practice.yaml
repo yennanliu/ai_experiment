@@ -1,0 +1,90 @@
+lesson: 13-transfusion-autoregressive-diffusion
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/13-transfusion-autoregressive-diffusion/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lesson_balances_magnitudes_and_the_mix_balances_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A Transfusion-style model trains 70% text tokens and 30% image patches. The image diffusion loss is ~10x the text NTP loss in magnitude. What loss weights balance them?
+    zh: |
+      一個 Transfusion 風格的模型，訓練資料有 70% 文字詞元與 30% 影像 patch。影像擴散損失的量級大約是文字 NTP 損失的 10 倍。什麼樣的損失權重能讓兩者平衡？
+    verifies: >-
+      0.1 balances the per-token magnitudes and 0.2333 balances the contributions -- weighted by the
+      70/30 mix, img_w = 0.1 leaves contributions of 0.7 and 0.3, so text carries 70% of the gradient.
+      The lesson ships the first answer exactly and cannot ask the second: two_loss_step computes
+      text_w*text_loss + img_w*img_loss -- read out of the lesson's own source, which hard-codes
+      img_w 0.1 and text_w 1.0 and passes two_loss_step only scale and weight keys, so there is no
+      token-count term anywhere. Neither loss depends on the
+      data -- text_loss is -log(0.3 + 0.05k) and img_loss is (0.8 + 0.02k - 1)^2 times the noise,
+      closed forms in the step counter -- and the image loss reaches exactly 0 at step 10, the last
+      one the demo runs. The text loss goes negative at step 14, where 0.3 + 0.05k passes 1.0 and
+      cross_entropy_toy clamps only the lower end.
+  - index: 2
+    slug: the_closing_separator_cannot_see_the_image_it_closes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the block-triangular mask for a sequence: `[T, T, <image>, P, P, P, P, </image>, T]`. Mark each entry 0 or 1.
+    zh: |
+      為序列 `[T, T, <image>, P, P, P, P, </image>, T]` 實作那個區塊三角遮罩。把每一格標成 0 或 1。
+    verifies: >-
+      the lesson's own build_mask on the exercise's nine tokens gives 40 of 81 entries set, 49.4%
+      dense, with row sums 1, 2, 2, 6, 6, 6, 6, 2, 9 -- causal over text and fully bidirectional
+      across the 4x4 patch block. But row 7, </image>, has 2 ones, both in the leading text and 0 in
+      the patch columns: in_text excludes both separators by name and same_img covers only the open
+      interval between them, so the token that closes the block cannot read it. Column 2 is zero
+      across the patch rows for the mirror reason, so the delimiters are invisible to the content they
+      delimit in both directions. Row 8 is the only complete row in the mask.
+  - index: 3
+    slug: twenty_five_percent_of_parameters_for_a_five_percent_axis
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      MMDiT has modality-specific QKV weights. What parameter count overhead does this add vs Transfusion's fully-shared transformer? At 7B params, is it worth it?
+    zh: |
+      MMDiT 有模態專屬的 QKV 權重。相較於 Transfusion 完全共享的 Transformer，這增加了多少參數量的額外開銷？在 70 億參數下，這值得嗎？
+    verifies: >-
+      +25% of block parameters -- 3d^2 of duplicated QKV against a 12d^2 block -- so 7B becomes 8.75B,
+      with the attention operation itself still shared. Duplicating the whole block, which is what
+      SD3's MMDiT does, would be +100%, so the two readings of the question differ by 4x. Priced
+      against this phase's own measurements, a 1.25x parameter increase is 0.097 decades and about
+      +0.68 MMMU at Lesson 12.07's +7 per decade -- a stated extrapolation -- while the same lesson
+      rates architecture at 5% of variance against 60% for visual-token count. And the duplicated
+      weights are per-modality, so 3.3 of 16.3 GiB of bf16 weights are resident for a modality a
+      text-only request never touches.
+  - index: 4
+    slug: the_image_is_twenty_nine_percent_of_the_passes_and_ninety_nine_of_the_work
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Generation: given a text prompt, the model runs NTP for 50 tokens, then hits `<image>`, then runs diffusion on 256 patches over 20 denoise steps. How many forward passes total?
+    zh: |
+      生成流程：給定一段文字提示詞，模型先跑 50 個詞元的 NTP，接著碰到 `<image>`，然後在 256 個 patch 上跑 20 步去噪的擴散。總共要跑幾次前向傳播？
+    verifies: >-
+      70 forward passes -- 50 for the text, one per token with a KV cache, and 20 for the image, one
+      per denoise step rather than one per patch, because the image block is bidirectional. Counted in
+      positions instead the split inverts: 50 of text against 5,120 of image, so the image is 99.0% of
+      the work in 28.6% of the calls. Against the same 256 patches generated one token at a time --
+      256 passes, 256 positions -- Transfusion is 12.8x fewer calls for 20x the position-work, so the
+      trade is parallelism and not total compute. There is a breakeven on passes at 256 denoise steps
+      -- the shipped 20 sits 12.8x inside it -- and none on work at all: the two arms meet on
+      positions at a single step, so from the second denoise step onward Transfusion does strictly
+      more work, and at the pass breakeven it is 65,536 positions against 256. That step count, which
+      the exercise treats as a given, decides whether the architecture is cheaper than Chameleon's.
+  - index: 5
+    slug: why_rectified_flow_needs_fewer_steps
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read SD3 paper Section 3. Describe rectified flow and why it converges in fewer inference steps than DDPM.
+    zh: |
+      讀 SD3 論文第 3 節。描述修正流，以及它為什麼能用比 DDPM 更少的推論步數收斂。
+    cites: >-
+      MMDiT: Stable Diffusion 3's variant

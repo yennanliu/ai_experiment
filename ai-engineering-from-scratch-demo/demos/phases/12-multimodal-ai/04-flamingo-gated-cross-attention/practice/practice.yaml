@@ -1,0 +1,84 @@
+lesson: 04-flamingo-gated-cross-attention
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/04-flamingo-gated-cross-attention/docs/en.md
+exercises:
+  - index: 1
+    slug: frozen_llm_spans_a_forty_four_fold_range_of_trained_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute Flamingo-9B's visual parameter count: 9B LLM + 1.4B gated cross-attention layers + 64M resampler. What fraction of total params is trained?
+    zh: |
+      算出 Flamingo-9B 的視覺參數量：9B 的 LLM + 14 億的帶閘門交叉注意力層 + 6400 萬的 resampler。有在訓練的參數佔總量的多少比例？
+    verifies: >-
+      1.464B trained of 10.464B total -- 13.99%, leaving the frozen LLM at 86.01%. Put beside the two
+      adapters this phase has already priced, the same phrase 'frozen LLM' covers 0.32% (LLaVA's
+      projector on a 7B), 2.35% (BLIP-2's 188M bridge) and 13.99% -- a 43.7x range, with Flamingo
+      training 65x the parameters of LLaVA's projector. Of the trained budget the gated
+      cross-attention is 95.6% and the Perceiver resampler 4.4%, so the component the architecture is
+      named for is 0.61% of the model. And at one block every 4 layers a 32-layer LLM takes 8 of them
+      at 175M each -- 1.15x the 152.2M Lesson 12.03's arithmetic gives for the whole Q-Former.
+  - index: 2
+    slug: the_gate_is_exact_at_zero_and_steepest_there_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the gated residual `y = tanh(alpha) * cross + x` in PyTorch. Show experimentally that with `alpha=0`, `y==x` exactly at init.
+    zh: |
+      用 PyTorch 實作帶閘門的殘差 `y = tanh(alpha) * cross + x`。用實驗證明在 `alpha=0` 時，初始化當下 `y==x` 完全成立。
+    verifies: >-
+      the lesson's own gated_cross_attention_step at alpha=0 changes nothing: max |y-x| is 0.0 and all
+      5 output rows compare == to their inputs, because tanh(0) is exactly 0.0 and x + 0.0*c == x for
+      every finite c. The finiteness is load-bearing -- 0.0 * inf is nan, so one non-finite value
+      leaks through a fully closed gate. The no-op point is also the steepest: d/dalpha tanh is 1.0 at
+      0, so a step of 0.01 admits 1% of the cross-attention and moves the deviation from 0.0 to
+      0.001969. And the gate saturates -- tanh is 0.964028 at alpha=2 and 0.999909 at 5, so the last
+      three units buy 3.6% of the range while the slope falls 5,507x.
+  - index: 3
+    slug: the_padding_costs_the_vision_tower_and_nothing_else
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read OpenFlamingo Section 3.2 (arXiv:2308.01390) on how they handle multiple images in a batch when each prompt has a different image count. Describe the padding strategy.
+    zh: |
+      讀 OpenFlamingo 第 3.2 節（arXiv:2308.01390），看他們在同一批次中每段提示詞影像數量不同時怎麼處理。描述那個填補策略。
+    verifies: >-
+      the strategy implemented and priced: image counts (1, 3, 5, 2) pad to a 4 x 5 tensor, 20 slots
+      holding 11 images, 45% padding. The ratio is exactly 1 - mean/max, so (10, 30, 50, 20) wastes
+      the identical 45% and a uniform batch wastes 0. None of it is attention: run over a padded
+      sequence the lesson's own interleaved_mask attends 0 positions in every padding column, because
+      a text token only reaches a preceding image -- the cost is 9 image encodes and 576 of 1,280
+      resampler latents at 64 per image. Bucketing the same four prompts by count into pairs gives 14
+      slots and 21.4%.
+  - index: 4
+    slug: why_only_the_most_recent_image
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Why does Flamingo's cross-attention mask let a text token attend to *only the most recent* preceding image rather than all preceding images? Read the Flamingo paper Section 2.4 and explain the tradeoff.
+    zh: |
+      Flamingo 的交叉注意力遮罩，為什麼只讓文字詞元關注*緊鄰在前的那一張*影像，而不是前面所有影像？讀 Flamingo 論文第 2.4 節並說明其取捨。
+    cites: >-
+      Masked cross-attention for interleaved inputs
+  - index: 5
+    slug: the_answer_token_never_sees_the_example_images
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      In-context few-shot: construct a prompt with 4 examples of "image → color of main object" for a new Flamingo variant. Describe the expected accuracy pattern as you vary the number of examples from 0 to 8.
+    zh: |
+      脈絡內少樣本：替一個新的 Flamingo 變體，建一段帶 4 個「影像 → 主要物件的顏色」範例的提示詞。描述當你把範例數從 0 變到 8 時，預期的準確率變化模式。
+    verifies: >-
+      the prompt built for every shot count from 0 to 8 and handed to the lesson's own
+      interleaved_mask. The final text position attends exactly one image at every k, and it is always
+      the query's own -- the example images are invisible to the token that produces the answer, so
+      the few-shot signal is carried by the example text. Text positions grow 1, 3, 5 ... 17 while the
+      answer's visual context stays at one image, which makes the expected accuracy pattern a step at
+      the first shot rather than a curve. At 8 shots the mask is 17 x 9 = 153 cells with 17 True,
+      11.1% dense, and every row sums to exactly 1 at every k. 8 of the 9 images -- 512 of 576 latents
+      -- are encoded and then hidden.

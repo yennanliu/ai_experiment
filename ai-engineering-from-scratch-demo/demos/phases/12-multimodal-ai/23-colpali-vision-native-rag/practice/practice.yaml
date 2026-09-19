@@ -1,0 +1,87 @@
+lesson: 23-colpali-vision-native-rag
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/23-colpali-vision-native-rag/docs/en.md
+exercises:
+  - index: 1
+    slug: the_index_size_is_a_vision_tower_choice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 200-page annual report at 729 patches per page, 128-dim emb, 4-byte floats. Compute raw storage and PQ-compressed (8x) storage.
+    zh: |
+      一份 200 頁的年報，每頁 729 個 patch、128 維嵌入、4 位元組浮點數。算出原始儲存量與 PQ 壓縮（8 倍）後的儲存量。
+    verifies: >-
+      71.2 MiB raw and 8.9 MiB at PQ 8x -- 364.5 KiB and 45.6 KiB a page, reproducing the lesson's own
+      365 KB and 46 KB rows. Even compressed the index is 15.2x a text-RAG one, and raw it is 121.5x,
+      so the compression closes most of the gap and none of the comparison. The 729 is 27 x 27, SigLIP
+      SO400m at 384 -- the same page through Qwen2.5-VL at 1280x720 is 4,641 patches (Lesson 12.01),
+      6.37x the storage at 2.27 MiB a page, so the index size is chosen when the encoder is. And PQ is
+      a lossy codec on exactly what MaxSim maximises over: the lesson reports 8x and 0 recall figures.
+  - index: 2
+    slug: maxsim_is_invariant_to_padding_and_additive_per_query_token
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      MaxSim is Σ_i max_j cos(q_i, p_j). What does this sum capture that a simple mean similarity does not?
+    zh: |
+      MaxSim 是 Σ_i max_j cos(q_i, p_j)。這個總和捕捉到了什麼，是單純的平均相似度捕捉不到的？
+    verifies: >-
+      on the lesson's own fixture MaxSim is 1.4776 and the mean 0.5007; padding the page from 4
+      patches to 729 with irrelevant ones leaves MaxSim at 1.4776 and takes the mean to 0.0522, a 9.6x
+      collapse. So a mean asks whether a page is about the query and a max asks whether the answer is
+      on it -- and the cost of that invariance is that pages of different sizes are scored on one
+      scale. The score is additive per query token rather than linear in query length: token 0 scores
+      0.774 and token 1 0.7036, and every total is their running sum -- 0.774, 1.4776, 2.2515, 2.9551,
+      14.7755 at 1, 2, 3, 4 and 20 tokens -- so the per-token average takes three distinct values
+      (0.774, 0.7388, 0.7505) and tracks which tokens the query has, not how many. A fixed threshold
+      is wrong per query in both length and composition. And one
+      patch matching both query tokens scores 1.4807 against 2.0 for two specialised patches -- a max
+      with no assignment step.
+  - index: 3
+    slug: word_level_is_smaller_and_costs_the_thing_colpali_removed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      ColPali indexes pages as patch sets. What changes if we instead index at the word level (as ColBERT does)? Trade-offs?
+    zh: |
+      ColPali 把頁面索引成 patch 集合。如果我們改成在字詞層級做索引（像 ColBERT 那樣）會有什麼改變？取捨是什麼？
+    verifies: >-
+      a page at a stated 500 words is 250.0 KiB against 729 patches' 364.5 KiB -- a 31.4% shrink, the
+      same order rather than an order of magnitude, because a word and a patch are about the same size
+      on a page. Quantisation beats changing the unit: ColPali at PQ 8x is 45.6 KiB, 5.5x smaller than
+      word-level raw, and needs no OCR pass. What the unit change costs is everything not in the text
+      stream -- checkboxes, stamps, table rules, chart bars, signatures, column alignment -- and an
+      OCR pass whose per-field error Lesson 12.22 states at 2%. The failure modes also invert: patches
+      degrade gracefully and a word never extracted is unretrievable at any recall.
+  - index: 4
+    slug: two_stage_or_ten_thousand_times_the_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design the end-to-end pipeline for a 1M-page corpus with a latency budget of 500ms per query. Pick ColQwen2 / VisRAG and justify.
+    zh: |
+      為一個 100 萬頁的語料庫設計端到端管線，每次查詢的延遲預算是 500ms。在 ColQwen2 與 VisRAG 之間做選擇並說明理由。
+    verifies: >-
+      VisRAG pooled ANN first, ColQwen2 MaxSim rerank on the top 100. Single-stage MaxSim is
+      1,866,240,000,000 multiply-adds for a 20-token query against 1M pages of 729 patches -- 10,000x
+      the rerank's 186,624,000, which is the same arithmetic on 0.01% of the corpus. It is
+      unaffordable in storage first: 373.2 GB raw and 46.7 GB at PQ 8x against the pooled index's 3.1
+      GB, 15.2x, so the first stage is the only one that fits in memory rather than a speed
+      optimisation. The justification is the recall hand-off -- a pooled vector asks whether a page is
+      about the query and MaxSim asks whether the answer is on it -- and the number to watch is
+      first-stage recall@100.
+  - index: 5
+    slug: how_m3docrag_differs_from_single_page_retrieval
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read M3DocRAG (arXiv:2411.04952). Describe the multi-page attention pattern and how it differs from single-page ColPali retrieval.
+    zh: |
+      讀 M3DocRAG（arXiv:2411.04952）。描述那個多頁注意力模式，以及它與單頁的 ColPali 檢索有何不同。
+    cites: >-
+      M3DocRAG

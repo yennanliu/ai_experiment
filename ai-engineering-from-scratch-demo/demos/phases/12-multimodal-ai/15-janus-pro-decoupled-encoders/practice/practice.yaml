@@ -1,0 +1,78 @@
+lesson: 15-janus-pro-decoupled-encoders
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/15-janus-pro-decoupled-encoders/docs/en.md
+exercises:
+  - index: 1
+    slug: five_of_the_twenty_nine_points_are_the_parameter_count
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Janus-Pro-7B beats DALL-E 3 on GenEval. Explain why a 7B open model can match a frontier proprietary model on generation but not on understanding.
+    zh: |
+      Janus-Pro-7B 在 GenEval 上勝過 DALL-E 3。說明為什麼一個 70 億參數的開放模型能在生成上追平前沿的專有模型，卻在理解上追不上。
+    verifies: >-
+      the lesson's own Janus-to-Janus-Pro rows: MMMU 30.5 -> 60.3 and GenEval 0.61 -> 0.80, gains of
+      +29.8 and +0.19, which in relative terms are +97.7% against +31.1% -- a ratio of 3.1, so the
+      same step buys three times more in understanding than in generation. Only 5.1 of the 29.8 MMMU
+      points are the parameter increase: 1.3B to 7B is 0.731 decades at Lesson 12.07's +7 per decade,
+      17.2% of the gain, leaving 82.8% to data. And the two benchmarks have 0.20 and 39.7 of headroom
+      left, so a scoreboard at 80% of 1.0 cannot separate a 7B from a frontier model by much -- the
+      asymmetry is partly a property of the benchmarks.
+  - index: 2
+    slug: ambiguous_means_both_and_neither_and_the_pipeline_pays_for_both
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a router function: given prompt text, classify as `understand` or `generate`. How do you handle ambiguous prompts like "describe and then sketch"?
+    zh: |
+      實作一個路由函式：給定提示詞文字，把它分類為 `understand` 或 `generate`。像「描述一下然後畫出來」這種模稜兩可的提示詞，你要怎麼處理？
+    verifies: >-
+      the lesson's own route scores 9 of 14 (64.3%) on a labelled set, and the five misroutes fall
+      into two classes: two substring collisions on 'draw' inside 'drawer' and 'withdraw', and three
+      prompts with no keyword at all. Of the five ambiguous verdicts, 2 score 1-1 and 3 score 0-0 --
+      60% mean 'neither', the opposite case -- and run_pipeline encodes with both towers for all five.
+      The substring bug is load-bearing: a word-boundary matcher takes the router DOWN to 50.0%,
+      because 'paint' inside 'painting' and 'what' inside 'Somewhat' are two of its nine correct
+      answers, and it rescues none of the misroutes. The matcher is a bad stemmer and the fix is the
+      keyword list.
+  - index: 3
+    slug: what_janusflow_changes_in_the_body_and_the_loss
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      JanusFlow replaces the VQ path with rectified flow. What does the transformer body now output, and what changes in the loss?
+    zh: |
+      JanusFlow 把 VQ 路徑換成了修正流。Transformer 主體現在輸出什麼？損失又有什麼改變？
+    cites: >-
+      JanusFlow — the rectified flow variant
+  - index: 4
+    slug: a_fourth_decoupled_encoder
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Propose a fourth task the Janus-Pro architecture could handle with one more decoupled encoder. Examples: image segmentation (DINO-style), depth (MiDaS-style).
+    zh: |
+      提出第四項任務，讓 Janus-Pro 的架構只要再多一個解耦編碼器就能處理。例如：影像分割（DINO 風格）、深度（MiDaS 風格）。
+    cites: >-
+      Decoupled visual encoding
+  - index: 5
+    slug: four_axes_moved_and_the_table_has_no_ablation
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Janus-Pro Section 4.2 on data scaling. Which data stage contributes most to the T2I quality gain vs Janus?
+    zh: |
+      讀 Janus-Pro 第 4.2 節關於資料規模的部分。相對於 Janus，哪一個資料階段對 T2I 品質的提升貢獻最大？
+    verifies: >-
+      stage 2, the unified stage, at +176.9% -- 26M pairs to 72M -- which leads on the absolute
+      reading too, 46M new pairs against 18M and 0.2M. Stage 3's +16.7% is in a different unit:
+      instructions rather than pairs, 200,000 against 46,000,000, a 230x difference the percentage
+      column hides. Four axes separate the two columns -- three data stages and a 5.4x parameter
+      increase -- and the table has 6 rows and 0 ablations, so attributing the +0.19 GenEval to stage
+      2 is not identified by this evidence. And the one axis that could be subtracted cannot be:
+      Lesson 12.07 measured +7 MMMU per decade but has no GenEval-per-decade row.

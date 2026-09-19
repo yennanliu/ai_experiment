@@ -1,0 +1,92 @@
+lesson: 10-internvl3-native-multimodal
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/10-internvl3-native-multimodal/docs/en.md
+exercises:
+  - index: 1
+    slug: the_ten_times_is_the_llm_being_trained_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Estimate the compute delta between InternVL3-8B (native pretrain) and LLaVA-OneVision-7B (post-hoc). Ratio of GPU-hours approximately? What explains the gap?
+    zh: |
+      估算 InternVL3-8B（原生預訓練）與 LLaVA-OneVision-7B（事後補救）之間的計算量差距。GPU 小時的比例大約是多少？這道落差要怎麼解釋？
+    verifies: >-
+      10x -- 300k GPU-hours against 30k, both carrying the only two tildes in the lesson's own table.
+      The explanation is the row immediately below: base LLM reuse, yes against no, so the 270k
+      premium is a language-model cost paid a second time rather than a multimodal one. It buys the
+      two regression rows, -2 to -8 MMLU and -3 to -10 GSM8K against 0, which at the midpoints is
+      54,000 and 41,538 GPU-hours per point avoided. And 3 of the 8 comparison rows carry numbers at
+      all: the MMLU range spans 4x end to end, and its 6-point width is four times the 1.5-point gap
+      between the two midpoints.
+  - index: 2
+    slug: steps_returns_a_hundred_times_the_total_if_you_forget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      InternVL3 reports 40% text / 35% interleaved / 20% caption / 5% video. If your target task is video-heavy, propose a new ratio and argue why the base model still needs substantial text and caption data.
+    zh: |
+      InternVL3 回報的是 40% 文字／35% 交錯／20% 字幕／5% 影片。如果你的目標任務以影片為主，提出一份新的比例，並論證為什麼基礎模型仍然需要可觀的文字與字幕資料。
+    verifies: >-
+      a 25/25/15/35 proposal run through the lesson's own CorpusMix: video goes from 25,000 to 175,000
+      of 500,000 steps, 7x, with the total unchanged. The argument for the text floor is two rows of
+      the lesson's own table -- post-hoc training is priced at -2 to -8 MMLU and -3 to -10 GSM8K,
+      exactly what a text share holds -- and the proposal cuts text by 37.5%, spending against a
+      quantified risk rather than denying it. Raising video also shrinks the bucket video depends on:
+      sequence-shaped data grows 40% to 60% while interleaved falls 28.6%. And steps() without
+      normalize() returns 50,000,000 steps against the 500,000 requested -- a silent factor of 100,
+      because the fields are still percentages.
+  - index: 3
+    slug: both_benchmarks_it_reports_are_text_only
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read MM1.5 Section 4 on forgetting. Name the exact benchmark where post-hoc training showed the largest regression. How much did the regression cost?
+    zh: |
+      讀 MM1.5 第 4 節關於遺忘的部分。指出事後補救式訓練退步最嚴重的到底是哪一項基準。那次退步的代價有多大？
+    verifies: >-
+      GSM8K on the lesson's own evidence -- larger at both ends of the reported range (-3 to -10
+      against -2 to -8) and at the midpoint, -6.5 against -5.0. But the ranking sits inside the width
+      of its own reporting: the midpoints are 1.5 points apart and the widest range is 7 points. Both
+      benchmarks are text-only, and they are the only regression rows in the table, so everything the
+      lesson reports about the cost of post-hoc multimodal training is measured on the modality that
+      training did not add. Converted into the one unit the lesson supplies, the 270,000-GPU-hour
+      premium is 41,538 per GSM8K point and 54,000 per MMLU point -- the cheaper point to buy is the
+      larger regression.
+  - index: 4
+    slug: the_simulator_is_optimised_by_routing_everything_low
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      ViR routes 60% of traffic to low-resolution encoding. What kinds of queries does it misroute (sends to low-res when high-res was needed)? Propose three router-failure modes.
+    zh: |
+      ViR 把 60% 的流量導向低解析度編碼。它會把哪些查詢導錯（該用高解析度卻送去低解析度）？提出三種路由器的失敗模式。
+    verifies: >-
+      the high-res tier is 20% of requests and 57.7% of the tokens, and one misroute saves 1,792
+      tokens while returning a wrong answer -- so the saving and the damage live in the same fifth of
+      the traffic, and all three proposed failure modes land there. The exercise's 60% is not the
+      lesson's 50%: the shipped tiers give 710.4 tokens and 2.88x, the exercise's split 531.2 and
+      3.86x, 33.7% better before any routing decision is examined. vir_sim has no accuracy term, so
+      its own optimum is to send 100% to low-res -- 256 tokens, 8.0x, a router that has stopped
+      routing. And the 2.88x is a choice of baseline: against a flat 576 the same routed mix costs
+      1.23x MORE.
+  - index: 5
+    slug: the_model_cannot_express_the_answer_it_is_asked_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      DvD splits vision and LLM onto separate GPUs. Under what traffic pattern does DvD hurt throughput instead of helping?
+    zh: |
+      DvD 把視覺與 LLM 拆到不同的 GPU 上。在什麼樣的流量型態下，DvD 反而會傷害吞吐量而非幫上忙？
+    verifies: >-
+      dvd_throughput returns (encoder + llm) / max(encoder, llm), which is 1 + min/max and bounded in
+      [1, 2] for every input -- so the traffic pattern the exercise asks about cannot be expressed in
+      the model on offer. Swept over output lengths 16 to 1,024 the curve is 1.43, 1.85, 1.59, 1.29,
+      1.15, 1.04, never outside the band. It is maximised at exactly 2.0 when the two stages balance,
+      which for a 300 GFLOP encoder at 8 GFLOPs a token is 37.5 output tokens; the shipped 128 sits
+      past the peak at 1.29x. The term that would make DvD hurt is the one the function omits: 2,048
+      visual tokens at 4,096 wide in bf16 is 16.0 MiB a request, charged at 0 GFLOPs.

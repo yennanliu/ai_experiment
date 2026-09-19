@@ -1,0 +1,100 @@
+lesson: 02-clip-contrastive-pretraining
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/02-clip-contrastive-pretraining/docs/en.md
+exercises:
+  - index: 1
+    slug: the_recipe_in_the_exercise_computes_half_the_loss
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement InfoNCE for a batch of 4 pairs by hand. Construct the 4x4 similarity matrix, run softmax, pick out the diagonal, compute cross-entropy. Verify your Python implementation against this hand calculation.
+    zh: |
+      用手算對一批 4 組配對實作 InfoNCE。建出 4x4 的相似度矩陣，跑 softmax，把對角線挑出來，算交叉熵。拿你的 Python 實作對照這份手算結果做驗證。
+    verifies: >-
+      a hand-written 4x4 matrix built around one generic caption -- text 0 scores 4 against every
+      image. Row softmax diagonals 0.9479, 0.2619, 0.2619, 0.2619 give cross-entropies 0.0535, 1.3397
+      x3; averaged with the column direction the loss is 0.734559, which is infonce_loss to a
+      difference of 0.0. The exercise's own recipe -- pick out the diagonal, compute cross-entropy --
+      is the row direction alone at 1.0181, 38.6% above the lesson's symmetric loss. The two
+      directions disagree about which pairs are right: 1 of 4 strict argmax hits by row against 3 of 4
+      by column. And column 0 is uniform, so its term is exactly log 4 = 1.386294, the whole dynamic
+      range a batch of 4 has -- the lesson's own aligned fixture at tau=0.07 uses 0.00045% of it,
+      against 10.397 nats for a 32,768 batch.
+  - index: 2
+    slug: the_bias_is_the_class_prior_in_log_odds
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      SigLIP uses a bias parameter `b` in addition to temperature: `S'[i,j] = S[i,j]/tau + b`. What role does `b` play when the batch has a large class imbalance (many more negatives than positives per row)? Read SigLIP Section 3 (arXiv:2303.15343).
+    zh: |
+      SigLIP 除了溫度之外還用了一個偏置參數 `b`：`S'[i,j] = S[i,j]/tau + b`。當批次有嚴重的類別不平衡（每一列的負例遠多於正例）時，`b` 扮演什麼角色？讀 SigLIP 第 3 節（arXiv:2303.15343）。
+    verifies: >-
+      the b minimising the lesson's own sigmoid_loss, measured to 0.01 over untrained batches of N =
+      4, 8, 16, 32, 64, tracks -log(N-1) -- the logit of the 1/N positive rate -- to within 0.051.
+      Without b the loss cannot see the imbalance: at b=0 it is 0.696-0.711 for every N, all within 3%
+      of log 2, while the positive-to-negative ratio moves from 1:3 to 1:63 and the negatives reach
+      98.4% of the pairs. SigLIP's published b = -10 is -log(32,767) = -10.397 to within 0.4 nats, and
+      moving b to its optimum cuts the loss by 88% at N=64 without changing an embedding. Sharpening
+      tau from 1.0 to 0.07 moves the optimum a further 1.1-1.41 nats negative, so temperature and bias
+      are not independent.
+  - index: 3
+    slug: the_ensemble_beats_the_mean_template_not_the_best_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a zero-shot classifier for cats vs dogs. Try two prompt templates: `a photo of a {class}` and `a picture of a {class}`. Measure accuracy on 100 test images. Does the ensemble of templates beat single?
+    zh: |
+      做一個貓 vs 狗的零樣本分類器。試兩種提示詞模板：`a photo of a {class}` 與 `a picture of a {class}`。在 100 張測試影像上量測準確率。模板的集成有贏過單一模板嗎？
+    verifies: >-
+      a stated text model -- a template is its class prototype plus template noise at ALPHA, an image
+      is its prototype plus noise at BETA, both prototypes the lesson's own make_fake_embedding(42)
+      and (43). On 100 images at ALPHA=BETA=2 the templates score 80% and 83% and the ensemble 91%: 8
+      points over the better one and 9.5 over their mean. Over a 15-cell sweep the ensemble is at or
+      above the mean of its singles in 15 of 15 cells but above the better single in only 6, and at
+      worst 9 points below it. At ALPHA=0 single and ensemble agree exactly at every image-noise
+      level, so all the gain is template variance. In the lesson's own text model a template destroys
+      the class: the templated cat prompt scores -0.1254 against the cat prototype and +0.0046 against
+      the dog one, and its sum(ord) seed is anagram-invariant -- cat and act both hash to 1401 and
+      embed identically.
+  - index: 4
+    slug: the_wire_cost_is_identical_to_the_byte
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the communication cost of softmax InfoNCE vs sigmoid pairwise for a 512-GPU run at batch 32k. Which scales as O(N), which as O(N^2)? Cite SigLIP Section 4.
+    zh: |
+      算出在 512 張 GPU、批次 32k 的訓練中，softmax InfoNCE 與 sigmoid 成對損失各自的通訊成本。哪一個是 O(N)，哪一個是 O(N^2)？引用 SigLIP 第 4 節。
+    verifies: >-
+      at N=32,768 on 512 devices with SigLIP SO400m's 1,152-wide bf16 embeddings, both losses move
+      75,350,016 bytes -- 71.86 MiB -- per device per tower per step: InfoNCE's all-gather of (P-1)/P
+      x N x D x 2 and SigLIP's ring pass of P-1 chunks of (N/P) x D x 2 are the same expression. What
+      differs is memory, by exactly P: 64 x 32,768 fp32 logits (8 MiB) against a 64 x 64 chunk (16
+      KiB), a ratio of 512. Measured at fixed local batch between N=8,192 and N=131,072 the exponents
+      are wire 1.0, InfoNCE logits 1.0, sigmoid chunk 0.0, pair count 2.0 -- the only O(N^2) quantity
+      is the one both losses share. Instrumenting the lesson's own functions, sigmoid_loss calls
+      sigmoid exactly N^2 times and infonce_loss calls log_sum_exp exactly 2N times, half of them over
+      columns held on other devices.
+  - index: 5
+    slug: the_law_is_model_independent_in_error_and_not_in_accuracy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OpenCLIP scaling-laws paper (arXiv:2212.07143, Cherti et al.). Reproduce their conclusion for data scaling from the figures: at fixed model size, what is the log-linear relationship between ImageNet zero-shot accuracy and training data size?
+    zh: |
+      讀 OpenCLIP 的尺度法則論文（arXiv:2212.07143，Cherti 等人）。從圖表中重現他們關於資料規模的結論：在固定模型大小下，ImageNet 零樣本準確率與訓練資料量之間，呈現什麼樣的對數線性關係？
+    verifies: >-
+      the four ImageNet zero-shot top-1 numbers on the OpenCLIP checkpoint cards, transcribed and
+      labelled: ViT-B/32 62.9 -> 66.6 and ViT-L/14 72.8 -> 75.3 across LAION-400M to LAION-2B, 0.699
+      decades. The log-linear fit is +5.294 and +3.577 points per decade -- slopes that disagree by
+      32.4% -- while the same step in error gives ratios 0.90027 and 0.90809, agreeing to 0.87%, i.e.
+      error ~ D^-0.0653 and D^-0.0599. The law is model-independent in error and model-dependent in
+      accuracy. The linear form also names a finite crossing, 100% top-1 at 4.1e15 images for B/32 and
+      1.6e16 for L/14, which the power law never reaches -- yet at 100x LAION-2B the two forms differ
+      by only 1.9 and 1.2 points, so the choice is settled by the asymptote. And the step is not a
+      data-size step: the checkpoint names give 12.8B against 34B samples seen, a 2.66x compute
+      increase inside the 5x data increase.

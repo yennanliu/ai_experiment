@@ -1,0 +1,77 @@
+lesson: 21-embodied-vlas-openvla-pi0-groot
+phase: 12-multimodal-ai
+source: phases/12-multimodal-ai/21-embodied-vlas-openvla-pi0-groot/docs/en.md
+exercises:
+  - index: 1
+    slug: the_bin_count_does_not_enter_the_rate_at_all
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A 10-DOF arm at 30 Hz control rate. Discrete-bin tokenization at 256 bins emits how many tokens per second? Can a 7B VLM keep up?
+    zh: |
+      一支 10 自由度的手臂，控制速率 30 Hz。256 箱的離散分箱分詞每秒吐出多少詞元？一個 7B 的 VLM 跟得上嗎？
+    verifies: >-
+      300 tokens a second -- 10 DOF is 10 tokens a step at any bin count and 30 Hz makes 300 -- and
+      no, a 7B at the 30-80 tok/s this phase uses is 3.75x to 10x too slow. bins changes precision and
+      not rate: 2 and 1,024 both emit 10 tokens a step, and what 256 buys is a round-trip error of
+      0.0069 against 1.9 at two bins. Achievable control rate is throughput over DOF, 3.0 to 8.0 Hz,
+      which brackets the lesson's own reported OpenVLA 4-5 Hz -- so its architecture section and its
+      token arithmetic agree and neither reaches 30. And DOF is the lever nobody names: at 80 tok/s a
+      7-DOF arm runs at 11.43 Hz and a 26-DOF humanoid at 3.08, 3.7x slower for the same model.
+  - index: 2
+    slug: the_cutoff_is_one_and_a_half_hertz_and_drumming_is_gone
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      FAST tokenization compresses 30-step trajectories to ~10 tokens. What does the user lose if the trajectory has high-frequency motion (e.g., drumming)?
+    zh: |
+      FAST 分詞把 30 步的軌跡壓縮到約 10 個詞元。如果軌跡帶有高頻運動（例如打鼓），使用者會損失什麼？
+    verifies: >-
+      everything above 1.5 Hz. keep_coeff=4 of a 30-step trajectory keeps DCT bins 0-3 and at 30 Hz
+      bin k is k/2 Hz, so the tokenizer is a low-pass with a 1.5 Hz corner and drumming at 4-8 Hz is
+      entirely in the stopband. Reconstructing a pure sine from its first four coefficients -- with an
+      inverse DCT written here, because the module ships none -- keeps 90.5% of the energy at 0.5 Hz,
+      38.5% at 2, 1.5% at 5 and 0.4% at 8. The lesson's own fast_compress returns 40 tokens on its own
+      fixture, four per dimension, not the ~10 the exercise names -- a compression of 7.5x against
+      300. And there is no fast_decompress anywhere, so the ratio is printed and the round trip is
+      never checked.
+  - index: 3
+    slug: sixty_model_invocations_against_five
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      π0's flow-matching head denoises in ~5 steps. Compare throughput to OpenVLA's autoregressive decode at 4-5 Hz.
+    zh: |
+      π0 的流匹配 head 在約 5 步內去噪完成。把它的吞吐量與 OpenVLA 在 4 到 5 Hz 的自迴歸解碼做比較。
+    verifies: >-
+      5 invocations against 300 for the same second of motion, a factor of 60. At its own reported 4-5
+      Hz decode OpenVLA emits 40-50 tokens a second against the 300 a second of 30 Hz, 10-DOF motion
+      needs -- a real-time factor of 7.5 or 6.0, so it cannot run at 30 Hz at all rather than running
+      slowly. The flow head needs 5 passes a second, 6x to 16x under the same 30-80 tok/s budget. And
+      the advantage is the chunk rather than the flow: the 60x is chunk_steps x DOF / denoise_steps =
+      30 x 10 / 5, which any head emitting 30 steps at once would get.
+  - index: 4
+    slug: a_third_system_for_bipedal_walking
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      GR00T's System 1 / System 2 split maps to Kahneman. Propose a different split (System 3?) that might help bipedal walking.
+    zh: |
+      GR00T 的 System 1／System 2 分工對應到 Kahneman。提出另一種可能有助於雙足行走的分工（System 3？）。
+    cites: >-
+      GR00T N1 — dual-system for humanoids
+  - index: 5
+    slug: three_curation_rules_against_domain_leakage
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Open X-Embodiment Section 4 on dataset curation. Name the three curation rules that prevent domain leakage.
+    zh: |
+      讀 Open X-Embodiment 第 4 節關於資料集策展的部分。說出那三條防止領域洩漏的策展規則。
+    cites: >-
+      Open X-Embodiment
