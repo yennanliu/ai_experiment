@@ -131,7 +131,7 @@ Q-Former's real cost is stage 1 — a pretraining run the projector does not nee
 | cross-attention every *other* layer | 132.2M |
 | the paper | **188M** |
 
-**23.5% short**, and the other reading of "12 layers" is further away.
+**19.0% short**, and the other reading of "12 layers" is further away.
 
 **FINDING: the comparison is between a projector and a language encoder.** The
 2-layer MLP is **22.55M**; the Q-Former is 6.75× that, of which **23.8M** is the

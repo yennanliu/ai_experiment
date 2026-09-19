@@ -19,7 +19,7 @@ train; the choice has to be made on something else.
 
 **FINDING: the lesson's own shapes do not reconstruct 188M.** Cross-attention
 in every layer, the BERT-base embedding table, the 32 queries and the 768 ->
-4096 projection give **152.2M** -- **23.5%** short. Cross-attention in every
+4096 projection give **152.2M** -- **19.0%** short. Cross-attention in every
 other layer, the other reading of "12 layers", gives 132.2M and is further away.
 Neither assumption in the lesson closes the gap.
 
@@ -89,7 +89,7 @@ def solve():
     return {
         "components": full, "total": full["total"], "halved": halved["total"],
         "shortfall": PAPER - full["total"],
-        "shortfall_pct": round((PAPER / full["total"] - 1) * 100, 1),
+        "shortfall_pct": round((PAPER - full["total"]) / PAPER * 100, 1),
         "projector": projector, "ratio": round(full["total"] / projector, 2),
         "extra": extra,
         "breakeven": {name: round(breakeven(extra, tokens) / 1e6, 1)
@@ -116,7 +116,7 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson's own shapes do not reconstruct 188M",
-            all([result["total"] == 152_229_376, result["shortfall_pct"] == 23.5,
+            all([result["total"] == 152_229_376, result["shortfall_pct"] == 19.0,
                  result["halved"] == 132_156_928, result["halved"] < result["total"]]),
             f"cross-attention in every layer, the BERT-base embedding table, {QUERIES} "
             f"queries and the {HIDDEN} -> {LLM_DIM} projection give "

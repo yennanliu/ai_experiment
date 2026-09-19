@@ -43,7 +43,7 @@ exercises:
       比較參數量：Q-Former（12 層、隱藏維度 768）對上一個兩層的 MLP 投影器（1408 → 4096，兩層）。在多大的 LLM 規模下，1.88 億參數的 Q-Former 成本能在訓練效率上回本？
     verifies: >-
       parameter counts built from the lesson's own stated shapes rather than quoted. The Q-Former
-      totals 152,229,376 -- 23.5% short of the paper's 188M -- and the every-other-layer reading gives
+      totals 152,229,376 -- 19.0% short of the paper's 188M -- and the every-other-layer reading gives
       132,156,928, further away, so neither assumption in the lesson closes the gap. The 2-layer
       projector is 22,552,576, a ratio of 6.75x, of which 23.8M of the Q-Former is the BERT embedding
       table and 125.2M the blocks. Priced in training FLOPs per image at 6 per parameter per token,
