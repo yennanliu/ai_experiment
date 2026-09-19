@@ -1,0 +1,106 @@
+lesson: 08-building-an-mcp-client
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/08-building-an-mcp-client/docs/en.md
+exercises:
+  - index: 1
+    slug: one_request_is_sent_and_the_retry_path_is_the_one_not_taken
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make a fake server return `-32022` with no mutually supported version. Confirm the client fails instead of sending `initialize`.
+    zh: |
+      讓一台假伺服器回傳 `-32022`，且沒有任何雙方都支援的版本。確認客戶端會失敗，而不是送出 `initialize`。
+    verifies: >-
+      the client raises no mutually supported modern version having sent exactly one request,
+      server/discover, with initialize not among them; the peer stays era=unknown,
+      available=False, protocol_version=None. The same code with a shared version is not fatal:
+      probing at 2099-01-01 against a server supporting 2026-07-28 reads data.supported, picks
+      the mutual version and re-sends server/discover -- 2 requests, both modern -- so -32022 is
+      a negotiation signal and only the empty intersection fails. Legacy is never reached
+      because -32022 is one of the three recognised modern errors, so even with
+      allow_legacy=True the transport sees 0 initialize messages and the failure text is
+      identical either way.
+  - index: 2
+    slug: failing_closed_leaves_the_peer_in_the_state_it_started_in
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Allowlist a fake legacy server, make its bounded `initialize` probe time out, and prove the peer stays `unknown` and unavailable.
+    zh: |
+      把一台假舊版伺服器列入允許清單，讓它那次有界限的 `initialize` 探測逾時，並證明該對端維持在 `unknown` 且不可用。
+    verifies: >-
+      the probe raises bounded legacy probe failed closed and every field of the peer is the
+      value add_server created: era=unknown, available=False, protocol_version=None,
+      capabilities={}, server_info={}, tools=[] -- not partially connected, not connected. The
+      bound reaches the transport and it is the legacy one: configured to 1000 and 250 the
+      transport sees exactly [1000, 250] across server/discover and initialize. TimeoutError and
+      ConnectionError give the same failed-closed outcome while a wrong protocol revision gives
+      unsupported legacy protocol revision instead, and without the allowlist the same dead
+      transport raises legacy compatibility is not allowlisted after 1 message -- the allowlist
+      gates whether the second request is sent, not what is done with its result.
+  - index: 3
+    slug: the_client_cannot_leak_a_cache_because_it_has_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `cacheScope: "private"` tool lists for two authorization contexts. Confirm the client never shares one context's cached result with the other.
+    zh: |
+      為兩個授權脈絡各加上 `cacheScope: "private"` 的工具清單。確認客戶端絕不把其中一個脈絡的快取結果分享給另一個。
+    verifies: >-
+      the client never shares a cached result because it never keeps one: MultiServerClient has
+      0 attributes matching a cache and discover_tools re-sends tools/list every call, 2
+      messages for two rounds against one peer, so the scope field is read by nobody and the
+      property holds vacuously. Building the cache the exercise assumes prices it: keyed on the
+      peer alone it holds 1 entry and serves the admin's 3-tool list to the reader, who is
+      entitled to 1; re-keyed on (peer, principal) it holds 2 entries and reproduces the
+      uncached answer exactly. private does not forbid caching, it names the key -- and the
+      client has no principal to key on, since CLIENT_INFO is a name and a version and
+      client_capabilities is a feature list, neither varying per authorization context. The key
+      would have to come from the transport, which is where the credential lives.
+  - index: 4
+    slug: the_policy_called_reject_drops_the_tool_and_says_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the collision policy to rejection and make startup fail with both peer names in the error.
+    zh: |
+      把撞名政策改成拒絕，並讓啟動失敗時的錯誤訊息同時帶上兩個對端名稱。
+    verifies: >-
+      two peers each exporting notes_list merge to 1 entry under reject, {'notes_list':
+      'alpha'}, with no exception and no diagnostic, and beta's tool unreachable. The winner is
+      alphabetical rather than deliberate: merge iterates sorted(self.peers), so renaming alpha
+      to zulu hands the bare name to beta, and the label is a client-side configuration string
+      the server never sees. A strict policy can name both peers from values the shipped code
+      already has at that point -- tool name collision: notes_list exported by alpha and beta,
+      assembled from the incumbent's peer_name and the current peer. Prefix-on-collision keeps 2
+      entries and both resolve, so the three policies differ in what they lose: name stability,
+      a tool silently, or the whole startup -- and only the last cannot go unnoticed in
+      production.
+  - index: 5
+    slug: a_new_id_is_a_new_stream_and_the_gap_is_resynced_not_replayed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a finite `subscriptions/listen` simulator. On stream loss, re-listen with a new request id and refetch tools.
+    zh: |
+      加一個有限次的 `subscriptions/listen` 模擬器。串流遺失時，用新的請求 id 重新 listen 並重抓工具。
+    verifies: >-
+      the finite simulator loses 2 streams, so the loop listens 3 times with ids [2, 4, 6] --
+      all distinct, ascending, allocated by the client's own _new_id -- and refetches after
+      each; the registry goes ['notes_list'] to ['notes_delete', 'notes_list'] to
+      ['notes_archive', 'notes_delete', 'notes_list'], matching the server at every step, with 6
+      events delivered. None of this could go through the shipped client: MultiServerClient has
+      0 members matching listen, subscribe, stream or notification, _send is annotated dict[str,
+      Any] | None -- one message per request -- and the lesson's own ModernFakeServer answers
+      subscriptions/listen with -32601. The new id is load-bearing because the id is the only
+      correlation key: a replayed stream-1 event is accepted 0 of 1 times against the live
+      stream and 1 of 1 had the re-listen reused the old id, so reusing it does not resume the
+      stream, it makes dead traffic indistinguishable from live. And the refetch recovers state,
+      not events -- the server dropped 2 tools/list_changed with no stream open to carry them
+      and the client received 0, yet its tool list is right anyway, because tools/list reports
+      the current state while the notification reported a transition.
