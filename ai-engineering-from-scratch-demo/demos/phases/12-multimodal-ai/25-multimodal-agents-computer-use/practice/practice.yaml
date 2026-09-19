@@ -32,7 +32,7 @@ exercises:
     cites: >-
       Why it's still hard
   - index: 3
-    slug: four_screenshots_buy_two_thousand_nine_hundred_steps
+    slug: four_screenshots_buy_one_thousand_seven_hundred_steps
     kind: code
     tier: T0
     deps_group: none
@@ -46,7 +46,7 @@ exercises:
       screenshot exhausts a 128k context at step 12, and neither of the lesson's own benchmark tasks
       is longer than six steps, so its simulator never meets the constraint. The compressed scheme is
       constant in step count after step 4 and the log is what grows, so the remaining budget buys
-      2,929 more steps at a slope 351x shallower. And the four slots are first, previous, current and
+      1,779 more steps at 50 tokens each (the summary chain amortises to 20 a step), a slope 211x shallower. And the four slots are first, previous, current and
       last state-changing -- not the last four, because a sliding window loses the last real action
       during any run of failed clicks.
   - index: 4

@@ -17,7 +17,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 |---|---|---|---|---|
 | 1 | Extend the action schema with a `screenshot_region` tool (crop + zoom). What tasks benefit? | code | T0 | `ex01_the_tool_is_already_in_the_schema_and_not_in_the_simulator.py` |
 | 2 | Read AgentVista (arXiv:2602.23166). Describe the hardest task category and why frontier model… | explain | T0 | prose, below |
-| 3 | Long-horizon memory compression: design a summary-chain with ≤4 screenshots kept live, any nu… | code | T0 | `ex03_four_screenshots_buy_two_thousand_nine_hundred_steps.py` |
+| 3 | Long-horizon memory compression: design a summary-chain with ≤4 screenshots kept live, any nu… | code | T0 | `ex03_four_screenshots_buy_one_thousand_seven_hundred_steps.py` |
 | 4 | Build an error-recovery hook: on action failure (button not found), what does the agent do next? | code | T0 | `ex04_there_is_no_failure_to_hook_because_nothing_fails.py` |
 | 5 | Compare screenshot-only Claude 4.7 to hybrid screenshot + accessibility-tree Qwen2.5-VL on 10… | code | T0 | `ex05_the_gap_is_five_points_on_seeing_and_twenty_five_on_doing.py` |
 <!-- generated:end -->
@@ -97,7 +97,7 @@ arrive:**
 grounding and twenty-five on chained execution: the models can see. What they
 cannot do is notice that they were wrong ten steps ago.
 
-### 3 — four screenshots buy 2,929 steps
+### 3 — four screenshots buy 1,779 steps
 
 **ANSWER: four live frames, a full action log, a rolling summary every ten
 steps.**
@@ -115,8 +115,11 @@ neither of the lesson's benchmark tasks is longer than six steps, which is why
 its simulator never meets the constraint this exercise imposes.
 
 **FINDING: the compressed scheme is constant in step count.** After step 4 the
-screenshot term stops moving; the remaining budget buys **2,929** more steps at a
-slope **351×** shallower.
+screenshot term stops moving; the remaining budget buys **1,779** more steps at
+**50** tokens each — not 30, because the rolling summary costs 200 every ten
+steps and amortises to 20 — a slope **211×** shallower. Charging the chain
+smoothly gives 1,777; the true figure is two higher because summaries land in
+jumps of 200.
 
 **FINDING: the four are not interchangeable.** `first`, `previous`, `current`,
 `last state-changing` — *not* the last four. The first anchors the goal, the

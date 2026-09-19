@@ -1,4 +1,4 @@
-"""Exercise 3 — four screenshots buy 2,929 steps.
+"""Exercise 3 — four screenshots buy 1,779 steps.
 
     Long-horizon memory compression: design a summary-chain with ≤4 screenshots
     kept live, any number logged.
@@ -22,8 +22,11 @@ exercise exists to impose.
 
 **FINDING: the compressed scheme is constant in step count and the log is what
 grows.** After step 4 the screenshot term stops moving, so the remaining budget
-buys **2,929** more steps at 30 tokens each. The design turns a linear cost into
-a constant plus a slope 350x shallower.
+buys **1,779** more steps -- at **50** tokens each, not 30, because the rolling
+summary costs 200 every ten steps and that amortises to 20 a step. The design
+turns a linear cost into a constant plus a slope **211x** shallower. Charging
+the chain smoothly gives 1,777; the true figure is two higher because summaries
+land in jumps of 200 rather than continuously.
 
 **FINDING: and the four are not interchangeable.** The useful set is first,
 previous, current and the last *state-changing* one -- not the last four. The
@@ -43,6 +46,7 @@ from harness import parity, practice
 PHASE, LESSON = "12-multimodal-ai", "25-multimodal-agents-computer-use"
 SCREEN, PATCH = (1920, 1080), 14
 LIVE, LOG_TOKENS, SUMMARY_TOKENS, SUMMARY_EVERY = 4, 30, 200, 10
+MARGINAL = LOG_TOKENS + SUMMARY_TOKENS // SUMMARY_EVERY
 STEPS = 50
 CONTEXT = 131072
 SLOTS = ("first", "previous", "current", "last state-changing")
@@ -65,9 +69,16 @@ def exhausts_at(context=CONTEXT):
     return context // screenshot_tokens()
 
 
+def closed_form_headroom(context=CONTEXT, live=LIVE):
+    """Steps affordable if the summary chain were charged smoothly at MARGINAL."""
+    return (context - live * screenshot_tokens()) // MARGINAL
+
+
 def headroom(context=CONTEXT, live=LIVE):
-    fixed = live * screenshot_tokens() + (STEPS // SUMMARY_EVERY) * SUMMARY_TOKENS
-    return (context - fixed) // LOG_TOKENS
+    """Largest step count whose *whole* compressed budget still fits the context."""
+    approx = closed_form_headroom(context, live)
+    return max(n for n in range(approx, approx + SUMMARY_EVERY)
+               if compressed(n, live) <= context)
 
 
 def solve():
@@ -83,7 +94,11 @@ def solve():
         "exhausts_at": exhausts_at(),
         "bench_steps": 6,
         "headroom_steps": headroom(),
-        "slope_ratio": frame // LOG_TOKENS,
+        "headroom_closed_form": closed_form_headroom(),
+        "headroom_cost": compressed(headroom()),
+        "over_by_one": compressed(headroom() + 1) > CONTEXT,
+        "marginal": MARGINAL,
+        "slope_ratio": round(frame / MARGINAL),
         "slots": SLOTS, "slot_count": len(SLOTS),
         "context": CONTEXT,
     }
@@ -112,11 +127,20 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the compressed scheme is constant and the log is what grows",
-            all([result["headroom_steps"] == 2929, result["slope_ratio"] == 351]),
+            all([result["headroom_steps"] == 1779, result["headroom_closed_form"] == 1777,
+                 result["marginal"] == 50, result["slope_ratio"] == 211,
+                 result["headroom_cost"] <= CONTEXT, result["over_by_one"]]),
             f"after step {LIVE} the screenshot term stops moving, so the remaining budget "
-            f"buys {result['headroom_steps']:,} more steps at {LOG_TOKENS} tokens each. The "
-            f"design turns a linear cost into a constant plus a slope {result['slope_ratio']}x "
-            "shallower",
+            f"buys {result['headroom_steps']:,} more steps -- at {result['marginal']} tokens "
+            f"each, not {LOG_TOKENS}, because the rolling summary costs {SUMMARY_TOKENS} "
+            f"every {SUMMARY_EVERY} steps and that amortises to "
+            f"{SUMMARY_TOKENS // SUMMARY_EVERY} a step. The design turns a linear cost into a "
+            f"constant plus a slope {result['slope_ratio']}x shallower. Charging the chain "
+            f"smoothly gives {result['headroom_closed_form']:,}; the true figure is "
+            f"{result['headroom_steps'] - result['headroom_closed_form']} higher because "
+            f"summaries land in jumps of {SUMMARY_TOKENS}. At "
+            f"{result['headroom_steps']:,} the budget sits at {result['headroom_cost']:,} "
+            f"tokens of {CONTEXT:,} and one more step overflows",
         ),
         practice.Check(
             "FINDING: and the four are not interchangeable",
