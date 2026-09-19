@@ -1,0 +1,104 @@
+lesson: 09-mcp-transports
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/09-mcp-transports/docs/en.md
+exercises:
+  - index: 1
+    slug: a_missing_header_and_a_wrong_one_are_the_same_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove `Mcp-Method` from a POST. Confirm HTTP `400` and error `-32020`.
+    zh: |
+      從一次 POST 裡拿掉 `Mcp-Method`。確認回傳 HTTP `400` 與錯誤 `-32020`。
+    verifies: >-
+      removing Mcp-Method answers HTTP 400, -32020, 'Header mismatch: Mcp-Method', with the
+      JSON-RPC id echoed, where the same request with the header present answers 200. Absent and
+      wrong are indistinguishable: dropping the header, setting it to tools/call and setting it
+      to TOOLS/LIST all produce the identical status, code and message, because
+      validate_http_headers raises one fault for `is None or != method`. The header name is
+      case-insensitive and its value is not -- 'mcp-method' answers 200 while 'TOOLS/LIST'
+      answers 400. And the mirrored headers are checked before the version: an unsupported
+      2027-01-01 with no Mcp-Method answers -32020 rather than -32022, while a notification with
+      no id answers 400 with id null rather than the 202 a well-formed one gets.
+  - index: 2
+    slug: matching_is_the_word_that_selects_the_only_path_to_32022
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Send matching header and body version `2027-01-01`. Confirm HTTP `400`, error `-32022`, and exact data `{"supported":["2026-07-28"],"requested":"2027-01-01"}`.
+    zh: |
+      送出標頭與主體一致、版本為 `2027-01-01` 的請求。確認回傳 HTTP `400`、錯誤 `-32022`，以及精確的資料 `{"supported":["2026-07-28"],"requested":"2027-01-01"}`。
+    verifies: >-
+      matching header and body at 2027-01-01 answers HTTP 400, -32022, and data that serializes
+      to {"supported":["2026-07-28"],"requested":"2027-01-01"} byte for byte, supported before
+      requested. Breaking the match either way -- header current over body future, or header
+      future over body current -- answers -32020 Header mismatch: MCP-Protocol-Version with no
+      data, because the two strings are compared before validate_supported_version asks whether
+      the version exists. The code does not mean too new: the legacy 2025-11-25 answers the same
+      -32022 with the same shape, so a dual-era client must read data.supported rather than
+      branch on the number. And the rejection carries discovery's own supportedVersions, so
+      renegotiation needs no second round trip, while the HTTP status is a separate channel --
+      -32022 rides on 400 and -32601 on 404.
+  - index: 3
+    slug: the_comparison_is_proved_by_which_failure_you_get
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Send a Base64 sentinel `Mcp-Name` for a non-ASCII resource URI. Confirm the decoded value is compared with `params.uri`.
+    zh: |
+      為一個非 ASCII 的資源 URI 送出 Base64 標記形式的 `Mcp-Name`。確認解碼後的值有拿去跟 `params.uri` 比對。
+    verifies: >-
+      the correct Base64 sentinel for a non-ASCII uri passes validate_http_headers and dies at
+      the dispatcher with HTTP 404 -32601, while a sentinel encoding a different uri dies
+      earlier with HTTP 400 -32020 Header mismatch: Mcp-Name -- only a comparison against
+      params.uri separates those two, and resources/read has no handler, so there is no success
+      to confirm instead. The contract is enforced for a method the server does not implement:
+      an ASCII uri answers the same -32601 with the value sent unencoded. The sentinel is what
+      makes the channel usable rather than a convention on top of it -- the raw UTF-8 value
+      raises UnicodeEncodeError in http.client, which encodes headers as latin-1, so no request
+      exists at all. And a malformed sentinel is a second message under the same code, Malformed
+      Base64 MCP header value, while encode_header_value encodes a value that merely looks like
+      a sentinel so it decodes back to itself.
+  - index: 4
+    slug: a_reissue_is_not_a_resume_because_the_old_id_names_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Break the finite listen stream before its final response. Reissue it with a new JSON-RPC id and refetch tools.
+    zh: |
+      在有限次的 listen 串流拿到最終回應之前把它弄斷。用新的 JSON-RPC id 重新送出它，並重抓工具。
+    verifies: >-
+      closing the SSE connection after the acknowledgement takes 1 of 3 frames and never sees
+      the JSON-RPC result; reissued as listen-2 the stream delivers acknowledged,
+      tools/list_changed and the result, each tagged with its own subscriptionId, and the
+      refetched tools/list answers ['ping']. There is nothing to resume from: the stream writes
+      0 'id:' SSE fields, so Last-Event-ID has no anchor. A reissue is not a resume because the
+      server keeps no subscription -- subscription_messages is a pure function of the request
+      and the module's only subscription-shaped names are the key constant and that function, so
+      the old id names nothing. And the refetch is load-bearing because the notification carries
+      no tools: the list_changed frame's params hold _meta and nothing else, while the
+      acknowledgement echoes the accepted filter after accepted_filter drops unknown keys.
+  - index: 5
+    slug: affinity_is_neither_necessary_nor_sufficient_for_the_handle
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an explicit workflow handle to the ping tool. Bind it to an authorization subject without using connection affinity.
+    zh: |
+      為 ping 工具加上一個明確的工作流程把手。把它綁到一個授權主體上，過程中不使用連線親和性。
+    verifies: >-
+      ping mints a 32-character token_urlsafe handle at turns=1 on replica a, and replica b -- a
+      different process with no memory of that call -- takes the same handle to turns=2, with
+      every other method still going to the lesson's own dispatch. The same Replica code over
+      two separate dicts reproduces the lesson's five-step failure instead, answering -32004 on
+      b, so the handle is not what breaks: the place it is kept is. The binding is the subject,
+      which makes affinity neither necessary nor sufficient -- a second subject presenting the
+      handle to the minting replica is refused -32003, and the owning subject is served by both
+      replicas. And the handle has to be an argument because the envelope has no slot for it: a
+      real POST answers with Mcp-Session-Id None and http_headers_for sends none, so expiry
+      lives on the record, where an aged handle answers -32005.
