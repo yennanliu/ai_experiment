@@ -1,0 +1,87 @@
+lesson: 07-building-an-mcp-server
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/07-building-an-mcp-server/docs/en.md
+exercises:
+  - index: 1
+    slug: statelessness_is_proved_by_the_absence_of_a_place_to_keep_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove capabilities from one request and prove the server does not reuse the previous request's declaration.
+    zh: |
+      從某一則請求裡拿掉能力，證明伺服器沒有沿用前一則請求的宣告。
+    verifies: >-
+      with capabilities, without, with again gives complete/-32602/complete, and all six methods
+      reject the omission identically. But this server does keep state between requests: NOTES is a
+      module dict notes_create mutates, taking resources/list from 3 entries to 4. The two kinds are
+      told apart by where they are read -- validate_request reads params._meta, and all three
+      executors read NOTES and touch _meta in 0 of 3 cases. Empty capabilities still pass, and the
+      three advertised capability groups are read by no handler.
+  - index: 2
+    slug: three_lists_are_stable_and_a_created_note_lands_anywhere
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reverse the `TOOLS`, `PROMPTS`, and note insertion order. Confirm all list results remain stable.
+    zh: |
+      把 `TOOLS`、`PROMPTS` 與筆記的插入順序反轉。確認所有清單結果仍然穩定。
+    verifies: >-
+      reversing TOOLS, PROMPTS and the note insertion order at once changes none of the three lists.
+      But exec_notes_create names a note note-{uuid4 hex} and resources/list sorts lexicographically,
+      so over 200 creates the new note lands at positions 0 through 3 -- deterministic given the ids,
+      unreproducible across runs. Creating a note takes resources/list from 3 to 4 while
+      resources.listChanged is False and the list caches 10,000 ms, so a client honouring both serves
+      a stale list and is never told. And resources/list is the one list whose sort key is absent from
+      its payload.
+  - index: 3
+    slug: the_hint_is_a_hint_because_no_handler_ever_reads_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a destructive `notes_delete` tool and require an authorization check inside the executor. Keep `destructiveHint` as a UX hint only.
+    zh: |
+      加一個具破壞性的 `notes_delete` 工具，並在執行器內部要求一道授權檢查。`destructiveHint` 只當成 UX 提示。
+    verifies: >-
+      notes_delete with the authorization check inside the executor: unauthorised returns an rpc_error
+      -32003 and the note survives; authorised drops resources from 3 to 2. Searching every handle_*
+      for 'annotations' finds 0 and handle_tools_call never consults the tool record, so
+      destructiveHint could not be anything but advisory. The two error channels differ --
+      handle_tools_call catches (KeyError, TypeError, ValueError) into an isError tool result the
+      model may retry, while RpcProblem escapes to dispatch as a JSON-RPC error it never sees. And
+      notes_delete is the only tool whose retry after success fails.
+  - index: 4
+    slug: a_template_list_is_public_because_it_holds_no_instances
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `resources/templates/list` with `ttlMs`, `cacheScope`, and deterministic ordering.
+    zh: |
+      加上 `resources/templates/list`，附帶 `ttlMs`、`cacheScope` 與確定性排序。
+    verifies: >-
+      resources/templates/list installed with public scope, 60,000 ms and sorting by uriTemplate,
+      stable under reversal, and -32601 before installation and after removal. It is the only
+      resources/* method that can be public: resources/list is private at 10,000 and resources/read
+      private at 5,000 because both return note contents. Scope and ttl are the same decision -- the
+      three public methods cache 3,600,000 / 60,000 / 60,000 and the two private ones 10,000 / 5,000.
+      And the tag template expands to a URI resources/read answers -32602 Resource not found for.
+  - index: 5
+    slug: the_two_eras_are_separated_by_a_key_neither_one_shares
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a separate legacy adapter for `2025-11-25`. Add tests proving a modern request never enters it.
+    zh: |
+      為 `2025-11-25` 另外做一個舊版轉接層。加上測試，證明現代請求永遠不會進到它裡面。
+    verifies: >-
+      a pre-parser selector on params._meta routes 8 message shapes into 4 modern and 4 legacy, with
+      none routing both or neither. The legacy adapter holds connection state: uninitialised it
+      refuses tools/list with -32002, and after initialize it answers with capabilities the later
+      request never re-sent -- exactly what exercise 1 proved the modern path cannot do. initialize
+      through the modern dispatch gives -32601 Method not found, which is a rejection rather than a
+      handover and indistinguishable from an unknown method. And a 2025-11-25 version on a
+      modern-shaped message still routes modern, answering -32022.

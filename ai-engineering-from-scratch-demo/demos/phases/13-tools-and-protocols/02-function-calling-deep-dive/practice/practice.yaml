@@ -1,0 +1,82 @@
+lesson: 02-function-calling-deep-dive
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/02-function-calling-deep-dive/docs/en.md
+exercises:
+  - index: 1
+    slug: the_one_quirk_it_names_is_the_one_the_translator_misses
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` and verify that the three provider declaration JSONs all serialize the same underlying `Tool` object. Modify the canonical tool to add an enum parameter and confirm only the Gemini translator needs to handle the OpenAPI quirk.
+    zh: |
+      跑一次 `code/main.py`，驗證三份供應商宣告 JSON 序列化的都是同一個底層 `Tool` 物件。修改那個標準工具，加上一個 enum 參數，然後確認只有 Gemini 的轉譯器需要處理那個 OpenAPI 怪癖。
+    verifies: >-
+      the three declarations do not carry the same object: strict reaches OpenAI and neither of the
+      other two, surviving 1 of 3. The enum parameter the exercise says to add is already on units.
+      _gemini_schema uppercases type only when it is a str, so units' declared ['string','null'] falls
+      through untouched beside uppercased OBJECT and STRING -- the OpenAPI quirk the exercise says
+      only Gemini needs handled is the one Gemini does not handle. additionalProperties is stripped
+      for Gemini by name and kept by the other two, which is the intended disagreement and the
+      control.
+  - index: 2
+    slug: the_asymmetry_is_three_ways_not_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `ListToolsResponse` parser for each provider that extracts the tool list a model returns after a `list_tools` or discovery call. OpenAI does not have one natively; note this asymmetry.
+    zh: |
+      為每家供應商加上一個 `ListToolsResponse` 解析器，用來抽出模型在一次 `list_tools` 或探索呼叫之後回傳的工具清單。OpenAI 原生沒有這個東西；把這個不對稱記下來。
+    verifies: >-
+      searching the module for list_tools / tools/list / ListTools / listTools finds 0 shapes, and the
+      three parse_* functions all key off calls (tool_calls, tool_use, functionCall) rather than
+      declarations -- so discovery is 0 of 3 and the asymmetry is all three against MCP, not OpenAI
+      against the other two. An MCP tools/list parser recovers get_weather with its schema intact.
+      Reading each provider's request-side declaration back recovers the name from 3 of 3 but only 2
+      of 3 schemas byte-for-byte; Gemini's is rewritten.
+  - index: 3
+    slug: the_mode_it_asks_for_is_a_wire_name_not_a_canonical_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement `tool_choice` conversion: map a canonical `ToolChoice(mode="force", tool_name="x")` into all three provider shapes. Then map `mode="any"` and `mode="none"`. Check the lesson's diff table.
+    zh: |
+      實作 `tool_choice` 的轉換：把一份標準的 `ToolChoice(mode="force", tool_name="x")` 映射到三家供應商的形狀。接著再映射 `mode="any"` 與 `mode="none"`。對照本課那張差異表。
+    verifies: >-
+      force and none convert cleanly through all three converters; mode='any' raises ValueError from 3
+      of 3. 'any' is Anthropic's wire spelling for the mode the lesson calls required --
+      tool_choice_anthropic maps required TO {'type': 'any'} -- so the exercise feeds a provider's
+      output back in as canonical input. The Anthropic column reads auto, none, any, tool, of which
+      only auto and none are also canonical names. force is the only mode that uses tool_name, and
+      Gemini's force is ANY plus allowed_function_names rather than a distinct shape.
+  - index: 4
+    slug: strict_is_the_field_with_no_equivalent
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one of the three providers and read its function-calling guide end to end. Find one field in its schema spec that the other two do not support. Candidates: OpenAI `strict`, Anthropic `disable_parallel_tool_use`, Gemini `function_calling_config.allowed_function_names`.
+    zh: |
+      挑三家供應商中的一家，把它的函數呼叫指南從頭讀到尾。找出一個它的 schema 規格中有、而另外兩家不支援的欄位。候選有：OpenAI 的 `strict`、Anthropic 的 `disable_parallel_tool_use`、Gemini 的 `function_calling_config.allowed_function_names`。
+    cites: >-
+      Shape diffs, field by field
+  - index: 5
+    slug: the_canonical_tool_declares_a_value_it_cannot_accept
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a test vector: a tool call whose arguments violate the declared schema. Run it through each provider's validator (the stdlib one in Lesson 01 will do as a proxy) and record which errors fire. Document which provider you would use in production for strictness.
+    zh: |
+      寫一組測試向量：一次參數違反所宣告 schema 的工具呼叫。把它送過每家供應商的驗證器（用單元 01 那個 stdlib 版本當替身就行），記錄哪些錯誤會觸發。寫下就嚴格性而言，你在生產環境會選哪一家。
+    verifies: >-
+      four of five violating vectors fire through Lesson 01's validator: missing required units, city
+      as int, units outside the enum, and units null. The undeclared extra key fires nothing although
+      the canonical schema sets additionalProperties false. units is declared type ['string','null']
+      with an enum that excludes null and is listed required, so no value exercises the null branch --
+      the schema declares a nullability it forbids. With the enum removed as a control, units accepts
+      7, None, 'celsius' and {'a': 1}: 4 of 4 clean, because a list of types matches neither the
+      'string' nor the 'number' branch. OpenAI wins on strictness via strict=True, the field that
+      survives 1 of 3 translations.

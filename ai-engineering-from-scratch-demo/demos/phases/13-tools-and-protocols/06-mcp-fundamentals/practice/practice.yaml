@@ -1,0 +1,87 @@
+lesson: 06-mcp-fundamentals
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/06-mcp-fundamentals/docs/en.md
+exercises:
+  - index: 1
+    slug: the_version_gate_is_per_request_and_a_notification_skips_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change one request's protocol version to `2027-01-01`. Confirm the error code is `-32022` and the data advertises the supported version.
+    zh: |
+      把某一則請求的協定版本改成 `2027-01-01`。確認錯誤碼是 `-32022`，而且 data 公告了受支援的版本。
+    verifies: >-
+      a tools/list carrying 2027-01-01 returns -32022 with data {requested, supported:
+      ['2026-07-28']}. Stripping the id makes it a notification and dispatch returns None before
+      validate_request runs, so the same unsupported version produces no error at all. All three
+      methods taking an id reject it identically and all three accept the supported version, which is
+      the per-message cost of having no session. -32022 sits inside JSON-RPC's reserved -32768..-32000
+      block and is none of its five defined codes, while the lesson's other errors are standard.
+  - index: 2
+    slug: there_is_no_state_to_reuse_so_the_question_cannot_be_answered_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove `io.modelcontextprotocol/clientCapabilities` from the second request. Confirm the server does not reuse capabilities from the first request.
+    zh: |
+      從第二則請求裡拿掉 `io.modelcontextprotocol/clientCapabilities`。確認伺服器沒有沿用第一則請求的能力。
+    verifies: >-
+      a first request carrying capabilities returns complete; a second omitting them returns -32602; a
+      third carrying them again returns complete. The module holds 0 mutable containers outliving a
+      call and validate_request reads only its argument, so the server has no state rather than
+      declining to reuse it. Removing the version fails the same way on a later request, so all three
+      _meta keys are re-established per message. And empty capabilities pass -- the check is presence,
+      and nothing reads a capability afterwards.
+  - index: 3
+    slug: the_order_is_deterministic_because_the_names_are_unique
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reverse the in-memory tool registry. Confirm `tools/list` still returns the same deterministic order.
+    zh: |
+      把記憶體裡的工具登錄表反轉。確認 `tools/list` 仍然回傳同樣的確定性排序。
+    verifies: >-
+      tools/list returns ['notes_list','notes_search'] before and after reversing TOOLS, because
+      dispatch sorts by name. But sorted is stable, so the determinism rests on the shipped names
+      being unique: adding a second notes_list leaves the name list identical while the bodies swap,
+      so a client diffing by name sees no change and gets a different tool. TOOLS has no uniqueness
+      check, tools/list does not deduplicate, and tools/call dispatches on hard-coded name
+      comparisons. dispatch calls sorted once; the other two methods return no order-bearing
+      collection.
+  - index: 4
+    slug: private_is_the_default_that_nothing_in_the_lesson_uses
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change `cacheScope` from `public` to `private`. Explain which authorization contexts may reuse the response in each case.
+    zh: |
+      把 `cacheScope` 從 `public` 改成 `private`。說明這兩種情況下，各有哪些授權脈絡可以重用該回應。
+    verifies: >-
+      public means any authorization context may reuse the response and private means only the one
+      that produced it; re-emitting tools/list as private changes the scope and nothing else.
+      server/discover caches 3,600,000 ms and tools/list 30,000, both public, while tools/call carries
+      no ttlMs and no cacheScope -- the two cacheable methods are pure functions of the server and the
+      third is a function of the request. private is complete_result's default when a ttl is passed
+      without a scope, and both call sites pass public explicitly. And no _meta key carries a
+      principal: clientInfo is a name and a version, so a private tools/call would have nothing to key
+      on.
+  - index: 5
+    slug: the_optional_field_is_the_only_one_validated_for_shape
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an optional `clientInfo` omission test. The request should remain valid because client identity is recommended, not required.
+    zh: |
+      加一個「省略 `clientInfo`」的選用測試。這則請求應該仍然有效，因為客戶端身分是建議填寫，不是必填。
+    verifies: >-
+      all three methods accept a request carrying only the version and capability keys. clientInfo is
+      the only _meta field whose contents are checked -- five malformed values (name without version,
+      version without name, non-string name, a bare string, a list) all give -32602, while empty
+      capabilities pass. The asymmetry follows from what is consulted: nothing reads a capability, so
+      nothing can be broken by a wrong one. And 'recommended' is unenforced -- its absence is accepted
+      everywhere while the server's reply always carries serverInfo.

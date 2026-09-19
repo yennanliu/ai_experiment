@@ -1,0 +1,86 @@
+lesson: 05-tool-schema-design
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/05-tool-schema-design/docs/en.md
+exercises:
+  - index: 1
+    slug: twenty_findings_to_zero_and_one_of_them_was_counted_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take the `BAD_REGISTRY` in `code/main.py` and rewrite each tool to pass the linter. Measure description length and count rule violations before and after.
+    zh: |
+      拿 `code/main.py` 裡的 `BAD_REGISTRY`，把每個工具改寫到能通過 linter。量測改寫前後的描述長度與違規條數。
+    verifies: >-
+      BAD_REGISTRY lints at 20 findings (6 block, 11 warn, 3 nit) and the rewrite at 0; descriptions
+      go from 19/16/109 characters to 88/112/85, two of the three under the 40-character floor. The
+      duplicate-name rule reports once per copy rather than once per collision, so 2, 3 and 4 copies
+      give 2, 3 and 4 findings. A delete_note tool described as a weather tool lints at 0 -- nothing
+      compares description to name. And the embedded-argument rule fires on search_notes_for_text, a
+      legitimate name shape.
+  - index: 2
+    slug: zero_findings_is_reachable_by_a_registry_the_lesson_calls_bad
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an MCP server for a notes application with atomic tools: list, search, create, update, delete, and a `summarize` slash prompt. Lint the registry. Target zero findings.
+    zh: |
+      為一個筆記應用設計一台 MCP 伺服器，配上原子化工具：list、search、create、update、delete，以及一個 `summarize` 斜線提示詞。對那份登錄跑 lint。目標是零問題。
+    verifies: >-
+      six entries -- notes_list/search/create/update/delete plus a summarize prompt -- lint at 0. The
+      same five operations as one monolithic tool score 1 warn with the verb under 'action' and 0
+      under 'op', because lint_schema matches the key name literally rather than the shape. The prompt
+      is linted as a tool, including the 'Do not use for' rule it has no counterpart to be
+      disambiguated from. The atomic registry spends 729 characters of description against the
+      monolith's 75 -- 10x, all of it reaching the model every request.
+  - index: 3
+    slug: the_nearest_real_registry_lints_at_three_nits_and_two_of_them_matter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick an existing popular MCP server from the official registry and lint its tool descriptions. Find at least two actionable improvements.
+    zh: |
+      從官方登錄中挑一台既有的熱門 MCP 伺服器，對它的工具描述跑 lint。找出至少兩項可實際動手的改進。
+    verifies: >-
+      the official registry is a network fetch, so the substitution is stated: Lesson 13.01's
+      registry, written for another purpose and never meant to be linted. It scores 3 findings, all
+      nit, all the same rule -- get_time.timezone, get_weather.city, get_weather.units lack field
+      descriptions. Two are actionable: units carries an enum so a description would restate it, while
+      timezone and city are open strings whose accepted form nothing states. The linter scores
+      descriptions the decider never reads, and rewording the shipped poisoned description drops its 2
+      injection blocks to 0 -- the denylist holds 4 literal phrases.
+  - index: 4
+    slug: the_gate_blocks_six_of_twenty_and_lets_the_poisoned_tool_through
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add the linter to your CI. On a PR that changes a tool registry, fail the build on severity `block` findings. The eval-driven CI pattern is covered in a future phase.
+    zh: |
+      把 linter 加進你的 CI。在一個變更工具登錄的 PR 上，只要出現嚴重度為 `block` 的問題就讓建置失敗。評測驅動的 CI 模式會在未來的階段涵蓋。
+    verifies: >-
+      the gate exits 1 on any block: BAD_REGISTRY 1, GOOD_REGISTRY 0, Lesson 13.01's registry 0. It
+      discards 14 of the 20 findings on the registry it rejects, because a missing 'Use when' is warn
+      while a 39-character description is block. Rewording the injection takes the poisoned tool from
+      exit 1 on 2 blocks to exit 0 on 0, so the same attack ships green. And exactly 1 of the 3
+      registries fails -- the one written to fail.
+  - index: 5
+    slug: the_lesson_states_five_parameter_rules_and_lints_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Composio's tool-design field guide top to bottom. Identify one rule not covered in this lesson and add it to the linter.
+    zh: |
+      把 Composio 的工具設計實務指南從頭讀到尾。找出一條本課沒涵蓋的規則，並把它加進 linter。
+    verifies: >-
+      the added rule is snake_case for parameter names: lint_name rejects 'noteId' as a tool name and
+      nothing applies the same regex to fields, so a schema with noteId and MAX lints at 0 today and 2
+      with the rule. Auditing the linter against the five rules the lesson's own Parameter design
+      section states, 2 are enforced -- describe-the-field and no-overly-flexible-types.
+      Enum-every-closed-set fires only for a key named action, typed-ids-need-a-pattern is absent, and
+      required-vs-optional checks only that the key exists. The two skipped are the two that catch
+      hallucinated arguments. All 10 shipped parameter names are already snake_case, so the new rule
+      scores 0.
