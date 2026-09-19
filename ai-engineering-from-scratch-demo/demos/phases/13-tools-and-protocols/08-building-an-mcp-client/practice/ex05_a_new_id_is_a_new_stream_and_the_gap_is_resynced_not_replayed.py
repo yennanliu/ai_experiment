@@ -41,8 +41,8 @@ with `Last-Event-ID`" costs: the transitions in the gap are unrecoverable, and
 recovery is a resync that does not need them.
 
 Structure: `SubscribableServer` wraps the lesson's `ModernFakeServer` and adds
-the listen method; `open_stream` and `run_subscription` are the client side,
-built from the lesson's `modern_request` / `decode_rpc_response` / `_new_id`.
+the listen method; `run_subscription` is the client side, built out of the
+lesson's own `modern_request` / `decode_rpc_response` / `_new_id`.
 """
 
 from __future__ import annotations
@@ -93,7 +93,7 @@ class SubscribableServer:
         self.listen_ids.append(request_id := message["id"])
         self.streams[request_id] = self._events(request_id, self.generation + 1 < len(GENERATIONS))
         return {"jsonrpc": "2.0", "id": request_id, "result": self.ref.complete(
-                    self.server.server_info, {"acknowledged": ACK})}
+            self.server.server_info, {"acknowledged": ACK})}
 
 
 def correlates(event, listen_id):   # an event belongs to a stream by its id alone
