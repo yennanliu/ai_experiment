@@ -13,10 +13,15 @@ DCT bins 0-3, and at a 30 Hz control rate bin k is `k x 30 / (2 x 30)` = k/2 Hz.
 So the tokenizer is a low-pass filter with a **1.5 Hz** corner, and drumming at 4
 to 8 Hz is entirely in the stopband.
 
-**FINDING: the retained energy falls off a cliff.** Reconstructing a pure sine
-from its first four coefficients keeps **90.5%** of it at 0.5 Hz, **38.5%** at
-2 Hz, **1.5%** at 5 Hz and **0.4%** at 8 Hz. A drumming trajectory does not come
-back degraded; it comes back as a straight line.
+**FINDING: the retained energy falls off a cliff, and the amplitude falls
+faster.** Reconstructing a pure sine from its first four coefficients keeps
+**99.1%** of its energy at 0.5 Hz, **62.2%** at 2 Hz, **3.0%** at 5 Hz and
+**0.7%** at 8 Hz. Truncating the DCT is an orthogonal projection, so kept and
+discarded energy sum to the whole at every frequency and that is the honest
+figure. Measured as amplitude instead -- `1 - rms(error)/rms(signal)`, which is
+what the trajectory looks like -- the same reconstructions read **90.5%**,
+**38.5%**, **1.5%** and **0.4%**. A drumming trajectory does not come back
+degraded; it comes back as a straight line.
 
 **FINDING: the lesson's own FAST output is 40 tokens, not the ~10 the exercise
 names.** `fast_compress(traj, keep_coeff=4)` on its own 30-step, 10-DOF fixture
@@ -62,11 +67,26 @@ def rms(series):
     return math.sqrt(statistics.fmean(value * value for value in series))
 
 
+def energy(series):
+    return sum(value * value for value in series)
+
+
 def retained(ref, frequency, steps=STEPS, keep=KEEP, rate=CONTROL_HZ):
+    """Energy kept, amplitude kept, and whether the two halves sum to the whole."""
     series = [math.sin(2 * math.pi * frequency * step / rate) for step in range(steps)]
     rebuilt = idct(ref.dct(series)[:keep], steps)
-    error = rms([a - b for a, b in zip(series, rebuilt)])
-    return round(1 - error / rms(series), 3)
+    residual = [a - b for a, b in zip(series, rebuilt)]
+    whole = energy(series)
+    return {"energy": round(energy(rebuilt) / whole, 3),
+            "amplitude": round(1 - rms(residual) / rms(series), 3),
+            "orthogonal": abs(energy(rebuilt) + energy(residual) - whole) < 1e-9}
+
+
+def summarise(rows):
+    """Split the per-frequency rows into the series the checks assert."""
+    return {"retained": {f: row["energy"] for f, row in rows.items()},
+            "amplitude": {f: row["amplitude"] for f, row in rows.items()},
+            "orthogonal": all(row["orthogonal"] for row in rows.values())}
 
 
 def cutoff(keep=KEEP, steps=STEPS, rate=CONTROL_HZ):
@@ -79,9 +99,10 @@ def solve():
                   for step in range(STEPS)]
     produced = len(ref.fast_compress(trajectory, keep_coeff=KEEP))
     discrete = DOF * STEPS
+    rows = {frequency: retained(ref, frequency) for frequency in FREQUENCIES}
     return {
         "keep": KEEP, "steps": STEPS, "cutoff_hz": cutoff(),
-        "retained": {frequency: retained(ref, frequency) for frequency in FREQUENCIES},
+        **summarise(rows),
         "stopband": [frequency for frequency in FREQUENCIES if frequency > cutoff()],
         "produced": produced, "claimed": EXERCISE_CLAIM,
         "claim_gap": produced // EXERCISE_CLAIM,
@@ -105,12 +126,18 @@ def verify(result):
             f"{result['stopband']} Hz are in the stopband, and drumming lives at 4 to 8",
         ),
         practice.Check(
-            "FINDING: the retained energy falls off a cliff",
-            all([kept == {0.5: 0.905, 2.0: 0.385, 5.0: 0.015, 8.0: 0.004}]),
+            "FINDING: the retained energy falls off a cliff, and the amplitude falls faster",
+            all([kept == {0.5: 0.991, 2.0: 0.622, 5.0: 0.03, 8.0: 0.007},
+                 result["amplitude"] == {0.5: 0.905, 2.0: 0.385, 5.0: 0.015, 8.0: 0.004},
+                 result["orthogonal"]]),
             f"reconstructing a pure sine from its first {KEEP} coefficients keeps "
-            f"{kept[0.5]:.1%} of it at 0.5 Hz, {kept[2.0]:.1%} at 2 Hz, {kept[5.0]:.1%} at 5 "
-            f"and {kept[8.0]:.1%} at 8. A drumming trajectory does not come back degraded; "
-            "it comes back as a straight line",
+            f"{kept[0.5]:.1%} of its energy at 0.5 Hz, {kept[2.0]:.1%} at 2 Hz, "
+            f"{kept[5.0]:.1%} at 5 and {kept[8.0]:.1%} at 8. Truncating the DCT is an "
+            f"orthogonal projection -- kept and discarded energy sum to the whole at every "
+            f"frequency -- so that is the honest figure. Measured as amplitude, "
+            f"1 - rms(error)/rms(signal), the same reconstructions read "
+            f"{list(result['amplitude'].values())}. A drumming trajectory does not come back "
+            "degraded; it comes back as a straight line",
         ),
         practice.Check(
             "FINDING: the lesson's own FAST output is 40 tokens, not ~10",

@@ -32,8 +32,10 @@ exercises:
       everything above 1.5 Hz. keep_coeff=4 of a 30-step trajectory keeps DCT bins 0-3 and at 30 Hz
       bin k is k/2 Hz, so the tokenizer is a low-pass with a 1.5 Hz corner and drumming at 4-8 Hz is
       entirely in the stopband. Reconstructing a pure sine from its first four coefficients -- with an
-      inverse DCT written here, because the module ships none -- keeps 90.5% of the energy at 0.5 Hz,
-      38.5% at 2, 1.5% at 5 and 0.4% at 8. The lesson's own fast_compress returns 40 tokens on its own
+      inverse DCT written here, because the module ships none -- keeps 99.1% of the energy at 0.5 Hz,
+      62.2% at 2, 3.0% at 5 and 0.7% at 8; truncating the DCT is an orthogonal projection, so kept and
+      discarded energy sum to the whole. Measured as amplitude, 1 - rms(error)/rms(signal), the same
+      reconstructions read 90.5%, 38.5%, 1.5% and 0.4%. The lesson's own fast_compress returns 40 tokens on its own
       fixture, four per dimension, not the ~10 the exercise names -- a compression of 7.5x against
       300. And there is no fast_decompress anywhere, so the ratio is printed and the round trip is
       never checked.
