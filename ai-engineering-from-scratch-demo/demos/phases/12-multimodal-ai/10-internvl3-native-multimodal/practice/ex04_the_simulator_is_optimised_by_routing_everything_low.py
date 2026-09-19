@@ -45,6 +45,8 @@ maximises the simulator's own objective.
 
 from __future__ import annotations
 
+import inspect
+
 from harness import parity, practice
 
 PHASE, LESSON = "12-multimodal-ai", "10-internvl3-native-multimodal"
@@ -65,6 +67,15 @@ def share_of_tokens(split, index=-1):
     return round(TOKENS[index] * split[index] / total * 100, 1)
 
 
+ACCURACY_WORDS = ("accuracy", "correct", "quality", "wrong", "misroute", "error")
+
+
+def accuracy_terms(ref):
+    """Any accuracy-like name in vir_sim's source -- the term a misroute would need."""
+    source = inspect.getsource(ref.vir_sim).lower()
+    return [word for word in ACCURACY_WORDS if word in source]
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     shipped = ref.vir_sim(tiers(ref, SHIPPED))
@@ -81,7 +92,9 @@ def solve():
         "misroute_cost": TOKENS[-1] - TOKENS[0],
         "premise_gain_pct": round((asked["ratio"] / shipped["ratio"] - 1) * 100, 1),
         "baseline": shipped["baseline"],
-        "has_accuracy_term": False,
+        "sim_keys": sorted(shipped),
+        "accuracy_terms": accuracy_terms(ref),
+        "has_accuracy_term": bool(accuracy_terms(ref)),
         "modes": 3,
     }
 
@@ -111,12 +124,16 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: vir_sim cannot represent a misroute",
-            all([not result["has_accuracy_term"],
+            all([not result["has_accuracy_term"], result["accuracy_terms"] == [],
+                 result["sim_keys"] == ["avg_tokens", "baseline", "ratio"],
                  degenerate == {"avg": 256.0, "ratio": 8.0},
                  degenerate["ratio"] > asked["ratio"] > shipped["ratio"]]),
-            f"the simulator takes (tokens, fraction) pairs and returns a weighted mean, with "
-            f"no accuracy term anywhere, so every policy that lowers the average scores "
-            f"better. Its optimum is {DEGENERATE} -- {degenerate['avg']} tokens, "
+            f"the simulator takes (tokens, fraction) pairs and returns "
+            f"{result['sim_keys']} -- a weighted mean, its own maximum and their quotient. "
+            f"Searching its source for {list(ACCURACY_WORDS)} finds "
+            f"{result['accuracy_terms'] or 'nothing'}, so no policy can be penalised for "
+            f"being wrong and every policy that lowers the average scores better. Its "
+            f"optimum is {DEGENERATE} -- {degenerate['avg']} tokens, "
             f"{degenerate['ratio']}x -- a router that has stopped routing",
         ),
         practice.Check(

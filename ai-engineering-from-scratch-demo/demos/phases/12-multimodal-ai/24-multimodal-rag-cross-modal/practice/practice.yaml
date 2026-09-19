@@ -57,8 +57,9 @@ exercises:
       -- run on the lesson's own corpus against a gold set re-derived from it rather than asserted.
       Fused recall@2 is 1.00 and precision@3 0.67, while standalone recall@2 is image 1.00, audio 1.00
       and text 0.50: the composite hides a retriever finding half the gold set. Text is the weakest
-      and carries 0.3 of the weight against image's 0.4, and it is weak because four of the five
-      restaurants tie at 0.2857 and the tie-break is sorted's stability. Citation coverage is 3 of 3
+      and carries 0.3 of the weight against image's 0.4, and it is weak because r1 wins outright and
+      the second slot is a three-way tie at 0.2857 between r2, r3 and r4 that sorted breaks by
+      position rather than relevance, so gold r4 loses it to r2. Citation coverage is 3 of 3
       modalities on every result, 100%, and is worth measuring because it degrades silently -- drop a
       retriever and its evidence line is still printed.
   - index: 5

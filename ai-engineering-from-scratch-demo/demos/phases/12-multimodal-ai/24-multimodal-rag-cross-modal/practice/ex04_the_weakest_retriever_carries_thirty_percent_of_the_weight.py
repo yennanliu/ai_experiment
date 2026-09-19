@@ -19,9 +19,10 @@ Fused recall@2 is **1.00** and precision@3 is **0.67**. Standalone recall@2 is
 **image 1.00, audio 1.00, text 0.50**.
 
 **FINDING: the weakest retriever carries 30% of the weight.** Text alone finds
-one of the two gold pages, because four of the five restaurants tie at 0.2857 and
-the tie-break is `sorted`'s stability rather than relevance. It is weighted 0.3
-against image's 0.4, and no eval in the lesson would have shown it.
+one of the two gold pages. `r1` wins outright at 0.4286, and the second slot is a
+**three-way** tie at **0.2857** between `r2`, `r3` and `r4` that `sorted` breaks
+by position rather than relevance -- so gold `r4` loses it to `r2`. It is
+weighted 0.3 against image's 0.4, and no eval in the lesson would have shown it.
 
 **FINDING: citation coverage is the metric that is already satisfied and still
 worth having.** `grounded_generate` emits a review id, an image tag list and a
@@ -79,6 +80,13 @@ def coverage(ref, ranked):
             for line in lines]
 
 
+def runner_up_tie(ref, query=QUERY):
+    """Who shares the second-best text score -- the tie the ranking breaks blind."""
+    scores = ref.text_retrieve(query)
+    second = sorted(scores.values(), reverse=True)[1]
+    return round(second, 4), sorted(doc for doc, v in scores.items() if v == second)
+
+
 def gold_check(ref):
     """The gold set re-derived from the corpus, so it is not a magic constant."""
     return {r.id for r in ref.CORPUS
@@ -100,6 +108,9 @@ def solve():
         "weakest": min(alone, key=alone.get),
         "weakest_weight": WEIGHTS[MODALITIES.index(min(alone, key=alone.get))],
         "strongest_weight": max(WEIGHTS),
+        "tie_score": runner_up_tie(ref)[0], "tied": runner_up_tie(ref)[1],
+        "gold_in_tie": sorted(set(runner_up_tie(ref)[1]) & GOLD),
+        "text_picks": [doc for doc, _ in ref.top_k(ref.text_retrieve(QUERY), 2)],
         "coverage": coverage(ref, ranked),
         "coverage_pct": round(sum(coverage(ref, ranked))
                               / (3 * len(ranked)) * 100),
@@ -132,12 +143,15 @@ def verify(result):
         practice.Check(
             "FINDING: the weakest retriever carries 30% of the weight",
             all([result["weakest"] == "text", result["weakest_weight"] == 0.3,
-                 result["strongest_weight"] == 0.4, alone["text"] == 0.5]),
-            f"{result['weakest']} alone finds {alone['text']:.0%} of the gold set, because "
-            f"four of the five restaurants tie at 0.2857 and the tie-break is sorted's "
-            f"stability rather than relevance. It is weighted {result['weakest_weight']} "
-            f"against {result['strongest_weight']}, and no eval in the lesson would have "
-            "shown it",
+                 result["strongest_weight"] == 0.4, alone["text"] == 0.5,
+                 result["tied"] == ["r2", "r3", "r4"], result["tie_score"] == 0.2857,
+                 result["gold_in_tie"] == ["r4"], result["text_picks"] == ["r1", "r2"]]),
+            f"{result['weakest']} alone finds {alone['text']:.0%} of the gold set. r1 wins "
+            f"outright, and the second slot is a {len(result['tied'])}-way tie at "
+            f"{result['tie_score']} between {result['tied']} that sorted breaks by position "
+            f"rather than relevance -- so gold {result['gold_in_tie'][0]} loses it to "
+            f"{result['text_picks'][1]}. It is weighted {result['weakest_weight']} against "
+            f"{result['strongest_weight']}, and no eval in the lesson would have shown it",
         ),
         practice.Check(
             "FINDING: citation coverage is satisfied and still worth having",

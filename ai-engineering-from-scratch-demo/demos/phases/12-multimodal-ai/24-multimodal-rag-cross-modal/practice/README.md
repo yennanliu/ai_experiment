@@ -77,8 +77,10 @@ checkable rather than asserted.
 | **text alone** | **0.50** |
 
 **FINDING: the weakest retriever carries 30% of the weight** — and it is weak
-because four of the five restaurants tie at 0.2857 and the tie-break is `sorted`'s
-stability rather than relevance. No eval in the lesson would have shown it.
+because `r1` wins outright and the second slot is a **three-way** tie at
+**0.2857** between `r2`, `r3` and `r4` that `sorted` breaks by position rather
+than relevance, so gold `r4` loses it to `r2`. No eval in the lesson would have
+shown it.
 
 **FINDING: citation coverage is already satisfied and still worth having.**
 **3 of 3** modalities on every result. It is worth measuring because it degrades
