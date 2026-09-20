@@ -11,10 +11,20 @@ on one large enough to leave cache. The recompute side is timed against it acros
 hidden sizes, and the breakeven is then written down as the closed form, because
 the simulated buffer has no parameter in which an interconnect could appear.
 
-**ANSWER: there is no breakeven inside the toy.** Copying a layer's input is
-12x to 120x cheaper than recomputing that layer, at every hidden size from 8 to
-512, and the ratio *grows* with width: recompute is `O(h*inner)` and the copy is
-`O(h)`. The sweep runs away from the crossing rather than toward it.
+**ANSWER: there is no breakeven inside the toy.** Where the arithmetic
+dominates -- hidden 128 and up -- copying a layer's input is **40x to 100x**
+cheaper than recomputing that layer, and the ratio *grows* with width:
+recompute is `O(h*inner)` and the copy is `O(h)`. The sweep runs away from the
+crossing rather than toward it.
+
+**The narrow end of the sweep measures the interpreter, not the asymptotics.**
+At hidden 8 to 64 a `layer_forward` and a pair of `np.array` copies are both
+dominated by per-call overhead, so the ratio there is a property of the host
+rather than of the algorithm: it is not monotone locally -- h=8 lands *above*
+h=16 on every run -- and a shared CI runner measured **4x** at h=64 against
+roughly 30x here. The threshold is therefore taken over the widths where the
+matmul is actually the work, and the narrow widths are reported without being
+asserted on.
 
 **FINDING: bytes/time answers with the array size and the machine, not with a
 link.** On the same machine the figure moves about **3-4x** with the size -- the
@@ -136,12 +146,13 @@ def solve():
     reference, _ = ref.model_forward_checkpointed(x, params, k=SEGMENT)
     measured, buffer = offload_forward(ref, x, params, SEGMENT)
     bytes_moved = bandwidth(buffer)
+    ratios, wide = crossing(ref), [w for w in WIDTHS if w >= 128]  # below: pure overhead
     return {
         "same_output": bool(np.array_equal(reference, measured)),
         "saved": len(buffer), "bandwidth": bytes_moved,
         "share": bytes_moved["segment_time"] / plain,
         "jitter": (jitter - plain) / plain,
-        "ratios": crossing(ref),
+        "ratios": ratios, "wide": wide, "floor": min(ratios[w] for w in wide),
         "breakeven": breakeven(),
         "defaults": defaults(),
     }
@@ -149,17 +160,16 @@ def solve():
 
 def verify(result):
     band, ratios, even = result["bandwidth"], result["ratios"], result["breakeven"]
-    plain = result["defaults"]
+    plain, wide = result["defaults"], result["wide"]
     return [
         practice.Check(
-            "ANSWER: there is no breakeven in the toy -- offload wins by 10x and up at every width",
-            result["same_output"] and min(ratios.values()) > 4
-            and ratios[max(WIDTHS)] > ratios[min(WIDTHS)],
-            f"the offload forward saves {result['saved']} segment inputs and returns the same "
-            f"output as the lesson's own ({result['same_output']}). Recompute over copy is "
-            + ", ".join(f"h={width} {ratio:.0f}x" for width, ratio in ratios.items())
-            + ". The ratio grows with width -- recompute is O(h*inner), the copy is O(h) -- so "
-            "the sweep runs away from the crossing rather than toward it",
+            "ANSWER: no breakeven in the toy -- offload wins by 10x and up where the math dominates",
+            result["same_output"] and result["floor"] > 10
+            and ratios[max(wide)] > ratios[min(wide)],
+            f"the offload saves {result['saved']} inputs, output matches. Recompute over copy: "
+            + ", ".join(f"h={w} {r:.0f}x" for w, r in ratios.items())
+            + f". Over {wide} it grows -- recompute O(h*inner), copy O(h); below it both sides "
+            "are per-call overhead, 4x at h=64 on a shared runner",
         ),
         practice.Check(
             "FINDING: bytes/time answers with the array size and the machine, not with a link",
