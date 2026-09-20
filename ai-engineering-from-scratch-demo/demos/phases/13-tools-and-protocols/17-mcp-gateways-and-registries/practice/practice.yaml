@@ -1,0 +1,103 @@
+lesson: 17-mcp-gateways-and-registries
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/17-mcp-gateways-and-registries/docs/en.md
+exercises:
+  - index: 1
+    slug: the_audit_row_and_the_forwarded_id_are_made_in_different_functions
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add trace context to the outer and forwarded request metadata and record the correlation in the audit event.
+    zh: |
+      把追蹤脈絡加進外層與轉發後的請求中繼資料，並在稽核事件裡記下那個對應關係。
+    verifies: >-
+      the outer request and the forwarded one share one traceId and carry distinct spans with
+      the inner naming the outer as parent, and the audit row grows from 3 keys to 6, adding
+      traceId, span and the gw-N forwarded id. The shipped row is {principal, tool, decision}
+      and nothing else, so calling notes.search twice writes 2 byte-identical entries with no
+      way to say which response belonged to which call. forwarded_request_ids is generated in
+      _forward and never read by handle, so the two are produced in different functions and
+      share no field -- the correlation does not exist to be recorded, it has to be created. And
+      three of the four decisions never reach a backend: deny, rate_limit and pin_mismatch are
+      appended before _forward runs, so a trace spanning forwards is blind to every refusal and
+      the span has to open at the gateway's entry.
+  - index: 2
+    slug: a_task_id_is_opaque_so_routing_it_costs_the_state_tools_do_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a Tasks-capable backend and route `tasks/get` by task id in `Mcp-Name`.
+    zh: |
+      加一個支援 Tasks 的後端，並用 `Mcp-Name` 裡的任務 id 路由 `tasks/get`。
+    verifies: >-
+      tasks/get routes by the id in Mcp-Name and each of two tasks resolves to the backend that
+      minted it, with an unknown id answering -32602; validate_wire already enforces the header,
+      mirroring params.taskId for task methods where it mirrors params.name for tool ones. The
+      envelope was specified before the router: NAMED_METHODS lists 6 methods including all
+      three tasks/*, yet the shipped handle answers tasks/get with HTTP 404 -32601. Routing
+      tools needs no state -- canonical.split('.', 1) recovers the backend from the name --
+      while a task id names no backend, so the gateway keeps a durable {task_id: backend} map
+      that grows with every task. And RBAC is keyed on canonical tool names, which a task id
+      matches 0 of, so authorizing tasks/get has to be ownership, a second table again.
+  - index: 3
+    slug: discovery_omits_it_silently_and_the_call_says_why
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change one backend descriptor and prove both discovery and direct call are blocked.
+    zh: |
+      改動一個後端描述，並證明發現與直接呼叫都被擋下。
+    verifies: >-
+      editing notes.search's description takes alice's listing from 4 tools to 3 and makes the
+      direct call answer HTTP 409 -32010 Descriptor changed, with the audit recording
+      pin_mismatch. The two blocks report differently and only one is an answer: _visible_tools
+      drops the tool silently while tools/call names it and gives a reason, so a client working
+      from a cached listing gets the useful message and one that refreshes gets nothing. The pin
+      covers the whole descriptor, so prose is load-bearing -- name and inputSchema are
+      identical and the digest still moves, where a schema comparison would see nothing. And the
+      deny path and the pin path are separated in the audit and nowhere else: from the client's
+      side a forbidden tool and a pinned-out tool both simply fail to appear.
+  - index: 4
+    slug: the_gateway_already_downgrades_what_the_backend_calls_public
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a principal-specific server capability and explain why discovery must remain privately cached.
+    zh: |
+      加上一項因主體而異的伺服器能力，並說明為什麼發現必須維持私有快取。
+    verifies: >-
+      discovery must stay private because the response varies by caller and the cache key does
+      not: with a principal-specific capability alice's discovery advertises
+      experimental.bulkExport and bob's does not, from byte-identical requests to the same
+      method, so a public scope would serve the first response to the second caller. Adding the
+      capability makes the existing scope necessary rather than changing it -- private at ttlMs
+      30000 before and after. The gateway already downgrades what its backends call public:
+      BackendServer answers server/discover with cacheScope public at 60000 and the gateway
+      answers private, because one is per-backend and the other per-principal, so forwarding the
+      backend's hint verbatim would have been wrong. And the shorter ttl sits on the thing that
+      moves faster, 10000 on tools/list against 30000 on discovery.
+  - index: 5
+    slug: the_interface_is_already_there_it_is_just_not_written_down
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a legacy adapter interface without adding any legacy state to the modern `Gateway` class.
+    zh: |
+      寫一個舊版轉接層介面，過程中不對現代的 `Gateway` 類別加上任何舊版狀態。
+    verifies: >-
+      the interface Gateway._forward already uses is one method and one attribute, handle(body,
+      headers) and tools; writing it down as a Protocol, both BackendServer and a LegacyAdapter
+      satisfy it and the gateway routes to either with no changes. The gateway's fields are
+      unchanged before and after -- audit, backends, buckets, forwarded_request_ids, pins, none
+      per-connection -- while the adapter holds the session that outlives a request, so the
+      constraint holds because the adapter is a backend rather than a branch. The real interface
+      is wider than the protocol: tools/list answers HTTP 400 until REGISTRY_SERVER_JSON and
+      VERIFIED_ADMISSION_STATE each carry a row under the same backend key, because
+      _visible_tools indexes both by name. And the handshake is invisible from the gateway's
+      side -- the first forwarded call costs 2 legacy messages and later ones 1, while the
+      gateway records one forwarded id either way.
