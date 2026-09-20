@@ -1,0 +1,107 @@
+lesson: 11-mcp-sampling
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/11-mcp-sampling/docs/en.md
+exercises:
+  - index: 1
+    slug: the_server_distrusts_the_shape_and_takes_the_contents_on_faith
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the file-selection response to invalid JSON. Confirm the server returns `-32602` instead of trusting model output.
+    zh: |
+      把檔案挑選的回應改成無效的 JSON。確認伺服器回傳 `-32602`，而不是信任模型輸出。
+    verifies: >-
+      invalid JSON from pick_files answers -32602 'pick_files must return JSON', so the text is
+      parsed before it reaches FAKE_REPO. Walking the whole path with six responses gives three
+      distinct rejections that test different things: parsing, the shape check isinstance(list)
+      and all str, and membership. The membership gate is 'at least one', not 'all' --
+      ["README.md","ghost.md", "server.py"] succeeds and yields two files, the invented name
+      filtered out silently, so a model that hallucinated a third of its answer is
+      indistinguishable downstream. Over-delivery is truncated as quietly: five valid files
+      yield three because the comprehension ends in [:3]. And every outcome here is -32602,
+      invalid params, so a model failure is attributed to the client that relayed it -- there is
+      no code for text that came back wrong.
+  - index: 2
+    slug: the_seal_binds_the_arguments_and_publishes_everything_else
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change `audience` between the first call and retry. Explain why the sealed state blocks cross-request reuse.
+    zh: |
+      在第一次呼叫與重試之間改動 `audience`。說明為什麼封印過的狀態能阻擋跨請求重用。
+    verifies: >-
+      changing audience between the call and the retry answers -32602 'requestState arguments
+      mismatch'. It blocks cross-request reuse because the first response committed
+      argumentsDigest into the HMAC-signed body and the retry recomputes it from the arguments
+      actually sent: the digest changes, the token cannot be re-signed without the server
+      secret, so token and arguments can only travel together. The binding is to meaning rather
+      than spelling -- the digest is over json.dumps(sort_keys=True), so re-ordering keys is
+      accepted and adding an unused one is not. Four things are bound and checked in order,
+      integrity then principal then method then arguments then expiry, so a token replayed by
+      another principal with changed arguments reports the principal. And sealed means signed,
+      not hidden: the body is urlsafe_b64encode(json), so the client reads principal, phase,
+      expiresAt, the digest, and on round two the picked file list.
+  - index: 3
+    slug: a_signed_counter_is_not_a_rate_limit_while_replay_is_free
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a third round that asks the host to critique the summary. Carry the earlier summary inside signed state and cap the entire flow at three rounds.
+    zh: |
+      加上第三回合，請宿主評論那份摘要。把先前的摘要放進已簽章的狀態裡承載，並把整條流程限制在三回合以內。
+    verifies: >-
+      the third round runs pick then summarize then critique, and the final structuredContent
+      carries picked, summary and critique although round three's inputResponses hold only the
+      critique -- the summary is read out of the verified state, so the server trusts it because
+      it signed it. The cap lives in the token because the server has nowhere else to count, and
+      that makes it resettable: replaying the round-1 token five times yields five fresh tokens
+      all at round 2, so a signed counter bounds a chain rather than a flow, and bounding the
+      flow needs the single-use tokens that need the server state the lesson removed. Each round
+      re-seals expiresAt at now + 300, so the flow outlives its own expiry and the deadline
+      measures idle time between rounds. And the cap is checked after the full verification, so
+      a replayed token costs the server the HMAC, the principal, the method, the digest and the
+      expiry before being refused.
+  - index: 4
+    slug: the_round_trip_was_the_approval_and_removing_it_removes_that
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove Sampling by replacing the fake host callback with a server-owned model adapter. List which approval, billing, and observability responsibilities move to the server.
+    zh: |
+      把假的宿主回呼換成伺服器自有的模型轉接層，藉此移除 Sampling。列出哪些核准、計費與可觀測性責任因此轉移到伺服器。
+    verifies: >-
+      the adapter calls the lesson's own fake_host_model, so the model is held constant and only
+      its owner changes: one dispatch instead of three, zero requestState tokens instead of two,
+      and the identical structuredContent. Approval moves because the host was handed 2
+      input_required results, each a moment it could decline, and is now handed 0 -- the
+      approval point was the round trip rather than the prompt text, and nothing in the
+      remaining protocol offers another. Billing moves because every sampling request carried
+      costPriority and intelligencePriority, the host's per-round spending lever, and the
+      adapter sends none; the sampling capability goes the same way, since MRTR without it
+      answers -32021 while the adapter completes regardless. Observability moves because 2
+      prompt texts reached the host and now 0 do -- it is not lost, it changes owner, and the
+      client's remaining evidence is the final content.
+  - index: 5
+    slug: the_deadline_itself_passes_and_the_clock_has_no_caller
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an expiry test using a state value that is one second past its deadline.
+    zh: |
+      用一個超過期限一秒的狀態值，加一項到期測試。
+    verifies: >-
+      expiresAt + 1 raises -32602 'requestState expired' and expiresAt itself does not, because
+      the comparison is `expiresAt < now` -- the deadline second is inside the window, so a test
+      written at the deadline would have passed and proved nothing. Writing the test turns up
+      why one was missing: verify_request_state takes now=None but tools_call never passes it,
+      so the live path always reads time.time() and the exercise has to reach past dispatch.
+      Expiry is checked last, so a token that is both expired and carrying changed arguments
+      reports the arguments mismatch and only reports the expiry once the arguments are fixed --
+      two round trips for two faults. And the 300-second window is re-granted at every re-seal
+      rather than consumed, so it measures idle time between rounds rather than the age of the
+      flow.
