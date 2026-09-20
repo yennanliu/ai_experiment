@@ -1,0 +1,77 @@
+lesson: 01-the-agent-loop
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/01-the-agent-loop/docs/en.md
+exercises:
+  - index: 1
+    slug: the_cap_has_nowhere_to_attach_and_the_drop_leaves_no_trace
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `max_tool_calls_per_turn` cap. What breaks if the model issues three calls but you only execute the first two?
+    zh: |
+      加一個 `max_tool_calls_per_turn` 上限。如果模型發出三次呼叫、你卻只執行前兩次，會壞掉什麼？
+    verifies: >-
+      the cap lives in the flattening adapter because no shipped type holds a list of calls --
+      ToolCall has 2 fields and a reply's action is a str; at cap=2 over a 3-call turn 4 of 5 calls
+      dispatch and the dropped kv_set leaves 0 trace in history; the dropped write reads back as
+      'missing:tax', which is 1 wrong observation among 0 errors; uncapped at max_turns=4 the budget
+      truncates a turn mid-flight, dispatching 4 of 5 and ending 'budget exhausted'
+  - index: 2
+    slug: absence_is_the_default_state_of_a_broken_parse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `no_tool_calls → done` stop path. Contrast with `finish` as an explicit tool. Which is safer against early-termination bugs?
+    zh: |
+      實作一條 `no_tool_calls → done` 的停止路徑。拿它跟把 `finish` 當成一項明寫工具做對照。對抗提早終止的臭蟲時，哪一種比較安全？
+    verifies: >-
+      over the same six replies, no_tool_calls->done dispatches 3 and returns '' while
+      finish-as-a-tool dispatches 6 and returns '138.0', the unparsed reply coming back as 'error:
+      unknown tool'; the shipped finish is a third reply kind, absent from the 3-name registry, and is
+      the only place the loop indexes -- a finish reply with no content raises KeyError; a real
+      finish, an exhausted script and an exhausted budget all append kind='final' with 3 different
+      contents
+  - index: 3
+    slug: the_loop_already_recovers_and_the_policy_cannot
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend `ToyLLM` so it sometimes returns an `Action` with a malformed argument dict. Make the loop recover by feeding back an error observation. This is the shape of 2026 CRITIC-style correction (Lesson 5).
+    zh: |
+      擴充 `ToyLLM`，讓它偶爾回傳帶有畸形參數 dict 的 `Action`。讓迴圈藉由回饋一段錯誤觀察來復原。這就是 2026 年 CRITIC 式修正的形狀（第 5 課）。
+    verifies: >-
+      3 of 6 planned calls are malformed; without recovery the loop survives all 6, records 3 error
+      observations and reads back 'missing:tax', while a critic that reads the last observation
+      dispatches 9, still 3 errors, and reads back '18.0'; dispatch's single except TypeError files a
+      binding failure and a TypeError raised inside the tool under one 'bad args' prefix;
+      ToyLLM.respond names history 0 times in its body so it retries 0 times against the critic's 3
+  - index: 4
+    slug: the_transcript_loses_the_thoughts_and_gains_a_second_budget
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Replace `ToyLLM` with a real Responses API call. Move the thought trace from inline strings to the reasoning channel. What changes in the transcript?
+    zh: |
+      把 `ToyLLM` 換成真正的 Responses API 呼叫。把思考軌跡從內嵌字串搬到推理通道。逐字記錄裡有什麼改變？
+    cites: >-
+      The 2026 shift: native reasoning
+  - index: 5
+    slug: positional_pairing_is_right_until_it_is_silently_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `tool_use_id` correlator like the Anthropic schema so parallel tool calls can return out of order. Why do Anthropic, OpenAI, and Bedrock all require it?
+    zh: |
+      加一個像 Anthropic schema 那樣的 `tool_use_id` 關聯子，好讓平行的工具呼叫可以亂序回傳。為什麼 Anthropic、OpenAI 與 Bedrock 全都要求它？
+    verifies: >-
+      over 3 calls returned in reverse a tool_use_id correlator pairs 3 of 3 correctly and a
+      positional one pairs 1 of 3, while both transcripts hold 3 action turns, 3 non-empty
+      observations and 0 errors; all 3 results are numeric strings so a type check catches 0 of the 2
+      swaps and a numeric check catches 0; dispatch returns a bare str and ToolCall has no id field,
+      so the correlator belongs on the request; the module names tool_use_id 0 times and the
+      sequential run pairs 3 of 3
