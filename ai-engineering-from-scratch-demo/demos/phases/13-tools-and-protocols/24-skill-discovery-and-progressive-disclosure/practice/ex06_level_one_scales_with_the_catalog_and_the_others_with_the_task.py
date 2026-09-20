@@ -11,9 +11,11 @@ skills installed and the other two grow with the task, so their ratio is a
 property of the deployment rather than of the skill.
 
 **ANSWER: three counts, in bytes, reported apart and per resource.** With
-**3** skills installed the run costs **684** bytes at Level 1, **28** at
-Level 2 and **80** at Level 3 across **2** resources. Level 1 is **86%** of
-the total, and none of the three is derivable from the others.
+**3** skills installed the run costs **459** bytes at Level 1, **28** at
+Level 2 and **80** at Level 3 across **2** resources. Level 1 is **81%** of
+the total, and none of the three is derivable from the others. Level 1 is
+measured with the install path folded to its last segment, because the
+shipped entry carries an absolute one.
 
 **FINDING: Level 1 scales with the catalog and the others with the task.**
 Installing **50** skills instead of 3 leaves Levels 2 and 3 byte-identical
@@ -31,8 +33,10 @@ construction.
 **FINDING: the demo reports characters, and reports the smaller of the two
 catalog numbers.** `catalog_chars` measures the entries the model sees and
 `report_chars` the whole diagnostic including collisions and omissions --
-**684** against **752** here. A CJK description makes the gap worse in the
-other direction: **240** characters is **720** bytes.
+**459** against a larger report here, and both include the absolute install
+path -- so the shipped Level 1 figure changes when the tree moves. A CJK
+description makes the gap worse in the other direction: **240** characters
+is **720** bytes.
 
 Structure: `levels()` returns the three counts for one run, so the 3-skill
 and 50-skill cases are the same function called twice.
@@ -52,9 +56,13 @@ DESCRIPTION = "Report evidence for audit number {n} when that audit completes."
 REFERENCES = ("references/format.md", "references/schema.md")
 
 
-def catalog_bytes(entries):
-    payload = {"entries": [asdict(entry) for entry in entries]}
-    return len(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+def catalog_bytes(entries, absolute=False):
+    """Level 1 in bytes, optionally with the absolute install path left in."""
+    rows = [asdict(entry) if absolute
+            else {**asdict(entry), "directory": entry.directory.rsplit("/", 1)[-1]}
+            for entry in entries]
+    return len(json.dumps({"entries": rows}, sort_keys=True,
+                          separators=(",", ":")).encode("utf-8"))
 
 
 def plant(ref, root, count):
@@ -76,7 +84,9 @@ def levels(ref, root, count):
     body = ref.load_skill_body(entry, candidates)
     resources = {name: len(ref.load_reference(entry, name).encode("utf-8"))
                  for name in REFERENCES}
-    return {"level_1": catalog_bytes(catalog.entries), "level_2": len(body.encode("utf-8")),
+    return {"level_1": catalog_bytes(catalog.entries),
+            "level_1_absolute": catalog_bytes(catalog.entries, absolute=True),
+            "level_2": len(body.encode("utf-8")),
             "level_3": sum(resources.values()), "resources": resources,
             "entries": len(catalog.entries), "report_chars": catalog.report_chars,
             "catalog_chars": catalog.catalog_chars}
@@ -114,7 +124,7 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: three counts, in bytes, reported apart and per resource",
-            all([small["entries"] == 3, small["level_1"] == 684, small["level_2"] == 28,
+            all([small["entries"] == 3, small["level_1"] == 459, small["level_2"] == 28,
                  small["level_3"] == 80, result["resource_count"] == 2,
                  small["level_3"] == sum(small["resources"].values())]),
             f"with {small['entries']} skills installed the run costs {small['level_1']} "
@@ -147,12 +157,15 @@ def verify(result):
         practice.Check(
             "FINDING: the demo reports characters, and the smaller of the two catalog numbers",
             all([small["report_chars"] > small["catalog_chars"],
+                 small["level_1_absolute"] > small["level_1"],
                  result["wide_chars"] == 240, result["wide_bytes"] == 720]),
             f"catalog_chars is {small['catalog_chars']} and report_chars "
             f"{small['report_chars']}, and the demo prints the first -- correct for what "
-            f"the model sees, silent about what discovery produced. In the other direction "
-            f"{result['wide_chars']} CJK characters are {result['wide_bytes']} bytes, so "
-            "the published unit and the transported unit are not the same unit",
+            f"the model sees, silent about what discovery produced. Both carry the "
+            f"absolute install path, so Level 1 reads {small['level_1_absolute']} bytes "
+            f"here against {small['level_1']} with the path folded, and the figure moves "
+            f"when the tree does. In the other direction {result['wide_chars']} CJK "
+            f"characters are {result['wide_bytes']} bytes",
         ),
     ]
 

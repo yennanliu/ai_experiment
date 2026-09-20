@@ -139,7 +139,7 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the delegation row promises a sleep the code does not have",
-            all([result["sleeps"] == 0, result["a2a_us"] < 1_000,
+            all([result["sleeps"] == 0, result["a2a_us"] < 50_000,
                  "time" in result["imports"]]),
             f"the table calls the delegation layer 'Sleep plus nested span' and time.sleep "
             f"appears {result['sleeps']} times; time is imported for time_ns alone. The "

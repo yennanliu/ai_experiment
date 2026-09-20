@@ -67,9 +67,6 @@ def serve_writer(record):
             self.end_headers()
             self.wfile.write(payload)
 
-        def log_message(self, *args):
-            return
-
         def do_GET(self):
             self.reply({"protocolVersion": "0.3.0", "name": "writer-agent",
                         "url": f"{base(self.server)}/a2a", "preferredTransport": "JSONRPC",
@@ -81,23 +78,27 @@ def serve_writer(record):
                 time.sleep(SLOW)
             record["completed"] += 1
             self.reply({"jsonrpc": "2.0", "id": request["id"], "result": {
-                "kind": "message", "role": "agent", "messageId": uuid.uuid4().hex,
-                "artifacts": [{"artifactId": uuid.uuid4().hex, "name": "report.html",
-                               "parts": [{"kind": "text", "text": "3 papers summarized."},
-                                         {"kind": "text", "text": "<h1>Report</h1>"}]}]}})
+                "kind": "message", "role": "agent", "artifacts": [
+                    {"artifactId": uuid.uuid4().hex, "name": "report.html", "parts": [
+                        {"kind": "text", "text": "3 papers summarized."},
+                        {"kind": "text", "text": "<h1>Report</h1>"}]}]}})
+
+        def log_message(self, *args):
+            return
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 
 
+def settle(record, target, deadline=10):
+    limit = time.monotonic() + deadline
+    while record["completed"] < target and time.monotonic() < limit:
+        time.sleep(0.01)
+
+
 def base(server):
     return f"http://127.0.0.1:{server.server_address[1]}"
-
-
-def card(server):
-    with urllib.request.urlopen(base(server) + CARD_PATH, timeout=5) as page:
-        return json.loads(page.read())
 
 
 def send(server, text, *, slow=False, timeout=5.0):
@@ -117,13 +118,13 @@ def send(server, text, *, slow=False, timeout=5.0):
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     source = pathlib.Path(ref.__file__).read_text(encoding="utf-8")
-    record = {"completed": 0}
-    server = serve_writer(record)
-    agent_card = card(server)
+    server = serve_writer(record := {"completed": 0})
+    with urllib.request.urlopen(base(server) + CARD_PATH, timeout=5) as page:
+        agent_card = json.loads(page.read())  # the well-known Agent Card, over the wire
     first = send(server, "summarize the papers")
     timed_out = send(server, "summarize the papers", slow=True, timeout=DEADLINE)
     second = send(server, "summarize the papers")
-    time.sleep(SLOW)  # let the abandoned request finish, so the disagreement is visible
+    settle(record, 3)
     server.shutdown()
 
     artifact, out = first["artifacts"][0], ref.orchestrator("tok_alice", "summarize")
@@ -132,9 +133,9 @@ def solve():
         "card_skills": [skill["id"] for skill in agent_card["skills"]],
         "card_url": agent_card["url"], "card_transport": agent_card["preferredTransport"],
         "artifact_parts": len(artifact["parts"]), "artifact_named": artifact["name"],
-        "artifact_has_id": bool(artifact["artifactId"]), "sent": 3, "failure": timed_out.get("failure"),
+        "artifact_has_id": bool(artifact["artifactId"]), "sent": 3,
+        "failure": timed_out.get("failure"), "server_completed": record["completed"],
         "client_received": sum("failure" not in r for r in (first, timed_out, second)),
-        "server_completed": record["completed"],
         "stub_skill": stub["attrs"]["a2a.skill"], "stub_keys": sorted(stub["attrs"]),
         "handlers": source.count("except "), "timeouts": source.count("timeout"),
         "artifact_from_peer": artifact["parts"][0]["text"] == "3 papers summarized.",
@@ -145,39 +146,38 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: a real card, a real message/send, a real timeout, a peer-built artifact",
-            all([result["card_skills"] == [SKILL],
+            all([result["card_skills"] == [SKILL], result["artifact_parts"] == 2,
                  result["card_url"].startswith("http://127.0.0.1:"),
-                 result["card_transport"] == "JSONRPC", result["artifact_parts"] == 2,
-                 result["artifact_named"] == "report.html", result["artifact_has_id"],
+                 result["artifact_has_id"], result["card_transport"] == "JSONRPC",
                  result["failure"] is not None, result["artifact_from_peer"]]),
             f"the card declares {result['card_skills']} at {result['card_url']} over "
-            f"{result['card_transport']}; message/send returns an identified artifact of "
-            f"{result['artifact_parts']} parts and the slow route raises {result['failure']}",
+            f"{result['card_transport']}, message/send returns an identified "
+            f"{result['artifact_parts']}-part {result['artifact_named']!r}, and the slow "
+            f"route raises {result['failure']}",
         ),
         practice.Check(
             "FINDING: the timeout destroys a result the server had already produced",
             all([result["server_completed"] == 3, result["client_received"] == 2,
                  result["sent"] == 3]),
             f"{result['sent']} requests leave and {result['server_completed']} complete "
-            f"server-side, but {result['client_received']} answers return. The abandoned "
-            "work exists and is unreachable: hence a task id instead of a body",
+            f"server-side, but {result['client_received']} answers return -- the abandoned "
+            "work exists and is unreachable, hence a task id instead of a body",
         ),
         practice.Check(
             "FINDING: the capstone has no failure path for delegation at all",
             all([result["handlers"] == 0, result["timeouts"] == 0]),
             f"the module contains {result['handlers']} except handlers and "
-            f"{result['timeouts']} mentions of a timeout, so research_generate_report cannot "
-            "observe a writer that is slow, absent or wrong. The wire adds the first "
-            "failure the step can have, and therefore the first thing worth testing",
+            f"{result['timeouts']} mentions of a timeout, so research_generate_report "
+            "cannot observe a writer that is slow, absent or wrong -- the wire adds the "
+            "step's first possible failure",
         ),
         practice.Check(
             "FINDING: the skill name is asserted in a span attribute and validated nowhere",
             all([result["stub_skill"] == SKILL, result["stub_built_locally"],
                  result["stub_keys"] == ["a2a.peer", "a2a.skill"]]),
-            f"the stub records {result['stub_keys']} with skill {result['stub_skill']!r} and "
-            "builds the HTML from its own PAPERS list. The card declares the same id, and "
-            "their agreeing is a coincidence no code checks; a card fetch makes it a claim "
-            "with a source",
+            f"the stub records {result['stub_keys']} with skill {result['stub_skill']!r} "
+            "and builds the HTML from its own PAPERS list; the card declares the same id "
+            "and nothing checks that, so a card fetch is what gives the claim a source",
         ),
     ]
 

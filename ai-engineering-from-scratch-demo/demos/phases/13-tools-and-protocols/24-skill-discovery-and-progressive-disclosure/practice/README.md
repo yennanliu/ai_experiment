@@ -64,8 +64,8 @@ lesson's own JSON example — and `model_dict()` publishes entries only.
 ### 2 — a qualified name is not a name the loader can find
 
 **ANSWER: every candidate survives as `scope::name`, and the catalog grows.**
-**3** entries and **0** collisions against **2** and **1**; **628**
-characters against **405**, **55%** more for one duplicate.
+**3** entries and **0** collisions against **2** and **1**; **403**
+characters against **254**, **59%** more for one duplicate.
 
 **FINDING: a qualified name is not a name the loader can find.**
 `_candidate_for` matches name *and* directory, so the qualified entry raises
@@ -144,9 +144,9 @@ construction — Level 3 sealed, Level 2 open.
 
 ### 6 — Level 1 scales with the catalog and the others with the task
 
-**ANSWER: three counts, in bytes, reported apart and per resource.** **684**
+**ANSWER: three counts, in bytes, reported apart and per resource.** **459**
 / **28** / **80** across **2** resources at 3 skills installed; Level 1 is
-**86%** of the run.
+**81%** of the run.
 
 **FINDING: Level 1 scales with the catalog and the others with the task.**
 At **50** skills, Levels 2 and 3 are byte-identical and Level 1 reaches
@@ -158,5 +158,7 @@ nothing accumulated: **2** references cost **80** bytes against **46** for
 one and no code path notices. A Level 3 budget has to live in the caller.
 
 **FINDING: the demo reports characters, and the smaller of the two catalog
-numbers.** `catalog_chars` **684** against `report_chars` **752**; and in
-the other direction **240** CJK characters are **720** bytes.
+numbers.** `catalog_chars` against `report_chars`, both carrying the
+absolute install path — so Level 1 moves when the tree does, **684** bytes
+here against **459** with the path folded. In the other direction **240**
+CJK characters are **720** bytes.

@@ -12,8 +12,8 @@ module does with a name once it is no longer the skill's name.
 **ANSWER: every candidate survives, qualified as `scope::name`, and the
 catalog grows by the entry it used to drop.** Highest-precedence publishes
 **2** entries with **1** collision recorded; qualification publishes **3**
-with **0**. The model-facing cost rises from **405** to **628** characters --
-**55%** for one duplicate.
+with **0**. The model-facing cost rises from **254** to **403** characters --
+**59%** for one duplicate.
 
 **FINDING: a qualified name is not a name the loader can find.**
 `_candidate_for` matches on the name and the directory together, so an entry
@@ -52,9 +52,15 @@ SKILL = "evidence-report"
 
 
 def cost(entries):
-    """The module's own model-facing measure, so the two policies compare."""
-    payload = {"entries": [asdict(entry) for entry in entries]}
-    return len(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+    """The module's measure, with the install path folded to its last segment.
+
+    `CatalogEntry.directory` is absolute, so the shipped number depends on where
+    the bundle happens to live. Comparing two policies needs a measure that does
+    not move when the tree does.
+    """
+    rows = [{**asdict(entry), "directory": entry.directory.rsplit("/", 1)[-1]}
+            for entry in entries]
+    return len(json.dumps({"entries": rows}, sort_keys=True, separators=(",", ":")))
 
 
 def qualified(ref, candidates, precedence, budget):
