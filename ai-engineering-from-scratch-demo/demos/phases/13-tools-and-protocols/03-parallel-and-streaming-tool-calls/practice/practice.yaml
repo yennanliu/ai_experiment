@@ -1,0 +1,85 @@
+lesson: 03-parallel-and-streaming-tool-calls
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/03-parallel-and-streaming-tool-calls/docs/en.md
+exercises:
+  - index: 1
+    slug: parallel_stops_mattering_when_one_call_dominates
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` and vary the simulated latencies. Confirm that the parallel-to-sequential ratio is approximately `max/sum` (real runs deviate slightly from the ideal because of thread scheduling, serialization, and harness overhead). At what latency distribution does parallel stop mattering?
+    zh: |
+      跑一次 `code/main.py` 並改變那些模擬延遲。確認平行對循序的比例大約是 `max/sum`（實際執行會因執行緒排程、序列化與測試框架開銷而略微偏離理想值）。在什麼樣的延遲分布下，平行就不再有意義了？
+    verifies: >-
+      speedup is sum/max, capped at the call count and reached only when the calls are equal: 3.00x
+      for 500/500/500, 2.25x for the lesson's 400/600/800, 1.12x for 800/50/50 and 1.02x for
+      1000/10/10. Doubling every latency leaves the ratio unchanged, so the crossover is a property of
+      the spread; with two 10 ms companions a 1.1x threshold is crossed once the third call passes 200
+      ms. Running the lesson's own two arms at 1/10 scale measures 2.2-2.3x against an ideal 2.25x,
+      with both arms above their theoretical floors because time.sleep only overshoots.
+      executor_weather returns hash(city) % 35, which Python salts per process, so the reading is
+      stable within a run and different across runs.
+  - index: 2
+    slug: the_accumulator_has_no_branch_for_anything_going_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the accumulator to handle a "call was cancelled mid-stream" case by dropping its buffer and emitting a `cancelled` event. What provider documents this case explicitly? Check Anthropic's `content_block_stop` semantics and OpenAI's `finish_reason: "length"` behavior.
+    zh: |
+      擴充那個累積器，讓它處理「呼叫在串流中途被取消」的情況：丟掉它的緩衝並吐出一個 `cancelled` 事件。哪家供應商有明確記載這種情況？查一下 Anthropic 的 `content_block_stop` 語意與 OpenAI 的 `finish_reason: "length"` 行為。
+    verifies: >-
+      on_event branches on call_start, args_delta and call_stop and returns [] for anything else, so a
+      cancelled event is accepted silently and leaves the buffer in place; a subclass that pops it
+      records the id and leaves buffers empty. An unfinished call leaks rather than errors -- the
+      buffer stays with done=False, try_parse returns None, replay_and_execute never submits it, and
+      nothing logs. An args_delta for an id that never had a call_start raises KeyError out of
+      on_event and kills the loop, so the two failure modes are handled backwards. A truncated buffer
+      marked done raises 'Unterminated string starting at': OpenAI's finish_reason length and
+      Anthropic's content_block_stop both describe truncation, not cancellation, which MCP names
+      separately.
+  - index: 3
+    slug: asyncio_loses_because_the_lesson_executor_does_no_io
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the thread pool with `asyncio.gather`. Benchmark both. You should see small wins on async because of lower context-switch cost, but only if executors do real I/O.
+    zh: |
+      把執行緒池換成 `asyncio.gather`。兩者都做基準測試。你應該會看到 async 略勝，因為上下文切換成本較低，但前提是那些執行器真的在做 I/O。
+    verifies: >-
+      threads and asyncio.gather over asyncio.sleep both land on the 80 ms max floor for 40/60/80 ms
+      calls, within tens of milliseconds of each other. gather over the lesson's own blocking executor
+      reaches the 180 ms sequential ceiling instead, because the coroutine never awaits and the loop
+      has no point at which to interleave. So the exercise's 'only if executors do real I/O' condition
+      is the whole result: against time.sleep the thread pool is not slightly better than async, it is
+      the only one of the two that works, and fixing the coroutine makes them identical rather than
+      async-favourable.
+  - index: 4
+    slug: there_is_no_registry_here_and_no_fan_out_that_could_read_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick two tools that should NOT parallelize (e.g. `create_file` then `write_file`). Add an `ordering_dependency` graph to the registry and gate the parallel fan-out on that graph. This is the minimum machinery for dependency-aware scheduling, which a future agent-engineering phase formalizes.
+    zh: |
+      挑兩個「不」該平行化的工具（例如先 `create_file` 再 `write_file`）。在登錄中加上一張 `ordering_dependency` 圖，並讓平行扇出受這張圖節制。這就是相依感知排程所需的最小機件，未來的代理工程階段會把它形式化。
+    verifies: >-
+      a topological layering puts create_file, write_file and read_file in three layers and three
+      independent tools in one, so a chain costs 3 sequential windows and independent tools cost 1.
+      The lesson exports no Tool and no REGISTRY while Lesson 13.01 has both, and run_parallel's code
+      names only executor_weather -- it maps one function over a list of cities, with no tool name to
+      gate on. Priced against the lesson's own 400/600/800 latencies the chain costs 1,800 ms against
+      800, a 2.25x loss, which is sum/max again.
+  - index: 5
+    slug: the_tool_type_is_a_mutation_on_one_resource
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read OpenAI's parallel-function-calling section and Anthropic's `disable_parallel_tool_use` docs. Identify the one real-world tool type where Anthropic recommends disabling parallelism. (Hint: consequential mutations on the same resource.)
+    zh: |
+      讀 OpenAI 的平行函數呼叫章節與 Anthropic 的 `disable_parallel_tool_use` 文件。找出那一種 Anthropic 建議關掉平行的真實世界工具型別。（提示：對同一個資源做有後果的變更。）
+    cites: >-
+      Enabling parallel

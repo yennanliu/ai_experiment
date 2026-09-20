@@ -1,0 +1,103 @@
+lesson: 19-a2a-protocol
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/19-a2a-protocol/docs/en.md
+exercises:
+  - index: 1
+    slug: the_clarification_asks_for_a_key_the_resume_path_ignores
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Trace the full Task lifecycle, including the input-required pause where the called agent asks for a clarification.
+    zh: |
+      跑一次 `code/main.py`。追蹤完整的 Task 生命週期，包括被呼叫代理索取澄清時那次 input-required 的暫停。
+    verifies: >-
+      the lifecycle runs submitted, working, input_required, working, completed -- a send with
+      no targetLength pauses with the agent message 'Please specify target_length as a data
+      part.' and a reply carrying the value resumes to one artifact. The message names
+      target_length and the code reads targetLength: following the clarification literally still
+      completes the task, because writer_tasks_reply takes any data part and falls back to
+      payload.get('targetLength', 'short'), so asking for 'long' under the printed name yields a
+      short summary with no error. The pause requires a key the resume does not, so the
+      condition that stopped the task is not the condition that restarts it. A prose reply is
+      absorbed silently, leaving 3 messages and no signal. And state is a bare string: Task has
+      4 fields and the module 0 transition tables, so completed -> submitted is a plain
+      assignment.
+  - index: 2
+    slug: canonical_json_is_the_signature_and_the_card_has_no_slot_for_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a signed Agent Card. Sign with HMAC over the card's canonical JSON. Write a verifier and confirm it fails on a mutated card.
+    zh: |
+      加上一張簽章的 Agent Card。用 HMAC 對該卡片的標準 JSON 簽章。寫一個驗證器，確認它對被竄改的卡片會失敗。
+    verifies: >-
+      HMAC-SHA256 over json.dumps(card, sort_keys=True, separators=(',', ':')) verifies the
+      card, still verifies it re-serialized with keys reversed, and fails on a flipped
+      capabilities.streaming or a signature from another key. The signature cannot live in the
+      card it signs: the 7 top-level keys are all content, and embedding one changes the bytes
+      it covers, so verification would need a stripping rule the card does not state. A mutation
+      anywhere in the tree is caught, including the nested skills[0].description -- canonical
+      JSON flattens the document, so there is no cosmetic region. And signing makes a claim
+      attributable rather than true: capabilities.streaming is True while the module has 0
+      streaming functions and an in-process transport.
+  - index: 3
+    slug: the_chunks_carry_no_index_so_order_is_the_transports_promise
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement task streaming: the writer agent emits three incremental artifact chunks over SSE and the caller accumulates them.
+    zh: |
+      實作任務串流：寫作代理透過 SSE 吐出三個增量的 artifact 分塊，呼叫方把它們累積起來。
+    verifies: >-
+      the writer emits five frames -- four artifact chunks and a terminal task-complete -- and
+      the caller concatenates them into exactly the artifact the non-streaming path produces, on
+      a task ending completed. Nothing in the payload orders the chunks: Part is (kind, payload)
+      and Artifact is (name, mimeType, parts), with no index, offset or total, so replaying the
+      same frames shuffled yields a different document the accumulator cannot distinguish -- the
+      ordering guarantee lives in a transport the lesson does not have. The terminal frame is
+      the only thing that says done, since no chunk count is announced. And the card advertises
+      streaming while writer_tasks_send contains 0 yields and returns a finished Task, so the
+      capability flag was set before anything implemented it.
+  - index: 4
+    slug: the_wrapper_publishes_the_schemas_opacity_was_hiding
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an A2A agent that wraps an MCP server. Map each MCP tool to an A2A skill. Note the trade-offs — what opacity is lost?
+    zh: |
+      設計一個包住某台 MCP 伺服器的 A2A 代理。把每一個 MCP 工具對映到一項 A2A 技能。記下其中的取捨 —— 什麼樣的不透明性被犧牲了？
+    verifies: >-
+      three MCP tools map to three A2A skills carrying the same five fields the lesson's own
+      card declares, and the caller never names an MCP method. What opacity is lost is the
+      argument surface: an A2A skill has 0 schema fields and declares inputModes -- what kinds
+      of part it takes, not what goes in them -- so mapping faithfully writes the four property
+      names into prose, turning a machine-readable contract into documentation. Mapping without
+      them is not opacity either, since the tools' own descriptions already leak query and
+      destination, 2 of 4, by accident. The lesson's own agent already pays this price:
+      draft_report declares three input modes while requiring a targetLength key stated in 0
+      machine-readable fields. And the reverse direction loses the lifecycle, since a skill
+      backed by a one-shot tool can never reach input_required.
+  - index: 5
+    slug: multi_hop_delegation_has_no_field_to_travel_in
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the A2A v1.0 announcement and identify the one feature that is not yet implemented by any framework as of April 2026. (Hint: it relates to multi-hop task delegation.)
+    zh: |
+      讀 A2A v1.0 的發布公告，找出截至 2026 年 4 月尚未被任何框架實作的那項功能。（提示：它和多跳任務委派有關。）
+    verifies: >-
+      what multi-hop delegation would need is a task that is itself a sub-task, and the model
+      has no field for it: Task is id, state, messages, artifact, none of which can name a
+      parent, a delegating agent or a depth. Chaining by hand loses the relation on the first
+      hop -- the researcher stores the writer's task id in a text part of its own messages, the
+      only place there is, so the link is prose that has to be parsed back and no field would
+      refuse a cycle. The Agent Card cannot say an agent delegates: its 7 keys describe skills,
+      modes and the two flags streaming and pushNotifications, so an agent fanning out to three
+      others advertises what one answering alone does. And the lifecycle has no state for
+      waiting on a sub-task, so a blocked parent is indistinguishable from a computing one and
+      input_required means the user.

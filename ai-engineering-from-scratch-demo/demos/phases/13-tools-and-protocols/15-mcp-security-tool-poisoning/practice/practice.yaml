@@ -1,0 +1,126 @@
+lesson: 15-mcp-security-tool-poisoning
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/15-mcp-security-tool-poisoning/docs/en.md
+exercises:
+  - index: 1
+    slug: the_token_is_bearer_because_the_gateway_has_no_caller
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Bind the authenticated principal and current authorization decision to the sealed MRTR state, then reject a retry under a different principal.
+    zh: |
+      把已認證的主體與當前授權決策，綁進封印好的 MRTR 狀態裡，然後拒絕一次來自不同主體的重試。
+    verifies: >-
+      the principal and the decision are sealed into the state, and mallory replaying alice's
+      token answers 'requestState principal mismatch' and exports nothing where alice's own
+      retry exports -- 1 export from 2 retries of one token. The shipped state binds the request
+      and not the requester: its six fields are arguments, expiresAt, issuedAt, nonce, purpose
+      and tool, and handle takes only (self, body, headers), so the token is a bearer
+      credential. Binding the decision records it and does not re-check it -- a token sealed
+      while alice was authorized still carries decision=allow after the grant is revoked, so
+      re-deriving refuses where trusting the seal completes. And the three bindings fail
+      independently: changed arguments are caught by the lesson's own digest check, a changed
+      caller only by the principal, and a revoked grant only by the re-check.
+  - index: 2
+    slug: the_claim_is_the_rowcount_and_a_select_first_is_not_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the in-memory replay store with a persistent conditional insert and prove two processes cannot both claim one nonce.
+    zh: |
+      把記憶體重播儲存區換成持久化的條件式插入，並證明兩個行程無法同時宣告同一個 nonce。
+    verifies: >-
+      two SecurityGateway instances sharing one SQLite store and replaying one confirmation
+      produce 1 export and 1 row, the loser seeing rowcount 0 and answering 'requestState was
+      already used'. The rowcount is the claim and reading first gives it away: through the same
+      interleave -- both check, then both write -- the conditional insert claims 1 of 2 while
+      check-then-insert claims 2, so what makes it safe is the database deciding and reporting
+      in one statement rather than answering a question the caller then acts on. The in-memory
+      store cannot lose this race because it never enters it: two ReplayStore instances hold
+      separate dicts behind separate locks and both claim, giving 2 exports. And SecurityGateway
+      defaults replay_store to None and builds a fresh one, so two gateways are unshared by
+      construction -- the default is the unsafe configuration.
+  - index: 3
+    slug: the_two_orders_lose_different_things_and_idempotence_loses_neither
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Inject a failure after replay claim but before a simulated export. Define and test the transaction or idempotency rule that makes recovery safe.
+    zh: |
+      在重播宣告之後、模擬匯出之前注入一次失敗。定義並測試那條讓復原變安全的交易或冪等性規則。
+    verifies: >-
+      each order has its own crash window and they lose different things: claim-first, crashing
+      after the claim, gives 0 exports and answers 'already used' on retry; operate-first,
+      crashing after the export, gives 2; and the nonce-keyed store under the same crash gives
+      1. The rule is that the export carries the nonce as an idempotency key written with it, so
+      a retry finds the key and returns the first outcome -- which is what makes recovery safe
+      under either ordering, since neither ordering is safe alone. The lesson's own
+      claim_and_consume calls operation() before recording the nonce, so it is at-least-once:
+      safe against losing the export, unsafe against repeating it, and only correct if the
+      export is idempotent. And the key has to be the nonce -- two legitimate confirmations of
+      the same query to the same destination give 2 exports keyed on the nonce and 1 keyed on
+      the arguments.
+  - index: 4
+    slug: the_scanner_reads_prose_and_the_digest_reads_the_whole_thing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change a tool's `inputSchema` without changing its description. Confirm whole-descriptor pinning catches it.
+    zh: |
+      改動某個工具的 `inputSchema`，但不改它的描述。確認整份描述的固定機制抓得到它。
+    verifies: >-
+      adding maxLength to notes.search's query property leaves the description byte-identical,
+      so scan_description returns 0 labels while scan_catalog reports rug_pull on notes.search
+      and the tool drops out of tools/list, 3 visible becoming 2. Pinning the description alone
+      would have missed it: its own digest is unchanged and all 5 injection patterns match 0
+      times, so a pin over the field a human reads cannot see a change to the field a model is
+      constrained by. The digest is canonical -- descriptor_digest dumps with sort_keys=True, so
+      rebuilding the tool with reversed keys gives the identical hash and no new findings,
+      distinguishing content from spelling. And one finding can never block anything:
+      _visible_tools blocks keys containing a dot while shadowing is reported under the bare
+      name 'search', so it is emitted on every scan and both colliding tools stay visible.
+  - index: 5
+    slug: the_listing_is_already_private_and_does_not_yet_need_to_be
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a policy that refuses public caching when `tools/list` differs by principal.
+    zh: |
+      加上一條政策：當 `tools/list` 會因主體而異時，拒絕公開快取。
+    verifies: >-
+      the policy compares two principals' listings and picks the scope from whether they agree:
+      against the shipped gateway both see the same three tools and it permits public, and with
+      per-principal grants they see different listings and it refuses, forcing private. Today's
+      private is correct and unearned -- _visible_tools takes only (self), so both principals
+      get byte-identical listings while the result already declares cacheScope private at ttlMs
+      10000. server/discover is public and stays public under the same policy, because its
+      result depends on the version and the capability map and nothing about the caller, so
+      scope is decided per response rather than per server. And a catalog-wide block is not
+      principal-dependence: a rug pull hides notes.search from everyone, the two listings still
+      match, and the policy still permits public -- what forbids public caching is variation
+      across callers, which ttlMs does not cover.
+  - index: 6
+    slug: the_gateway_keeps_the_session_so_the_server_does_not_have_to
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Model an older server behind the gateway. Put all handshake and session behavior behind an explicit `2025-11-25` compatibility branch.
+    zh: |
+      在閘道後面模擬一台較舊的伺服器。把所有握手與工作階段行為，都放進一條明確的 `2025-11-25` 相容分支裡。
+    verifies: >-
+      the legacy backend refuses a cold tools/list with -32002 until initialize succeeds; the
+      adapter handshakes, keeps the session id and returns three tools through the gateway's
+      shape. The session is one field and it is on the adapter -- SecurityGateway carries
+      approved, catalog, replay_store and secret, none per-connection, while the adapter carries
+      backend and session. The handshake costs a message the modern path does not have: a fresh
+      legacy backend sees initialize then tools/list, 2 requests for one answer, and the extra
+      round trip is the session being established. And the branch is chosen by declaration
+      rather than by failure -- routing on the backend's stated era sends 0 modern requests to
+      the adapter, where routing on 'the modern call failed, try legacy' would start a legacy
+      handshake after any transient error.

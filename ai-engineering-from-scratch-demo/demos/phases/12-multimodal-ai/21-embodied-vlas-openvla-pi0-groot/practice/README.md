@@ -58,12 +58,16 @@ the humanoid for reasons that have nothing to do with the humanoid being harder.
 **ANSWER: everything above 1.5 Hz.** `keep_coeff=4` of 30 steps keeps DCT bins
 0–3, and at 30 Hz bin *k* is *k*/2 Hz. The tokenizer is a low-pass filter.
 
-| signal | energy retained by 4 coefficients |
-|---|---:|
-| 0.5 Hz | **90.5%** |
-| 2 Hz | 38.5% |
-| 5 Hz | **1.5%** |
-| 8 Hz | **0.4%** |
+| signal | energy retained | amplitude retained |
+|---|---:|---:|
+| 0.5 Hz | **99.1%** | 90.5% |
+| 2 Hz | 62.2% | 38.5% |
+| 5 Hz | **3.0%** | 1.5% |
+| 8 Hz | **0.7%** | 0.4% |
+
+Truncating the DCT is an orthogonal projection, so kept and discarded energy sum
+to the whole at every frequency — that is the honest column. The amplitude
+column, `1 - rms(error)/rms(signal)`, is what the trajectory looks like.
 
 A drumming trajectory does not come back degraded. It comes back as a straight
 line.

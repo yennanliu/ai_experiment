@@ -1,0 +1,100 @@
+lesson: 23-capstone-tool-ecosystem
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/23-capstone-tool-ecosystem/docs/en.md
+exercises:
+  - index: 1
+    slug: the_delegation_row_promises_a_sleep_the_code_does_not_have
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Separate facts proven by the output from production claims that still need integration evidence.
+    zh: |
+      跑一次 `code/main.py`。把輸出真正證明了的事實，跟仍然需要整合證據的生產主張分開。
+    verifies: >-
+      six printed facts re-derived from a fresh run; the module imports 0 of the 10 IO-capable
+      modules, so all 9 production layers are unevidenced by construction; time.sleep appears 0
+      times against a table row that promises one; two runs leave 4 audit rows and 11 spans
+      under 2 trace ids
+  - index: 2
+    slug: the_pin_manifest_already_has_a_namespace_the_tool_list_does_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second static backend and define the collision rule for two tools with the same name. Then replace both lists with real `tools/list` calls.
+    zh: |
+      加上第二個靜態後端，並定義兩個同名工具的衝突規則。然後把兩份清單都換成真正的 `tools/list` 呼叫。
+    verifies: >-
+      two real tools/list POSTs over loopback return 4 tools under 3 distinct bare names; a bare
+      generate_report resolves to ambiguous rather than routing; PINNED is keyed research::name
+      while REQUIRED_SCOPE and gateway_call use bare names; pin_ok accepts the archive backend's
+      identical description
+  - index: 3
+    slug: the_timeout_destroys_a_result_the_server_had_already_produced
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the writer stub with an A2A test server. Record the Agent Card, message request, timeout path, and returned artifact.
+    zh: |
+      把寫作者的樁換成一台 A2A 測試伺服器。記錄 Agent Card、訊息請求、逾時路徑與回傳的產物。
+    verifies: >-
+      a real Agent Card declares 1 skill and message/send returns a 2-part identified artifact;
+      a 150ms deadline raises on the slow route while the server completes 3 of 3 requests
+      against 2 client receipts; the module has 0 except handlers and 0 timeouts
+  - index: 4
+    slug: the_shipped_client_ignores_the_interval_it_was_handed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a task store that survives a process restart. Prove a client can resume with `tasks/get`, respect `pollIntervalMs`, and read the completed task's final result without `tasks/result`.
+    zh: |
+      加上一個能撐過行程重啟的任務儲存。證明客戶端可以用 `tasks/get` 續接、遵守 `pollIntervalMs`，並且不靠 `tasks/result` 就讀到已完成任務的最終結果。
+    verifies: >-
+      a second interpreter answers -32602 Unknown taskId for a task the parent minted while the
+      file-backed store resumes working then completed; every poll gap is at least the declared
+      60ms; the final result is read from task['result'] with 0 calls to tasks/result, and the
+      shipped run finishes in under 5ms against a declared 1000ms interval
+  - index: 5
+    slug: the_shipped_app_is_blocked_by_its_own_two_fields
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a minimal MCP App and verify `app.callServerTool` in a browser with a restrictive CSP and explicit permissions.
+    zh: |
+      做一個最小的 MCP App，並在瀏覽器裡用一份嚴格的 CSP 與明確的權限驗證 `app.callServerTool`。
+    verifies: >-
+      the served response carries a sha256 script-src over loopback and the inline script's
+      digest matches; the bridge allows 1 of 2 tools; the shipped ui block pairs default-src
+      'self' with an inline script and an empty permissions list, so it can neither run nor
+      call; a one-character edit flips the CSP verdict
+  - index: 6
+    slug: the_denial_never_reaches_the_trace_because_the_span_starts_after_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Export the simulated spans through an OTel SDK to a local collector. Assert receipt, trace identifiers, parentage, and error status.
+    zh: |
+      把模擬出來的 span 透過 OTel SDK 輸出到一台本機收集器。斷言收件、追蹤識別碼、父子關係與錯誤狀態。
+    verifies: >-
+      12 spans reach a real OTLP receiver in 1 POST with 32-hex trace ids, 16-hex span ids, 2
+      roots, no orphans, depth 4 and 1 status code 2; bob's 403 adds 1 audit row and 0 spans; a
+      raising tool leaves 1 span with end == 0; 0 of 2 llm.chat spans carry both token counts
+  - index: 7
+    slug: authority_is_a_two_table_function_and_neither_table_is_a_document
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write `AGENTS.md` for repository-wide maintenance rules and a separate skill bundle for the reusable research procedure. Explain why neither file grants tool authority.
+    zh: |
+      為全儲存庫的維護規則寫一份 `AGENTS.md`，再為那套可重用的研究程序寫一個獨立的技能套組。說明為什麼這兩份檔案都不授予工具權限。
+    verifies: >-
+      gateway_call reads 4 module globals directly plus PINNED through pin_ok and 0 documents or
+      paths, so both artifacts leave alice allowed and bob refused unchanged; the bundle carries
+      3 frontmatter fields against AGENTS.md's 0; 0 of the bundle's 4 files match the catalog's
+      flat skill-*.md glob; nesting the fields drops 6 top-level keys to 2

@@ -1,0 +1,102 @@
+lesson: 16-mcp-security-oauth-2-1
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/16-mcp-security-oauth-2-1/docs/en.md
+exercises:
+  - index: 1
+    slug: refusing_the_old_token_is_not_the_point_revoking_the_family_is
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add refresh-token rotation and reject reuse of the previous refresh token.
+    zh: |
+      加上更新權杖輪換，並拒絕重用前一個更新權杖。
+    verifies: >-
+      rotation mints a new access token and a new refresh token per refresh and retires the one
+      it consumed, so three refreshes hand out four tokens, retire three, and replaying the
+      first answers 'refresh token already used'. Refusing the replay is the half that protects
+      nobody: without family revocation the thief's own earlier refresh is still live, 1 token
+      remaining and it is theirs, where revocation leaves 0. The lesson has nothing to rotate --
+      Token has 7 fields, none a refresh token, and exchange returns one access token good for
+      3600 seconds with no renewal path short of a fresh PKCE authorization. And the family has
+      to be named at issue time and carried forward, because deriving it from the access tokens
+      would group a legitimate second session too: they share client_id and subject.
+  - index: 2
+    slug: the_url_is_portable_because_it_names_the_client_not_the_registration
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an issuer allowlist. On issuer change, reuse only a portable CIMD URL; refuse all prior issuer-minted credentials and tokens.
+    zh: |
+      加上一份簽發者允許清單。簽發者改變時，只重用可攜的 CIMD URL；拒絕所有先前由簽發者鑄造的憑證與權杖。
+    verifies: >-
+      enrolling at a second issuer returns the identical CIMD URL, because the client id is the
+      document's address, while the DCR client gets a fresh opaque dcr_ string -- one identifier
+      reused, one reissued. The allowlist makes the move deliberate: with only the first issuer
+      allowed, enrolling at the second is refused before any credential is minted, where without
+      it the client follows whichever issuer the resource named, and that metadata is what an
+      attacker controlling the resource writes. The client's stores are already keyed by issuer,
+      so refusing prior material is one key removed from each -- but the keying does not expire
+      anything, and the dropped token object stays valid. And the resource server refuses a
+      foreign-issuer token with the same 401 invalid_token it gives an expired one, because the
+      issuer and audience checks share a branch.
+  - index: 3
+    slug: the_expiry_is_already_there_and_the_clock_is_not_reachable
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an expiry to authorization codes and confirm a late exchange fails.
+    zh: |
+      為授權碼加上到期時間，並確認太晚的交換會失敗。
+    verifies: >-
+      the expiry already exists -- authorize writes expires_at at now + 300 and exchange refuses
+      past it -- so a code presented one second early exchanges for a token and the same code
+      one second late answers 'invalid authorization code', with the record popped either way.
+      Confirming it cannot be done honestly: exchange takes five parameters and no clock,
+      comparing against time.time() directly, so the test rewrites expires_at inside
+      pending_codes and is testing the branch rather than the behaviour. Expired and
+      never-issued give the same answer, deliberately, since distinguishing them would tell an
+      attacker which guesses were once real. And single use is enforced separately and is the
+      stronger control: a successful exchange pops the record, so an immediate replay well
+      inside the window fails identically.
+  - index: 4
+    slug: dcr_demands_the_field_that_decides_the_rule_and_cimd_does_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a web client variant with a remote HTTPS redirect and compare its DCR metadata to the native client.
+    zh: |
+      建一個 web 客戶端變體，使用遠端 HTTPS 重導，並把它的 DCR 中繼資料跟原生客戶端做比較。
+    verifies: >-
+      the native and web documents differ in exactly two fields, application_type and
+      redirect_uris, and share the other four. The two are not independent: declaring web with
+      the native loopback URI answers 'web redirect URIs must use remote HTTPS', because
+      _validate_application applies the HTTPS-and-not-loopback rule only under application_type
+      == 'web', so the declaration selects the rule that judges the URI. DCR requires that
+      deciding field and CIMD does not -- dynamic_register passes require_application_type=True
+      and refuses an untyped document, while enroll_cimd passes False and accepts it, so a CIMD
+      client can register a remote HTTPS redirect with no type and never have the web rule
+      applied. And the loopback redirect names a port on the user's own machine, so the native
+      registration is not portable even though its client_id is.
+  - index: 5
+    slug: the_audience_holds_and_the_challenge_points_at_the_wrong_resource
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second resource under the same issuer. Confirm its access token cannot be used at the first resource.
+    zh: |
+      在同一個簽發者底下加上第二個資源。確認它的存取權杖無法用在第一個資源上。
+    verifies: >-
+      a token minted for the second resource is refused at the first and the reverse too, both
+      401 invalid_token, because token.audience is written at exchange time from the resource
+      parameter and compared against self.resource. The WWW-Authenticate challenge then names
+      the wrong place: both servers answer with RESOURCE_METADATA_URI, a module constant, so a
+      client following the second resource's challenge reads the first resource's metadata and
+      returns with a token for the wrong audience. The client does not make that mistake because
+      tokens_by_issuer_resource is keyed on the pair, holding 2 entries for 2 audiences under 1
+      issuer. And wrong-resource and wrong-issuer are one branch, so a response cannot say
+      whether a new token or a different authorization server is needed.

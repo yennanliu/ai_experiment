@@ -1,0 +1,93 @@
+lesson: 25-skill-invocation-and-routing
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/25-skill-invocation-and-routing/docs/en.md
+exercises:
+  - index: 1
+    slug: the_first_row_is_two_different_deployments_wearing_one_label
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Create all four rows of the human/model matrix and write one legitimate use case for each.
+    zh: |
+      把人／模型矩陣的四列都做出來，並替每一列寫一個合理的使用情境。
+    verifies: >-
+      each of the four rows is built as a real InvocationPolicy and exercised with a human and a
+      model request, 8 of 8 agreeing with the row; the (False, False) row denies a harness
+      caller with an empty allowlist and activates it with the name listed while printing
+      identically; allow_model=False with allow_agent=True prints in the no-model row while the
+      agent activates; active_policy marks 1 row of 4 and 0 without a policy
+  - index: 2
+    slug: the_policy_is_catalog_wide_and_application_only_is_per_skill
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add application-only activation to `CorePolicyAdapter`. Prove that human and model callers remain denied.
+    zh: |
+      替 `CorePolicyAdapter` 加上「只給應用程式」的啟用。證明人類與模型呼叫方仍然被拒絕。
+    verifies: >-
+      the per-skill rule refuses the locked skill to all five non-application actors and leaves
+      humans the other two skills, where clearing allow_human leaves them none of three; an
+      agent activates the locked skill without the rule; an unlisted skill is denied to
+      applications even when allow_application is true; the three explicit actors are told the
+      skill is application-only while the model and agent are told the threshold was not met
+  - index: 3
+    slug: near_misses_only_calibrate_one_of_the_two_ways_routing_fails
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write ten near misses for a deployment skill. Each prompt must share vocabulary with the skill while belonging to a different workflow.
+    zh: |
+      替一項部署技能寫十個差一點的案例。每一個提示詞都必須跟這項技能共用詞彙，但屬於另一條流程。
+    verifies: >-
+      ten near misses across ten workflows each share 2 tokens with the skill; 6 of 10 falsely
+      activate at the demo's 0.15 threshold, the top near miss scoring 0.2667 against a lowest
+      true positive of 0.3846, so 0.30 gives 0 false and 3 true; padding the hardest prompt
+      drops it from 0.1111 to 0.0741; renaming the skill moves the top near miss to 0.25 and the
+      top true positive to 0.5833; a genuine triage request sharing 0 tokens scores 0.0
+  - index: 4
+    slug: the_shipped_tie_break_is_alphabetical_and_silent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an ambiguity margin between the top two routing scores. Return `ask` when the margin is too small.
+    zh: |
+      在前兩名路由分數之間加上一個歧義邊際。當邊際太小時回傳 `ask`。
+    verifies: >-
+      two skills 0.0772 apart return ask and a 0.1889 gap returns activate, while a one-skill
+      catalog activates at every margin; an exact 0.5 tie is resolved to the alphabetically
+      later name, activated, with only the eligibility reason; the same 0.03 gap is 8% of a 0.36
+      score and 60% of a 0.05 one; InvocationDecision has a bool activated and three outcomes to
+      express
+  - index: 5
+    slug: the_depth_is_asserted_by_the_caller_it_is_meant_to_bound
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a maximum composition depth to skill-to-skill requests and detect a two-skill cycle.
+    zh: |
+      替技能對技能的請求加上最大組合深度，並偵測出一個兩項技能的循環。
+    verifies: >-
+      the chain adapter refuses A -> B -> A as a cycle and a fourth hop at depth 4 against a
+      limit of 3, while the shipped adapter allows the cycle and allows the same fourth hop as
+      soon as it declares depth=1; five nested calls each declaring depth=1 are all allowed;
+      caller_name catches A -> A only; depth defaults to 0, which the adapter rejects
+  - index: 6
+    slug: the_extension_adapter_can_only_subtract
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the same labeled set through core and extension adapters. Explain every changed decision.
+    zh: |
+      把同一組有標註的測試集分別跑過核心與擴充轉接器。解釋每一個變掉的決策。
+    verifies: >-
+      12 requests through both adapters differ on 3 decisions: 1 allow becomes a deny and 2 stay
+      activated while moving from archive-cleanup to incident-triage, with 0 grants;
+      _extension_false denies on 4 of 9 falsey spellings and treats 0, 'no', 'off', 'disabled'
+      and None as absent; user-invocable=false denies HUMAN while APPLICATION and HARNESS still
+      reach the skill, and disable-model-invocation covers MODEL and AGENT together

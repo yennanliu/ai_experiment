@@ -1,0 +1,84 @@
+lesson: 04-structured-output
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/04-structured-output/docs/en.md
+exercises:
+  - index: 1
+    slug: the_minimum_holds_and_three_constraints_beside_it_do_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Add a fourth test case whose `total_usd` is a negative number. Confirm the validator rejects it with the `minimum` constraint path.
+    zh: |
+      跑一次 `code/main.py`。加上第四筆測試案例，其 `total_usd` 是負數。確認驗證器會以 `minimum` 約束的路徑拒絕它。
+    verifies: >-
+      total_usd -5.0 gives exactly one error, '$.total_usd: below minimum 0', because the number
+      branch returns early only on a type mismatch. Three sibling constraints do not hold: pattern
+      uses re.match so '^[A-Z0-9-]+$' accepts a SKU ending in a newline (Python's $ matches before
+      one); line_items has no minItems so an empty invoice with a zero total passes; and total_usd is
+      never related to the line items, so a stated 999.0 against a 10.00 item validates clean. Every
+      schema keyword describes one field in isolation, so strict mode can guarantee shape and never
+      arithmetic.
+  - index: 2
+    slug: an_unsupported_keyword_accepts_everything_instead_of_failing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the validator to support `oneOf` with a discriminator. The common case: `line_item` is either a product or a service, tagged by `kind`. Strict mode has subtle rules here; check OpenAI's structured outputs guide.
+    zh: |
+      擴充驗證器以支援帶鑑別欄位的 `oneOf`。常見情境是：`line_item` 要嘛是商品、要嘛是服務，以 `kind` 標記。嚴格模式在這裡有些微妙的規則；查一下 OpenAI 的結構化輸出指南。
+    verifies: >-
+      validate on a oneOf schema against the integer 5 returns no errors: there is no type key, every
+      dispatch branch is skipped, and a schema built on oneOf accepts every input -- an unsupported
+      keyword reads as an unconstrained one. A kind-discriminated union over product and service
+      validates both well-formed documents clean and reports one error for a service whose hours is a
+      string; checking the same document against both branches gives six, five of them about the
+      branch it never claimed to be. An unknown tag is its own error. Each branch pins its tag to a
+      singleton enum, which is what makes the branch selectable by a grammar.
+  - index: 3
+    slug: the_field_pydantic_adds_is_title
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Write the same Invoice schema as a Pydantic BaseModel and compare `model_json_schema()` output to your hand-rolled schema. Identify the one field Pydantic sets by default that the hand-rolled version omits.
+    zh: |
+      把同一份 Invoice schema 寫成一個 Pydantic BaseModel，並把 `model_json_schema()` 的輸出與你手寫的 schema 比較。找出那個 Pydantic 預設會設、而手寫版漏掉的欄位。
+    cites: >-
+      Pydantic, the Python binding
+  - index: 4
+    slug: none_of_the_ten_reaches_the_refusal_branch
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure refusal rates. Construct ten inputs that should not be extractable (a song lyric, a math proof, a blank email) and run them through a real provider with strict mode. Count refusals vs hallucinated outputs. This is your ground truth for refusal-aware retries.
+    zh: |
+      量測拒絕率。造出十筆不該被抽取的輸入（一段歌詞、一份數學證明、一封空白郵件），用嚴格模式送進一家真實的供應商。數一數拒絕與幻覺輸出各有幾次。這就是你做拒絕感知重試時的基準真值。
+    verifies: >-
+      ten unextractable inputs classify as 7 parse_error and 3 violation -- zero refusals, because the
+      branch is reachable only through the literal prefix __REFUSAL__ that a provider emits. {}, null
+      and [] are valid JSON, so they clear the parse branch and land in violation with 4, 1 and 1
+      errors, indistinguishable at this layer from a model that tried and got the shape wrong. The
+      sentinel is checked with startswith before any parsing, so an output carrying a JSON body still
+      classifies as a refusal. And a hallucinated invoice -- 999.0 against a 10.00 line item --
+      classifies as ok with 0 errors, so the other arm of the ratio is invisible to the validator.
+  - index: 5
+    slug: the_forbidden_construct_is_the_optional_property
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read OpenAI's structured outputs guide top to bottom. Identify the one construct it explicitly forbids in strict mode that plain JSON Schema allows. Then design a schema that uses the forbidden construct non-essentially and refactor it to be strict-compatible.
+    zh: |
+      把 OpenAI 的結構化輸出指南從頭讀到尾。找出那個純 JSON Schema 允許、但它在嚴格模式下明文禁止的構件。接著設計一份非必要地用上了該構件的 schema，再把它重構成相容嚴格模式的版本。
+    verifies: >-
+      the construct is the optional property -- declared in properties, absent from required. The
+      refactor moves it into required and widens its type to ['null','string']. The two forms accept
+      different documents: without the field, loose gives 0 errors and strict 1; with it null, loose
+      gives a type error and strict none. The lesson's own Invoice schema is already compatible on
+      this axis -- 4 of 4 and 3 of 3 properties required, additionalProperties False at both levels.
+      But the widened type is a list, which validate's == 'string' / == 'number' dispatch matches
+      nowhere, so 0 of 3 nonsense values (42, [], {'a': 1}) are caught: the clean result on null is
+      the validator having stopped looking, not the refactor working.

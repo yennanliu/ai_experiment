@@ -1,0 +1,122 @@
+lesson: 22-skills-and-agent-sdks
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/22-skills-and-agent-sdks/docs/en.md
+exercises:
+  - index: 1
+    slug: more_than_one_primitive_is_arithmetic_not_a_judgement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Classify five workflows from your own team using `TaskShape`. Defend every case where you choose more than one primitive.
+    zh: |
+      用 `TaskShape` 把你自己團隊的五套流程分類。凡是你選了不只一種原語的案例，都要說得出理由。
+    verifies: >-
+      five workflows classify through TaskShape and the three multi-primitive ones each lose
+      exactly one primitive when a flag is dropped, so both flags carry a responsibility. The
+      count is the number of true flags with no interaction: six flags give six primitives and
+      none gives ('prompt',), so setting a flag is choosing a primitive and the function cannot
+      disagree with the shape. The output order is the function's -- AGENTS.md, Agent Skill, MCP
+      tool, hook, ordinary code, subagent -- so a reader cannot tell which is primary and two
+      workflows with different centres of gravity give identical answers. And the default is the
+      weakest primitive, reached by silence, while nothing forbids a contradictory shape:
+      deterministic_logic with repeatable_method returns ordinary code and an Agent Skill, and
+      six booleans admit 64 shapes that are all accepted.
+  - index: 2
+    slug: the_limit_is_characters_and_three_fields_have_three_of_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add boundary tests proving that a 500-character `compatibility` value passes and a 501-character value fails as a specification error.
+    zh: |
+      加上邊界測試，證明一個 500 字元的 `compatibility` 值會過，而 501 字元的值會以規格錯誤失敗。
+    verifies: >-
+      a 500-character compatibility value reports valid with no issues and 501 reports exactly
+      one compatibility-too-long, since the check is `> 500` and the boundary is inclusive.
+      Absent, empty and over-length are three outcomes rather than two -- the whole block is
+      guarded by `'compatibility' in fields`, so omitting it is valid, an empty value gives
+      compatibility-empty, and a length test alone would treat the optional field as required.
+      The three bounded fields have three limits, name 64, description 1024 and compatibility
+      500, stated nowhere in the frontmatter, so an author discovers each by exceeding it. And
+      the limit counts characters, so a 500-character value of a three-byte codepoint is 1500
+      bytes and passes where a 501-character ASCII value is 501 bytes and fails.
+  - index: 3
+    slug: allowlisting_makes_it_valid_and_the_report_still_names_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add one runtime extension to the allowlist. Write a test proving the same file is still distinguishable from a portable-only skill.
+    zh: |
+      把一個執行環境擴充加進允許清單。寫一個測試，證明同一份檔案仍然分得出來跟只用可攜核心的技能不同。
+    verifies: >-
+      the same text reports unsupported-runtime-field under an empty policy and no issues under
+      a one-field allowlist, while runtime_extensions stays ('x-claude-model',) in both and a
+      portable-only skill reports () under either. Validity is a fact about the file-and-policy
+      pair and the extension list a fact about the file: four combinations give two validities
+      and two extension lists, so a consumer asking 'runs here' reads valid and one asking 'runs
+      anywhere' reads runtime_extensions. The allowlist is per-field -- an issue per unpermitted
+      field, so two unknown fields give two issues under an empty policy and one under a
+      one-field policy. And core_fields is the complement of the same parse, from a six-name
+      hard-coded set carrying no version.
+  - index: 4
+    slug: only_one_of_the_four_files_is_validated
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Split a 400-line prompt into `SKILL.md`, one reference, one script contract, and one output template. Keep every file responsible for one kind of information.
+    zh: |
+      把一段 400 行的提示詞拆成 `SKILL.md`、一份參考資料、一份腳本契約與一份輸出樣板。讓每個檔案只負責一種資訊。
+    verifies: >-
+      400 lines split into four files -- SKILL.md keeping routing and procedure at 36 lines,
+      plus a reference, a script contract and an output template -- reconciling exactly, with a
+      checker finding zero misplaced lines. The validator sees one of the four:
+      validate_skill_text takes text, directory_name and allowed_runtime_extensions, none of
+      them a file list, so the three companions could be empty, contradictory or absent and the
+      skill still validates -- the one-responsibility rule is a convention with no checker,
+      which is why the solution writes one. The frontmatter is the only machine-checked part, so
+      a SKILL.md carrying all 400 lines validates identically. And the description survives at
+      60 characters while the body it fronts shrank 91%, which is what makes progressive
+      disclosure work.
+  - index: 5
+    slug: the_substitute_is_tempting_because_it_is_a_superset
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a failure response for a skill that references an unavailable MCP tool. Do not silently substitute a tool with broader permissions.
+    zh: |
+      為一個引用了不存在 MCP 工具的技能設計失敗回應。不要默默換上一個權限更大的工具。
+    verifies: >-
+      an unavailable MCP tool is refused with the skill, the missing tool and the host named,
+      and no work performed. The substitute is a strict superset, which is the whole problem:
+      binding notes_export to files_write completes the task so an output test passes, while the
+      grant gains fs:write, fs:delete and net:post -- the skill has been given filesystem write
+      by a resolver rather than by its allowed-tools. The validator checks the field's shape and
+      never its contents, so a skill naming a tool that never existed reports valid with no
+      issues: availability is a runtime fact about a host and validity a static fact about a
+      file. And refusing needs the same parse the substitution would have used -- both split the
+      declaration and diff it against the host -- so the cost of refusing is zero and the choice
+      is entirely policy.
+  - index: 6
+    slug: a_sentence_that_belongs_in_two_places_belongs_in_neither
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Review an existing skill and label every sentence as routing, procedure, policy, reference pointer, or output contract. Move anything that does not belong.
+    zh: |
+      審查一個現成的技能，把每一句話標成路由、程序、政策、參考指標或輸出契約。把不屬於那裡的東西搬走。
+    verifies: >-
+      fourteen sentences across five labels, none unlabelled, land in four files with every
+      sentence in exactly one; two carried two labels and were split before they could be
+      placed, which is why sixteen pieces come out of fourteen sentences. The mixed sentences
+      are mixed in one direction, both procedure and policy -- a constraint written where the
+      action is -- and none mixes routing, because routing is one sentence in the description
+      and everything else is body. That description is the only sentence the validator reads,
+      with a length bound, a required-ness check and a home the format fixes, while the other
+      thirteen are body checked only for being non-empty. And moving a sentence changes no
+      verdict: the skill validates identically before and after, so the review is invisible to
+      every check the module ships.

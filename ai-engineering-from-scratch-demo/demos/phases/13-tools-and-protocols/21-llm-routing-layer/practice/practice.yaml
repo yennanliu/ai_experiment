@@ -1,0 +1,103 @@
+lesson: 21-llm-routing-layer
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/21-llm-routing-layer/docs/en.md
+exercises:
+  - index: 1
+    slug: the_failed_attempt_is_free_because_the_model_charges_the_winner
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Trigger the outage scenario; confirm fallback lands on the second provider and cost is attributed correctly.
+    zh: |
+      跑一次 `code/main.py`。觸發那個故障情境；確認退路落在第二家供應商上，而且成本被正確歸屬。
+    verifies: >-
+      with gpt-4o in outage the attempts are ['openai/gpt-4o', 'anthropic/claude-sonnet'], the
+      chosen model is the second, and the cost matches its 3.0/15.0 rates rather than the failed
+      provider's 5.0/15.0. The failed attempt contributes zero by construction, since
+      provider_call raises before returning usage -- a whole chain in outage costs 0.0 across
+      three attempts, and a provider that streamed tokens and then failed would bill for them
+      with no Invocation field to record it. A partial outage is invisible outside attempts: the
+      exception is discarded by `except RuntimeError: continue` and error is set only when the
+      chain is exhausted, so a degraded run reports error=None. And redaction happens once
+      before the chain, so every provider sees the same redacted text, though the flag is a bool
+      and does not record which pattern matched.
+  - index: 2
+    slug: a_sha256_cache_is_exact_match_and_the_key_has_to_choose_a_side
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add semantic caching: SHA256 of the prompt is a lookup key; cache hits return instantly. Measure cost savings on a repeated call.
+    zh: |
+      加上語意快取：以提示詞的 SHA256 當查找鍵；命中快取就立刻回傳。在一次重複呼叫上量測省下的成本。
+    verifies: >-
+      the second identical call costs 0.0 and returns the byte-identical response; over a
+      five-call workload the cache takes 3 hits and 2 misses and spends less than uncached. It
+      is exact-match, not semantic: of four prompts a human would call one question -- the text,
+      the text plus a trailing space, a paraphrase and the same text uppercased -- the cache
+      serves 0 and pays for 4. The prompt alone is the wrong key because the alias picks the
+      model: keyed on the prompt only, the fast alias is served gpt-4o's answer from one entry,
+      where keying on (alias, digest) gives two entries and gpt-4o-mini. And hashing before or
+      after redaction is a real choice -- a raw-prompt digest is invertible over a
+      1000-candidate SSN space, while a redacted-prompt digest makes two customers' distinct
+      prompts collide.
+  - index: 3
+    slug: a_prefix_is_not_a_classifier_and_the_default_is_the_expensive_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a prompt classifier that routes "code ..." prompts to an alias favoring intelligence and "summarize ..." prompts to an alias favoring speed.
+    zh: |
+      加上一個提示詞分類器，把「code ...」開頭的提示詞導向偏好智能的別名，把「summarize ...」開頭的導向偏好速度的別名。
+    verifies: >-
+      code prompts route to smart, summarize prompts to fast, and unmatched prompts to fast,
+      giving gpt-4o, gpt-4o-mini and gpt-4o-mini and spending less over a six-prompt workload
+      than routing everything to smart. Defaulting to smart is a cost decision taken by
+      omission: smart's first model is 5.0/15.0 against fast's 0.15/0.60, 33x on input, and
+      nothing in the exercise says which way to fall. Prefix matching misses the phrasings
+      people use -- of five prompts clearly asking for a summary, startswith('summarize') fires
+      on 1 and a lowercased substring search on 4, with the British spelling falling through to
+      the default either way. And a misroute is silent: the Invocation carries chosen_model and
+      cost and no field naming a rule, so a deliberate fast and a defaulted one are identical.
+  - index: 4
+    slug: the_cost_is_known_after_the_call_so_a_hard_cap_cannot_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design per-team budgets: each team has a monthly spend cap; gateway refuses requests once cap is hit. Pick an enforcement granularity (per-request or windowed).
+    zh: |
+      設計逐團隊的預算：每支團隊有一個月度支出上限；一旦到頂，閘道就拒絕請求。挑一個強制執行的粒度（逐請求或依時間窗）。
+    verifies: >-
+      per-request admission against a running total admits 2 and refuses 4 over six calls,
+      landing at or above the cap by no more than one call's cost. The cap cannot be checked
+      before the cost is known, because route prices from resp['usage'] which exists only after
+      provider_call returns -- so the alternative is reserving an upper-bound estimate and
+      reconciling, which never overshoots and refuses requests that would have fit. The two
+      granularities overshoot differently and the window is worse: per-request caps the excess
+      at one call while a window lets everything inside it through. And the refusal costs
+      nothing and has nowhere to be recorded -- a refused request never reaches route, so no
+      Invocation exists at all and refused calls are absent from the only structure that could
+      count them.
+  - index: 5
+    slug: the_three_differentiators_are_the_three_exercises_before_this_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read LiteLLM, OpenRouter, and Portkey docs side by side. Name the one feature each ships that the other two do not.
+    zh: |
+      把 LiteLLM、OpenRouter 與 Portkey 的文件並排讀一遍。各說出一項它有、而另外兩家沒有的功能。
+    verifies: >-
+      what a vendor shipped is not checkable from inside this repo, so the question is turned
+      into the one the code can answer: the three categories are caching, classification and
+      budgeting -- the three preceding exercises -- and Invocation's nine fields have a marker
+      for none of them, so the features cannot be reported even once implemented. The module's
+      whole surface is routing and pricing: its top-level tables are OUTAGE, PII_PATTERNS,
+      PRICES and ROUTES, with no cache, classifier or ledger anywhere, so each exercise adds a
+      component rather than a setting. The three land at three points before routing while
+      redaction, the one the lesson ships, sits inside it. And cost attribution is the field
+      they all need: cost_usd exists, so the gateway has the number and not the dimensions to
+      group it by.

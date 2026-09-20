@@ -1,0 +1,111 @@
+lesson: 12-mcp-roots-and-elicitation
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/12-mcp-roots-and-elicitation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lock_was_per_process_so_two_processes_had_no_lock
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the in-memory replay store with SQLite. Use one transaction to claim the nonce and delete the note, then prove two processes cannot both commit.
+    zh: |
+      把記憶體重播儲存區換成 SQLite。用同一個交易來宣告 nonce 並刪除筆記，然後證明兩個行程無法同時提交。
+    verifies: >-
+      two servers sharing one SqliteReplayStore and replaying one token delete 1 note between
+      them, the loser getting -32602 requestState was already consumed, and the swap is drop-in
+      so NotesServer is unchanged. The in-memory store does not fail this test, it does not
+      participate: two ReplayStore instances both commit the same nonce, 2 deletions for 1
+      token, because _consumed and _lock are per-instance -- and within one instance the same
+      replay is correctly refused, so the defect is invisible to any single-process test.
+      Claiming and mutating must share the transaction: an operation that raises inside the
+      connection block leaves 0 rows and the nonce is claimable again, where committing the
+      claim separately would consume a nonce for an operation that never happened. And the
+      capacity limit has to be re-implemented -- max_entries=1 reproduces -32023, and expiry
+      eviction becomes a DELETE inside the same transaction.
+  - index: 2
+    slug: the_schema_declares_the_fields_and_refuses_none_of_the_others
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `url` capability negotiation and an out-of-band setup flow. Keep third-party credentials out of `inputResponses`.
+    zh: |
+      加上 `url` 能力協商與一條帶外設定流程。把第三方憑證留在 `inputResponses` 之外。
+    verifies: >-
+      a client advertising only {"form": {}} is refused -32021 for the url flow while one
+      advertising {"url": {}} receives a mode:"url" elicitation with a setup URL, and the
+      completed retry carries 0 credential-shaped fields while the server's vault holds 1. The
+      lesson's negotiation reads absence of detail as support --
+      supports_form_elicitation({"elicitation": {}}) is True because an empty dict
+      short-circuits -- so the new mode must be checked by presence of its own key, which is
+      what makes the -32021 reachable. The setup URL carries a token_urlsafe handle and no part
+      of the credential, and the sealed state carries the same handle, so a URL from browser
+      history is worth nothing without the token. And nothing refuses an undeclared field: a
+      client that also sends api_key has it delivered intact, 2 keys where 1 was declared, so
+      keeping credentials out needs the server to reject keys it did not ask for rather than
+      merely not read them.
+  - index: 3
+    slug: the_token_binds_the_arguments_and_cannot_bind_the_world
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the in-memory note map with a temporary SQLite database. Re-check authorization and containment inside the mutation transaction.
+    zh: |
+      把記憶體筆記映射換成一個暫時的 SQLite 資料庫。在變更交易內部重新檢查授權與封閉性。
+    verifies: >-
+      the notes move to a temporary SQLite database and the delete re-checks authorization and
+      containment inside one transaction; the flow completes and the table goes 5 rows to 4.
+      Containment can lapse between rounds and candidateIds does not notice -- moving a
+      confirmed candidate's URI to file:///tmp after round one leaves it in the sealed candidate
+      list and the delete is refused with 'selected note is outside workspace'. Authorization
+      can lapse too and the token has no field for it: revoking the workspace between rounds
+      refuses the retry, because requestState binds principal, method and an arguments digest,
+      all properties of the request, while grants are a property of the server. And the
+      transaction is what makes a refused check harmless -- each refusal leaves the table at 5
+      rows, because the SELECT, both checks and the DELETE share one connection block.
+  - index: 4
+    slug: a_string_check_cannot_see_a_link_because_the_link_is_a_fact
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a symbolic-link policy for a real filesystem implementation. Explain why URI lexical containment alone cannot stop a symlink escape.
+    zh: |
+      為真實檔案系統實作加上符號連結政策。說明為什麼光靠 URI 的字面封閉性，擋不住符號連結逃逸。
+    verifies: >-
+      a real symlink at <root>/escape.md pointing outside answers True to the lesson's
+      uri_within_workspace and False once both sides are resolved with realpath, which is the
+      policy. Lexical containment cannot work because uri_within_workspace and
+      _normalized_uri_parts make 0 filesystem calls -- they are normpath, unquote and
+      commonpath, deciding what a path spells, while a symlink is the filesystem's decision
+      about what a name means; normpath even cancels '..' textually, correct for a pure path and
+      wrong when a component is a link. The policy must resolve the root as well: with the
+      workspace reached through a link, a legitimate inside file answers False against the
+      unresolved root and True once both sides are resolved. And resolve-then-check is still
+      time-of-check to time-of-use -- repointing the link after the check leaves the verdict
+      stale, so the durable fix is opening the file and checking the handle, O_NOFOLLOW or
+      st_dev/st_ino, rather than a better predicate.
+  - index: 5
+    slug: the_eras_disagree_about_who_owns_the_request_id
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a 2025-11-25 adapter that maps modern MRTR handler output to legacy server-initiated elicitation. Keep it isolated from the current handler.
+    zh: |
+      設計一個 2025-11-25 轉接層，把現代 MRTR 處理器的輸出，映射成舊版由伺服器發起的 elicitation。讓它跟現行處理器保持隔離。
+    verifies: >-
+      the adapter turns modern input_required into a legacy server-initiated elicitation/create
+      and the legacy answer back into the modern retry, completing with deleted:True and notes 5
+      to 4, with 3 messages on the legacy wire and 2 on the modern one. The eras differ by who
+      owns the request id: the adapter allocates 9000 for the server-initiated legacy request
+      while the modern transcript uses the client's [1, 2] correlated through requestState, and
+      the legacy id never appears in the modern transcript, so the two numbering spaces never
+      have to agree. Isolation costs the adapter the state the modern design removed -- the
+      server's fields are authorized_workspaces, notes and replay_store, none of them per
+      in-flight call, while the adapter must hold the requestState between the legacy request
+      and response because the legacy exchange has nowhere to carry it. And the isolation is
+      checkable: 0 elicitation/create messages reach the modern transcript and the lesson's own
+      run_mrtr still completes without the adapter present.

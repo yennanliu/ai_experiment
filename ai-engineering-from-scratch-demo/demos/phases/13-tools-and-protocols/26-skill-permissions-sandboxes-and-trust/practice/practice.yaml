@@ -1,0 +1,95 @@
+lesson: 26-skill-permissions-sandboxes-and-trust
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/docs/en.md
+exercises:
+  - index: 1
+    slug: deleting_the_workspace_root_is_inside_the_workspace_jail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add separate read, create, overwrite, and delete path permissions. Test the same path under every operation.
+    zh: |
+      把讀取、建立、覆寫與刪除的路徑權限分開。對同一條路徑在每一種操作下都測一次。
+    verifies: >-
+      one target answers allow, require-approval, require-approval, deny across
+      read/create/overwrite/delete once the file exists and allow, allow, allow, deny before it
+      does, while the shipped policy gives 2 distinct verdicts to 4 questions and the same 2
+      whatever is on disk; normalize_workspace_path(root, '.') returns the root, so the shipped
+      review answers require-approval for deleting the whole workspace; SandboxPolicy has 1 path
+      field for 4 operations
+  - index: 2
+    slug: one_malformed_allowlist_entry_denies_every_origin
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an origin policy that permits `https://registry.example.test` on port 443, separately permits port 8443, and rejects redirects to every undeclared origin.
+    zh: |
+      加上一份來源政策：允許 `https://registry.example.test` 的 443 埠、另外允許 8443 埠，並拒絕重新導向到任何沒宣告的來源。
+    verifies: >-
+      one allowlist entry permits :443 and denies :8443 while two permit both; a redirect chain
+      to cdn.example.test dies at hop 2 under network-allowlist and a chain staying inside is
+      allowed after 3 reviews; an entry with a trailing path makes every network request fail as
+      network-policy-shape; 2 of 5 attack URLs die in the parser and the userinfo form is
+      rejected rather than prefix-matched; ActionRequest has one url and no redirect history
+  - index: 3
+    slug: a_prefix_match_is_a_prefix_not_a_command
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Model a package-manager command whose lifecycle hooks execute repository code. Decide whether to ask, deny, or isolate it.
+    zh: |
+      對一個套件管理器指令建模，它的生命週期掛鉤會執行儲存庫的程式碼。決定要詢問、拒絕，還是把它隔離。
+    verifies: >-
+      npm install is denied because its effect is not a function of its argv, and the isolated
+      form is allowed only with --ignore-scripts, no network and no credentials; the shipped
+      prefix allowlist accepts a later --foreground-scripts that cancels the mitigation; two
+      repositories running different postinstall hooks produce byte-identical requests, both
+      reviewed require-approval; 0 of SandboxPolicy's 6 fields describe the executor
+  - index: 4
+    slug: the_reviewer_stops_being_a_function_the_moment_it_dedupes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend `ActionRequest` with an idempotency key and require one for external writes.
+    zh: |
+      替 `ActionRequest` 加上幂等鍵，並對外部寫入強制要求它。
+    verifies: >-
+      the unkeyed external write is denied, the first keyed one allowed, the same key answers
+      duplicate and a fresh key allows again -- 3 distinct verdicts over 4 requests;
+      review_action is pure while the keyed reviewer answers differently for identical input;
+      ActionRequest has no method or direction field, so a payload-based proxy misclassifies 2
+      of 4 shapes; a reminted key gets a second write
+  - index: 5
+    slug: the_shipped_prompt_is_the_same_sentence_for_both_publishes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write an approval message for a staging publish, then for a production publish. Make the target, artifact, and rollback consequence explicit.
+    zh: |
+      替一次 staging 發布寫一段核可訊息，再替一次生產發布寫一段。把目標、產物與回滾後果都寫明確。
+    verifies: >-
+      the renderer refuses 4 of 4 single-fact omissions and produces two messages naming target,
+      artifact digest and rollback cost, differing in target, rollback and irreversibility; two
+      requests differing only in URL both return the same approval-gate reason; ReviewDecision
+      has 7 fields and 0 for a prompt or consequence; approval_kinds is keyed by kind and 0
+      fields across ActionRequest and SandboxPolicy mention an environment or reversibility
+  - index: 6
+    slug: the_untrusted_flag_is_set_by_the_code_the_page_is_attacking
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Threat-model a skill that reads web pages and writes pull-request comments. Mark every trust and authority boundary.
+    zh: |
+      對一項會讀網頁、並寫 pull request 留言的技能做威脅建模。把每一道信任與權限邊界都標出來。
+    verifies: >-
+      six boundaries probed: authority, origin and secret are denied by the module, labelled is
+      gated only because the caller set the flag, and provenance and direction pass untouched;
+      the same write is allow without the untrusted flag and require-approval with it; a bare
+      fetch and a fetch carrying repository contents both answer allow; contains_secret's 3
+      patterns catch api_key= and miss a bare ghp_ token

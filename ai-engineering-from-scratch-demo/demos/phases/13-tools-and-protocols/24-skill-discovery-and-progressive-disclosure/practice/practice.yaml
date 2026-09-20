@@ -1,0 +1,90 @@
+lesson: 24-skill-discovery-and-progressive-disclosure
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/24-skill-discovery-and-progressive-disclosure/docs/en.md
+exercises:
+  - index: 1
+    slug: the_scope_name_is_the_identity_so_two_plugins_are_fatal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a plugin scope and place it between user and built-in precedence. Prove the collision result with a test.
+    zh: |
+      加上一個外掛範圍，並把它的優先順序排在使用者與內建之間。用一個測試證明衝突的結果。
+    verifies: >-
+      four scopes contesting one name give winner project over ('user', 'plugin', 'builtin'),
+      and dropping the winner each time yields project -> user -> plugin -> builtin; a scope
+      absent from the precedence tuple raises CollisionError rather than defaulting; two Scope
+      objects sharing the name 'plugin' over different roots raise ambiguous; CatalogEntry has 4
+      fields and no selected flag
+  - index: 2
+    slug: a_qualified_name_is_not_a_name_the_loader_can_find
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the collision policy from highest precedence to qualified names. Preserve both entries in the catalog.
+    zh: |
+      把衝突政策從「優先順序最高者勝」改成「限定名稱」。讓兩筆項目都留在目錄裡。
+    verifies: >-
+      qualification publishes 3 entries against highest-precedence's 2, with 0 collisions
+      against 1, at 628 characters against 405; a scope::name entry makes _candidate_for raise
+      KeyError so load_skill_body stops working; NAME_PATTERN rejects the qualified name it
+      accepts unqualified
+  - index: 3
+    slug: the_file_is_read_in_full_before_the_limit_is_consulted
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a byte-size limit to `load_reference`. Test a file exactly at the limit and one byte above it.
+    zh: |
+      替 `load_reference` 加上位元組大小上限。測試一個剛好在上限上的檔案，以及一個超過一個位元組的檔案。
+    verifies: >-
+      1024 bytes loads and 1025 raises ReferencePathError with 0 characters returned, while the
+      shipped character check returns all 1025; a 524288-byte file is decoded before being
+      refused; 1024 CJK characters are 3072 bytes, passing a 1024-character limit and failing a
+      1024-byte one
+  - index: 4
+    slug: the_clause_that_disambiguates_is_the_one_the_budget_cuts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create two descriptions that sound nearly identical. Rewrite them so the trigger boundaries do not overlap.
+    zh: |
+      寫兩段聽起來幾乎一樣的描述。把它們改寫到觸發邊界不再重疊。
+    verifies: >-
+      the near-identical trigger clauses share 3 terms and leave 6 of 6 queries tied; the
+      rewritten triggers share 0 and route 6 of 6 correctly at 84 characters more; at a
+      60-character budget both entries truncate to the same 59 characters and the router is 6 of
+      6 tied again; a 1024-character description is published at 240 with 784 dropped behind an
+      ellipsis
+  - index: 5
+    slug: a_manifest_that_does_not_cover_itself_covers_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a manifest containing hashes for every reference and script. Detect a modified resource before loading it.
+    zh: |
+      加上一份清單，裡面裝著每一份參考資料與腳本的雜湊。在載入之前就偵測出被改過的資源。
+    verifies: >-
+      a 3-resource manifest refuses an edited reference with IntegrityError and 0 characters
+      returned while the shipped loader returns all 41; editing the resource and its manifest
+      entry together verifies clean; an added references/extra.md passes every per-path lookup
+      and shows up as 1 unexpected in a set comparison; an edited SKILL.md body loads unchanged
+  - index: 6
+    slug: level_one_scales_with_the_catalog_and_the_others_with_the_task
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Instrument the demo to report Level 1, Level 2, and Level 3 byte counts separately.
+    zh: |
+      替這支示範加上量測，分別回報層級 1、層級 2 與層級 3 的位元組數。
+    verifies: >-
+      3 skills cost 684 bytes at Level 1, 28 at Level 2 and 80 at Level 3 across 2 resources,
+      Level 1 being 86% of the run; 50 skills leave Levels 2 and 3 byte-identical and take Level
+      1 to 99%; 2 references cost 80 bytes against 46 for one with no accumulator anywhere;
+      catalog_chars 684 against report_chars 752, and 240 CJK characters are 720 bytes

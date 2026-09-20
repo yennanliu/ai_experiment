@@ -1,0 +1,76 @@
+lesson: 01-the-tool-interface
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/01-the-tool-interface/docs/en.md
+exercises:
+  - index: 1
+    slug: registering_a_tool_does_not_route_to_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth tool to `code/main.py` called `get_stock_price(ticker)`. Write its description as "Use when the user asks for a current stock price by ticker. Do not use for historical prices or market summaries." Run the harness and confirm the fake decider routes queries mentioning tickers to the new tool.
+    zh: |
+      在 `code/main.py` 加上第四個工具，叫做 `get_stock_price(ticker)`。把它的描述寫成「當使用者依代號詢問當前股價時使用。不要用於歷史股價或市場摘要。」跑一次測試框架，確認那個假決策器會把提到代號的查詢導向新工具。
+    verifies: >-
+      the fourth tool is built to the exercise's spec -- name get_stock_price, the quoted description,
+      a required string ticker -- and joins the registry as entry 4; its schema accepts {'ticker':
+      'AAPL'}, rejects {} with "missing required field 'ticker'" and executes to a price. fake_decide
+      then routes 0 of 5 ticker queries to it. Walking fake_decide's AST with its docstring stripped
+      shows REGISTRY is not among the names its code touches, though it does appear in the docstring;
+      routing is three hard-coded branches naming add, get_time and get_weather as string literals.
+      describe_registry prints the registry rather than passing it to the decider.
+  - index: 2
+    slug: the_extra_field_is_ignored_and_a_boolean_is_a_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Break the schema validator. Pass a call whose `arguments` object is missing a required field, and confirm the host rejects it before execution. Then pass a call with an extra unknown field. Decide: should the host reject or ignore? Justify your choice with a safety argument.
+    zh: |
+      把 schema 驗證器弄壞。傳入一個 `arguments` 物件缺少必填欄位的呼叫，確認宿主在執行之前就把它擋下。接著傳入一個帶有多餘未知欄位的呼叫。決定：宿主該拒絕還是忽略？用一個安全上的論據為你的選擇辯護。
+    verifies: >-
+      {'a': 1} returns ["missing required field 'b'"] and never reaches the executor; {'a': 1, 'b': 2,
+      'evil': 'x'} returns [] and executes to {'sum': 3}, because validate walks the declared
+      properties and never enumerates the supplied keys -- it has no additionalProperties support. The
+      host should reject rather than ignore, since the undeclared key survives into
+      executor(call['arguments']). And {'a': True, 'b': False} validates clean and tool_add returns
+      {'sum': 1}: isinstance(True, int) is True, so the type gate admits a value JSON Schema excludes.
+  - index: 3
+    slug: the_gate_is_live_code_that_no_shipped_tool_reaches
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Classify each tool in the harness as pure or consequential. Add a `consequential: true` flag to the registry entries that need it, and change the loop to print a "would confirm with user" line whenever a consequential tool is chosen. This is the shape of the confirmation gate every production host needs.
+    zh: |
+      把測試框架裡的每個工具分類成純粹或有後果。替需要的登錄項目加上 `consequential: true` 旗標，並修改迴圈，讓它在選到有後果的工具時印出一行「將向使用者確認」。這就是每個生產級宿主都需要的那道確認閘門的形狀。
+    verifies: >-
+      all three tools carry consequential=False and 0 need the flag; add and get_weather replay
+      identically. tool_get_time calls datetime.now, so it reads external state without mutating any
+      -- an axis the pure/consequential dichotomy has no cell for, and which the docs' trust split
+      calls deterministic. The lesson's four demo queries print GATE 0 times; flipping
+      get_weather.consequential and re-running prints it once, so the branch is reachable and
+      unreached. MAX_TURNS is 5 while the deepest turn reached is 2, and 'LOOP TERMINATED' prints 0
+      times.
+  - index: 4
+    slug: the_columns_change_and_the_trust_boundary_moves
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Draw the four-step loop on paper with the provider-column table above filled in for your favorite client (Claude Desktop, Cursor, ChatGPT, or a custom stack). Cross-reference with the MCP-specific variant in Phase 13 · 06.
+    zh: |
+      在紙上畫出那個四步驟迴圈，並把上面那張供應商欄位表填成你最愛的客戶端（Claude Desktop、Cursor、ChatGPT，或一套客製堆疊）。再與階段 13 · 06 中 MCP 專屬的變體交叉比對。
+    cites: >-
+      Where the loop lives
+  - index: 5
+    slug: tool_choice_is_a_filter_you_could_apply_yourself
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read OpenAI's function-calling guide top to bottom. Identify the one field that sits in the request but not in the four-step loop as presented here. Explain what it adds and why it is convenient rather than essential.
+    zh: |
+      把 OpenAI 的函數呼叫指南從頭讀到尾。找出那個存在於請求中、卻不在本課所呈現的四步驟迴圈裡的欄位。說明它添加了什麼，以及為什麼它只是方便，而非必要。
+    cites: >-
+      Step two: decide

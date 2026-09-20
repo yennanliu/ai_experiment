@@ -1,0 +1,108 @@
+lesson: 13-mcp-async-tasks
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/13-mcp-async-tasks/docs/en.md
+exercises:
+  - index: 1
+    slug: the_update_reads_one_key_by_name_so_partial_is_not_expressible
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second outstanding input key. Send a partial `tasks/update` and prove the task remains `input_required` until both keys are answered.
+    zh: |
+      加上第二個仍待處理的輸入鍵。送出一次部分的 `tasks/update`，並證明在兩個鍵都被回答之前，任務維持在 `input_required`。
+    verifies: >-
+      two keys are issued and the task stays input_required until both are answered -- answering
+      one leaves the other in inputRequests, and either order gives the same two states. The
+      shipped tasks_update fails the requirement: given the same two-key task it sets working
+      after approve_outline alone and clears input_requests wholesale, so the unanswered
+      choose_format disappears with no answer at all. Iterating the outstanding set rather than
+      naming a key is the difference between the requirement holding and not. tasks/update also
+      says nothing about what it applied: an unknown key, a malformed answer and a correct one
+      return 1 distinct bare complete() while leaving the task in 2 different states, so the
+      outcome is learned only by polling tasks/get. And the key-reuse guard in advance_worker is
+      unreachable, because the stage gate already prevents re-entry -- rewinding the stage by
+      hand is the only way to fire it.
+  - index: 2
+    slug: isolation_is_a_filter_over_a_shared_namespace_and_one_path_skips_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add tenant ownership to the store and reject a valid task id presented by the wrong authenticated principal.
+    zh: |
+      為儲存區加上租戶擁有權，並拒絕由錯誤的已認證主體所提出的有效任務 id。
+    verifies: >-
+      a foreign principal presenting a valid task id gets -32602 task not found, byte-identical
+      to the answer for a nonexistent id, while a same-tenant co-worker reads it normally. The
+      ownership check lives in the service and advance_worker skips it: that method takes only
+      (self, task_id), calls store.get directly, and will drive any tenant's task through its
+      state machine. One directory holds every tenant and reload() loads all three files into
+      one store.tasks dict keyed by task id, so isolation is a runtime predicate over a shared
+      namespace and a missed predicate is a full cross-tenant read rather than a narrow bug.
+      What protects tenants today is entropy -- ids are uuid4().hex[:12], 48 bits -- and
+      unguessable is not the same property as authorized, since a tenant-keyed store refuses a
+      correctly guessed id and the id space alone cannot.
+  - index: 3
+    slug: the_lease_has_to_be_rechecked_at_the_commit_not_only_at_the_claim
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a worker lease with expiry. Demonstrate that two service instances cannot complete the same task concurrently.
+    zh: |
+      加上帶到期時間的 worker 租約。示範兩個服務實例無法同時完成同一個任務。
+    verifies: >-
+      without a lease, two TaskService instances over one directory both transition the same
+      task to completed -- 2 completions of 1 task, because each holds its own store.tasks copy.
+      With the lease one claim succeeds and the loser is refused. Claiming is not enough:
+      instance a claims, its lease expires, b claims and completes, and a's commit is then
+      refused with 'lease moved' -- checking only at the claim would let a's stale result land
+      on top of b's task, and that window is the price of an expiry that stops a crashed holder
+      blocking forever. The reference is safe in one process and only there: a second
+      advance_worker on the same instance transitions nothing, because the guard reads a copy
+      rather than the record. And the lease is state the extension has nowhere to put -- a Task
+      has 15 fields and its wire form 7, none naming a worker -- so adding it changes no
+      message.
+  - index: 4
+    slug: the_ack_drops_silently_where_the_notification_raises
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a POST-response SSE adapter for `subscriptions/listen`. Do not add GET, `Last-Event-ID`, or a session header.
+    zh: |
+      為 `subscriptions/listen` 實作一個 POST 回應的 SSE 轉接層。不要加上 GET、`Last-Event-ID` 或工作階段標頭。
+    verifies: >-
+      the adapter emits an acknowledgement, one notifications/tasks per accepted task and a
+      terminal result, 4 frames for 2 tasks, each tagged with the subscription id -- the
+      terminal one by merging into the _meta that complete() writes last. The response carries 0
+      SSE id fields, no session header, and exposes only POST. The lesson's two subscription
+      helpers disagree about an unowned task id: subscription_acknowledgement filters by owner
+      and returns survivors while task_notification raises -32602 task not found for the same
+      id, so the adapter has to follow the ack and the ack is the authorization boundary. That
+      narrowing is visible nowhere else -- 2 ids requested, 1 accepted, 3 frames delivered, and
+      nothing says the other was rejected. And the three prohibitions cost nothing because the
+      tasks are the durable thing: discarding the stream and polling tasks/get recovers the
+      identical taskId, status and statusMessage.
+  - index: 5
+    slug: expired_may_only_be_said_to_the_owner
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add expiry cleanup. Distinguish an expired task from a malformed task id without leaking cross-tenant existence.
+    zh: |
+      加上到期清理。在不洩漏跨租戶存在性的前提下，分辨「已過期的任務」與「格式錯誤的任務 id」。
+    verifies: >-
+      three outcomes: a malformed id answers 'malformed task id', the owner's expired task
+      answers 'task expired', and an unknown id, a foreign id and a foreign expired id all
+      answer 'task not found' -- the last being the case that matters, since answering 'expired'
+      there would confirm the id exists. The malformed check costs 0 store reads, decided on
+      shape alone, which is why it leaks nothing: any distinction drawn after a lookup is about
+      a record somebody owns and can only be reported to them, and that fixes the order shape,
+      existence, ownership, expiry. The lesson collapses all three into one message --
+      TaskStore.get answers 'task not found' for a malformed, an unknown and a foreign id alike,
+      safe but unable to tell a client its own id is the wrong shape. And cleanup destroys the
+      evidence 'expired' depends on: after the sweep even the owner gets 'task not found', so a
+      durable expired answer needs a tombstone keeping the owner and nothing else.
