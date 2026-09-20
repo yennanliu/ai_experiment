@@ -41,15 +41,31 @@ scenario-first ordering.
 
 from __future__ import annotations
 
+import contextlib
 import inspect
+import io
 import itertools
+import re
 
 from harness import parity, practice
 
 PHASE, LESSON = "12-multimodal-ai", "08-llava-onevision-single-multi-video"
 SCENARIOS = ("single", "multi", "video")
-LATER_STAGES = ((0.5, 0.3, 0.2), (0.4, 0.3, 0.3))
+LESSON_MIX = {"single": 0.4, "multi": 0.3, "video": 0.3}   # what main() passes
 REVERSE_PENALTY = "2-4 MMMU"
+
+
+def lesson_stages(ref, mix=LESSON_MIX):
+    """The three stage rows as curriculum_stages itself prints them (D5)."""
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        ref.curriculum_stages(dict(mix))
+    rows = []
+    for line in buffer.getvalue().splitlines():
+        numbers = re.findall(r"\d\.\d\d", line)
+        if len(numbers) == len(SCENARIOS):
+            rows.append(tuple(float(value) for value in numbers))
+    return rows
 
 
 def swap(first):
@@ -57,9 +73,9 @@ def swap(first):
     return tuple(1.0 if name == first else 0.0 for name in SCENARIOS)
 
 
-def exposure(first):
+def exposure(later, first):
     """Cumulative stage-units per scenario across the three stages."""
-    stages = (swap(first),) + LATER_STAGES
+    stages = (swap(first),) + tuple(later)
     return {name: round(sum(stage[i] for stage in stages), 2)
             for i, name in enumerate(SCENARIOS)}
 
@@ -71,12 +87,16 @@ def change(before, after):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    shipped, multi_first = exposure("single"), exposure("multi")
+    rows = lesson_stages(ref)
+    later = rows[1:]
+    shipped, multi_first = exposure(later, "single"), exposure(later, "multi")
     signature = inspect.signature(ref.curriculum_stages)
     source = inspect.getsource(ref.curriculum_stages)
     return {
         "shipped": shipped, "multi_first": multi_first,
-        "video_first": exposure("video"),
+        "video_first": exposure(later, "video"),
+        "lesson_rows": rows, "stage_one": rows[0],
+        "stage_one_matches": rows[0] == swap("single"),
         "change": change(shipped, multi_first),
         "loser": min(change(shipped, multi_first), key=change(shipped, multi_first).get),
         "parameters": list(signature.parameters),
@@ -84,7 +104,8 @@ def solve():
         "mix_references": source.count('mix['),
         "orderings": len(list(itertools.permutations(SCENARIOS))),
         "penalty_noted": REVERSE_PENALTY in source,
-        "video_invariant": len({exposure(name)["video"] for name in ("single", "multi")}) == 1,
+        "video_invariant":
+            len({exposure(later, name)["video"] for name in ("single", "multi")}) == 1,
     }
 
 
@@ -105,12 +126,17 @@ def verify(result):
         practice.Check(
             "FINDING: curriculum_stages has no order parameter",
             all([result["parameters"] == ["mix"], result["literal_stages"] == 3,
-                 result["mix_references"] == 3]),
+                 result["mix_references"] == 3, len(result["lesson_rows"]) == 3,
+                 result["lesson_rows"] == [(1.0, 0.0, 0.0), (0.5, 0.3, 0.2),
+                                           (0.4, 0.3, 0.3)],
+                 result["stage_one_matches"]]),
             f"the signature is curriculum_stages({', '.join(result['parameters'])}) and the "
             f"body holds {result['literal_stages']} literal stage rows, of which only the "
             f"last reads the argument ({result['mix_references']} references, all in stage "
-            "TT). The permutation the exercise asks for is not expressible in the planner "
-            "the lesson ships",
+            f"TT). The three rows it prints are {result['lesson_rows']}, read back off its "
+            f"own output rather than retyped, and its stage 1 is exactly the one-hot this "
+            f"solution permutes. The permutation the exercise asks for is not expressible in "
+            "the planner the lesson ships",
         ),
         practice.Check(
             "FINDING: the lesson has a number for one of six orderings, and it is not this one",
@@ -124,9 +150,13 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: video is invariant under both swaps",
-            all([result["video_invariant"], shipped["video"] == swapped["video"] == 0.5]),
+            all([result["video_invariant"], shipped["video"] == swapped["video"] == 0.5,
+                 result["video_first"]["video"] == 1.5,
+                 result["video_first"]["video"] != shipped["video"]]),
             f"moving either single-image or multi-image into stage 1 leaves video at "
-            f"{shipped['video']} stage-units, because video appears only in the last two "
+            f"{shipped['video']} stage-units -- while putting video itself first takes it to "
+            f"{result['video_first']['video']}, so the invariance is a property of these two "
+            f"swaps and not of the arithmetic. Video appears only in the last two "
             "stages under any ordering that does not put it first. The scenario the "
             "curriculum exists to reach is the one the order does not move",
         ),

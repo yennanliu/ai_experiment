@@ -36,11 +36,14 @@ simulation lands above it, below it, or nowhere near it depending on what it is
 run on. A list in the same address space cannot be slower than memcpy, and a
 link is the only thing that makes offload a decision.
 
-**FINDING: the traffic is unmeasurable inside the step anyway.** The copies are
-**0.23%** of the checkpointed forward's time, against **8.3%** run-to-run
-jitter on the forward itself -- a factor of 36. Timing them in place, as "add
-offload, then measure", returns noise; they have to be timed in isolation, which
-is how the number above was obtained.
+**FINDING: the traffic is unmeasurable inside the step anyway.** Timed in
+isolation the copies are well under **1%** of the checkpointed forward; timed in
+place they disappear into run-to-run jitter, which runs from **2%** on a quiet
+CI runner to **35%** on a busy laptop. Adding the copies leaves the fastest run
+inside the plain forward's own min-to-max envelope, and on a quiet host the
+offload arm comes out *faster* than the plain one -- which a real cost cannot
+do. Timing them in place, as "add offload, then measure", returns noise; they
+have to be timed in isolation, which is how the number above was obtained.
 
 **MECHANISM: the breakeven is `h = F / (6 * BW)`.** Recompute costs
 `24*b*s*h^2 / F` and an offload round trip costs `2*(b*s*h*2) / BW`, so they
@@ -142,19 +145,18 @@ def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     params = ref.make_params(LAYERS, HIDDEN, INNER)
     x = np.random.default_rng(0).standard_normal((BATCH, HIDDEN)).astype(np.float32)
-    plain, jitter = span(lambda: ref.model_forward_checkpointed(x, params, k=SEGMENT), 9)
-    reference, _ = ref.model_forward_checkpointed(x, params, k=SEGMENT)
+    plain, slowest = span(lambda: ref.model_forward_checkpointed(x, params, k=SEGMENT), 9)
+    with_copies, _ = span(lambda: offload_forward(ref, x, params, SEGMENT), 9)
+    reference = ref.model_forward_checkpointed(x, params, k=SEGMENT)[0]
     measured, buffer = offload_forward(ref, x, params, SEGMENT)
     bytes_moved = bandwidth(buffer)
     ratios, wide = crossing(ref), [w for w in WIDTHS if w >= 128]  # below: pure overhead
     return {
-        "same_output": bool(np.array_equal(reference, measured)),
-        "saved": len(buffer), "bandwidth": bytes_moved,
-        "share": bytes_moved["segment_time"] / plain,
-        "jitter": (jitter - plain) / plain,
-        "ratios": ratios, "wide": wide, "floor": min(ratios[w] for w in wide),
-        "breakeven": breakeven(),
-        "defaults": defaults(),
+        "same_output": bool(np.array_equal(reference, measured)), "saved": len(buffer),
+        "bandwidth": bytes_moved, "ratios": ratios, "wide": wide, "defaults": defaults(),
+        "breakeven": breakeven(), "floor": min(ratios[w] for w in wide),
+        "share": bytes_moved["segment_time"] / plain, "jitter": (slowest - plain) / plain,
+        "inside_noise": with_copies <= slowest, "over_plain": with_copies / plain - 1,
     }
 
 
@@ -182,12 +184,13 @@ def verify(result):
             "PCIe gen4 x16 is a fixed 25 GB/s; this is above it, below it or neither, by host",
         ),
         practice.Check(
-            "FINDING: the traffic is unmeasurable in place -- 0.2% against 8% jitter",
-            result["jitter"] > 5 * result["share"],
-            f"the copies are {result['share']:.2%} of the checkpointed forward's time against "
-            f"{result['jitter']:.1%} run-to-run jitter on the forward itself, a factor of "
-            f"{result['jitter'] / result['share']:.0f}. Timed in place, 'add offload then "
-            "measure bytes/time' returns noise; the figures above are timed in isolation",
+            "FINDING: the traffic is unmeasurable in place -- it hides inside the jitter",
+            result["inside_noise"] and result["jitter"] > result["share"],
+            f"timed in isolation the copies are {result['share']:.2%} of the forward, "
+            f"against {result['jitter']:.1%} jitter on it. Timed in place they vanish: the "
+            f"offload arm's fastest run is {result['over_plain']:+.1%} against the plain "
+            f"arm's and lands inside its min-to-max envelope -- on a quiet host that goes "
+            "negative, which a real cost cannot do",
         ),
         practice.Check(
             "MECHANISM: the breakeven is h = F / (6 * BW), and it moves 36x with the link",

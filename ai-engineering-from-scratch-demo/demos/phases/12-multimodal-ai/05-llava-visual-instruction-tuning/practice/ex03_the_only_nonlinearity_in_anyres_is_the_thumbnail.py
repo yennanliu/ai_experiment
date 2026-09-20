@@ -104,6 +104,11 @@ def solve():
 
 
 def verify(result):
+    # Indexed eagerly when these Checks are built, so guard rather than raise.
+    shares, takeaway_row = result["thumb_shares"], result["takeaway_row"]
+    first_share = shares[1] if len(shares) > 1 else None
+    last_share = shares[-1] if shares else None
+    takeaway_label = takeaway_row[0] if takeaway_row else None
     return [
         practice.Check(
             "ANSWER: 5,184 tokens -- 8 tiles plus 1 thumbnail -- against 576 at base",
@@ -120,8 +125,8 @@ def verify(result):
                  result["thumb_shares"] == [0.0, 33.3, 20.0, 11.1, 5.9]]),
             f"token ratios {result['ratios']} against pixel ratios "
             f"{result['pixel_ratios']} -- exactly (pixels + 1) x {TILE} in every row with a "
-            f"thumbnail. Its share of the bill falls {result['thumb_shares'][1]}% -> "
-            f"{result['thumb_shares'][-1]}% as tiles grow, so AnyRes is linear in pixels "
+            f"thumbnail. Its share of the bill falls {first_share}% -> "
+            f"{last_share}% as tiles grow, so AnyRes is linear in pixels "
             "plus one constant tile",
         ),
         practice.Check(
@@ -129,7 +134,7 @@ def verify(result):
             all([result["table_max"] == 9792, result["takeaway_gap"] == 3.4,
                  result["takeaway_row"] == ["672x672"]]),
             f"the takeaway prints 'up to {result['takeaway']:,} tokens'; "
-            f"{result['takeaway']:,} is the {result['takeaway_row'][0]} row, three above the "
+            f"{result['takeaway']:,} is the {takeaway_label} row, three above the "
             f"last, and the table's own maximum is {result['table_max']:,} -- "
             f"{result['takeaway_gap']}x higher",
         ),

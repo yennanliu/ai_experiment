@@ -35,6 +35,11 @@ the lesson's own text-RAG row.
 
 from __future__ import annotations
 
+import contextlib
+import inspect
+import io
+import re
+
 from harness import parity, practice
 
 PHASE, LESSON = "12-multimodal-ai", "23-colpali-vision-native-rag"
@@ -60,8 +65,28 @@ def ratio_to_text(value, text_kib=TEXT_RAG_KIB):
     return round(value / 1024 / text_kib, 1)
 
 
+def lesson_text(ref):
+    """The lesson's source plus everything main() prints."""
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        ref.main()
+    return inspect.getsource(ref) + "\n" + buffer.getvalue()
+
+
+def pq_and_recall(ref):
+    """The PQ factor the lesson prints, and the recall figures next to it."""
+    text = lesson_text(ref)
+    factor = re.search(r"ColPali PQ (\d+)x", text)
+    return {
+        "pq_factor": int(factor.group(1)) if factor else None,
+        "recall_mentions": len(re.findall(r"recall", text, re.IGNORECASE)),
+        "recall_figures": len(re.findall(r"recall[^\n]*?(?:\d+\.\d+|\d+%)", text,
+                                         re.IGNORECASE)),
+    }
+
+
 def solve():
-    parity.load_reference(PHASE, LESSON, "main")
+    ref = parity.load_reference(PHASE, LESSON, "main")
     raw = page_bytes()
     compressed = raw // PQ_FACTOR
     return {
@@ -75,7 +100,7 @@ def solve():
                              / TOWERS["SigLIP SO400m @ 384"], 2),
         "native_mib": round(page_bytes(TOWERS["Qwen2.5-VL @ 1280x720"]) / 2 ** 20, 2),
         "grid": int(PATCHES ** 0.5),
-        "pq_factor": PQ_FACTOR, "recall_figures": 0,
+        **pq_and_recall(ref),
     }
 
 
@@ -114,9 +139,12 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: PQ is a lossy codec applied to what MaxSim maximises over",
-            all([result["pq_factor"] == 8, result["recall_figures"] == 0]),
-            f"the lesson reports {result['pq_factor']}x and {result['recall_figures']} recall "
-            "figures. Quantising the patch vectors perturbs every cosine inside the max, and "
+            all([result["pq_factor"] == PQ_FACTOR, result["recall_figures"] == 0,
+                 result["recall_mentions"] == 2]),
+            f"read off the lesson's own output, it prints 'ColPali PQ {result['pq_factor']}x' "
+            f"and says the word recall {result['recall_mentions']} times with "
+            f"{result['recall_figures']} numbers attached to any of them. Quantising the "
+            f"patch vectors perturbs every cosine inside the max, and "
             "the retrieval effect is the number nobody prints -- the same shape as Lesson "
             "12.21's FAST tokenizer, which reports a ratio and ships no inverse",
         ),
