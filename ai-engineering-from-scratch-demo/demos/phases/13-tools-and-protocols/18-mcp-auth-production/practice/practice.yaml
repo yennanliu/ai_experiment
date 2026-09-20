@@ -1,0 +1,142 @@
+lesson: 18-mcp-auth-production
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/18-mcp-auth-production/docs/en.md
+exercises:
+  - index: 1
+    slug: the_overlap_is_one_rotation_and_only_for_the_current_key
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Trace the flow. Note how the IdP rotates a key in step 6, the scheduled `refresh_jwks` re-pulls the published set, and both the old token (overlap window) and a fresh token validate without restart.
+    zh: |
+      執行 `code/main.py`。追蹤那條流程。留意 IdP 在第 6 步輪替一把金鑰、排程的 `refresh_jwks` 重新拉取已發布的金鑰組，而舊權杖（重疊窗口內）與新權杖都不必重啟就能驗證通過。
+    verifies: >-
+      after the rotation and the scheduled refresh the cache holds 2 kids, the token minted from
+      the pre-rotation current key still verifies and a fresh one does too, with the
+      authorization server steady at 2 keys. The overlap is one rotation for the newest key and
+      zero for the other: rotate_key retires by position, so a token minted from keys[0] answers
+      'unknown kid' after one rotation while one from current_key() survives that and dies at
+      the second -- the grace period is decided by where in the cycle the token was issued. The
+      resource server cannot rotate, only re-pull: two refreshes leave the key count at 2. And
+      retirement is by count, the only comparison rotate_key makes being on len(self.keys) --
+      never on a clock and never on the 300-second TTL, so whether a live token outlives its key
+      is a scheduling property enforced nowhere.
+  - index: 2
+    slug: the_allowlist_admits_an_issuer_the_fetch_can_never_serve
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a new IdP to the protected-resource metadata's `authorization_servers` list. Issue a token signed by the new IdP and confirm the validator accepts it. Issue a token signed by an unlisted IdP and confirm the validator rejects with `WWW-Authenticate: Bearer error="invalid_token", error_description="iss not allowed"`.
+    zh: |
+      在受保護資源中繼資料的 `authorization_servers` 清單裡加一家新的 IdP。簽發一個由新 IdP 簽章的權杖，確認驗證器接受它。再簽發一個由未列出之 IdP 簽章的權杖，確認驗證器以 `WWW-Authenticate: Bearer error="invalid_token", error_description="iss not allowed"` 拒絕。
+    verifies: >-
+      with the second issuer allowlisted and its keys taught to the cache its token validates
+      and an unlisted issuer answers the exact challenge, Bearer error=invalid_token,
+      error_description=iss not allowed, plus the resource_metadata every challenge here
+      carries. The allowlist is checked before any JWKS work on purpose: an unlisted issuer
+      costs 0 refreshes where a listed issuer with an unknown kid costs 1. allowed_issuers and
+      jwks_cache have to agree and only one has an updater -- refresh_jwks hard-codes
+      self.auth_server.issuer while the cache is keyed by issuer, so allowlisting alone yields
+      'unknown kid' and the shipped code has no path that makes it sufficient. And two
+      rejections meaning opposite things share one status: 401 invalid_token for both, differing
+      only in error_description, so a client branching on status cannot tell which is worth
+      retrying.
+  - index: 3
+    slug: the_bucket_has_to_precede_the_work_it_is_protecting
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a rate-limit check to `register_client` that runs before the registrar accepts a request. Use a token-bucket per source IP held in a small dict keyed by IP.
+    zh: |
+      為 `register_client` 加上一道在註冊器接受請求之前執行的速率限制檢查。用一個以來源 IP 為鍵、放在小字典裡的 token bucket。
+    verifies: >-
+      a token bucket per source IP in front of the registrar refuses the sixth request from one
+      IP with 429 and Retry-After while a second IP still gets five 201s. Placement is
+      measurable as work rather than verdicts: in front, six requests reach register_client 5
+      times; behind, 6 -- the URI parsing, the application-type branch and a token_hex all run
+      before the refusal, and both placements return the same statuses. Refusing late also
+      mints, so the behind-placement grows the client table to 6 against 5, recording a
+      registration the caller is told it did not get. And the bucket refills, so the limit is a
+      rate rather than a quota: three seconds later at one token per second the same exhausted
+      IP gets three more 201s.
+  - index: 4
+    slug: the_hint_names_one_field_that_is_already_validated
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read RFC 7591 and identify two fields the lesson's `/register` handler does not validate. Add the validation. (Hint: `software_statement` and `redirect_uris` URI scheme.)
+    zh: |
+      讀 RFC 7591，找出這一課的 `/register` 處理器沒有驗證的兩個欄位。把驗證加上去。（提示：`software_statement` 與 `redirect_uris` 的 URI scheme。）
+    verifies: >-
+      the two unvalidated fields are software_statement and grant_types. A registration carrying
+      software_statement 'not.a.jwt' -- three dot-separated parts, so it passes for a JWS on
+      shape and fails the lesson's own jwt_decode -- answers 201, and grant_types ['implicit',
+      'nonsense'] is echoed and persisted verbatim on a server implementing only
+      authorization_code. The hint's second field is already validated in three layers: https
+      passes and http is refused for web, loopback passes and remote http is refused for native,
+      and javascript: is refused as either. Validating the two is a rejection each and they fail
+      differently, invalid_software_statement against invalid_client_metadata. And the
+      unvalidated grant is not inert -- the 201 body quotes it back, so the response tells the
+      caller the server supports implicit.
+  - index: 5
+    slug: the_client_is_keyed_by_issuer_and_the_server_it_points_at_is_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second authorization server. Confirm the client stores a separate issuer-keyed enrollment and refuses to reuse the first issuer's token or `client_id`.
+    zh: |
+      加上第二台授權伺服器。確認客戶端存的是另一份以簽發者為鍵的註冊資料，並且拒絕重用第一個簽發者的權杖或 `client_id`。
+    verifies: >-
+      enrolling at two issuers leaves 2 entries in client_ids_by_issuer and 2 in
+      access_tokens_by_issuer_resource keyed on (issuer, resource) with distinct tokens, and the
+      first issuer's token at the second resource server answers 'iss not allowed'. What is
+      issuer-keyed is the entry and not the identifier: both enrollments carry the same
+      client_id, because CIMD makes it the document URL, which is portable across issuers by
+      design. expected_issuer is a single slot that the second discover overwrites, so a
+      response from the first issuer arriving after the switch is checked against the second's
+      name. auth_server is one attribute, so the dicts are a memory of past enrollments rather
+      than a router. And the refusal to reuse is the resource server's 401 from allowed_issuers,
+      not the client's doing.
+  - index: 6
+    slug: a_pure_fetch_is_idempotent_and_a_mint_is_an_amplifier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Prove the DoS fix. Send the validator a token with a random `kid` and confirm `refresh_jwks` runs at most once and the authorization server's key count does not grow. Then deliberately re-wire the fall-back to a rotate-and-mint and watch the key count climb per bogus token — restore the re-fetch afterward.
+    zh: |
+      證明那個 DoS 修法有效。送給驗證器一個帶隨機 `kid` 的權杖，確認 `refresh_jwks` 最多只跑一次，而且授權伺服器的金鑰數量沒有成長。接著刻意把補救路徑改接成「輪替並鑄造」，看著金鑰數量隨著每個假權杖往上爬 —— 之後記得把重新抓取改回來。
+    verifies: >-
+      20 tokens with random kids cost exactly 1 refresh each and leave the authorization server
+      at 2 keys, every one answering 'unknown kid', because refresh_jwks re-pulls a published
+      set rather than creating one. Re-wired to rotate-and-mint the count still does not climb
+      -- rotate_key keeps keys[-2:] -- so the exercise's 'watch the key count climb' does not
+      happen; what climbs is churn, and it is worse: 20 forced rotations leave a legitimate
+      token that verified before the storm answering 'unknown kid' after it. The fall-back is
+      reachable twice and fires once: a cold cache costs 2 fetches and a warm one 1, so the
+      bound is per request rather than per token. And the allowlist makes the bound cheap, since
+      the same bogus kid under an unlisted issuer costs 0 refreshes.
+  - index: 7
+    slug: the_two_client_types_forbid_each_others_redirect
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Exercise deprecated DCR with both `native` and `web` clients. Confirm a web client with an HTTP redirect URI and a native client without an exact loopback redirect are rejected.
+    zh: |
+      用 `native` 與 `web` 兩種客戶端各跑一次已棄用的 DCR。確認「帶 HTTP 重導 URI 的 web 客戶端」與「沒有精確回送重導的 native 客戶端」都被拒絕。
+    verifies: >-
+      a web client offering http and a native client offering a remote http URI are both refused
+      with 400 invalid_redirect_uri, while https and loopback are accepted by their own types.
+      The two rules are disjoint on the interesting cases: https is legal for both, remote http
+      for neither, and loopback and a reverse-DNS private-use scheme for native only -- no URI
+      is web-only, which makes web the narrower rule rather than a different one. The loopback
+      allowance is by hostname and not by port, since valid_native_redirect_uri checks the
+      hostname against {localhost, 127.0.0.1, ::1} and never reads the port, the correct reading
+      of RFC 8252. And application_type is required, so omitting it or sending 'mobile' answers
+      invalid_client_metadata rather than falling back to either rule.
