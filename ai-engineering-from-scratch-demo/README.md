@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**902 / 2150 exercises** (42.0%) across 20 phases.
+**907 / 2150 exercises** (42.2%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -62,7 +62,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `10-llms-from-scratch` | 116 | 116 | 24 |
 | ✅ `11-llm-engineering` | 79 | 79 | 17 |
 | ✅ `12-multimodal-ai` | 125 | 125 | 25 |
-| 🚧 `13-tools-and-protocols` | 148 | 66 | 13 |
+| 🚧 `13-tools-and-protocols` | 148 | 71 | 14 |
 | ⬚ `14-agent-engineering` | 272 | 0 | 0 |
 | ⬚ `15-autonomous-systems` | 110 | 0 | 0 |
 | ⬚ `16-multi-agent-and-swarms` | 123 | 0 | 0 |

@@ -1,0 +1,107 @@
+lesson: 14-mcp-apps
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/14-mcp-apps/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tool_degrades_where_the_resource_refuses
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the client capability to an empty extension map. Confirm `tools/list` keeps the tool but removes the UI binding.
+    zh: |
+      把客戶端能力改成空的擴充映射。確認 `tools/list` 保留了那個工具，但移除了 UI 綁定。
+    verifies: >-
+      with an empty extension map tools/list keeps the tool and drops its _meta -- 1 tool either
+      way, every other field byte-identical, and the ui.resourceUri binding present only when
+      the extension is declared. The same empty map makes resources/read answer -32021 with
+      requiredCapabilities, so the capability that silently degrades the listing refuses the
+      resource: a client that lost it between the two calls gets a tool it can invoke and cannot
+      render. Both listings carry ttlMs 60000 and cacheScope public and they differ, so a cache
+      keyed on the method alone would hand a UI-bound listing to a client that never asked for
+      one. And the negotiation is a dict or nothing -- _apps_enabled requires
+      isinstance(extensions[ui], dict), so of an absent map, an empty one, one holding None and
+      one holding {}, exactly 1 enables the binding and a client sending true is read as absent
+      with no error.
+  - index: 2
+    slug: the_header_check_runs_first_so_it_masks_every_other_fault
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Send `Mcp-Name: ui://notes/other.html` with a body that reads the timeline. Confirm error `-32020`.
+    zh: |
+      送出 `Mcp-Name: ui://notes/other.html`，而主體讀的是 timeline。確認錯誤是 `-32020`。
+    verifies: >-
+      a body reading the timeline with Mcp-Name set to ui://notes/other.html answers HTTP 400
+      -32020 Mcp-Name header does not match body, where the matching header answers 200. The
+      same mismatch masks three other faults: sent with no apps capability it still answers
+      -32020 rather than the -32021 the capability alone gives, against an unsupported version
+      rather than -32022, and against an unknown URI rather than -32602 -- _validate checks
+      mirrored headers before the version and long before the handler, so two faults cost two
+      round trips. The expected name is `params.name or params.uri`, and `or` is not `if
+      present`: a tools/call naming the empty string makes make_request send Mcp-Name '' while
+      the server computes None, so an empty name is unreachable rather than rejected. And the
+      rule covers exactly tools/call, resources/read and prompts/get, while tools/list goes out
+      with no Mcp-Name to mismatch.
+  - index: 3
+    slug: the_template_is_not_a_template_it_is_the_data
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the resource to `cacheScope: private`. Describe the user-specific condition that justifies it.
+    zh: |
+      把資源改成 `cacheScope: private`。描述是什麼使用者專屬的條件證成了它。
+    verifies: >-
+      the user-specific condition is that resources/read returns the user's notes rather than a
+      shell for them: timeline_html interpolates every title, so two users' reads differ and one
+      contains 3 of its own titles and 0 of the other's, while a public cache is keyed on a URI
+      that is the same for everybody. The change is cacheScope private with ttlMs unchanged and
+      every other field identical. resources/list should stay public and the difference is
+      measurable -- its entry carries uri, name, description and mimeType and 0 note titles, so
+      scope is a property of what the bytes contain rather than of the server. And the data
+      already travels twice: tools/call returns the same notes as structuredContent, so an empty
+      template filled from the tool result would be genuinely user-independent and cacheable by
+      everyone -- the scope follows the design. That tool result also hands back the store's own
+      list object rather than a copy.
+  - index: 4
+    slug: the_csp_can_name_an_origin_and_cannot_pin_a_build
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Move the script to `https://static.example.com/app.js`. Add that origin to `resourceDomains` and explain the new supply-chain risk.
+    zh: |
+      把腳本搬到 `https://static.example.com/app.js`。把那個 origin 加進 `resourceDomains`，並說明新出現的供應鏈風險。
+    verifies: >-
+      the inline script moves to https://static.example.com/app.js and resourceDomains goes from
+      0 entries to 1, with connectDomains, frameDomains and baseUriDomains left empty. The risk
+      is that the CSP grammar has 4 keys and none is an integrity hash, so the policy authorizes
+      an origin rather than a build and the URL carries no version -- whatever that origin
+      serves next runs inside the app frame on the next read, and a cacheScope public resource
+      may keep serving the same HTML while the script behind it changes. connectDomains empty is
+      a real mitigation and not a complete one: the script cannot open a socket out, but it
+      executes in a document carrying 3 of the user's note titles, so confidentiality now rests
+      on the other two lists staying empty. And the origin lives in two places nothing
+      cross-checks -- pointing the tag at a domain absent from resourceDomains still answers
+      HTTP 200, and fails only inside the frame.
+  - index: 5
+    slug: the_app_can_ask_and_only_the_host_can_call
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an `notes_open` tool and route the button click through the host. Keep user approval in the host.
+    zh: |
+      加一個 `notes_open` 工具，並把按鈕點擊路由到宿主。讓使用者核准留在宿主端。
+    verifies: >-
+      the app posts an intent, the host prompts, and the host calls: three valid clicks give 3
+      prompts, 3 tools/call notes_open and 0 direct app-to-server requests. The approval is the
+      only thing between the frame and the tool -- with the host auto-approving, the same three
+      clicks give 3 calls and 0 prompts, so the routing is unchanged and the control is gone.
+      The intent is untrusted input because the frame runs code the server did not write: 2 of 5
+      intents, note-999 and a path traversal, are refused before any human sees them, validated
+      against the notes the server actually has. And approving is not authorizing -- a host that
+      approves anything still gets -32602 from the tool, because the host cannot know the
+      server's store and the server cannot know whether a human clicked.
