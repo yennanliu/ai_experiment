@@ -1,0 +1,126 @@
+lesson: 27-skill-evals-packaging-and-portability
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/docs/en.md
+exercises:
+  - index: 1
+    slug: the_clear_negatives_are_free_and_they_are_a_third_of_the_score
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Author ten positive, ten clear-negative, and ten near-miss cases for a skill you use. Split them before editing the description.
+    zh: |
+      替一項你在用的技能，寫十個正例、十個明確負例與十個差一點的案例。在改描述之前先把它們拆開。
+    verifies: >-
+      thirty cases in three frozen groups score 10/10 positives, 10/10 clear negatives and 6/10
+      near misses at precision 0.7143, recall 1.0, accuracy 0.8667; dropping the clear negatives
+      takes accuracy to 0.80 and they contribute 0 false positives; all 4 false positives are
+      near misses and TriggerCase has 3 fields with no group; raising the threshold to 3 fixes
+      all 4 near misses and breaks 2 positives
+  - index: 2
+    slug: the_shipped_router_discards_the_run_index
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run a five-run baseline and treatment comparison. Report every per-task regression even if the average improves.
+    zh: |
+      跑一次五次重複的 baseline 與 treatment 比較。就算平均變好，也要把每一件任務的退步都報出來。
+    verifies: >-
+      the mean per-case pass rate rises 0.82 to 0.92 while near-trigger, near-package and pos-
+      manifest each regress; KeywordRouter discards run_index so its only rates are 0.0 and 1.0;
+      five runs admit six rates, making 0.2 the smallest measurable regression and 2 of 3
+      regressions one run wide; pooled precision and recall both rise across the same 50
+      observations
+  - index: 3
+    slug: a_three_point_rubric_reaches_the_gate_as_one_boolean
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a rubric dimension that requires human judgment. Calibrate it on five examples before using it as a gate.
+    zh: |
+      加上一個需要人類判斷的評分維度。在拿它當關卡之前，先用五個例子校準它。
+    verifies: >-
+      two raters agree exactly on 4 of 5 calibration examples and differ on the boundary case; a
+      written rule takes agreement to 5 of 5; EvidenceCheck has 3 fields so a 0-2 score
+      collapses to one bool before the gate sees it; a check whose evidence is 'x' validates and
+      passes while an all-whitespace one is rejected; rubrics averaging 1.0 and 1.6 arrive as 2
+      and 3 passing booleans
+  - index: 4
+    slug: adapter_required_is_two_outcomes_and_the_gate_counts_neither
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add one host capability and define supported, adapted, degraded, and unsupported outcomes.
+    zh: |
+      加上一項宿主能力，並定義已支援、經轉接、降級與不支援這幾種結果。
+    verifies: >-
+      five hosts classify as supported, adapted, degraded, degraded, unsupported against the
+      shipped matrix's three statuses; the inlining and no-scripts hosts both read adapter-
+      required though only one can be emulated; the host that does not enforce allowed-tools
+      reads native because the matrix has no field for it; min_native_hosts is satisfied by 2
+      native hosts while 2 degraded hosts go uncounted
+  - index: 5
+    slug: the_digest_covers_the_bytes_and_nothing_about_the_file
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify an installed reference after manifest creation. Prove the package verification fails before activation.
+    zh: |
+      在清單建立之後去改一份已安裝的參考資料。證明套件驗證會在啟用之前失敗。
+    verifies: >-
+      editing an installed reference gives mismatched=['references/format.md'] with passed False
+      while the source verifies clean, and adding or removing a file reports unexpected or
+      missing; removing a script's executable bit leaves every digest identical and verification
+      passes; build_manifest skips assets/manifest.json and verify_manifest rejects a manifest
+      listing it; the gate marks the installed check failed when both roots resolve to the same
+      path
+  - index: 6
+    slug: lint_reads_the_prose_and_the_artifact_layer_reads_a_fixture
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a skill whose body passes lint but whose script violates its artifact contract. Identify which release layer blocks it.
+    zh: |
+      做一項技能，它的本體過得了 lint，但它的腳本違反了它的產物契約。指出是哪一層發布關卡擋下它。
+    verifies: >-
+      lint_package returns valid with 0 issues while the script's real output is missing the
+      Evidence heading, so with_skill_artifact and artifact_improvement are the 2 failing checks
+      of 11; a hand-written fixture turns every check green with the script unchanged;
+      artifact_mode defaults to 'fixture' so nothing in the gate runs the script; a baseline
+      that already passes fails artifact_improvement alone
+  - index: 7
+    slug: nothing_in_the_module_knows_what_a_version_is
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an upgrade eval that compares invocation policy and required capabilities between two package versions.
+    zh: |
+      加上一項升級評估，比較兩個套件版本之間的叫用政策與必要能力。
+    verifies: >-
+      five deltas classify as three widening, one narrowing and one neutral; 0 of the module's
+      10 dataclasses carries a version field; dropping network-access moves no-network-host from
+      adapter-required to native, so the portability matrix reads better while the skill
+      silently stopped asking for it; 3 manifest paths change digest and 1 is new, which is what
+      a rename plus an edit looks like
+  - index: 8
+    slug: the_badge_ban_is_a_phrase_ban
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Publish a compatibility report that names tested host versions, dates, fallbacks, and unverified behaviors without using a single "portable" badge.
+    zh: |
+      發布一份相容性報告，指名測過的宿主版本、日期、退路與未驗證的行為，而且完全不用「可攜」這種徽章。
+    verifies: >-
+      the report passes a contract requiring four headings and two terms with 0 forbidden hits
+      and 0 occurrences of 'portable'; the lesson's own forbidden term catches 'guaranteed
+      portable' and misses 'fully portable', 'portable' and 'portability-verified';
+      portability_matrix rows carry host, status and missing and HostCapabilities has 0 version
+      or date fields; missing lists 2 known-absent capabilities and nothing enumerates the
+      untested ones
