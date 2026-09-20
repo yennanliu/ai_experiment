@@ -1,0 +1,101 @@
+lesson: 20-opentelemetry-genai
+phase: 13-tools-and-protocols
+source: phases/13-tools-and-protocols/20-opentelemetry-genai/docs/en.md
+exercises:
+  - index: 1
+    slug: the_kind_says_where_the_work_goes_not_what_the_code_does
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Count the spans and identify which is CLIENT vs INTERNAL.
+    zh: |
+      跑一次 `code/main.py`。數一數 span 的數量，並指認哪些是 CLIENT、哪些是 INTERNAL。
+    verifies: >-
+      nine spans in one trace, five CLIENT and four INTERNAL: CLIENT is llm.chat twice and
+      mcp.call three times, INTERNAL is agent.invoke_agent once and tool.execute three times,
+      rooted at agent.invoke_agent with eight naming a parent. The rule is whether the work
+      leaves the process, and both hard cases obey it -- llm.chat is CLIENT although
+      fake_llm_call only sleeps, and tool.execute is INTERNAL although the crossing happens in
+      its mcp.call child. The two spans per tool call are one operation named twice: six spans
+      carry gen_ai.operation.name execute_tool where three tool executions happened. And SPANS
+      is a module-level list nothing clears, so a second agent_loop leaves 18 spans in 2 traces
+      and doubles every count.
+  - index: 2
+    slug: truncation_is_not_redaction_and_the_completion_is_a_literal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Turn on content capture (env var) and confirm `gen_ai.content.prompt` and `gen_ai.content.completion` events appear. Note the implications for PII.
+    zh: |
+      打開內容擷取（環境變數），確認 `gen_ai.content.prompt` 與 `gen_ai.content.completion` 事件有出現。並記下這對 PII 的意涵。
+    verifies: >-
+      with capture on, each llm.chat span gains gen_ai.content.prompt and
+      gen_ai.content.completion for four events in the trace; with it off there are zero and the
+      nine spans are otherwise identical. Truncation is not redaction: a 500-character prompt is
+      stored as its first 200, a length cap applied before anything inspects it, so PII in the
+      first 200 characters is captured and PII at character 400 is protected by accident. The
+      completion event does not carry the completion -- both hold the literal 'sample
+      completion', fake_llm_call's return value, against two distinct prompts. And the switch is
+      a module constant read from os.environ at import, so it cannot vary per request or tenant,
+      while the events ride span.events into the same exporter with no separate sink, sampling
+      or retention.
+  - index: 3
+    slug: the_span_already_has_the_duration_the_histogram_needs
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add the tool-execution metric `gen_ai.tool.execution.duration` and emit it as a histogram sample per call.
+    zh: |
+      加上工具執行的指標 `gen_ai.tool.execution.duration`，並在每次呼叫時把它當成一個直方圖樣本吐出。
+    verifies: >-
+      one sample per tool call, derived from the tool.execute spans in seconds: three calls give
+      three samples in one series across seven buckets, carrying gen_ai.operation.name and
+      gen_ai.tool.name, and the sum equals the sum of the span durations because it is them.
+      Timing it separately would disagree -- mcp.call gives three smaller values, since the
+      child measures only the crossing, and both spans carry operation.name execute_tool, so
+      sampling every such span emits six samples and nearly doubles the total. The histogram
+      needs a unit the span does not state, spans being start_ns/end_ns against a semconv metric
+      in seconds. And the attributes are a cardinality choice: including gen_ai.tool.call.id,
+      which tool.execute already carries, turns one series into three.
+  - index: 4
+    slug: the_traceparent_is_recorded_and_never_sent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Propagate a traceparent from a parent agent span into an MCP request's `_meta.traceparent` field. Verify the MCP server would see the same trace id.
+    zh: |
+      把一個 traceparent 從父層代理 span 傳播到一次 MCP 請求的 `_meta.traceparent` 欄位。驗證 MCP 伺服器會看到相同的 trace id。
+    verifies: >-
+      the traceparent rides params._meta and the server recovers the trace: the request carries
+      00-<32 hex>-<16 hex>-01, the server parses it into a remote parent, and its SERVER span
+      shares the client's trace id while naming the client's span id as parent. The shipped
+      traceparent is written to the span and not to a request -- fake_mcp_call sets
+      mcp_span.attrs['traceparent'] and returns a two-key dict with no params, no _meta and no
+      message, so the string is correct and goes nowhere. Without it the server mints its own
+      trace id, making the two halves of one call into two internally well-formed traces that no
+      query joins, which is why a missing header is not an error anywhere. And the format's
+      fourth field carries the sampling decision, so copying only the trace id produces traces
+      with holes.
+  - index: 5
+    slug: the_missing_attribute_is_the_one_that_says_it_went_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OTel GenAI semconv spec. Identify one attribute listed in the semconv that this lesson's code does NOT emit. Add it.
+    zh: |
+      讀 OTel GenAI 的 semconv 規格。找出一個 semconv 中列出、而本課程式碼「沒有」吐出的屬性。把它加上去。
+    verifies: >-
+      error.type is the attribute worth adding, because its absence changes what a trace can
+      answer rather than how much detail it has: the lesson emits zero error attributes across
+      nine spans, so a failing call ends a span that looks successful. The absence is structural
+      -- Span's nine fields include no status, so error.type has to live in attrs and there is
+      nowhere for the UNSET/OK/ERROR it normally accompanies. The request half of the semconv is
+      missing too and costs less: temperature, max_tokens and finish_reasons are absent while
+      both models and both token counts are present, so the emitted set answers what it cost and
+      not why it stopped. And an error must propagate to the ancestors or a trace-level query
+      for failures finds none, which is a policy rather than an attribute.
