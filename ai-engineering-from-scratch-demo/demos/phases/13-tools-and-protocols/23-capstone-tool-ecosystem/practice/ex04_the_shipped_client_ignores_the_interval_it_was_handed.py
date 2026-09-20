@@ -127,7 +127,7 @@ def solve():
         "resumed": statuses[0], "final_status": final["status"],
         "final_text": final["result"]["content"][0]["text"],
         "result_inline": "result" in final and "_meta" in final["result"],
-        "tasks_result_calls": 0, "methods": methods,
+        "tasks_result_exists": hasattr(ref, "tasks_result"), "methods": methods,
         "parent_pid": os.getpid(), "worker_pid": report["pid"],
         "volatile": report["volatile"]["error"]["message"],
         "volatile_code": report["volatile"]["error"]["code"],
@@ -143,12 +143,13 @@ def verify(result):
             all([result["resumed"] == "working", result["final_status"] == "completed",
                  len(result["statuses"]) >= 2, result["gaps"] != [],
                  min(result["gaps"]) >= POLL_MS, result["result_inline"],
-                 result["tasks_result_calls"] == 0,
+                 not result["tasks_result_exists"],
                  result["final_text"] == "3 papers summarized."]),
             f"the client resumes by id alone -- {result['statuses']} across "
             f"{len(result['gaps'])} gaps of {result['gaps']}ms, none under the declared "
-            f"{result['declared_ms']}ms -- and reads the final result out of the completed "
-            f"task with {result['tasks_result_calls']} calls to tasks/result",
+            f"{result['declared_ms']}ms -- and reads the final result out of the "
+            "completed task, which is the only place it exists: the module defines no "
+            "tasks/result to call",
         ),
         practice.Check(
             "FINDING: the shipped client ignores the interval it was handed",
@@ -171,7 +172,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: tasks/result is absent and unnecessary in the same breath",
-            all([result["methods"] == ["tasks_get"], result["result_inline"]]),
+            all([result["methods"] == ["tasks_get"], result["result_inline"],
+                 not result["tasks_result_exists"]]),
             f"the module defines {result['methods']} and the completed task already carries "
             "result with its content and _meta. A second fetch would exist only to "
             "re-deliver a field the client is holding, which is why the current extension "

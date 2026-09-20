@@ -39,6 +39,10 @@ policy, so a row's claim and the runtime's answer are the same evidence.
 
 from __future__ import annotations
 
+import ast
+import inspect
+import textwrap
+
 from harness import parity, practice
 
 PHASE, LESSON = "13-tools-and-protocols", "25-skill-invocation-and-routing"
@@ -65,6 +69,13 @@ def behaviour(ref, skills, policy):
     model = ref.route_request(skills, ref.InvocationRequest(
         ref.Actor.MODEL, "report release readiness for merged pull requests"), adapter)
     return human.activated, model.activated
+
+
+def flags_read(ref, name):
+    """Which policy.allow_* fields this function loads -- the matrix's real width."""
+    tree = ast.parse(textwrap.dedent(inspect.getsource(getattr(ref, name))))
+    return sorted({node.attr for node in ast.walk(tree)
+                   if isinstance(node, ast.Attribute) and node.attr.startswith("allow_")})
 
 
 def row_for(rows, human, model):
@@ -108,7 +119,8 @@ def solve():
         "same_row": row_for(rows_dark, False, False) == row_for(rows_lit, False, False),
         "agent_activated": agent, "agent_row": row_for(
             ref.build_invocation_matrix(split), False, False)["meaning"],
-        "flags": sorted(flags), "matrix_reads": 2,
+        "flags": sorted(flags),
+        "matrix_reads": flags_read(ref, "build_invocation_matrix"),
         "unmarked": sum(row["active_policy"] for row in ref.build_invocation_matrix(None)),
     }
 
@@ -137,12 +149,13 @@ def verify(result):
         practice.Check(
             "FINDING: an agent is not a model here, and the matrix has no column for it",
             all([result["agent_activated"], result["agent_row"].startswith("programmatic"),
-                 len(result["flags"]) == 6, result["matrix_reads"] == 2]),
+                 len(result["flags"]) == 6,
+                 result["matrix_reads"] == ["allow_human", "allow_model"]]),
             f"allow_agent is a separate flag on a separate adapter branch, so a policy with "
             f"allow_model=False and allow_agent=True prints in the "
             f"{result['agent_row']!r} row while the agent activates the skill. The matrix "
-            f"reads {result['matrix_reads']} of {len(result['flags'])} actor flags: "
-            f"{result['flags']}",
+            f"reads {result['matrix_reads']} -- {len(result['matrix_reads'])} of the "
+            f"{len(result['flags'])} actor flags {result['flags']}",
         ),
         practice.Check(
             "FINDING: active_policy marks exactly one row, and marks none without a policy",

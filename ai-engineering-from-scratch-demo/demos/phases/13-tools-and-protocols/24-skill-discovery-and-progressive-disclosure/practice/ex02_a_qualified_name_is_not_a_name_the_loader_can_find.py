@@ -106,7 +106,8 @@ def solve():
         body = ref.load_skill_body(repaired, candidates)
         return {
             "shipped_entries": len(shipped.entries), "qualified_entries": len(entries),
-            "shipped_collisions": len(shipped.collisions), "qualified_collisions": 0,
+            "shipped_collisions": len(shipped.collisions),
+        "qualified_collisions": len(entries) - len({entry.name for entry in entries}),
             "shipped_names": [entry.name for entry in shipped.entries],
             "qualified_names": [entry.name for entry in entries],
             "shipped_cost": cost(shipped.entries), "qualified_cost": cost(entries),

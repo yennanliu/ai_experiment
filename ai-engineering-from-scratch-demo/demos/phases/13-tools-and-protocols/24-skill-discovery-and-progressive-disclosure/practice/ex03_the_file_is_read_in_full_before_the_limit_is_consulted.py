@@ -40,6 +40,7 @@ Structure: `bounded()` is the replacement -- stat first, then read -- and
 
 from __future__ import annotations
 
+import inspect
 import pathlib
 import tempfile
 
@@ -105,7 +106,8 @@ def solve():
             "read_first": body.index("read_text") < body.index("> max_chars"),
             "frontmatter_unit": "encode" in source.split("def _frontmatter(")[1][:600],
             "reference_unit": "len(content)" in body,
-            "max_chars_default": 12_000,
+            "max_chars_default": inspect.signature(
+                ref.load_reference).parameters["max_chars"].default,
         }
 
 

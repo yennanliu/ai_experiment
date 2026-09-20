@@ -121,21 +121,21 @@ def solve():
     server = serve_writer(record := {"completed": 0})
     with urllib.request.urlopen(base(server) + CARD_PATH, timeout=5) as page:
         agent_card = json.loads(page.read())  # the well-known Agent Card, over the wire
-    first = send(server, "summarize the papers")
-    timed_out = send(server, "summarize the papers", slow=True, timeout=DEADLINE)
-    second = send(server, "summarize the papers")
-    settle(record, 3)
+    attempts = [send(server, "summarize the papers"),
+                send(server, "summarize the papers", slow=True, timeout=DEADLINE),
+                send(server, "summarize the papers")]
+    settle(record, len(attempts))
     server.shutdown()
 
-    artifact, out = first["artifacts"][0], ref.orchestrator("tok_alice", "summarize")
+    artifact, out = attempts[0]["artifacts"][0], ref.orchestrator("tok_alice", "x")
     stub = next(sp for sp in ref.SPANS if sp["name"] == "a2a.SendMessage")
     return {
         "card_skills": [skill["id"] for skill in agent_card["skills"]],
         "card_url": agent_card["url"], "card_transport": agent_card["preferredTransport"],
         "artifact_parts": len(artifact["parts"]), "artifact_named": artifact["name"],
-        "artifact_has_id": bool(artifact["artifactId"]), "sent": 3,
-        "failure": timed_out.get("failure"), "server_completed": record["completed"],
-        "client_received": sum("failure" not in r for r in (first, timed_out, second)),
+        "artifact_has_id": bool(artifact["artifactId"]), "sent": len(attempts),
+        "failure": attempts[1].get("failure"), "server_completed": record["completed"],
+        "client_received": sum("failure" not in reply for reply in attempts),
         "stub_skill": stub["attrs"]["a2a.skill"], "stub_keys": sorted(stub["attrs"]),
         "handlers": source.count("except "), "timeouts": source.count("timeout"),
         "artifact_from_peer": artifact["parts"][0]["text"] == "3 papers summarized.",

@@ -44,6 +44,7 @@ and 50-skill cases are the same function called twice.
 
 from __future__ import annotations
 
+import inspect
 import json
 import pathlib
 import tempfile
@@ -113,7 +114,11 @@ def solve():
             "same_resources": small["resources"] == large["resources"],
             "resource_count": len(small["resources"]),
             "one_resource": small["resources"][REFERENCES[0]],
-            "per_call_cap": 12_000, "accumulator": False,
+            "per_call_cap": inspect.signature(
+                ref.load_reference).parameters["max_chars"].default,
+            "accumulators": [name for name, value in vars(ref).items()
+                             if isinstance(value, (list, dict, set))
+                             and not name.startswith("__")],
             "wide_chars": len(entry.description),
             "wide_bytes": len(entry.description.encode("utf-8")),
         }
@@ -145,11 +150,12 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the per-call cap is not a budget",
-            all([result["per_call_cap"] == 12_000, not result["accumulator"],
+            all([result["per_call_cap"] == 12_000, result["accumulators"] == [],
                  small["level_3"] > result["one_resource"],
                  result["one_resource"] == 46]),
             f"load_reference bounds each file at {result['per_call_cap']} characters and "
-            f"nothing accumulates across calls, so {result['resource_count']} references "
+            f"the module holds {len(result['accumulators'])} mutable module-level "
+            f"containers to accumulate in, so {result['resource_count']} references "
             f"cost {small['level_3']} bytes against {result['one_resource']} for one and no "
             "code path notices. A Level 3 budget has to live in the caller, because the "
             "loader is stateless by construction",

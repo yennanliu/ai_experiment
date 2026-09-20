@@ -45,6 +45,7 @@ PHASE, LESSON = "13-tools-and-protocols", "27-skill-evals-packaging-and-portabil
 DIMENSION = "names a consequence the reader can act on"
 EXAMPLES = ("no-consequence", "vague-consequence", "partial-consequence",
             "named-consequence", "owned-consequence")
+RATERS = ("rater-a", "rater-b")
 RATER_A = {"no-consequence": 0, "vague-consequence": 0, "partial-consequence": 1,
            "named-consequence": 2, "owned-consequence": 2}
 RATER_B = {"no-consequence": 0, "vague-consequence": 0, "partial-consequence": 2,
@@ -93,7 +94,8 @@ def solve():
                                                   "rubric")["cases"]]
     return {
         "before": before, "after": after, "rule": RULE,
-        "scale": sorted({0, 1, 2}), "raters": 2,
+        "scale": sorted(set(RATER_A.values()) | set(RATER_B.values())),
+        "raters": len(RATERS),
         "check_fields": list(vars(ref.EvidenceCheck)["__dataclass_fields__"]),
         "gate_passed": report["passed"], "case_verdicts": strict_pass,
         "thin_passed": thin["passed"], "thin_evidence": thin["cases"][0]["evidence"],
