@@ -1,0 +1,84 @@
+lesson: 24-agent-observability-platforms
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/24-agent-observability-platforms/docs/en.md
+exercises:
+  - index: 1
+    slug: trace_count_counts_spans_and_the_judge_runs_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Export a week of OTel traces to Langfuse cloud (free tier). Which sessions failed? Why?
+    zh: |
+      把一週的 OTel 追蹤匯出到 Langfuse 雲端（免費方案）。哪些工作階段失敗了？為什麼？
+    verifies: >-
+      a week of 140 sessions through the shipped TraceCollector scores 40 FAIL at 0.20, 40 WARN at
+      0.50 and 60 PASS at 1.00, with error reasons rate_limited 14, tool_timeout 13 and
+      context_overflow 13; SessionSummary.trace_count holds len(spans), so the healthiest session
+      reports 4 for 1 trace id and the week is 400 spans under 140 traces, making every per-trace rate
+      wrong by the 2.86x fan-out; scripted_llm_judge has 2 call sites for one decision, which is 280
+      judge calls for 140 sessions; a 2-span failed session and a 12-span one both score 0.20, because
+      the judge takes the whole span list and returns one number
+  - index: 2
+    slug: the_shipped_judge_never_reads_a_word_of_the_output
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write an LLM-judge rubric for your domain (factual correctness, tone, scope adherence). Test on 50 traces.
+    zh: |
+      替你的領域寫一份 LLM 裁判的評分準則（事實正確性、語氣、是否守住範圍）。在 50 條軌跡上測。
+    verifies: >-
+      a factual/tone/scope rubric over 50 hand-labelled traces agrees with the labels 40/50 at
+      precision 0.67 and recall 0.67 where the shipped judge manages 15/50 by passing everything, the
+      two disagreeing on 35 traces; a session with a tool call, a reference id and no errors scores
+      1.00 whatever the referenced text says, because has_final tests that the attribute exists and
+      never dereferences it; the four penalties sum to 0.9, so max(0.0, score) never fires and no
+      session scores below 0.10, where the rubric uses 0.00 to 1.00; 10 traces are factually wrong
+      while in scope and in tone and 5 state the right fact about the wrong subject, and all 15 still
+      average above 0.60
+  - index: 3
+    slug: versioning_needs_one_group_by_and_clustering_needs_a_cluster
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare Langfuse prompt versioning against Phoenix's trace clustering. Which tells you what broke faster?
+    zh: |
+      拿 Langfuse 的提示詞版本控制跟 Phoenix 的軌跡分群比較。哪一個讓你更快知道壞了什麼？
+    verifies: >-
+      on a prompt regression a group-by on prompt.version splits 10.0% against 68.5% and names v7 at
+      trace 8, where on a corpus regression a behavioural group-by names refund at trace 42, 5.2x
+      later, with detection defined as a verdict that holds to the end of a 400-trace stream;
+      SpanEvent has 5 fields and the lesson's main writes 0 attributes naming a prompt or a version; a
+      corpus change leaves one version group at 14.2% so the version group-by returns None, and a
+      prompt change hits every topic equally so the behavioural split returns None -- each tool finds
+      1 of the 2 regressions
+  - index: 4
+    slug: redaction_runs_after_the_span_already_carried_the_value
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Opik's guardrail docs. Wire a PII redaction guardrail to one of your agent runs.
+    zh: |
+      讀 Opik 的護欄文件。替你其中一趟代理執行接上一個 PII 遮蔽護欄。
+    verifies: >-
+      a guardrail wrapping ingest redacts 4 PII kinds across 24 spans in 8 sessions, rewriting 5 span
+      values and leaving 0 matches where the unguarded run holds 5; redacting after ingest reaches the
+      same 0 matches but only after all 24 spans were appended with their original values; of 6 PII
+      values 4 are fully redacted, 1 internationally formatted phone number is missed, and one comes
+      out as 'ada+[REDACTED:email]', a partial redaction that reads as a complete one;
+      scripted_llm_judge returns PASS for all 8 sessions before and after redaction, 0 verdicts
+      changed, because it reads status and reference ids rather than content
+  - index: 5
+    slug: benchmark_the_three_on
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark the three on your corpus. Ignore vendor-published numbers; measure your own.
+    zh: |
+      在你自己的語料上替這三個做基準測試。無視廠商公布的數字；量你自己的。
+    cites: >-
+      Comet Opik (Apache 2.0)
