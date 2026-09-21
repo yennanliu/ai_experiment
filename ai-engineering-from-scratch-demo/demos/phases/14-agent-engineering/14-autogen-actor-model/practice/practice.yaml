@@ -1,0 +1,79 @@
+lesson: 14-autogen-actor-model
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/14-autogen-actor-model/docs/en.md
+exercises:
+  - index: 1
+    slug: the_dlq_is_shipped_and_the_sender_is_never_told
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a dead-letter queue: when a handler raises, park the failing message for human inspection. How often does DLQ get hit in your toy?
+    zh: |
+      加一個死信佇列：處理器丟出例外時，把那則失敗訊息停放起來供人檢視。在你的玩具裡 DLQ 多久被打中一次？
+    verifies: >-
+      Runtime already parks failing messages, so the demo hits the DLQ once in the 8 messages it
+      generates (12%) with 7 handled, rising to 2 of 9 once a message to an unregistered actor is
+      added; dead_letters holds (message, reason) pairs whose reason is free text, mixing "no actor
+      'ghost'" with a RuntimeError; parking notifies neither sender nor supervisor, so a checklist
+      waiting on a raised review sits at 2 of 3 results with consensus True; ChecklistAgent sets
+      consensus True after 1 of 3 results
+  - index: 2
+    slug: the_selector_needs_a_conversation_the_runtime_does_not_keep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement `SelectorGroupChat`: a selector actor picks who processes the next message based on conversation state.
+    zh: |
+      實作 `SelectorGroupChat`：一個選擇器演員依對話狀態挑出誰來處理下一則訊息。
+    verifies: >-
+      a selector actor owning the transcript routes 5 turns to 3 distinct specialists and ends with 10
+      transcript entries; Message has 5 fields and 0 conversation or thread id, so interleaved chats
+      are distinguishable only by sender; readdressing every turn costs 15 messages where direct
+      addressing costs 10; the runtime's single global FIFO queue delivers all five turns before the
+      first answer, so the answer count at each choice is [0, 0, 0, 0, 0] and the continuity rule
+      never fires
+  - index: 3
+    slug: the_runtime_reference_is_what_cannot_cross_a_process
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add distributed transport: swap the in-process queue for a JSON-over-HTTP server so actors can run in separate processes.
+    zh: |
+      加上分散式傳輸：把行程內佇列換成一個 JSON-over-HTTP 伺服器，讓演員可以跑在不同行程裡。
+    verifies: >-
+      all 8 demo messages round-trip through json.dumps and json.loads into equal Message objects on
+      all 5 fields, with the same 16 trace lines and 1 dead letter; Actor.receive takes (message,
+      runtime) and the two shipped actors call runtime.send at 2 sites inside their handlers, so a
+      remote actor needs a proxy runtime; of three probe bodies a list survives, a tuple returns as a
+      list and a set raises TypeError; Runtime.counter is per-runtime, so two nodes both mint m001 and
+      all 8 ids collide
+  - index: 4
+    slug: the_span_ends_where_the_causal_chain_continues
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Wire an OTel span per message (or a no-op stand-in). Emit `gen_ai.agent.name`, `gen_ai.operation.name` per Lesson 23.
+    zh: |
+      替每則訊息接上一個 OTel span（或一個 no-op 替身）。依第 23 課發出 `gen_ai.agent.name`、`gen_ai.operation.name`。
+    verifies: >-
+      a span per delivered message gives 8 spans, all carrying gen_ai.agent.name and
+      gen_ai.operation.name, with operations handle and dead_letter and 1 dead letter; Message carries
+      0 parent fields, so spanning on dequeue alone gives 8 roots while threading the parent through
+      send gives 2 roots in a tree 3 levels deep; a handler's send only appends, so 2 unrelated
+      messages are handled between a review span and its reply; the request whose reply never came has
+      no span
+  - index: 5
+    slug: the_layer_you_skipped_is_the_one_with_the_subscriptions
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read AutoGen v0.4's architecture post. Port your toy to the real `autogen_core` API. What did you skip that matters in production?
+    zh: |
+      讀 AutoGen v0.4 的架構貼文。把你的玩具移植到真正的 `autogen_core` API。你跳過了哪些在生產環境很要緊的東西？
+    cites: >-
+      Three API layers
