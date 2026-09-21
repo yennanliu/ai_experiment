@@ -1,0 +1,76 @@
+lesson: 19-benchmarks-swebench-gaia
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/19-benchmarks-swebench-gaia/docs/en.md
+exercises:
+  - index: 1
+    slug: ftp_pre_is_computed_and_never_used_in_the_verdict
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Port the toy harness to run on a real repo (pick one of yours). Write 3 FAIL_TO_PASS tests for known bugs.
+    zh: |
+      把這個玩具執行框架移植到一個真實儲存庫上（挑你自己的一個）。替已知的臭蟲寫 3 個 FAIL_TO_PASS 測試。
+    verifies: >-
+      three real bugs ported onto the shipped Task -- slugify dropping non-ASCII letters, clamp off by
+      one at the upper bound, truncate cutting before the ellipsis -- give 3 FAIL_TO_PASS tests that
+      really fail at version 0 and 2 PASS_TO_PASS tests each that hold at both, resolving 3/3;
+      run_task computes ftp_pre and reads only ftp_post, so a task whose FAIL_TO_PASS tests are
+      already green is resolved=True at 2/2 by an identity patch; TaskResult has 6 fields and 0 of
+      them a before-count while ftp_fixed is computed and discarded; ptp_broke is a difference, so a
+      PASS_TO_PASS test that was already failing contributes 0 and the task resolves at 0 of 1 guards
+  - index: 2
+    slug: steps_per_resolution_divides_by_the_tasks_it_gave_up_on
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a step-count metric. On your 3 tasks, how many agent steps per resolution?
+    zh: |
+      加一個步數指標。在你那 3 項任務上，每次解決要花幾個代理步驟？
+    verifies: >-
+      an edit-and-retest agent over three real functions takes 3, 7 and 16 steps, resolving 3/3 in 26
+      steps for 8.7 per resolution against a median of 7; the slowest run is 5.3x the fastest and 1.8x
+      the mean, so a budget set at the mean finishes 2 of 3; capping at 12 steps gives 11.0 per
+      resolution on 2 resolutions and capping harder at 8 gives 9.0 on the same 2, so the metric is
+      not monotone in the budget; Task and TaskResult carry 12 fields between them and 0 name a step,
+      a token or a cost
+  - index: 3
+    slug: quoting_the_bug_and_naming_the_fix_look_the_same_to_overlap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the SWE-bench+ paper. Implement a solution-leakage check (pattern-match the issue text against the diff).
+    zh: |
+      讀 SWE-bench+ 論文。實作一個解答外洩檢查（把 issue 文字拿去跟 diff 做樣式比對）。
+    verifies: >-
+      scoring only the identifiers and literals a diff introduces flags 4 of 12 issues -- 33.3%
+      against SWE-bench+'s reported 32.67% -- agreeing with the hand labels 12/12 at precision 1.00
+      and recall 1.00; matching against the whole diff instead flags 10 of 12, 83.3%, at precision
+      0.40, with all 6 false positives being reports that quoted the failing call; replacing every
+      task's description with its own patch leaves all 12 verdicts identical because run_task reads
+      description 0 times; a task with 1 FAIL_TO_PASS and 0 PASS_TO_PASS tests resolves on a patch
+      that zeroes everything else, because ptp_broke over an empty list is 0
+  - index: 4
+    slug: download_gaia_question_public
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Download a GAIA question from the public split. Trace what a GPT-4-class agent would do. What tools does it need?
+    zh: |
+      從公開切分下載一道 GAIA 題目。追一遍 GPT-4 等級的代理會怎麼做。它需要哪些工具？
+    cites: >-
+      GAIA (Mialon et al., Nov 2023)
+  - index: 5
+    slug: read_agentbench_s_per
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read AgentBench's per-environment breakdown. Which environment mirrors your product surface? What does "SOTA" look like there?
+    zh: |
+      讀 AgentBench 的逐環境細分。哪個環境最貼近你的產品表面？那裡的「SOTA」長什麼樣子？
+    cites: >-
+      AgentBench (Liu et al., ICLR 2024)
