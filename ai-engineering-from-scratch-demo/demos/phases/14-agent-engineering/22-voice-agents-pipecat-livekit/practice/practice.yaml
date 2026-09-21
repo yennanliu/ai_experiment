@@ -1,0 +1,84 @@
+lesson: 22-voice-agents-pipecat-livekit
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/22-voice-agents-pipecat-livekit/docs/en.md
+exercises:
+  - index: 1
+    slug: frame_counts_are_flat_and_the_latency_is_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a metrics observer to your toy pipeline: count frames per stage per second. Where does latency accumulate?
+    zh: |
+      給你的玩具管線加一個指標觀察者：計算每個階段每秒處理幾個 frame。延遲累積在哪裡？
+    verifies: >-
+      a Pipecat-style observer wrapping every processor records [1, 1, 1, 1, 1] frames for one
+      utterance across 5 stages, while the lesson's published bands sum to 400-990ms of which LLM
+      first token is 37.5% of the floor and 40.4% of the ceiling; the per-stage counts are identical
+      so they carry no latency information, with end-to-end at a 695ms midpoint outside the 450-600ms
+      premium band; the module references a clock 0 times and Frame carries kind, payload and
+      direction with no identity, so one frame appears as five unrelated log lines; a barge-in cancel
+      is seen at all 5 stages travelling upstream, taking the observed total from 5 to 10 frames -- a
+      100% increase for an event that shortens the turn
+  - index: 2
+    slug: the_payload_is_the_transcript_so_there_is_nothing_to_doubt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement confidence-gated STT: below threshold, request "could you repeat that?"
+    zh: |
+      實作依信心設閘門的 STT：低於門檻就回問「可以再說一次嗎？」
+    verifies: >-
+      widening the payload to (text, confidence) and gating at 0.60 re-asks on 3 of 10 utterances and
+      takes wrong transcripts from 3 to 0 across 7 answered turns; at wrong-answer-to-re-ask ratios of
+      2, 5 and 10 the optimum threshold stays at 0.60 at a cost of 3, because every error this
+      recogniser makes sits at confidence 0.55 or below; each gate is a full round trip, so 3 gates
+      add 1350-1800ms at the lesson's 450-600ms premium band; routing the clarification as a
+      transcript reaches LLM.replies and returns '[no canned reply]', while emitting a text frame from
+      the STT bypasses the LLM entirely
+  - index: 3
+    slug: the_rule_fires_on_punctuation_the_stt_never_emits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add semantic turn detection: simple rule — if transcript ends with "?", end of turn.
+    zh: |
+      加上語意輪次偵測：簡單規則 —— 若轉錄以「？」結尾，就當作輪次結束。
+    verifies: >-
+      0 of 12 raw transcripts end in a question mark, so endswith('?') fires 0 times and scores 4/12
+      only by agreeing with the non-endings, where a trailing-filler rule scores 11/12 with 1 false
+      end and 0 missed; every vad_speech frame produces a transcript and an LLM call on the spot, so a
+      three-chunk utterance makes 3 LLM calls and delivers 3 replies, and Processor carries name,
+      next, prev and trace with no buffer; restoring punctuation takes the same rule from 4/12 to
+      10/12 because 2 turn-ending utterances are not questions; the word rule's single error is a
+      false end while the punctuated rule's 2 errors are missed ends, which cost 450-600ms each
+  - index: 4
+    slug: read_pipecat_s_transport
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Pipecat's transport docs. Swap the stdlib transport for the SmallWebRTCTransport config (stub).
+    zh: |
+      讀 Pipecat 的傳輸文件。把 stdlib 的傳輸換成 SmallWebRTCTransport 的設定（樁）。
+    cites: >-
+      Pipecat (pipecat-ai/pipecat)
+  - index: 5
+    slug: text_level_control_costs_the_stt_and_tts_bands
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure an OpenAI Realtime vs STT+LLM+TTS cascade on the same query. What latency cost does text-level control carry?
+    zh: |
+      在同一則查詢上，量 OpenAI Realtime 與 STT+LLM+TTS 串接的差異。文字層級的掌控帶來多少延遲成本？
+    verifies: >-
+      summing the lesson's published bands gives a cascade of 400-990ms at a 695ms midpoint against
+      Realtime's 200-540ms at 370ms, a difference of 200-450ms that is exactly STT's 100-250 plus
+      TTS's 100-200; Realtime's midpoint is below the 450-600ms premium band, the cascade's is above
+      it and the cascade's 990ms ceiling sits inside the 800-1200ms common band, with neither above
+      the 1500ms broken threshold; stt, llm and tts all name a text frame kind in their own source, so
+      3 of 5 processors have no input on a Realtime path; TTS.process resets self.cancelled before its
+      emit loop, so a TTS pre-set to cancelled still emits all 14 words and logs 0 cuts
