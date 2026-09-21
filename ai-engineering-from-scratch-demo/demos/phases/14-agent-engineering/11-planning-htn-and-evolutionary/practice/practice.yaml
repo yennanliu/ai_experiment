@@ -1,0 +1,79 @@
+lesson: 11-planning-htn-and-evolutionary
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/11-planning-htn-and-evolutionary/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_no_runtime_so_a_postcondition_cannot_fail
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the HTN planner with backtracking: when an operator's postcondition fails at runtime, roll back and try the next method.
+    zh: |
+      替 HTN 規劃器擴充回溯：當某個運算子的後置條件在執行期失敗時，回捲並試下一個方法。
+    verifies: >-
+      Operator.apply unions effects_add into the state unconditionally and Operator has 4 fields with
+      0 naming a postcondition, so the failure the exercise describes needs an executor before it
+      needs backtracking; with 2 applicable methods the shipped planner takes applicable[0], executes
+      3 of 4 operators and returns None, while the backtracking version rolls back once and returns
+      the second method's 4-operator plan; plan returns None for max depth, unknown task, unmet
+      precondition, a declining LLM and an unknown suggestion -- 5 causes, 1 value
+  - index: 2
+    slug: the_cache_is_shipped_and_its_key_is_missing_the_state
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a LLM-method cache to ChatHTN: when the LLM decomposes task `T` in state pattern `P`, store the result. Re-check the method library first on the next call.
+    zh: |
+      給 ChatHTN 加一份 LLM 方法快取：當 LLM 在狀態樣式 `P` 下分解任務 `T` 時，把結果存起來。下一次呼叫前先重新檢查方法庫。
+    verifies: >-
+      cached_methods, the write after every LLM fallback and the methods-then-cache-then-LLM order are
+      all shipped; keyed on (task, frozenset(state)) two states needing different decompositions get 2
+      entries, 2 LLM calls and a correct plan each with 0 calls on a repeat, while the shipped
+      task-only key returns the migration decomposition in a state without it and yields None after 0
+      new calls; keying on the whole state costs 2 calls where a projection onto the relevant facts
+      costs 1; adding a method for a cached task makes the method win
+  - index: 3
+    slug: twenty_tests_accept_a_network_that_does_not_sort
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the evolutionary search evaluator to a real test suite. Evolve a sort function that passes 20 test cases; report generations to convergence.
+    zh: |
+      把演化式搜尋的評估器換成真正的測試套件。演化出一個能通過 20 個測試案例的排序函數；回報收斂所需的世代數。
+    verifies: >-
+      evolving a 5-input comparator network against 20 seeded permutations reaches 0 failures at
+      generation 7 on a 9-comparator network that passes 20/20 tests and 31 of the 32 zero-one
+      vectors, so by the 0-1 principle it is not a sorting network; dropping the 0.01-per-comparator
+      length penalty converges in 5 generations on a 12-comparator network passing 32/32; of 500
+      single mutations 124 leave the failure count unchanged against 18 of 500 that leave the demo's
+      squared error unchanged
+  - index: 4
+    slug: an_evaluator_is_a_spec_you_can_run_and_a_spec_you_can_overfit
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read AlphaEvolve's evaluator design notes. Design an evaluator for a domain you care about (SQL query optimization, test-suite minimization, deployment YAML).
+    zh: |
+      讀 AlphaEvolve 關於評估器設計的筆記。替一個你在意的領域設計一個評估器（SQL 查詢最佳化、測試套件最小化、部署 YAML）。
+    cites: >-
+      AlphaEvolve (Novikov et al., 2025)
+  - index: 5
+    slug: two_of_the_three_subtasks_have_nothing_to_search
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Combine: use HTN to decompose a compound task into subtasks, then use evolutionary search on each subtask's primitive operator. Where does it shine, where does it over-engineer?
+    zh: |
+      合起來用：用 HTN 把一個複合任務分解成子任務，再對每個子任務的原始運算子做演化式搜尋。它在哪裡發光，又在哪裡過度工程？
+    verifies: >-
+      the HTN plan for tune_pipeline is 3 operators and evolving each costs 120 evaluator calls to
+      improve 1: the batch parameter goes from cost 30 to 0 in 40 calls while the other two subtasks
+      are flat, so 80 calls buy nothing; the batch space holds 200 candidates and the search finds the
+      optimum after 40 evaluations, a 5.0x saving over enumerating; Operator has 4 fields and 0
+      carrying a cost or score, so evolution over HTN operators has no fitness until a human writes
+      one per subtask
