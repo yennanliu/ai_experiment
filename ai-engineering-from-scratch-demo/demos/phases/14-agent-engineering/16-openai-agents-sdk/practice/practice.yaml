@@ -1,0 +1,77 @@
+lesson: 16-openai-agents-sdk
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/16-openai-agents-sdk/docs/en.md
+exercises:
+  - index: 1
+    slug: max_hops_counts_tool_calls_so_it_is_not_a_hop_counter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a handoff hop counter: refuse after N transfers. Trace the behavior.
+    zh: |
+      加一個 handoff 跳數計數器：超過 N 次轉移就拒絕。把行為追出來。
+    verifies: >-
+      a transfer counter refuses the second hop with 'error: handoff limit 1 reached' after 1 transfer
+      and 2 agent spans, and completes at a limit of 2; the shipped max_hops=3 bounds policy steps, so
+      an agent that calls a tool twice then transfers uses all three on its own turns, leaving 3 agent
+      spans, 2 tool spans and 1 handoff span with the target never run; the exhausted run returns ''
+      and length_cap accepts it at 0 characters; the trace records a transfer that no agent received
+  - index: 2
+    slug: there_is_no_history_to_nest_only_the_last_string
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement `nest_handoff_history` as an option — collapse prior messages into one summary before transferring.
+    zh: |
+      把 `nest_handoff_history` 實作成一個選項 —— 在轉移之前，把先前的訊息塌縮成一段摘要。
+    verifies: >-
+      Runner keeps current_input, a single string each step overwrites, so an accumulating runner
+      carries 3 turns into the transfer and nests them into one 68-character summary against the
+      shipped 1 turn and 41 characters; the shipped handoff payload contains the user's words 0 times
+      and the last tool's result 1 time; nesting is a 67% reduction in entries and 110 characters to
+      68, which is a no-op on a single turn; a policy's own `input` can hand over 13 characters
+      appearing in neither the history nor the tool results
+  - index: 3
+    slug: the_output_guardrail_bills_the_whole_run_before_it_answers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a blocking output guardrail. Compare latency on prompts that would trip it vs ones that pass.
+    zh: |
+      寫一個阻塞式的輸出護欄。比較「會絆到它的提示詞」與「通過的提示詞」兩者的延遲。
+    verifies: >-
+      measured in work rather than seconds, a tripping prompt and a passing one both run 2 agent
+      turns, 1 tool call and 1 handoff for 7 spans each, so a blocking output guardrail costs 100% of
+      the work the answer would have; the same content blocked on input raises after 0 agent turns and
+      0 tool calls at 1 span, a 7.0x difference; GuardrailTripped carries which and reason and not the
+      offending text; input checks run once before the loop, so a handoff payload containing 'ssn'
+      reaches the second agent unchecked
+  - index: 4
+    slug: the_span_has_no_id_no_parent_and_no_clock
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Wire `add_trace_processor` to a JSON logger. What shape does it emit per span?
+    zh: |
+      把 `add_trace_processor` 接到一個 JSON logger。它每個 span 發出的形狀長怎樣？
+    verifies: >-
+      a processor walking the tree emits 7 JSON objects for the refund case with name, depth, parent
+      and attributes, 1 root and depths 0 to 2, parent and depth supplied by the walk; Span carries
+      name, attributes and children and 0 id, parent, start time or duration, so duration_ms is
+      unavailable in principle; the union of attribute keys across the 7 spans is 8 and 0 appear on
+      every span; Runner's trace is a mutable field, so one run leaves 2 children and two leave 4
+  - index: 5
+    slug: the_handoff_is_a_tool_name_and_not_a_tool
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the SDK docs. Port your stdlib toy to `openai-agents-python`. What did you model wrong?
+    zh: |
+      讀 SDK 文件。把你的 stdlib 玩具移植到 `openai-agents-python`。你哪裡模型化錯了？
+    cites: >-
+      Handoffs as tools
