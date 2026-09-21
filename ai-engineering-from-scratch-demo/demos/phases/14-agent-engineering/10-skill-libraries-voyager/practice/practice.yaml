@@ -1,0 +1,80 @@
+lesson: 10-skill-libraries-voyager
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/10-skill-libraries-voyager/docs/en.md
+exercises:
+  - index: 1
+    slug: a_cycle_returns_an_order_and_the_order_depends_on_the_ask
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a dependency-cycle detector to `compose()`. What happens when skill A depends on B which depends on A? Error vs warning?
+    zh: |
+      給 `compose()` 加一個相依環偵測器。當技能 A 相依 B、B 又相依 A 時會發生什麼事？該報錯還是警告？
+    verifies: >-
+      the composition step is topo_order, whose visited set makes a cycle terminate rather than raise:
+      topo_order('skill_a') returns ['skill_b', 'skill_a'] and topo_order('skill_b') returns
+      ['skill_a', 'skill_b'], so the order depends on the entry point and the detector must raise
+      rather than warn; over a library with one DAG, one two-skill cycle and one self-dependency the
+      detector flags 2 and leaves the DAG at ['leaf', 'mid', 'root']; execute runs the cycle with 2
+      log lines and failed=False; a self-dependency composes to one entry; a dangling dependency fails
+      only at run time
+  - index: 2
+    slug: refinement_mutates_the_object_every_parent_is_holding
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement per-skill version pinning. When a parent skill composes child `crafting@1`, a refinement to `crafting@2` must not silently upgrade the parent.
+    zh: |
+      實作逐技能的版本釘選。當父技能組合了子技能 `crafting@1`，一次對 `crafting@2` 的精修不能無聲地把父技能升上去。
+    verifies: >-
+      with name@version pins resolved against an archive, the pinned parent still logs 'ran crafting
+      v1: crafted with 3 ore' after the child is refined while the unpinned one logs v2 and 5 ore;
+      register(dedup=True) assigns existing.fn on the object the library already holds, so before and
+      after are the same instance at versions 1 and 2, and depends_on is tuple[str, ...] with no room
+      for a version; history holds 1 str and 0 callables, so the old behaviour is unrecoverable;
+      dedup=False resets the version to 1 and drops the history
+  - index: 3
+    slug: only_the_description_is_indexed_and_the_code_is_the_api
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace token-overlap retrieval with sentence-transformers embeddings (or a BM25 stdlib impl). Measure retrieval@5 on a 50-skill toy library.
+    zh: |
+      把詞元重疊檢索換成 sentence-transformers 嵌入（或一份 stdlib 的 BM25 實作）。在一個 50 項技能的玩具庫上量 retrieval@5。
+    verifies: >-
+      over a 50-skill library with queries naming an identifier from each skill's code, BM25 across
+      description, code and tags reaches retrieval@5 of 20/20 while the shipped search returns a
+      non-empty result 0 times; BM25 over descriptions alone also scores 0/20 and plain token overlap
+      over all three fields scores 20/20, so the field set moves the number by 20 and the scorer by 0;
+      two skills containing every query term score 0.667 and 0.1 under Jaccard, a 6.7x length penalty
+      against BM25's 2.0x; tag_filter 'crafting' against tag 'craft' returns 0 with no error
+  - index: 4
+    slug: the_only_machine_readable_gap_is_a_dependency_that_does_not_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "curriculum" agent: given the current library and a domain description, propose 5 missing skills. Call it weekly.
+    zh: |
+      加一個「課程」代理：給定當前的庫與一段領域描述，提出 5 項缺少的技能。每週呼叫它一次。
+    verifies: >-
+      over a 6-skill library and an 8-capability domain the agent proposes 5 names no skill has,
+      leading with the 2 dangling dependencies the library states about itself; executing every skill
+      and reading the logs finds the same 2 gaps, so reading depends_on turns a run-time failure into
+      a weekly report; Skill has 8 fields and 0 recording an attempt while execute reports failed and
+      log into a discarded context; proposing 'extract_minerals' against a library holding 'mine_ore'
+      passes the name check and returns 0 search candidates
+  - index: 5
+    slug: the_sdk_moves_discovery_from_a_scorer_to_a_contract
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's Claude Agent SDK skill docs. Port the toy library to the SDK's skill schema. What changes about discoverability?
+    zh: |
+      讀 Anthropic 的 Claude Agent SDK 技能文件。把這個玩具庫移植到該 SDK 的技能 schema。可發現性有什麼改變？
+    cites: >-
+      Skill retrieval
