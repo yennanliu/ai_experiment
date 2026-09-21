@@ -1,0 +1,78 @@
+lesson: 09-hybrid-memory-mem0
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/09-hybrid-memory-mem0/docs/en.md
+exercises:
+  - index: 1
+    slug: the_drift_question_is_answerable_without_an_embedding_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the toy vector similarity with a real embedding model (sentence-transformers, Ollama, OpenAI embeddings). Measure recall@10 on a synthetic long conversation. Does the ranking drift over 1000 writes?
+    zh: |
+      把玩具版的向量相似度換成真正的嵌入模型（sentence-transformers、Ollama、OpenAI embeddings）。在一段合成的長對話上量 recall@10。經過 1000 次寫入後，排序會漂移嗎？
+    verifies: >-
+      over 1020 records with each query a single word in an inflection the record does not use, the
+      shipped token overlap reaches recall@10 of 0/20 and CRC-hashed trigram cosine 19/20; the shipped
+      top-10 for one fixed query overlaps its predecessor by 0.43, 1.0, 1.0 across 100, 250, 500 and
+      1000 writes, so 750 new memories enter the top ten 0 times; Mem0.search injects every KV record
+      for the user at a fixed relevance of 0.4, returning 3 results for a query with 0 vector matches;
+      a 7-day-old record scores 0.0078 on recency, contributing 0.0016
+  - index: 2
+    slug: the_graph_knows_when_a_fact_started_and_not_when_it_stopped
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a temporal query: `search(query, as_of=timestamp)`. Return only records valid at or before that time. Which store needs the most work?
+    zh: |
+      加一個時間性查詢：`search(query, as_of=timestamp)`。只回傳在該時點或之前有效的紀錄。哪個儲存要動的工最多？
+    verifies: >-
+      with Berlin written at T1 and Lisbon at T3, an as_of filter on Record.ts answers 3 of 3 probe
+      times correctly and the graph 1 of 3, returning the empty list at T2; Edge has 5 fields and 0
+      recording when an edge stopped being valid; by_user returns list[Record] and Record has 0 fields
+      naming a fact type, so the two city records come back as 2 untyped rows among 3; KVKey includes
+      entity, so the two cities occupy 2 distinct keys of 3 and neither overwrites the other
+  - index: 3
+    slug: the_graph_updates_and_the_other_two_stores_never_hear
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a conflict detector: if an incoming fact contradicts a graph edge, invalidate the old edge and log both. Test on "user lives in Berlin" -> "user lives in Lisbon."
+    zh: |
+      實作一個衝突偵測器：若一則進來的事實跟某條圖邊矛盾，就把舊邊作廢並把兩者都記錄下來。用「使用者住柏林」-> 「使用者住里斯本」來測。
+    verifies: >-
+      writing lives_in Lisbon over lives_in Berlin leaves 1 invalid edge and 1 valid one with a
+      1-entry log naming both, and neighbors returns Lisbon alone; the vector arm still ranks the
+      Berlin record first because the two texts tie at 0.143 and ties break by insertion order; the KV
+      arm holds both cities on 2 distinct keys; add_edge invalidates on subject and relation alone, so
+      writing the same fact twice leaves 2 edges with 1 invalid, both pointing at Lisbon, while the
+      detector logs 0 conflicts
+  - index: 4
+    slug: normalising_by_impressions_does_not_fix_exposure_bias
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Port the fusion scorer to include a `user_feedback` dimension (thumbs-up on retrieved records). How do you prevent gaming (the agent only returns records it already liked)?
+    zh: |
+      把融合評分器擴充成含一個 `user_feedback` 維度（對檢索到的紀錄按讚）。你要怎麼防止被操弄（代理只回傳它自己已經喜歡的紀錄）？
+    verifies: >-
+      an incumbent scoring 0.24 wins rounds 1 to 24 and collects 24 thumbs-up, and a record arriving
+      at round 25 with a base score of 0.30 wins 0 of the remaining 26 under a naive count;
+      normalising by impressions leaves the lock-in at 0/26 because the incumbent's rate is 1.0 and
+      the newcomer has 0 impressions; capping the feedback contribution at 0.05 against a base gap of
+      0.06 gives the newcomer all 26 remaining rounds from the round it arrives; forcing an unrated
+      record to the top every 5th round wins it exactly 1
+  - index: 5
+    slug: what_the_benchmark_numbers_measure_and_what_the_toy_cannot
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Mem0 docs (`docs.mem0.ai`). Port the toy to `mem0` client calls. Compare retrieval quality on the same 20 test queries.
+    zh: |
+      讀 Mem0 文件（`docs.mem0.ai`）。把這個玩具移植成 `mem0` 的客戶端呼叫。在同樣 20 條測試查詢上比較檢索品質。
+    cites: >-
+      Benchmark numbers
