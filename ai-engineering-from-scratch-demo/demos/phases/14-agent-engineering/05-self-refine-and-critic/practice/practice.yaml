@@ -1,0 +1,74 @@
+lesson: 05-self-refine-and-critic
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/05-self-refine-and-critic/docs/en.md
+exercises:
+  - index: 1
+    slug: one_iteration_verifies_before_it_refines_and_never_again
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the toy with max_iterations=1. Does CRITIC still help?
+    zh: |
+      用 max_iterations=1 跑這個玩具。CRITIC 還有幫助嗎？
+    verifies: >-
+      at max_iters=1 both arms return 1 unverified attempt carrying the initial output with 2
+      known-wrong facts, while refine still runs and its different output is discarded -- one
+      refinement performed, zero verified; swept 1 to 10, CRITIC first reports verified at 3 and still
+      stops at 3 given 10, and Self-Refine converges at no budget; verify_external returns on its
+      first failing check, naming germany and not everest, so the minimum is defects plus one; at a
+      budget of 1 only the critique strings differ
+  - index: 2
+    slug: a_false_pass_is_absorbing_and_looks_exactly_like_a_real_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the external verifier with a noisy one (random 30% false positives). What does the loop do? This is the 2026 reality of most guardrail stacks.
+    zh: |
+      把外部查證器換成很吵的那種（隨機 30% 偽陽性）。這個迴圈會怎麼做？這就是 2026 年多數護欄堆疊的現實。
+    verifies: >-
+      at a 30% false-positive rate, 52.8% of 2000 seeded runs exit on an output still containing a
+      known-wrong fact, against the closed form 1-(1-p)^2 = 0.51 for the trajectory's 2 failing
+      checks; every bad exit carries verified=True and the one critique 'verifier: ok', and Attempt's
+      4 fields record nothing about sampling; rates at p = 0.1, 0.3 and 0.5 land within 0.018 of the
+      closed form; verify_external's loop never uses fact, so 2 of 3 listed facts are tested and 'the
+      sun orbits the earth' passes clean
+  - index: 3
+    slug: the_critic_that_wins_is_the_one_speaking_the_refiners_vocabulary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a "generator-critic on different models" variant: big model generates, small model critiques. Does it beat same-model?
+    zh: |
+      實作一個「生成器與批評者用不同模型」的變體：大模型生成、小模型批評。它勝過同模型的版本嗎？
+    verifies: >-
+      the shipped self-critic scores 3 of 3 correct verdicts over the trajectory and never converges,
+      while the same judgement reworded to name the entities scores 3 of 3 and converges in 3
+      iterations, matching CRITIC; generate selects on 'germany' and 'everest' in the last critique
+      and feedback_self says 'capital' and 'continent'; a rubber stamp converges in 1 iteration with 2
+      known-wrong facts left; counting critiques carrying a trigger word gives 0, 0, 2, 2 and predicts
+      a clean exit in all four arms
+  - index: 4
+    slug: three_categories_and_what_each_one_can_actually_decide
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read CRITIC Section 3 (arXiv:2305.11738 v4). Name the three verification-tool categories and give an example for each.
+    zh: |
+      讀 CRITIC 第 3 節（arXiv:2305.11738 v4）。說出那三類查證工具，並各給一個例子。
+    cites: >-
+      CRITIC (Gou et al., arXiv:2305.11738, v4 Feb 2024)
+  - index: 5
+    slug: the_tripwire_is_right_and_the_retry_channel_is_missing
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Map OpenAI Agents SDK's `output_guardrails` to CRITIC's verifier role. What does the SDK get wrong, and what does it get right?
+    zh: |
+      把 OpenAI Agents SDK 的 `output_guardrails` 對映到 CRITIC 的查證器角色。這個 SDK 哪裡做錯了，又哪裡做對了？
+    cites: >-
+      OpenAI Agents SDK output guardrails
