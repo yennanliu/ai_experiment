@@ -1,0 +1,83 @@
+lesson: 29-production-runtimes
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/29-production-runtimes/docs/en.md
+exercises:
+  - index: 1
+    slug: four_of_the_six_shapes_ship_and_one_of_them_prints
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Port your Lesson 01 ReAct loop to all six shapes in your stack. Which shape fits which product surface?
+    zh: |
+      把你第 01 課的 ReAct 迴圈在你的堆疊上移植到全部六種形狀。哪種形狀配哪個產品表面？
+    verifies: >-
+      porting Lesson 01's loop to all six shapes gives a 12-step run and 1 distinct answer across the
+      6 ports; request_response returns steps[-1], so the caller sees 1 of 12 steps where streaming
+      yields 12, making the shape choice decide how much trace escapes; _agent_fn returns 5 lines for
+      every input with 3 of them byte-identical whatever the input, so the 4 shipped shapes do the
+      same work and differ only in packaging; killed at step 7 and restarted, four shapes spend 12
+      steps reaching the answer again and a durable port spends 5, a 2.4x difference, and the module
+      defines none of durable, scheduled, checkpoint or cron
+  - index: 2
+    slug: the_fail_policy_is_consulted_twice_and_the_draws_differ
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a DLQ to the queue-based demo. Simulate 10% job failure; surface DLQ size.
+    zh: |
+      替佇列式示範加上 DLQ。模擬 10% 的工作失敗；把 DLQ 大小呈現出來。
+    verifies: >-
+      1000 jobs at a 10% failure rate through the shipped worker give 108 DLQ entries -- 10.8% against
+      the 0.1% three independent draws predict -- from 218 failed calls and 108 retries, with the
+      queue draining to 0; worker evaluates fail_policy once for the retry branch and again for the
+      DLQ branch, so 100 of the 108 entries are first-attempt jobs with 2 of 3 attempts unused, and
+      caching one draw per attempt takes the DLQ to 1; retried jobs are appended at the tail and
+      finish at positions 1001 to 1108; QueueRuntime declares fail_rate and worker references only
+      queue and dlq
+  - index: 3
+    slug: the_scheduled_shape_is_a_print_statement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a cron-triggered eval agent that runs nightly against your top 20 traces from the day.
+    zh: |
+      寫一個由 cron 觸發的評測代理，每晚對當天最重要的 20 條軌跡跑一次。
+    verifies: >-
+      a virtual-clock cron over the shipped EventBus fires 7 times in a simulated week, evaluating the
+      20 lowest-scoring traces of 150 per day for 140 evals at mean 0.07 against 0.50 across all 1050
+      traces; the slice rule decides the headline -- worst-20 reports 0.07, random-20 0.49 and
+      most-recent-20 0.49, a 7.0x spread on the same data; skipping 2 of 7 nights leaves 40 traces
+      never evaluated with the weekly mean unchanged, because the cron fires on a clock match and
+      carries no backlog; EventBus.publish runs handlers in order, so a first subscriber that raises
+      stops the remaining 2 and propagates
+  - index: 4
+    slug: a_generator_already_has_backpressure_and_no_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement streaming with backpressure: if the client is slow, pause the agent. How does this interact with a turn budget?
+    zh: |
+      實作帶背壓的串流：若客戶端很慢，就把代理暫停。這跟輪次預算之間怎麼互動？
+    verifies: >-
+      the shipped streaming generator is already pull-based backpressure: a client consuming one chunk
+      per 3 ticks stretches a 12-step run to 36 ticks with the producer idle 24 and the buffer never
+      above 1, where pushing into a 4-slot queue drops 5 of 12 chunks and gating the producer drops 0;
+      max_turns counts model calls, so the paused run spends no extra budget and finishes inside 10
+      turns while taking 3.0x the wall time; at a 20-tick deadline the paused run is cut after 6 of 12
+      steps while the unpaused one finishes in 12; streaming takes 1 argument and 0 fields across
+      QueueRuntime and Job name a budget, a limit or a deadline
+  - index: 5
+    slug: read_claude_managed_agents
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Claude Managed Agents docs. When would you move a self-hosted long-horizon agent to managed?
+    zh: |
+      讀 Claude Managed Agents 的文件。什麼時候你會把一個自架的長時程代理搬到託管？
+    cites: >-
+      2026 deployment patterns
