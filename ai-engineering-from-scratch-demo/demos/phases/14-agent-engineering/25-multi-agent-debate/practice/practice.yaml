@@ -1,0 +1,92 @@
+lesson: 25-multi-agent-debate
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/25-multi-agent-debate/docs/en.md
+exercises:
+  - index: 1
+    slug: the_shipped_debaters_agree_before_the_first_round
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a "forced disagreement" rule: in round 1, every debater must produce a distinct proposal. Measure effect on convergence speed.
+    zh: |
+      實作一條「強制分歧」規則：第 1 回合每個辯論者都必須提出不同的提案。量它對收斂速度的影響。
+    verifies: >-
+      the shipped debaters converge at round 1 on all 3 questions under both topologies and 0 answers
+      ever change, so the 18 full-mesh and 12 star critique ops buy the same output as zero would;
+      forcing distinct round-1 proposals gives convergence at round 3 on capital_of_portugal and -1 on
+      the other two, because three debaters holding three answers rotate on a tie broken by insertion
+      order, with the majority still correct 3/3; drift adopts the peer majority only if common
+      differs from both current and bias, so beta holding Lisbon by correction and Madrid by bias
+      stays on Lisbon against unanimous Madrid and moves to Porto against unanimous Porto; run_debate
+      loops its full round count, spending 12 of 18 ops after consensus
+  - index: 2
+    slug: the_aggregator_already_breaks_ties_by_list_position
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a confidence-weighted aggregation: debaters return (answer, confidence); aggregator weights by confidence. Does it help?
+    zh: |
+      加上依信心加權的彙整：辯論者回傳 (答案, 信心)；彙整器依信心加權。有幫助嗎？
+    verifies: >-
+      over 12 three-way splits with the truth rotating through the panel, the shipped plurality
+      aggregator is right 4 times and calibrated confidence weighting 10; weighting by one debater's
+      fixed overconfidence also scores 4 and returns the same answer as plurality on 12 of 12,
+      reproducing the bias it replaced; most_common breaks a 1-1-1 tie by insertion order, so alpha
+      wins 12 of 12 ties and beta 0, and reversing the debater list changes the answer 12 of 12 times
+      with nobody changing their mind; Debater has 2 fields and drift returns a bare str, with 3 of
+      the module's 5 functions reading the answer as a string; on an agreeing panel plurality and both
+      weightings return 1 distinct answer
+  - index: 3
+    slug: a_lone_correct_debater_is_outvoted_before_it_can_argue
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap one "agent" for a different scripted LLM with different opinions. Does heterogeneity improve accuracy?
+    zh: |
+      把其中一個「代理」換成另一個意見不同的腳本化 LLM。異質性有改善準確率嗎？
+    verifies: >-
+      over 8 questions where a swapped expert is right and two incumbents agree on a wrong answer, the
+      expert adopts the majority in round 1 on 8 of 8 and the debate scores 0, the same as a
+      homogeneous panel; drift compares the peer majority against its own answer with no confidence or
+      justification, so 2 peers outrank 1 debater regardless of correctness; the expert's answers run
+      Herbert then Asimov three times, but asked again with no peers it still says Herbert, because
+      drift recomputes current from corrections every call; sweeping 1 to 4 experts against 2
+      incumbents gives debate and plain-vote scores {1: (0, 0), 2: (8, 0), 3: (0, 8), 4: (8, 8)} --
+      the vote is monotone and the debate is not
+  - index: 4
+    slug: the_lesson_counts_the_hub_reads_and_the_code_pays_for_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure token cost for full mesh vs sparse on your 3 questions. Plot cost vs accuracy.
+    zh: |
+      在你那 3 個問題上量全網狀與稀疏的詞元成本。把成本對準確率畫出來。
+    verifies: >-
+      on the shipped 3 questions full mesh costs 6 ops per round and the star 4, giving (18, 3/3)
+      against (12, 3/3) and a 33.3% saving at identical accuracy; at N=5, R=3 the lesson's prose gives
+      60 mesh ops and 12 star ops where sparse_star_round charges 24, because it counts the hub's
+      reads as well as the spokes', making the star's advantage 2.5x in the code and 5.0x in the
+      prose; weighting each read by the length of what is read gives a character ratio of 3.1x against
+      the op ratio's 2.5x; across 6 configurations every run is correct, so the cost-accuracy plot has
+      1 distinct accuracy value
+  - index: 5
+    slug: the_hub_is_debaters_zero_and_the_tie_break_is_the_list
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Society of Minds paper. Port your toy to N=5, R=3. What breaks? What gets better?
+    zh: |
+      讀 Society of Minds 論文。把你的玩具移植到 N=5、R=3。什麼壞了？什麼變好了？
+    verifies: >-
+      porting to N=5, R=3 costs 60 mesh ops and 24 star ops against 12 for the paper's N=3, R=2, and
+      both panels answer 8 of 8, so the extra 5.0x buys nothing on debaters that all propose the same
+      thing; at N=5 each debater reads 4 peers, so reversing the panel changes 8 of 8 answers with
+      nobody changing their mind where at N=3 it changes 0; run_debate computes hub = debaters[0], so
+      rotating the hub through all 5 positions produces 2 distinct answers on one question and the
+      lesson's rotate-the-hub mitigation has no parameter; with four correct spokes and one wrong hub
+      the star scores 0 of 8 where the same panel in full mesh scores 8
