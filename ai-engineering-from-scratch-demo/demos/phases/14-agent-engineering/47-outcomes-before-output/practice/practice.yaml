@@ -1,0 +1,87 @@
+lesson: 47-outcomes-before-output
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/47-outcomes-before-output/docs/en.md
+exercises:
+  - index: 1
+    slug: the_request_that_started_this_repository_names_its_output_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Rewrite a feature request from your backlog as an outcome frame.
+    zh: |
+      Rewrite a feature request from your backlog as an outcome frame.
+    verifies: >-
+      the request that produced this repository -- complete all the lessons, commit and push -- names
+      a unit of work and a delivery mechanism and nobody who is better off, while the rewritten frame
+      validates with 0 issues at status ready-to-discover and never names the artifact; validate's
+      leak check compares proposed_output as a substring of desired_outcome and proposed_output
+      defaults to empty, so the same leaking sentence returns 0 issues when the output is left blank;
+      'triage with the assistant' against 'incident assistant' returns 0 issues where the literal
+      spelling returns 1; the frame has 7 fields, the validator has 3 emptiness tests and 1 semantic
+      rule, and non_goals appears in it exactly once
+  - index: 2
+    slug: the_determinism_constraint_removes_the_solutions_the_lesson_would_reach_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add one constraint that changes which solutions remain possible.
+    zh: |
+      Add one constraint that changes which solutions remain possible.
+    verifies: >-
+      'the same command produces the same verdict on any machine' deletes 3 of 6 candidate outputs --
+      timing, sampling and network -- and the 15 shipped answers import time, random or urllib 0
+      times; validate reads frame.constraints once, in the emptiness test, so a frame with 3 real
+      constraints and one carrying a single slogan both return 0 issues; grading all 15 answers twice
+      agrees 15 of 15 times, a comparison that is only meaningful because the constraint exists; a
+      preference like 'prefer clear names' leaves all 6 candidates available
+  - index: 3
+    slug: the_non_goals_held_in_five_of_six_commits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add two non-goals that keep the first slice small.
+    zh: |
+      Add two non-goals that keep the first slice small.
+    verifies: >-
+      over the six lesson commits ending at the anchor, every file lands inside a practice directory
+      or the generated README except one commit that also edited scripts/scaffold_practice.py -- 5 of
+      6 held, and the crossing was necessary because the scaffolder raised FileNotFoundError on
+      English-only lessons; the translation non-goal removes a surface of 42 Chinese documents and 212
+      zh blocks rather than deferring it file by file; validate reports only 'non-goals are empty', so
+      two concrete non-goals and the single word 'nothing' are equally valid
+  - index: 4
+    slug: the_next_question_asks_for_confirmation_and_the_frame_has_no_field_for_doubt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Identify the earliest observation that would disprove the desired outcome.
+    zh: |
+      Identify the earliest observation that would disprove the desired outcome.
+    verifies: >-
+      the earliest disproof -- one graded answer failing against its lesson's code -- costs 1 file
+      where confirmation costs 15, and grading all 15 returns 15 passes with 0 failed checks;
+      next_question is a single template asking what evidence would show the outcome was achieved,
+      decision returns 4 keys and OutcomeFrame has no falsifier field; the 15 answers hold 60
+      individual checks, so the disproof names a file, a check and a measured value; grading one file
+      is 6.7% of grading fifteen, so the earliest observation is available after the first lesson
+  - index: 5
+    slug: three_outputs_satisfy_the_outcome_and_one_constraint_picks_between_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write three different outputs that could satisfy the same outcome.
+    zh: |
+      Write three different outputs that could satisfy the same outcome.
+    verifies: >-
+      imported answers, a fixture-diff harness and a worked-answer quiz all validate against the same
+      frame with 0 issues, and scored against its 3 constraints they read 3, 2 and 2 so exactly 1
+      survives; naming each candidate in the desired outcome flags 3 of 3 frames and leaving the
+      outcome alone flags none, so the leak check protects the sentence rather than the decision;
+      'answers import the lesson's code' is the clause that eliminates 2 candidates; OutcomeFrame has
+      7 fields and decision returns 4 keys, none recording the alternatives considered or the
+      constraint that eliminated them
