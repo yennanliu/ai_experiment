@@ -1,0 +1,83 @@
+lesson: 39-reviewer-agent
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/39-reviewer-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: the_five_dimensions_score_a_forked_copy_ten_out_of_ten
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a sixth dimension specific to your product domain. Defend why it is not absorbed by the existing five.
+    zh: |
+      加一個你產品領域專屬的第六維度。論證它為何不會被既有那五個吸收掉。
+    verifies: >-
+      a diff that forks 143 lines of the lesson's reference module and one that imports it score
+      identically on all five dimensions -- 10/10, pass, same notes -- which is the non-absorption
+      proof a sixth dimension needs; 0 of the 5 scorers read file contents and diff_summary is typed
+      dict[str, list[str]], so reference fidelity cannot be computed from ReviewerInputs without
+      widening it; the 4 shipped Lesson 38 solutions all import via parity.load_reference and score
+      2/2 against 0 for the fork; score_problem_fit counts goal words in file names, so the lesson's
+      clean case scores 1/2 while one file named signup_validation_input.py scores 2/2
+  - index: 2
+    slug: a_terse_report_that_prints_only_the_total_inverts_the_verdict
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the reviewer with two different system prompts (terse, verbose). Which produces a report a human is more likely to read?
+    zh: |
+      用兩種不同的系統提示詞（精簡、囉唆）各跑一次審查者。哪一種產出的報告人類比較可能會讀？
+    verifies: >-
+      the same ReviewReport renders in 12 lines and 322 characters verbose against 2 lines and 74
+      terse, a 6.0x cut whose whole content is the passing dimensions; review tests any(score == 0)
+      before comparing the total, so 2/2/2/2/0 hard-fails at 8 points while 2/1/2/1/1 passes at 7, and
+      a terse report printing only total and verdict reads as a bug; 3 of the 5 notes carry a count
+      the reader could have read off the artifacts and one of the other two says the scorer cannot
+      tell; the clean demo renders 12 verbose lines of which 0 name something to do, against 1 terse
+      line
+  - index: 3
+    slug: the_dimension_the_reviewer_exists_for_is_the_one_it_cannot_be_sure_of
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `confidence` field per dimension. Refuse to ship the report when confidence in the lowest dimension is below 0.6.
+    zh: |
+      替每個維度加一個 `confidence` 欄位。當最低那個維度的信心低於 0.6 時，拒絕出貨這份報告。
+    verifies: >-
+      attaching confidence by the branch each scorer took gives min(confidence) = 0.5 on all 3 runs,
+      so a 0.6 floor ships 0 reports; problem_fit answers 'did this solve the right problem' by
+      matching 3 goal keywords against file names and is never confident, so the threshold deletes the
+      dimension the reviewer exists for; 1 of the 5 scorers admits its doubt in prose -- 'either work
+      was trivial or undocumented' -- with nowhere in DimensionScore to record it; ReviewReport has 4
+      fields and review emits 3 verdict literals, none meaning 'no verdict', while refusing per
+      dimension rescores the clean case from 9/10 to 8/8
+  - index: 4
+    slug: the_calibration_set_agrees_wherever_the_evidence_is_not_in_the_diff
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a calibration set: 10 historical task close-outs with known correct verdicts. Run the reviewer over them. Where does it disagree with the historical record?
+    zh: |
+      做一組校準集：10 次歷史上任務收尾、且已知正確裁決的案例。拿審查者跑一遍。它在哪裡跟歷史紀錄不一致？
+    verifies: >-
+      ten close-outs labelled from their histories give 5/10 agreement, half the lesson's 80% bar,
+      with all 5 disagreements the rubric being more lenient than the record and 0 stricter; the
+      deleted failing test and the rename that changed no behaviour both come back pass at 10/10; no
+      scorer reads verdict['passed'] and score_scope_discipline reads 2 of the gate's codes, so a
+      close-out the gate blocked on acceptance.missing scores 9/10 pass while an empty feedback log
+      scores 1 with the note 'mixed exit codes in feedback'; the pass bar of 7 lets a run with one
+      dimension at 1 total 9 and pass where the record says soft_fail
+  - index: 5
+    slug: request_more_evidence_backoff
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "request more evidence" affordance: the reviewer can ask the builder for a specific test run before scoring. What is the right back-off so this does not loop?
+    zh: |
+      加一個「要求更多證據」的能供性：審查者可以在評分前要求建造者跑某個特定測試。什麼樣的退避機制才不會讓它一直繞圈？
+    cites: >-
+      The reviewer cannot edit the diff
