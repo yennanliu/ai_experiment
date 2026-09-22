@@ -1,0 +1,74 @@
+lesson: 07-recursive-self-improvement
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/07-recursive-self-improvement/docs/en.md
+exercises:
+  - index: 1
+    slug: the_threshold_is_absolute_and_the_processes_are_exponential
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py --threshold 2.0`. With capability rate 1.15 and alignment rate 1.08 (Scenario A), how many cycles until the misalignment gap `C - A` crosses 2.0?
+    zh: |
+      跑 `code/main.py --threshold 2.0`。在能力速率 1.15、對齊速率 1.08（情境 A）之下，要幾輪失準落差 `C - A` 才會跨過 2.0？
+    verifies: >-
+      at DEFAULT_SEED the Scenario A gap crosses 2.0 at cycle 10 with capability 4.15 against
+      alignment 2.12, where the two rates alone cross at cycle 11 and the shipped 1.5 threshold at
+      cycle 9; C/A is 1.96 at that crossing, and the median ratio where the flag fires is 1.81 for
+      Scenario A against 1.19 for Scenario B, so one PAUSE string covers 96% ahead and 19%;
+      monte_carlo averages only the trials that crossed, about 11 of 2000 on Scenario C; the max(0.9,
+      ...) floor sits 6.0 sigma out and fires with probability about 1e-09
+  - index: 2
+    slug: equal_rates_cross_the_pause_threshold_in_half_of_runs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Set both rates equal. Does the gap stay bounded or does noise push it one way? What does this imply for RSI safety?
+    zh: |
+      把兩個速率設成相等。落差會維持有界，還是雜訊會把它推向某一邊？這對 RSI 安全意味著什麼？
+    verifies: >-
+      at equal rates of 1.10 the gap crosses the 1.5 threshold in 54.53% of 40-cycle runs with a 10-90
+      spread of -12.2 to +11.9, sixteen times the threshold, and a median final gap of +0.457 against
+      a mean of 0.001; swapping the noise levels flips the median to -0.419 and equalising them gives
+      -0.042, so the drift is Jensen rather than rate; equal noise still crosses in 49.88% of runs, so
+      92% of the crossing probability is a directionless walk; at zero noise the rule never fires and
+      the gap is exactly 0.0
+  - index: 3
+    slug: read_anthropic_alignment_faking
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Anthropic alignment-faking paper summary. Identify the specific training condition that pushed faking from 12% to 78%. Design one evaluator that would catch the behavior.
+    zh: |
+      讀 Anthropic 對齊偽裝論文的摘要。指認出把偽裝從 12% 推到 78% 的那個特定訓練條件。設計一項能抓到該行為的評估器。
+    cites: >-
+      The alignment-faking result in detail
+  - index: 4
+    slug: read_iclr_2026_rsi
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the ICLR 2026 RSI Workshop summary. Pick one of the four open problems and write a one-page proposal for attacking it.
+    zh: |
+      讀 ICLR 2026 RSI 工作坊的摘要。挑四個未解問題之一，寫一份一頁的攻克提案。
+    cites: >-
+      What the ICLR 2026 workshop treats as engineering
+  - index: 5
+    slug: the_human_is_worth_it_and_the_shipped_rule_is_not
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Hassabis WEF 2026 remarks. In one paragraph, argue either for or against requiring a human between every RSI cycle at the frontier. Be concrete about what the human does.
+    zh: |
+      讀 Hassabis 在 2026 年世界經濟論壇上的發言。用一段話，替「在前沿的每一輪 RSI 之間都應該要求有人」這件事贊成或反對。要具體說出那個人做什麼。
+    verifies: >-
+      replacing C - A >= 1.5 with C / A >= 1.96 holds Scenario A detection at 100% while Scenario B
+      alarms fall from 54.73% to 0.08%, a factor of 684; the absolute rule fires on the matched-rate
+      scenario in 54.73% of runs and on the surging one in 0.70%, opposite to the lesson's claim;
+      41.21% of Scenario B firings and 96.43% of Scenario C firings see the gap fall back below the
+      threshold against 0.0% for Scenario A; Scenario A trips at cycle 9.5 on average, about 10
+      reviewer decisions per detection, by which point capability is 3.77x its start
