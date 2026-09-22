@@ -59,8 +59,8 @@ from Lesson 38 does not survive into its scoring.
 ### 2 — a real second-day task slips on the two outcomes this repo has no surface for
 
 The honest version of this exercise scores a task that already shipped, using the
-repository's own artifacts. The task: the commit that landed Lesson 40's practice
-solutions — 8 files, every solution graded in-process for the acceptance run.
+repository's own artifacts. The task: shipping Lesson 40's practice solutions — the
+8 files it put in the tree, every solution graded in-process for the acceptance run.
 
 | Outcome | Benchmark's workbench row | This repo, measured |
 |---|---|---|
@@ -77,7 +77,7 @@ has some of the seven surfaces and not others.
 directory is the top-level `README.md`, which `scripts/coverage.py` rewrites
 whenever a lesson lands. A contract made of allowed globs has no way to say "the
 build owns this file", so a mechanical regeneration is counted as scope creep —
-the same finding Lesson 38's gate produced on the same commit.
+the same finding Lesson 38's gate produced on the same work.
 
 **The reviewer's `hard_fail` is correct and unmodelled.** Running Lesson 39 over
 the real artifacts gives 6/10 with `handoff_readiness` at 0: there is no

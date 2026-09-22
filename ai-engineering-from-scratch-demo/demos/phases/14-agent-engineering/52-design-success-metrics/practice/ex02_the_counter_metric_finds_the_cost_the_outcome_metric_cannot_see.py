@@ -8,9 +8,9 @@ maintainer who has to keep each file inside the repository's own size rule,
 and the reviewer who has to read the answers section. Both are measurable
 from the tree.
 
-**ANSWER: 11 of 45 shipped files sit above the 120-line target, and the
+**ANSWER: 10 of 45 shipped files sit above the 120-line target, and the
 outcome metric cannot see any of them.** The answers sections average
-**132.7** lines each. Both numbers come from the same nine lessons whose
+**133.3** lines each. Both numbers come from the same nine lessons whose
 answers pass **45** of **45**, so a plan carrying only the outcome metric
 reports a perfect result while the cost it created is entirely outside the
 report.
@@ -124,9 +124,9 @@ def solve():
 def verify(result):
     return [
         practice.Check(
-            "ANSWER: 11 of 45 files sit above the line target the outcome cannot see",
-            all([result["files"] == 45, result["over"] == 11, result["largest"] == 145,
-                 result["answer_mean"] == 132.7, result["outcome_only_rows"] == 2]),
+            "ANSWER: 10 of 45 files sit above the line target the outcome cannot see",
+            all([result["files"] == 45, result["over"] == 10, result["largest"] == 145,
+                 result["answer_mean"] == 133.3, result["outcome_only_rows"] == 2]),
             f"{result['over']} of {result['files']} shipped files exceed the "
             f"{TARGET}-line target, the largest at {result['largest']}, while the answers "
             f"sections average {result['answer_mean']} lines -- none of it visible in a "

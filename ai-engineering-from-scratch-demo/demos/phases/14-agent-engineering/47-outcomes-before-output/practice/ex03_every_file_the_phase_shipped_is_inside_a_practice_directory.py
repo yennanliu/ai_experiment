@@ -3,8 +3,7 @@
     Add two non-goals that keep the first slice small.
 
 Reading of the exercise: a non-goal is only a boundary if a diff can cross it.
-So write two that this repository's own history can be checked against, then
-check it.
+So write two this repository's own tree can be checked against, then check it.
 
 **ANSWER: "do not translate anything" and "do not touch the tooling" keep the
 slice to one directory per lesson, and the second one held in 5 of 6
@@ -31,49 +30,43 @@ The check that matters -- does the diff stay inside them -- is the one
 Exercise 5 of Lesson 43 built out of `git status`, and it lives in the gate,
 not in the frame.
 
-Structure: `crossings()` reads the real commits; `frames()` compares a
-concrete non-goal list against a vacuous one.
+Structure: `shipped()` reads where the work landed; `crossing()` shows the one
+file outside the slice; `frames()` compares a concrete non-goal list against a
+vacuous one.
 """
 
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
 from harness import parity, practice
 
 PHASE, LESSON = "14-agent-engineering", "47-outcomes-before-output"
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "demos").is_dir())
-BASE = "demos/phases/14-agent-engineering"
-INSIDE = re.compile(rf"^{re.escape(BASE)}/\d\d-[a-z0-9-]+/practice/")
+BASE = ROOT / "demos" / "phases" / "14-agent-engineering"
+FINISHED = tuple(f"{number}-" for number in range(43, 53))
+PHASE_DIR = "phases/14-agent-engineering"
 NON_GOALS = ["do not translate anything", "do not touch the tooling"]
-REFERENCE = Path("/Users/jliu/ai-engineering-from-scratch/phases/14-agent-engineering")
+TOOLING = "scripts/scaffold_practice.py"
+FALLBACK = "except FileNotFoundError"
 
 
-def git(*args):
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+def shipped():
+    """Every file the finished lessons put in the tree, and where it landed."""
+    files = [path for lesson in sorted(BASE.iterdir())
+             if lesson.is_dir() and lesson.name.startswith(FINISHED)
+             for path in sorted(lesson.rglob("*"))
+             if path.is_file() and "__pycache__" not in path.parts]
+    return {"files": len(files),
+            "outside": [path.name for path in files if "practice" not in path.parts]}
 
 
-ANCHOR = "a992f27"  # the lesson-46 commit: a fixed window, not a sliding one
-
-
-def commits(count=6):
-    return git("log", "--format=%H", "-n", str(count), ANCHOR, "--", BASE).split()
-
-
-def crossings(count=6):
-    """Files in the recent lesson commits that fall outside the declared slice."""
-    rows = []
-    prefix = ROOT.name + "/"
-    for sha in commits(count):
-        files = [line[len(prefix):] if line.startswith(prefix) else line
-                 for line in git("show", "--name-only", "--format=", sha).splitlines()
-                 if line.strip()]
-        outside = [name for name in files
-                   if not INSIDE.match(name) and name != "README.md"]
-        rows.append({"sha": sha[:7], "files": len(files), "outside": outside})
-    return rows
+def crossing():
+    """The one tooling file the phase had to change, and the proof it changed."""
+    source = (ROOT / TOOLING).read_text(encoding="utf-8")
+    return {"path": TOOLING, "fallback": FALLBACK in source,
+            "inside_practice": "practice" in Path(TOOLING).parts}
 
 
 def frames(ref, non_goals):
@@ -88,17 +81,17 @@ def frames(ref, non_goals):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    rows = crossings()
-    crossed = [row for row in rows if row["outside"]]
+    placement = shipped()
+    crossed = crossing()
     concrete = frames(ref, NON_GOALS)
     vacuous = frames(ref, ["nothing"])
-    zh_docs = len(list(REFERENCE.glob("*/docs/zh.md"))) if REFERENCE.exists() else 0
+    reference = parity.find_reference_root() / PHASE_DIR
+    zh_docs = len(list(reference.glob("*/docs/zh.md")))
     manifests = sorted((ROOT / "demos" / "phases" / "14-agent-engineering").glob(
         "*/practice/practice.yaml"))
     return {
-        "commits": len(rows), "held": len(rows) - len(crossed),
-        "crossed": [row["sha"] for row in crossed],
-        "outside": sorted({name for row in crossed for name in row["outside"]}),
+        **placement, "crossing": crossed["path"], "fallback": crossed["fallback"],
+        "crossing_inside": crossed["inside_practice"],
         "zh_docs": zh_docs,
         "zh_blocks": sum(path.read_text(encoding="utf-8").count("    zh: |")
                          for path in manifests[:42]),
@@ -111,19 +104,18 @@ def solve():
 def verify(result):
     return [
         practice.Check(
-            "ANSWER: the non-goals held in 5 of 6 commits",
-            all([result["commits"] == 6, result["held"] == 5,
-                 len(result["crossed"]) == 1,
-                 result["outside"] == ["scripts/scaffold_practice.py"]]),
-            f"across the {result['commits']} lesson commits ending at the anchor, every file lands inside a "
-            f"practice/ directory or the generated README, except {result['crossed']} which "
-            f"also edited {result['outside']} -- one crossing, in the place a non-goal makes "
-            "visible",
+            "ANSWER: every file the phase shipped is inside a practice directory",
+            all([result["files"] == 80, result["outside"] == [],
+                 result["crossing"] == TOOLING, result["crossing_inside"] is False,
+                 result["fallback"] is True]),
+            f"the finished lessons put {result['files']} files in the tree and "
+            f"{len(result['outside'])} of them sit outside a practice directory; the one "
+            f"crossing is {result['crossing']}, which still carries the "
+            f"{FALLBACK!r} branch the phase needed",
         ),
         practice.Check(
             "FINDING: the crossing was correct, and the non-goal makes it a decision",
-            all([result["outside"] == ["scripts/scaffold_practice.py"],
-                 len(result["crossed"]) == 1]),
+            all([result["crossing"] == TOOLING, result["fallback"] is True]),
             "the scaffolder raised FileNotFoundError on lessons shipping English docs only, "
             "so shipping at all required the edit; without the non-goal it is an invisible "
             "extra file in a diff, with it a line in the commit message",

@@ -37,10 +37,10 @@ practice solutions for two lessons.
 
 Zero path conflicts, waves `[['lesson-43', 'lesson-44'], ['integration']]`, status
 `ready`. The interesting part is the third unit's path: the repository's top-level
-`README.md` is touched by **6 of the last 6** lesson commits, because
-`scripts/coverage.py` rewrites it from the manifests. It is not a file either
-worker should own — it is a generated artifact, and the integrator is the only
-party that can regenerate it once.
+`README.md` is written by `scripts/coverage.py` — which also ships a `--check` mode
+that fails when it is stale — and lies inside **0** of the two workers' directories.
+It is not a file either worker should own; it is a generated artifact, and the
+integrator is the only party that can regenerate it once.
 
 Three gaps in the artifact while we are here. `WorkUnit` has 5 fields where the
 docs table asks for 6: `goal` and `handoff` are missing — the two that say what the

@@ -12,7 +12,7 @@ counter-metric, and the plan validates with 2 of the 3.** "Does every shipped
 answer still pass?" is **45** of **45** across nine finished lessons. "Does
 any answer make a claim its own run does not support?" is the traced-number
 rate. "What does this cost the reader?" is the length of the answers section
--- mean **132.7** lines -- and `validate` has no `counter` kind to hold it.
+-- mean **133.3** lines -- and `validate` has no `counter` kind to hold it.
 
 **FINDING: `validate` requires exactly two kinds and ignores the third the
 docs name.** It refuses a plan with no `outcome` and no `guardrail` metric;
@@ -114,7 +114,7 @@ def verify(result):
             "ANSWER: three questions, an outcome, a guardrail and a counter-metric",
             all([result["questions"] == 3, result["files"] == 45,
                  result["passing"] == 45, result["lessons"] == 9,
-                 result["answer_lines"] == 132.7]),
+                 result["answer_lines"] == 133.3]),
             f"across {result['lessons']} finished lessons, {result['passing']} of "
             f"{result['files']} shipped answers pass and the answers sections average "
             f"{result['answer_lines']} lines -- the third question's metric, which the "

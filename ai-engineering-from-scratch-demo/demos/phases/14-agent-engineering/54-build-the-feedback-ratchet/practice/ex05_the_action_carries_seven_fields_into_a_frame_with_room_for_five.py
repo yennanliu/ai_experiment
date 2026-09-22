@@ -21,11 +21,11 @@ because three solutions broke, which is the provenance Lesson 51 measured as
 missing and this lesson's loop depends on.
 
 **FINDING: the accepted correction already shipped, and the frame would have
-scoped it correctly.** The real fix touched **3** solution files in lessons
-45, 47 and 48; the frame's allowed paths, derived from the ratchet action's
-durable artifact, name **1** path -- the artifact that does not exist -- so
-the trace preserves the intent and loses the location. Deriving allowed
-paths from the recurrence instead names all **3**.
+scoped it correctly.** The correction has to hold in every solution that
+measures this repository -- **8** files across lessons 41 to 51 -- while the
+frame's allowed paths, derived from the ratchet action's durable artifact,
+name **1** path that does not exist. The trace preserves the intent and loses
+the location; deriving allowed paths from the recurrence names all **8**.
 
 **FINDING: the loop closes only if the frame's acceptance is the ratchet's
 verification.** Both fields hold a command string, and setting them to the
@@ -53,15 +53,16 @@ CORRECTION = ("commit 448f198", "a later commit changed a measurement three solu
 ACCEPTANCE = f"uv run pytest {PHASE_DIR}"
 
 
-FINISHED = tuple(f"{number}-" for number in range(43, 53))
+MEASURING = tuple(f"{number}-" for number in range(41, 53))
+ROOT_IDIOM = 'p / "demos").is_dir()'
 
 
 def recurrence_paths():
-    """Where the accepted correction actually landed, across the finished lessons."""
+    """Where the correction has to hold: every solution that measures this repository."""
     return sorted(f"{path.parents[1].name}/practice/{path.name}"
                   for path in BASE.glob("*/practice/ex0*.py")
-                  if path.parents[1].name.startswith(FINISHED)
-                  and "ANCHOR = " in path.read_text(encoding="utf-8"))
+                  if path.parents[1].name.startswith(MEASURING)
+                  and ROOT_IDIOM in path.read_text(encoding="utf-8"))
 
 
 def trace(ref, frame_ref, action, allowed):
@@ -126,8 +127,8 @@ def verify(result):
             "FINDING: the trace preserves the intent and loses the location",
             all([result["allowed_from_artifact"] == 1,
                  result["artifact_exists"] is False,
-                 result["allowed_from_recurrence"] == 3,
-                 len(result["recurrence_paths"]) == 3]),
+                 result["allowed_from_recurrence"] == 8,
+                 len(result["recurrence_paths"]) == 8]),
             f"the action's durable artifact gives {result['allowed_from_artifact']} allowed "
             f"path that does not exist, while the recurrence itself names "
             f"{result['allowed_from_recurrence']}: {[p[:2] for p in result['recurrence_paths']]}",

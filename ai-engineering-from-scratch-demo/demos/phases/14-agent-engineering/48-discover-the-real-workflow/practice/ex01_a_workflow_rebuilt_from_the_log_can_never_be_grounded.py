@@ -2,14 +2,14 @@
 
     Reconstruct one workflow from a log without interviewing anyone.
 
-Reading of the exercise: the log available here is this repository's git
-history plus the artifacts each commit left behind. Reconstructing from it is
-the whole exercise -- and running the lesson's audit over the result says
-something the exercise did not anticipate.
+Reading of the exercise: the log available here is the trail of artifacts the
+work leaves in the tree -- a manifest, a test module, a generated README.
+Reconstructing the workflow from them is the whole exercise, and running the
+lesson's audit over the result says something the exercise did not anticipate.
 
-**ANSWER: the log yields an 8-step workflow whose direct-evidence ratio is
-0.0, and the audit calls it `needs-evidence`.** Every step is supported by an
-artifact -- a manifest on disk, a generated README marker, a commit subject --
+**ANSWER: the artifacts yield an 8-step workflow whose direct-evidence ratio
+is 0.0, and the audit calls it `needs-evidence`.** Every step is supported by
+an artifact -- a manifest on disk, a generated README, a practice directory --
 and `Evidence.direct` is false for all **8**, so `audit` reports
 `needs-evidence` on a reconstruction that is entirely correct. "Grounded"
 requires a kind of evidence that a log, by definition, does not contain.
@@ -21,9 +21,8 @@ inference are stored identically. **3** of the **4** rungs land on `False`
 and the ratio that drives the status cannot tell them apart.
 
 **FINDING: the reconstruction is checkable, which is what artifacts buy.**
-Each step names a file or a commit: **7** of the **8** steps point at a path
-that exists in the tree and **1** at a commit the log knows -- **8** of **8**
-receipts resolve. An interview produces claims; a log produces
+Each step names a path: **8** of the **8** open in the tree, so every claim in
+the reconstruction can be re-checked by someone who doubts it. An interview produces claims; a log produces
 claims with addresses.
 
 **FINDING: confidence is stored and never used.** `audit` checks that each
@@ -38,7 +37,6 @@ that each one points at something real.
 from __future__ import annotations
 
 import inspect
-import subprocess
 from pathlib import Path
 
 from harness import parity, practice
@@ -66,15 +64,11 @@ STEPS = [
     ("author", "writes the answers section by hand",
      f"{BASE}/{SAMPLE}/practice/README.md", "prose follows the generated block",
      "the numbers must match the graded output"),
-    ("author", "commits the lesson as one change", "f77cab9",
-     "one commit per lesson in the log", ""),
+    ("author", "ships the lesson as one directory", f"{BASE}/{SAMPLE}/practice",
+     "one practice directory per lesson", ""),
     ("author", "regenerates the repository coverage table", "README.md",
      "the top-level README changes in the same commit", ""),
 ]
-
-
-def git(*args):
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
 
 
 def reconstruct(ref):
@@ -86,20 +80,16 @@ def reconstruct(ref):
 
 
 def receipts():
-    """Every source: a path that exists, or a commit the log knows."""
-    shas = {line[:7] for line in git("log", "--format=%h", "-n", "20").splitlines()}
-    paths = sum((ROOT / source).exists() for *_, source, _, _ in
-                [(a, b, c, d, e) for a, b, c, d, e in STEPS] if "/" in source or "." in source)
-    commits = sum(source in shas for *_, source, _, _ in
-                  [(a, b, c, d, e) for a, b, c, d, e in STEPS])
-    return paths, commits
+    """Every source is a path in the tree, so every receipt can be opened."""
+    sources = [source for _, _, source, _, _ in STEPS]
+    return len(sources), sum((ROOT / source).exists() for source in sources)
 
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     steps = reconstruct(ref)
     report = ref.audit(steps)
-    paths, commits = receipts()
+    sources, resolving = receipts()
     confident = [ref.WorkflowStep(step.order, step.actor, step.action,
                                   tuple(ref.Evidence(item.source, item.observation,
                                                      item.direct, 0.01)
@@ -112,7 +102,7 @@ def solve():
         "friction": len(report["friction_points"]),
         "direct_type": ref.Evidence.__annotations__["direct"],
         "rungs": 4, "on_false": 3,
-        "paths": paths, "commits": commits, "resolved": paths + commits,
+        "sources": sources, "resolving": resolving,
         "low_ratio": ref.audit(confident)["direct_evidence_ratio"],
         "low_status": ref.audit(confident)["status"],
         "confidence_used": auditor.count("confidence"),
@@ -140,11 +130,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the reconstruction is checkable, which is what artifacts buy",
-            all([result["paths"] == 7, result["commits"] == 1, result["resolved"] == 8]),
-            f"{result['paths']} steps point at a path that exists and "
-            f"{result['commits']} at commits the log knows -- {result['resolved']} of "
-            f"{result['steps']} receipts resolve. An interview produces claims; a log "
-            "produces claims with addresses",
+            all([result["sources"] == 8, result["resolving"] == 8]),
+            f"every one of the {result['sources']} steps names a path in the tree and "
+            f"{result['resolving']} of them open -- an interview produces claims; an "
+            "artifact produces claims with addresses",
         ),
         practice.Check(
             "FINDING: confidence is stored and never used",

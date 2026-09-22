@@ -61,9 +61,10 @@ writing what the string stands for:
 > **stop** — any shipped answer fails, or the traced rate falls below 0.75.
 > **revise** — everything else; the pilot continues in its bounded form.
 
-The real numbers: **50 of 50** shipped answers passing, a traced rate of **0.875**.
-Neither expand nor stop fires, so the pilot **revises** — it does not get to expand
-on a near miss, and the reason was written before the number.
+The real numbers: **50 of 50** shipped answers passing, a traced rate of **0.708**.
+The first condition is met and the second is not, so the rule written before the run
+says **stop** — the pilot does not get to expand on a partial trace, and it does not
+get to call a miss a revision either.
 
 Three notes on the artifact. `required_controls("pilot")` returns five strings of
 which one is "exit criteria", and `plan` returns three keys — nothing that can hold
@@ -124,13 +125,13 @@ function gives them no reason not to.
 The pilot's unit here is a lesson and the rollback is `git revert` of its single
 commit, so both halves of a receipt are computable.
 
-Reverting lesson 47: commit `f77cab9`, **9 files**, all but the generated README
-inside that lesson's directory. It looks local. It is not — **7 solutions** in
-lessons 48, 49, 51 and 52 name that directory and read its files, so the revert
-takes their measurements with it.
+Reverting lesson 47 takes out **9 files** — its practice directory plus the
+generated top-level README. It looks local. It is not: **7 solutions** in lessons
+48, 49, 51 and 52 name that directory and read its files, so the revert takes their
+measurements with it.
 
 The shape of the dependency matters as much as the count. The two earliest finished
-lessons have 7 dependents each; the last five have 0 between them — 29 edges across
+lessons have 9 dependents each; the last five have 0 between them — 37 edges across
 the ten finished lessons, all pointing backwards. Reverting an early lesson is
 expensive and reverting a late one is free, which is the opposite of how a commit
 log reads, and nothing in the stage plan records it.

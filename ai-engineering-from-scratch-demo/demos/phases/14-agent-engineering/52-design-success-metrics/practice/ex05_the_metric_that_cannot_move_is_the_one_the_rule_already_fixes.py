@@ -141,7 +141,7 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the metric that looks similar does vary",
-            all([result["files"] == 45, result["over"] == 11,
+            all([result["files"] == 45, result["over"] == 10,
                  result["over_variance"] == 2, result["over_row"]["passed"] is False]),
             f"files_over_line_target reads {result['over']} over the same "
             f"{result['files']} files against a threshold of 0, so it fails -- the "

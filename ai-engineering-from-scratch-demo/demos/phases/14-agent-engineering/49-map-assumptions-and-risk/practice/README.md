@@ -18,7 +18,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 1 | Write five assumptions for a feature you want to build. | code | T0 | `ex01_the_two_riskiest_assumptions_tie_and_the_two_functions_disagree.py` |
 | 2 | Add one safety assumption that your feature list omitted. | code | T0 | `ex02_the_omitted_assumption_is_the_one_about_the_published_answer.py` |
 | 3 | Define a threshold that would cause you to stop the build. | code | T0 | `ex03_the_threshold_has_nowhere_to_live_and_the_run_it_judges_fails_it.py` |
-| 4 | Replace one large experiment with a cheaper decisive test. | code | T0 | `ex04_the_cheap_test_reaches_the_same_verdict_in_four_of_five_draws.py` |
+| 4 | Replace one large experiment with a cheaper decisive test. | code | T0 | `ex04_the_cheap_test_reaches_the_same_verdict_in_every_draw.py` |
 | 5 | Compare risk ranking with roadmap priority and explain the mismatch. | code | T0 | `ex05_the_roadmap_builds_in_the_order_the_risk_map_would_test_last.py` |
 <!-- generated:end -->
 
@@ -76,15 +76,20 @@ rather than resolving it.
 **The rule: stop unless 90% of the numbers in a generated answer trace to a graded
 check detail.** Written before the result, as the lesson requires.
 
-Run against one finished lesson: 16 distinct numbers in its answers section, 14 of
-them appearing verbatim in the details its own solutions print. **87.5%** — below
-the threshold. The rule says stop.
+Run against five finished lessons: **154** numbers claimed in their solutions'
+docstrings, **109** of them appearing verbatim in the details those same solutions
+print. **70.8%** — below the threshold. The rule says stop.
 
-The two misses are `43` and `46`: "Lesson 43", "Lesson 46". Not claims about
-anything measured. So the threshold fired correctly and the conclusion is to fix
-the metric (exclude cross-references) rather than the feature. That is what a cheap
-threshold buys — it stops the build on its first run and tells you something either
-way.
+The 45 misses are quoted material: line numbers inside receipts (`code/main.py:174`),
+field counts read off a dataclass, thresholds the prose explains rather than
+measures. Not claims about anything the run produced. So the threshold fired
+correctly and the conclusion is to fix the metric rather than the feature. That is
+what a cheap threshold buys — it stops the build on its first run and tells you
+something either way.
+
+(The trace reads the solutions' docstrings rather than this answers section on
+purpose: a metric that reads the prose it is quoted in moves every time the prose is
+edited, which is a feedback loop rather than a measurement.)
 
 The artifact cannot hold any of this. `Assumption` has six fields; its only numbers
 are the three risk dimensions. There is no field for the number to beat, the number
@@ -98,19 +103,20 @@ not a state this document can represent.
 Both versions can actually be run, which is the only way to know whether the cheap
 one is decisive.
 
-- **Large:** trace every number in five finished lessons' answers — 67 numbers, 52
-  matched, **77.6%**, 25 graded files.
-- **Cheap:** trace one lesson — 16 numbers, 14 matched, **87.5%**, 5 graded files.
+- **Large:** trace every number five finished lessons' solutions claim — 154 numbers,
+  109 matched, **70.8%**, 25 graded files.
+- **Cheap:** trace one lesson — 38 numbers, 22 matched, **57.9%**, 5 graded files.
 
 Both return `stop`, at 20% of the cost. The substitution is justified.
 
-But the honest report includes the draw that would have disagreed. The per-lesson
-rates are 72.2%, 87.5%, 57.1%, **90.9%** and 87.5%. Sampling the fourth lesson
-returns `continue`. So 4 of the 5 available draws agree with the full run, and
-"cheaper and decisive" is a property of this sample rather than of the method.
+The honest report is the list of draws. The per-lesson rates are 57.9%, 78.6%,
+70.4%, **86.2%** and 65.6% — every one below the threshold, so all 5 available draws
+agree with the full run and none would have reversed it. "Cheaper and decisive" is
+still a property of this sample rather than of the method; here the sample is
+generous, and the nearest draw is 3.8 points from the line.
 
 What the expensive run actually buys is not a better point estimate — both land on
-the same side of the threshold — it is the **33.8-point spread**, which is the
+the same side of the threshold — it is the **28.3-point spread**, which is the
 measurement that says the metric is noisy. That is worth knowing, and it is not
 what the experiment was proposed to find out.
 

@@ -10,11 +10,11 @@ rule is a mapping from observed result to one of those five, written before
 the pilot runs.
 
 **ANSWER: five branches, none of which is "keep building", and the result
-already in hand selects "collect better evidence".** The pilot's measurement
-is the number-trace from Lesson 49: **87.5%** against a 90% threshold, with
-both misses being lesson references rather than claims. Under the rule that
-maps a near-miss caused by a metric defect to better evidence, the pilot
-fails and the build does not continue on the same footing.
+already in hand selects "test a different mechanism".** The pilot's
+measurement is the number-trace from Lesson 49: **70.8%** against a 90%
+threshold, more than fifteen points below it, so the branch that fires is the
+one for a result that is not a near miss. The build does not continue on the
+same footing.
 
 **FINDING: `Slice` has 7 fields and `decision` returns 3 keys, none of them a
 stop rule.** The document records what was chosen and what was rejected, so
@@ -29,9 +29,9 @@ branches can be evaluated from a run rather than argued. A branch reading
 "if it feels wrong" would make the rule decorative.
 
 **FINDING: the same failure maps to different branches depending on one
-number.** At **87.5%** the rule says collect better evidence; at **57.1%** --
-the worst per-lesson rate the previous lesson measured -- it says test a
-different mechanism. The stop rule is a function of the result, so writing it
+number.** At **70.8%** the rule says test a different mechanism; at **86.2%**
+-- the best per-lesson rate the previous lesson measured -- it says collect
+better evidence. The stop rule is a function of the result, so writing it
 before the pilot is what stops the result from choosing its own
 interpretation.
 
@@ -45,8 +45,8 @@ from harness import parity, practice
 
 PHASE, LESSON = "14-agent-engineering", "50-choose-the-smallest-testable-slice"
 THRESHOLD = 0.90
-MEASURED = 0.875          # Lesson 49's traced-number rate for one finished lesson
-WORST = 0.571             # the worst per-lesson rate in that same run
+MEASURED = 0.708          # Lesson 49's traced-number rate over five finished lessons
+BEST = 0.862              # the best per-lesson rate in that same run
 PILOT = ("publish one lesson, numbers only, planted error", 3, 5, 2, 3, True,
          ("numbers-trace", "wrong-number-detected"))
 
@@ -81,7 +81,7 @@ def solve():
         "measured": MEASURED, "threshold": THRESHOLD,
         "decision": apply(MEASURED, metric_defect=True),
         "passing": apply(0.95, metric_defect=False),
-        "worst_decision": apply(WORST, metric_defect=True),
+        "best_decision": apply(BEST, metric_defect=True),
         "fields": len(ref.Slice.__dataclass_fields__),
         "keys": sorted(document),
         "stop_field": any(name in ref.Slice.__dataclass_fields__
@@ -97,10 +97,10 @@ def solve():
 def verify(result):
     return [
         practice.Check(
-            "ANSWER: five branches, none of them keep building, and 87.5% selects one",
+            "ANSWER: five branches, none of them keep building, and 70.8% selects one",
             all([result["branches"] == 5, result["keep_building"] == 0,
-                 result["measured"] == 0.875,
-                 result["decision"] == "collect better evidence",
+                 result["measured"] == 0.708,
+                 result["decision"] == "test a different mechanism",
                  result["passing"] == "continue"]),
             f"the rule has {result['branches']} branches and "
             f"{result['keep_building']} of them is 'keep building'; the pilot's measured "
@@ -124,10 +124,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the same failure maps to different branches on one number",
-            all([result["decision"] == "collect better evidence",
-                 result["worst_decision"] == "test a different mechanism"]),
-            f"at 87.5% the rule says {result['decision']!r} and at 57.1% -- the worst "
-            f"per-lesson rate measured -- it says {result['worst_decision']!r}; writing the "
+            all([result["decision"] == "test a different mechanism",
+                 result["best_decision"] == "collect better evidence"]),
+            f"at 70.8% the rule says {result['decision']!r} and at 86.2% -- the best "
+            f"per-lesson rate measured -- it says {result['best_decision']!r}; writing the "
             "rule first is what stops the result choosing its own interpretation",
         ),
     ]

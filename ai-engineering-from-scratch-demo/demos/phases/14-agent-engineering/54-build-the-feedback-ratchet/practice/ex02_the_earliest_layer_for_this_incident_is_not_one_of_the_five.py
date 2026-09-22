@@ -22,10 +22,10 @@ nobody has created.
 
 **FINDING: the layer that caught it and the layer that owns it are one step
 apart, and the artifact records only one.** The test suite is where the
-incident surfaced; the solutions are where it was fixed -- **3** of them now
-pin a commit. `RatchetAction` has **7** fields and none distinguishes
-detection from prevention, so a reader cannot tell whether a control stops a
-failure or merely reports it.
+incident surfaced; the solutions are where it was fixed -- **8** of them
+measure this repository and **0** read its commit graph. `RatchetAction` has
+**7** fields and none distinguishes detection from prevention, so a reader
+cannot tell whether a control stops a failure or merely reports it.
 
 **FINDING: routing by keyword puts the cheapest layer last.** The router
 tests `evaluation`, `policy`, `context`, `runtime` and then falls through to
@@ -75,14 +75,19 @@ def artifacts(ref):
     return rows
 
 
-FINISHED = tuple(f"{number}-" for number in range(43, 53))
+MEASURING = tuple(f"{number}-" for number in range(41, 53))
+ROOT_IDIOM = 'p / "demos").is_dir()'
 
 
-def anchored():
-    """Solutions in the finished lessons that pin their git window to a fixed commit."""
-    return sorted(path.parents[1].name[:2] for path in BASE.glob("*/practice/ex0*.py")
-                  if path.parents[1].name.startswith(FINISHED)
-                  and "ANCHOR = " in path.read_text(encoding="utf-8"))
+def repo_measuring():
+    """Solutions that measure this repository, and how many read its commit graph."""
+    rows = []
+    for path in sorted(BASE.glob("*/practice/ex0*.py")):
+        text = path.read_text(encoding="utf-8")
+        if path.parents[1].name.startswith(MEASURING) and ROOT_IDIOM in text:
+            rows.append((path.parents[1].name[:2], "cwd=ROOT" in text))
+    return {"measuring": [lesson for lesson, _ in rows],
+            "reading_git": sum(reads for _, reads in rows)}
 
 
 def evidence(ref):
@@ -108,7 +113,7 @@ def solve():
         "destinations": len(paths),
         "existing": sum(exists for _, exists in paths.values()),
         "artifact_names": sorted(path for path, _ in paths.values()),
-        "anchored": anchored(),
+        **repo_measuring(),
         "action_fields": list(ref.RatchetAction.__dataclass_fields__),
         "detection_field": any(name in ref.RatchetAction.__dataclass_fields__
                                for name in ("detected_by", "prevents", "layer_kind")),
@@ -139,11 +144,12 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: detection and prevention are one step apart and only one is recorded",
-            all([result["anchored"] == ["45", "47", "48"],
+            all([len(result["measuring"]) == 8, result["reading_git"] == 0,
                  len(result["action_fields"]) == 7,
                  result["detection_field"] is False]),
             f"the test suite caught the incident and the fix lives in the solutions -- "
-            f"lessons {result['anchored']} now pin a commit -- while RatchetAction's "
+            f"{len(result['measuring'])} of them measure this repository and "
+            f"{result['reading_git']} read its commit graph -- while RatchetAction's "
             f"{len(result['action_fields'])} fields cannot say whether a control prevents a "
             "failure or merely reports it",
         ),

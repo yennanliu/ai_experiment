@@ -5,14 +5,14 @@
 Reading of the exercise: the interview available here is the instruction that
 started this work -- a person stating how the work should proceed. Each
 sentence is a claim about the workflow, and the repository can be asked
-whether it happened.
+whether its artifacts show it.
 
-**ANSWER: 2 of the 4 claims are corroborated by the log and 2 remain
-reported.** "One commit per completed lesson" holds -- the **8** most recent
-lesson commits carry **8** distinct lesson numbers. "Push after each lesson"
-holds: the branch is an ancestor of its remote. "The pull request is the place
-this lands" and "the reviewer reads the answers first" have **0** artifacts in
-this repository, and stay marked as reported.
+**ANSWER: 2 of the 4 claims are corroborated by the tree and 2 remain
+reported.** "Every exercise ships exactly one solution file" holds -- **10**
+finished lessons declare **50** code exercises and carry **50** files. "Every
+finished lesson carries a written answers section" holds: **10** of **10**.
+"The pull request is the place this lands" and "the reviewer reads the answers
+first" have **0** artifacts in this repository, and stay marked as reported.
 
 **FINDING: marking a claim costs one field the dataclass already has.**
 `Evidence.direct` distinguishes the corroborated pair from the reported pair,
@@ -21,10 +21,10 @@ recorded. The mechanism exists; what the interview adds is the discipline of
 entering the claim before looking for the artifact.
 
 **FINDING: a corroborated claim is narrower than the sentence it came from.**
-"Commit and push once a lesson is completed" is corroborated as "one commit
-whose subject names one lesson", which is what the log can show. Whether the
-lesson was *completed* is a separate check -- the audit of that lesson -- and
-conflating the two is how a reported claim quietly becomes a requirement.
+"Complete all of the lessons" is corroborated as "every code exercise has a
+file", which is what the tree can show. Whether the answer inside the file is
+*right* is a separate check -- that lesson's own audit -- and conflating the
+two is how a reported claim quietly becomes a requirement.
 
 **FINDING: the audit reports a ratio and never says which claims are weak.**
 `audit` returns **5** keys: a status, the issues, the ratio, the friction
@@ -32,58 +32,59 @@ points and the steps. A reader gets one number for the whole workflow and has
 to walk `steps` to find the **2** unsupported claims, which is the opposite of
 the lesson's advice to keep uncertain claims visible.
 
-Structure: `CLAIMS` is the interview; `corroborate()` asks the log about each
+Structure: `CLAIMS` is the interview; `corroborate()` asks the tree about each
 one.
 """
 
 from __future__ import annotations
 
-import re
-import subprocess
+import sys
 from pathlib import Path
 
 from harness import parity, practice
 
 PHASE, LESSON = "14-agent-engineering", "48-discover-the-real-workflow"
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "demos").is_dir())
-BASE = "demos/phases/14-agent-engineering"
+sys.path.insert(0, str(ROOT / "demos"))
+BASE = ROOT / "demos" / "phases" / "14-agent-engineering"
+FINISHED = tuple(f"{number}-" for number in range(43, 53))
 
-# (claim as stated, how the log would corroborate it)
+# (claim as stated, how the repository would corroborate it)
 CLAIMS = [
-    ("one commit per completed lesson", "commit-subjects"),
-    ("push after each lesson rather than at the end", "remote-ancestry"),
+    ("every exercise ships exactly one solution file", "manifest-and-files"),
+    ("every finished lesson carries a written answers section", "readme-sections"),
     ("the pull request is where this lands", "none"),
     ("a reviewer reads the answers before the code", "none"),
 ]
 
 
-def git(*args):
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+def lessons():
+    return sorted(path for path in BASE.iterdir()
+                  if path.is_dir() and path.name.startswith(FINISHED))
 
 
-ANCHOR = "a992f27"  # the lesson-46 commit: a fixed window, not a sliding one
-
-
-def lesson_numbers(count=8):
-    subjects = git("log", "--format=%s", "-n", str(count), ANCHOR, "--", BASE).splitlines()
-    return [match.group(1) for subject in subjects
-            if (match := re.search(r"lesson (\d+)", subject))]
-
-
-def pushed():
-    """Whether the branch this work lives on is an ancestor of its remote."""
-    branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
-    remotes = git("branch", "-r", "--contains", "HEAD~1")
-    return branch, bool(remotes.strip())
+def counted():
+    """One file per code exercise, and one answers section per lesson."""
+    from harness import yamlite
+    exercises = files = sections = 0
+    for lesson in lessons():
+        manifest = yamlite.loads(
+            (lesson / "practice" / "practice.yaml").read_text(encoding="utf-8"))
+        exercises += sum(row["kind"] == "code" for row in manifest["exercises"])
+        files += len(list((lesson / "practice").glob("ex0*.py")))
+        readme = (lesson / "practice" / "README.md").read_text(encoding="utf-8")
+        sections += "## Answers" in readme
+    return {"lessons": len(lessons()), "exercises": exercises, "files": files,
+            "sections": sections}
 
 
 def corroborate():
-    numbers = lesson_numbers()
-    branch, on_remote = pushed()
-    found = {"commit-subjects": len(numbers) == len(set(numbers)) and len(numbers) == 8,
-             "remote-ancestry": on_remote, "none": False}
-    return [{"claim": claim, "via": via, "direct": found[via]} for claim, via in CLAIMS], \
-        numbers, branch
+    rows = counted()
+    found = {"manifest-and-files": rows["exercises"] == rows["files"],
+             "readme-sections": rows["sections"] == rows["lessons"],
+             "none": False}
+    return [{"claim": claim, "via": via, "direct": found[via]}
+            for claim, via in CLAIMS], rows
 
 
 def steps(ref, rows):
@@ -94,7 +95,7 @@ def steps(ref, rows):
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    rows, numbers, branch = corroborate()
+    rows, counts = corroborate()
     report = ref.audit(steps(ref, rows))
     reported = [ref.WorkflowStep(step.order, step.actor, step.action,
                                  (ref.Evidence(item.source, item.observation, False, 0.8),))
@@ -103,8 +104,7 @@ def solve():
         "claims": len(rows), "corroborated": sum(row["direct"] for row in rows),
         "supported": [row["claim"] for row in rows if row["direct"]],
         "reported": [row["claim"] for row in rows if not row["direct"]],
-        "lessons": len(numbers), "distinct": len(set(numbers)),
-        "branch": branch,
+        **counts,
         "ratio": report["direct_evidence_ratio"],
         "unmarked_ratio": ref.audit(reported)["direct_evidence_ratio"],
         "keys": sorted(report),
@@ -118,13 +118,15 @@ def verify(result):
         practice.Check(
             "ANSWER: 2 of the 4 claims are corroborated and 2 remain reported",
             all([result["claims"] == 4, result["corroborated"] == 2,
-                 result["lessons"] == 8, result["distinct"] == 8,
+                 result["lessons"] == 10, result["exercises"] == result["files"] == 50,
+                 result["sections"] == 10,
                  result["reported"] == ["the pull request is where this lands",
                                         "a reviewer reads the answers before the code"]]),
-            f"{result['corroborated']} of {result['claims']} claims are backed by the log: "
-            f"{result['lessons']} anchored lesson commits carry {result['distinct']} distinct "
-            f"lesson numbers and the branch is on its remote. {result['reported']} have no "
-            "artifact in this repository",
+            f"{result['corroborated']} of {result['claims']} claims are backed by the "
+            f"tree: {result['lessons']} finished lessons declare {result['exercises']} code "
+            f"exercises against {result['files']} solution files and carry "
+            f"{result['sections']} answers sections. {result['reported']} have no artifact "
+            "in this repository",
         ),
         practice.Check(
             "FINDING: marking a claim costs one field the dataclass already has",
@@ -135,12 +137,12 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: a corroborated claim is narrower than the sentence it came from",
-            all([result["supported"][0] == "one commit per completed lesson",
-                 result["distinct"] == 8]),
-            "'commit and push once a lesson is completed' is corroborated only as 'one "
-            f"commit whose subject names one lesson' ({result['distinct']} distinct); "
-            "whether the lesson was completed is the lesson's own audit, and conflating "
-            "the two turns a reported claim into a requirement",
+            all([result["supported"][0] == "every exercise ships exactly one solution file",
+                 result["exercises"] == result["files"]]),
+            "'complete all of the lessons' is corroborated only as 'every code exercise has "
+            f"a file' ({result['files']} of {result['exercises']}); whether the answer in "
+            "the file is right is the lesson's own audit, and conflating the two turns a "
+            "reported claim into a requirement",
         ),
         practice.Check(
             "FINDING: the audit reports a ratio and never says which claims are weak",

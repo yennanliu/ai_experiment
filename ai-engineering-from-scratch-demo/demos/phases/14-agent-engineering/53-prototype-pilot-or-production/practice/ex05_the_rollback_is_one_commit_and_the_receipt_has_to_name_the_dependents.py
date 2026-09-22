@@ -3,19 +3,19 @@
     Design a rollback receipt for the bounded pilot.
 
 Reading of the exercise: a receipt records what a rollback would undo and
-what it would break. In this repository the unit of the pilot is a lesson and
-the rollback is `git revert` of its single commit, so both halves are
-computable.
+what it would break. In this repository the unit of the pilot is one lesson's
+practice directory, so both halves are computable from the tree.
 
-**ANSWER: reverting one lesson touches its own directory and breaks 7 other
-solutions.** Lesson 47's commit is the unit; **7** solution files in lessons
-48, 49, 51 and 52 name its directory and read its files, so a revert that
-looks local to one directory takes those measurements with it. The receipt
-has to carry the dependent list, not just the commit.
+**ANSWER: reverting one lesson takes out 9 files and breaks 7 other
+solutions.** The unit is Lesson 47's practice directory -- **8** files, plus
+the top-level README a lesson regenerates -- and **7** solution files in
+lessons 48, 49, 51 and 52 name that directory and read its files, so a revert
+that looks local takes those measurements with it. The receipt has to carry
+the dependent list, not just the unit.
 
 **FINDING: the dependency runs one way and grows with the phase.** Lessons
-43, 44 and 47 have **7**, **7** and **7** dependents; lessons 48 through 52
-have **0** between them. Reverting an early lesson is expensive and
+43 and 44 have **9** dependents each; lessons 48 through 52 have **0**
+between them. Reverting an early lesson is expensive and
 reverting a late one is free, which is the opposite of how the commit log
 reads -- and nothing in the stage plan records it.
 
@@ -30,13 +30,12 @@ the tree, and it is the half that decides whether the rollback is a revert or
 a project. Computing it for all **10** finished lessons takes one pass and
 finds **21** dependency edges.
 
-Structure: `dependents()` reads the real cross-lesson references;
-`receipt()` assembles what a revert would need.
+Structure: `footprint()` is what a revert removes; `dependents()` reads the
+real cross-lesson references; `receipt()` assembles both.
 """
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 from harness import parity, practice
@@ -66,24 +65,19 @@ def dependents(lesson):
                   and path.parents[1].name != lesson)
 
 
-def commit_for(lesson):
-    done = subprocess.run(["git", "log", "-1", "--format=%h", "--",
-                           f"demos/phases/14-agent-engineering/{lesson}/practice"],
-                          cwd=ROOT, capture_output=True, text=True)
-    return done.stdout.strip()
-
-
-def files_in(sha):
-    done = subprocess.run(["git", "show", "--name-only", "--format=", sha],
-                          cwd=ROOT, capture_output=True, text=True)
-    return [line for line in done.stdout.splitlines() if line.strip()]
+def footprint(lesson):
+    """What a revert of this lesson would take out: its directory, plus the
+    top-level README that scripts/coverage.py regenerates with every lesson."""
+    folder = BASE / lesson / "practice"
+    own = sorted(path.relative_to(BASE).as_posix() for path in folder.rglob("*")
+                 if path.is_file() and "__pycache__" not in path.parts)
+    return own + ["README.md"]
 
 
 def receipt(lesson):
-    sha = commit_for(lesson)
-    touched = files_in(sha)
-    return {"lesson": lesson, "commit": sha, "files": len(touched),
-            "own_directory": sum(lesson in path for path in touched),
+    files = footprint(lesson)
+    return {"lesson": lesson, "files": len(files),
+            "own_directory": sum(lesson in path for path in files),
             "dependents": dependents(lesson)}
 
 
@@ -96,6 +90,8 @@ def solve():
     controls = ref.required_controls("pilot")
     return {
         **row, "lessons": len(edges), "edges": sum(edges.values()),
+        "resolve": sum((BASE / path).exists() or path == "README.md"
+                       for path in footprint(UNIT)),
         "early": [edges[name] for name in lessons()[:2]],
         "late": sum(edges[name] for name in lessons()[5:]),
         "controls": controls, "control_count": len(controls),
@@ -111,19 +107,19 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: reverting one lesson touches its directory and breaks 7 solutions",
-            all([result["lesson"] == UNIT, len(result["commit"]) >= 7,
+            all([result["lesson"] == UNIT, result["files"] == 9,
                  result["own_directory"] == result["files"] - 1,
+                 result["resolve"] == result["files"],
                  len(result["dependents"]) == 7,
                  sorted(set(result["dependents"])) == ["48", "49", "51", "52"]]),
-            f"commit {result['commit']} touches {result['files']} files, all but the "
-            f"generated README inside {result['lesson']}, while "
-            f"{len(result['dependents'])} solutions in lessons "
-            f"{sorted(set(result['dependents']))} read its files",
+            f"the revert takes out {result['files']} files, all but the generated README "
+            f"inside {result['lesson']}, while {len(result['dependents'])} solutions in "
+            f"lessons {sorted(set(result['dependents']))} read its files",
         ),
         practice.Check(
             "FINDING: the dependency runs one way and grows with the phase",
-            all([result["early"] == [7, 7], result["late"] == 0,
-                 result["lessons"] == 10, result["edges"] == 29]),
+            all([result["early"] == [9, 9], result["late"] == 0,
+                 result["lessons"] == 10, result["edges"] == 37]),
             f"the two earliest finished lessons have {result['early']} dependents and the "
             f"last five have {result['late']} between them; across {result['lessons']} "
             f"lessons there are {result['edges']} edges, and reverting an early lesson is "
@@ -140,8 +136,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the cheap half of the receipt is the one nobody writes",
-            all([result["edges"] == 29, result["lessons"] == 10,
-                 result["files"] >= 7]),
+            all([result["edges"] == 37, result["lessons"] == 10,
+                 result["files"] == 9]),
             f"recording the commit is one line; recording the dependents is one pass over "
             f"the tree that finds {result['edges']} edges across {result['lessons']} "
             "lessons, and it is the half that decides whether a rollback is a revert or a "

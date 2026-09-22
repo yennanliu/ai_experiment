@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Reconstruct one workflow from a log without interviewing anyone. | code | T0 | `ex01_a_workflow_rebuilt_from_the_log_can_never_be_grounded.py` |
-| 2 | Interview a user and mark every claim that still lacks direct evidence. | code | T0 | `ex02_four_reported_claims_and_the_log_corroborates_two.py` |
+| 2 | Interview a user and mark every claim that still lacks direct evidence. | code | T0 | `ex02_four_reported_claims_and_the_tree_corroborates_two.py` |
 | 3 | Add one authority boundary and one failure-recovery step. | code | T0 | `ex03_the_recovery_step_is_a_loop_and_the_model_is_a_list.py` |
 | 4 | Model two workflow variants without merging them. | code | T0 | `ex04_the_two_variants_differ_at_one_step_and_merging_them_breaks_the_order.py` |
 | 5 | Identify a proposed feature that removes a visible step but leaves hidden work untouched. | code | T0 | `ex05_the_scaffold_removes_the_typing_and_leaves_the_measuring.py` |
@@ -26,14 +26,14 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 ### 1 — a workflow rebuilt from the log can never be grounded
 
-The log available here is this repository's git history plus the artifacts each
-commit left behind. Reconstructed from it, the per-lesson workflow is eight steps:
+The trail available here is the artifacts the work leaves in the tree. Reconstructed
+from them, the per-lesson workflow is eight steps:
 scaffold the manifest, write one solution per exercise, run each until its checks
 pass, fill the manifest's threshold, regenerate the lesson README, write the
 answers by hand, commit the lesson as one change, regenerate the coverage table.
 
-Every step is supported by something checkable — a path in the tree or a commit in
-the log — and 8 of 8 receipts resolve. And `audit` calls the result
+Every step is supported by something checkable — a path in the tree — and 8 of 8
+receipts open. And `audit` calls the result
 **`needs-evidence`**, because `direct_evidence_ratio` is `0.0`. Artifacts are not
 direct behaviour, and the status rule is `not issues and direct > 0`. A workflow
 reconstructed entirely from a log — which is exactly what this exercise asks for —
@@ -44,21 +44,21 @@ behaviour, artifact, reported, inference) and `Evidence.direct` is a `bool`. Thr
 of the four rungs store identically, so an incident log and somebody's hunch are
 the same value, and the ratio that drives the status cannot separate them.
 
-Two smaller notes. Reconstruction from a log buys addresses: 7 steps point at a
-file that exists and 1 at a commit, so every claim can be re-checked by someone who
+Two smaller notes. Reconstruction from artifacts buys addresses: all 8 steps point
+at a file or directory that exists, so every claim can be re-checked by someone who
 doubts it. And `confidence` is stored and never used — dropping all eight to 0.01
 leaves the ratio and status unchanged, because `audit` range-checks the number and
 then ignores it.
 
-### 2 — four reported claims, and the log corroborates two
+### 2 — four reported claims, and the tree corroborates two
 
 The "interview" available here is the instruction that started this work. Four
 claims come out of it, and the repository can be asked about each:
 
 | Claim | Corroboration | Verdict |
 |---|---|---|
-| one commit per completed lesson | 8 recent lesson commits, 8 distinct lesson numbers | corroborated |
-| push after each lesson rather than at the end | the branch is on its remote | corroborated |
+| every exercise ships exactly one solution file | 10 lessons, 50 code exercises, 50 files | corroborated |
+| every finished lesson carries a written answers section | 10 of 10 READMEs | corroborated |
 | the pull request is where this lands | nothing in this repository | reported |
 | a reviewer reads the answers before the code | nothing in this repository | reported |
 
@@ -68,10 +68,10 @@ writing the claim down *before* going to look for the artifact, so the ones that
 find nothing stay visible.
 
 The corroborated claims are also narrower than the sentences they came from.
-"Commit and push once a lesson is completed" is supported only as "one commit whose
-subject names one lesson". Whether the lesson was *completed* is a different check —
-that lesson's own audit — and collapsing the two is how a reported claim quietly
-becomes a requirement.
+"Complete all of the lessons" is supported only as "every code exercise has a file".
+Whether the answer inside the file is *right* is a different check — that lesson's
+own audit — and collapsing the two is how a reported claim quietly becomes a
+requirement.
 
 Finally, `audit` returns five keys and a single ratio. A reader gets one number for
 the whole workflow and has to walk `steps` to find which two claims are unsupported,

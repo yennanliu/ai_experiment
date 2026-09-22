@@ -109,12 +109,12 @@ lesson lists:
 None of the five is "keep building", which is the test the lesson sets, and all
 five are selected by something measurable rather than by an impression.
 
-The pilot's result is already in hand from Lesson 49: **87.5%** traced numbers
-against a 90% threshold, both misses being lesson references. The rule selects
-**collect better evidence** — fix the metric, re-run, and do not treat the pilot as
-a pass. Had the rate been 57.1% (the worst per-lesson rate in the same run), the
-same rule would say *test a different mechanism*. That the branch depends on one
-number is exactly why the rule has to be written before the number is known.
+The pilot's result is already in hand from Lesson 49: **70.8%** traced numbers
+against a 90% threshold — more than fifteen points below it, so the branch that
+fires is **test a different mechanism**, not the near-miss one. Had the rate been
+86.2% (the best per-lesson rate in the same run), the same rule would say *collect
+better evidence*. That the branch depends on one number is exactly why the rule has
+to be written before the number is known.
 
 `Slice` has 7 fields and `decision` returns 3 keys; none holds a stop rule. The one
 thing written before the pilot that is supposed to bind afterwards is the one thing

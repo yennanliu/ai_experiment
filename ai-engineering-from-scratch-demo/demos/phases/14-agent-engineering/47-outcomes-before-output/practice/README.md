@@ -17,7 +17,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 |---|---|---|---|---|
 | 1 | Rewrite a feature request from your backlog as an outcome frame. | code | T0 | `ex01_the_request_that_started_this_repository_names_its_output_twice.py` |
 | 2 | Add one constraint that changes which solutions remain possible. | code | T0 | `ex02_the_determinism_constraint_removes_the_solutions_the_lesson_would_reach_for.py` |
-| 3 | Add two non-goals that keep the first slice small. | code | T0 | `ex03_the_non_goals_held_in_five_of_six_commits.py` |
+| 3 | Add two non-goals that keep the first slice small. | code | T0 | `ex03_every_file_the_phase_shipped_is_inside_a_practice_directory.py` |
 | 4 | Identify the earliest observation that would disprove the desired outcome. | code | T0 | `ex04_the_next_question_asks_for_confirmation_and_the_frame_has_no_field_for_doubt.py` |
 | 5 | Write three different outputs that could satisfy the same outcome. | code | T0 | `ex05_three_outputs_satisfy_the_outcome_and_one_constraint_picks_between_them.py` |
 <!-- generated:end -->
@@ -93,10 +93,10 @@ runtime dependency) are all of the deleting kind.
 Two non-goals that a diff can cross: **do not translate anything**, and **do not
 touch the tooling**.
 
-Checked against the six lesson commits ending at the one that shipped Lesson 46:
-every file lands inside a lesson's `practice/` directory or is the generated
-top-level `README.md` — except one commit, which also edited
-`scripts/scaffold_practice.py`. **One crossing in six.**
+Checked against the tree: the finished lessons put **80** files in this repository
+and **0** of them sit outside a `practice/` directory. The one crossing is a single
+file the slice does not own — `scripts/scaffold_practice.py` — which still carries
+the `except FileNotFoundError` branch the phase needed.
 
 The crossing was correct. The scaffolder raised `FileNotFoundError` on lessons that
 ship English docs only, which is every lesson from 43 onward, so shipping anything

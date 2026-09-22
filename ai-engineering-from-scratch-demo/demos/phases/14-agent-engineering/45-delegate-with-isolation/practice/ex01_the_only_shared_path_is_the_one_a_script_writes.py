@@ -4,18 +4,19 @@
     integrator.
 
 Reading of the exercise: "real" means the decomposition has to survive the
-repository's own history. The change decomposed here is one this repository
+repository as it stands. The change decomposed here is one this repository
 performs every day -- ship the practice solutions for two lessons -- and the
-test of independence is whether the two units' path sets are disjoint in the
-commits that actually happened.
+test of independence is whether the two units' path sets are disjoint once
+every file the work produces has an owner.
 
 **ANSWER: two lesson directories decompose cleanly and the integrator owns the
 generated file.** `43-frame-the-task-before-code/practice` and
 `44-plan-from-evidence/practice` overlap in **0** paths, schedule as
 `[['lesson-43', 'lesson-44'], ['integration']]`, and the plan validates
 `ready`. The one path neither worker may own is the repository's top-level
-`README.md`: **6** of the six lesson commits ending at a fixed anchor touch it, because
-`scripts/coverage.py` rewrites it from the manifests.
+`README.md`: `scripts/coverage.py` writes it from the manifests -- and ships a
+`--check` mode that fails when it is stale -- while it lies inside **0** of the
+two workers' directories.
 
 **FINDING: the contract in the docs has 6 fields and `WorkUnit` has 5.**
 `goal` and `handoff` are missing -- the two that carry what the unit is for
@@ -36,13 +37,12 @@ neighbour that owns two nested paths -- one mistake, two lines -- while those
 two nested paths overlap each other and nothing reports it. The count in the
 report is not the number of decisions the integrator has to make.
 
-Structure: `units()` builds the decomposition; `history()` measures which
-paths the real commits touch together.
+Structure: `units()` builds the decomposition; `generated()` shows who owns
+the file neither worker writes.
 """
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 from harness import parity, practice
@@ -60,23 +60,20 @@ UNITS = [
 ]
 
 
-def git(*args):
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+GENERATOR = "scripts/coverage.py"
 
 
-ANCHOR = "a992f27"  # the lesson-46 commit: a fixed window, not a sliding one
-
-
-def history(count=6):
-    """Six lesson commits ending at the anchor, and which touch the root README."""
-    shas = git("log", "--format=%H", "-n", str(count), ANCHOR, "--", BASE).split()
-    rows = []
-    for sha in shas:
-        files = [line for line in git("show", "--name-only", "--format=", sha).splitlines()
-                 if line.strip()]
-        rows.append({"sha": sha[:7], "files": len(files),
-                     "root_readme": any(line.endswith("-demo/README.md") for line in files)})
-    return rows
+def generated():
+    """The root README is written by a script, not by either worker."""
+    source = (ROOT / GENERATOR).read_text(encoding="utf-8")
+    writes = "README.write_text" in source
+    readme = ROOT / "README.md"
+    inside = [unit for unit in UNITS[:2]
+              if any(readme.as_posix().startswith((ROOT / owned).as_posix())
+                     for owned in unit[2])]
+    return {"generator": GENERATOR, "writes": writes, "exists": readme.exists(),
+            "owned_by_a_worker": len(inside),
+            "checkable": "--check" in source}
 
 
 def units(ref, rows=UNITS):
@@ -86,7 +83,7 @@ def units(ref, rows=UNITS):
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     plan = ref.delegation_plan(units(ref))
-    commits = history()
+    generation = generated()
     greedy = list(UNITS)
     greedy[0] = (UNITS[0][0], UNITS[0][1],
                  (UNITS[0][2][0], f"{UNITS[0][2][0]}/tests"), (), UNITS[0][4])
@@ -95,8 +92,7 @@ def solve():
     return {
         "status": plan["status"], "conflicts": plan["conflicts"],
         "waves": plan["waves"], "units": len(plan["units"]),
-        "commits": len(commits),
-        "root_touched": sum(row["root_readme"] for row in commits),
+        **generation,
         "doc_fields": 6, "unit_fields": list(ref.WorkUnit.__dataclass_fields__),
         "missing_fields": [name for name in ("goal", "handoff")
                            if name not in ref.WorkUnit.__dataclass_fields__],
@@ -114,11 +110,14 @@ def verify(result):
             "generated file",
             all([result["status"] == "ready", result["conflicts"] == [],
                  result["waves"] == [["lesson-43", "lesson-44"], ["integration"]],
-                 result["units"] == 3, result["root_touched"] == result["commits"] == 6]),
+                 result["units"] == 3, result["writes"] is True,
+                 result["exists"] is True, result["owned_by_a_worker"] == 0,
+                 result["checkable"] is True]),
             f"the two workers overlap in {len(result['conflicts'])} paths and schedule as "
-            f"{result['waves']}; the top-level README is touched by "
-            f"{result['root_touched']} of the {result['commits']} anchored lesson commits "
-            "because scripts/coverage.py rewrites it, so it belongs to the integrator",
+            f"{result['waves']}; the top-level README is written by "
+            f"{result['generator']} -- which also ships a --check mode -- and lies inside "
+            f"{result['owned_by_a_worker']} of the two workers' directories, so it belongs "
+            "to the integrator",
         ),
         practice.Check(
             "FINDING: the documented contract has 6 fields and WorkUnit has 5",

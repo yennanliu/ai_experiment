@@ -44,7 +44,7 @@ from pathlib import Path
 from harness import parity, practice
 
 PHASE, LESSON = "14-agent-engineering", "48-discover-the-real-workflow"
-REFERENCE = Path("/Users/jliu/ai-engineering-from-scratch/phases/14-agent-engineering")
+PHASE_DIR = "phases/14-agent-engineering"
 BILINGUAL = "reads en.md and zh.md, emitting a manifest with both texts"
 ENGLISH_ONLY = "reads en.md only, taking the scaffolder's missing-file branch"
 
@@ -65,8 +65,9 @@ def variant(ref, bilingual, offset=0):
 
 
 def population():
-    en = len(list(REFERENCE.glob("*/docs/en.md")))
-    zh = len(list(REFERENCE.glob("*/docs/zh.md")))
+    reference = parity.find_reference_root() / PHASE_DIR
+    en = len(list(reference.glob("*/docs/en.md")))
+    zh = len(list(reference.glob("*/docs/zh.md")))
     return en, zh, en - zh
 
 

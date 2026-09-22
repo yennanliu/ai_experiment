@@ -47,7 +47,6 @@ from harness import parity, practice
 
 PHASE, LESSON = "14-agent-engineering", "53-prototype-pilot-or-production"
 BASE = Path(__file__).resolve().parents[2]
-REFERENCE = Path("/Users/jliu/ai-engineering-from-scratch")
 PHASE_DIR = "phases/14-agent-engineering"
 
 
@@ -70,7 +69,8 @@ def redirects():
 def untouched():
     """The receipt: the reference tree has nothing modified or added."""
     done = subprocess.run(["git", "status", "--porcelain", "--", PHASE_DIR],
-                          cwd=REFERENCE, capture_output=True, text=True)
+                          cwd=parity.find_reference_root(), capture_output=True,
+                          text=True)
     return [line for line in done.stdout.splitlines() if line.strip()]
 
 

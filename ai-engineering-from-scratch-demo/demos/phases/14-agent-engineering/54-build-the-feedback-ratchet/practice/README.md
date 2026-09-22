@@ -58,17 +58,18 @@ that noticed.
 
 For the complaint, that is `policy` — a permission the repository owner grants — and
 the router agrees. For the incident, the test suite is where it surfaced, but the
-layer that makes it impossible is the solution pinning its git window to a fixed
-commit. None of the five destinations describes a fixture, so the correct answer is
-unreachable from the router's vocabulary.
+layer that makes it impossible is the fixture the solution reads — measure the tree,
+not the commit graph. None of the five destinations describes a fixture, so the
+correct answer is unreachable from the router's vocabulary.
 
 Three measurements underneath. **The five durable artifacts do not exist**:
 `promote` assigns `evaluations/regression-suite.json`,
 `policies/authority-boundaries.json` and three more, and zero of them are present in
 this tree — every signal is promoted into a filesystem nobody has created.
-**Detection and prevention are one step apart and only one is recorded**: three
-solutions now pin a commit, and `RatchetAction`'s seven fields cannot say whether a
-control prevents a failure or merely reports it. And **the fall-through is
+**Detection and prevention are one step apart and only one is recorded**: eight
+solutions measure this repository and zero read its commit graph, and
+`RatchetAction`'s seven fields cannot say whether a control prevents a failure or
+merely reports it. And **the fall-through is
 backwards**: a signal matching no keyword becomes a backlog item, which is the most
 expensive destination and the only one with no runnable verification — zero of the
 five evidence strings name a command.

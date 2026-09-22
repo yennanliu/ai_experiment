@@ -20,7 +20,7 @@ exercises:
       exist and 1 is a commit the log knows, so 8 of 8 receipts resolve; dropping every confidence to
       0.01 changes neither the ratio nor the status
   - index: 2
-    slug: four_reported_claims_and_the_log_corroborates_two
+    slug: four_reported_claims_and_the_tree_corroborates_two
     kind: code
     tier: T0
     deps_group: none

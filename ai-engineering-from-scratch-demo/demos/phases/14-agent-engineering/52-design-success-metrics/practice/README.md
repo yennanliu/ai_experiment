@@ -35,7 +35,7 @@ code.* Three questions fall out of it, and the third is about somebody else:
 2. **Does any answer make a claim its own run does not support?** →
    `traced_number_rate`, at-least 0.9, over one lesson's answers section.
 3. **What does an answers section cost the reader?** → `answer_section_lines`,
-   at-most 150. Measured mean: **132.7** lines.
+   at-most 150. Measured mean: **133.3** lines.
 
 The third is a counter-metric, and `validate` has no kind for it. It enforces
 exactly two — refuse a plan with no `outcome` and no `guardrail` — while `kind` is
@@ -56,9 +56,9 @@ lesson teaches leaves no trace in the artifact that records it.
 The outcome metric measures the reader. The cost of reaching it lands on two other
 people, and both are measurable from the tree:
 
-- **11 of 45** shipped solution files sit above this repository's own 120-line
+- **10 of 45** shipped solution files sit above this repository's own 120-line
   target, the largest at 145 — maintainer cost.
-- The answers sections average **132.7** lines, worst case 146 — reviewer cost.
+- The answers sections average **133.3** lines, worst case 146 — reviewer cost.
 
 Both come from the same nine lessons whose answers pass 45 of 45. A plan carrying
 only the outcome metric reports a perfect result while the cost it created sits
@@ -104,10 +104,11 @@ present, never that they are real.
 > **fail:** any file over the 150-line hard ceiling, or a traced rate below 0.75.
 > **ambiguous:** anything else — buy a larger replay set.
 
-Then the values: 45 of 45 answers passing, a traced rate of **0.875**, zero files
-over the ceiling. Neither the pass rule nor the fail rule fires. The decision is
-**ambiguous**, and the consequence was written down before the number was known,
-which is the entire point of writing it first.
+Then the values: 45 of 45 answers passing, a traced rate of **0.708**, zero files
+over the ceiling. The rate alone trips the fail rule. The decision is **fail**, and
+the consequence was written down before the number was known — which is the entire
+point of writing it first, because the headline metric (every answer passes) looks
+green and the one that was harder to satisfy does not.
 
 `report` cannot make that call. It returns four keys and one row per metric with
 `passed` per row — on these values, two passing rows and one failing row and no

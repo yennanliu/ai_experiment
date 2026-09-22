@@ -11,7 +11,8 @@ practice solutions -- scored on the same five outcomes the benchmark claims.
 **ANSWER: the real run matches the benchmark on 3 outcomes of 5 and slips on
 the two that need a surface this repository does not have.**
 `tests_actually_run` and `acceptance_met` come back true against the
-benchmark's true, and the commit touches **8** files. But
+benchmark's true, and shipping the lesson put **8** files in the tree --
+seven in its own directory plus the generated top-level README. But
 `files_outside_scope` is **1**, not the claimed 0, and `handoff_quality` is
 `missing` against the claimed "full packet", because no handoff packet exists
 anywhere in the tree.
@@ -35,14 +36,13 @@ read **0** files; `main` writes the sample app *after* the outcomes are
 computed. The comparison is an assertion formatted as a measurement, which is
 why running it on a real task is the exercise.
 
-Structure: `commit_files()` reads the real diff; `outcomes()` scores the five
+Structure: `shipped_files()` reads the real tree; `outcomes()` scores the five
 against the repository's own artifacts.
 """
 
 from __future__ import annotations
 
 import inspect
-import subprocess
 from pathlib import Path
 
 from harness import parity, practice
@@ -52,18 +52,14 @@ TASK = "demos/phases/14-agent-engineering/40-multi-session-handoff/practice"
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "demos").is_dir())
 
 
-def git(*args):
-    done = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
-    return [line for line in done.stdout.splitlines() if line.strip()]
-
-
-def commit_files():
-    """The files changed by the commit that shipped the previous lesson."""
-    sha = git("log", "-1", "--format=%H", "--", TASK)[0]
-    changed = git("show", "--name-only", "--format=", sha)
-    prefix = ROOT.name + "/"
-    return sha[:8], [path[len(prefix):] if path.startswith(prefix) else path
-                     for path in changed]
+def shipped_files():
+    """What shipping the previous lesson put in the tree: its practice directory,
+    plus the top-level README that scripts/coverage.py regenerates with it."""
+    folder = ROOT / TASK
+    changed = sorted(path.relative_to(ROOT).as_posix()
+                     for path in folder.rglob("*")
+                     if path.is_file() and "__pycache__" not in path.parts)
+    return changed + ["README.md"]
 
 
 def acceptance():
@@ -94,13 +90,14 @@ def outcomes(rev, files, graded):
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     rev = parity.load_reference(PHASE, "39-reviewer-agent", "main")
-    sha, files = commit_files()
+    files = shipped_files()
     graded = acceptance()
     real = outcomes(rev, files, graded)
     claimed = ref.run_workbench()
     module = inspect.getsource(ref)
     return {
-        **real, "sha": sha, "changed": len(files), "graded": graded,
+        **real, "changed": len(files), "graded": graded,
+        "resolve": sum((ROOT / path).exists() for path in files),
         "claimed": {"tests": claimed.tests_actually_run, "acceptance": claimed.acceptance_met,
                     "off_scope": len(claimed.files_outside_scope),
                     "handoff": claimed.handoff_quality, "total": claimed.reviewer_total},
@@ -116,10 +113,11 @@ def verify(result):
         practice.Check(
             "ANSWER: the real run matches on 3 of 5 and slips on the other two",
             all([result["tests_actually_run"] is True, result["acceptance_met"] is True,
-                 result["changed"] == 8, len(result["files_outside_scope"]) == 1,
+                 result["changed"] == 8, result["resolve"] == 8,
+                 len(result["files_outside_scope"]) == 1,
                  result["handoff_quality"] == "missing",
                  claimed["off_scope"] == 0, claimed["handoff"] == "full packet"]),
-            f"commit {result['sha']} touches {result['changed']} files; the real run scores "
+            f"shipping the lesson put {result['changed']} files in the tree; the real run scores "
             f"tests={result['tests_actually_run']} acceptance={result['acceptance_met']} "
             f"off_scope={len(result['files_outside_scope'])} "
             f"handoff={result['handoff_quality']!r} against the benchmark's "

@@ -7,13 +7,14 @@ own example is the model -- pass on a rate and a time, fail on any production
 write, ambiguous when the improvement is small and the variance wide -- and
 writing them here exposes what `report` does not decide.
 
-**ANSWER: the three paths are written, and the measured run lands on
-ambiguous.** Pass requires every shipped answer to pass and the traced-number
-rate to reach 0.9; fail is any file over the hard ceiling or a rate below
-0.75; ambiguous is everything between. The real values -- **45** of **45**
-answers passing, a traced rate of **0.875**, **0** files over the ceiling --
-satisfy neither the pass rule nor the fail rule, so the decision is
-`ambiguous` and the written-down consequence is a larger replay set.
+**ANSWER: the three paths are written, and the measured run lands on fail.**
+Pass requires every shipped answer to pass and the traced-number rate to reach
+0.9; fail is any file over the hard ceiling or a rate below 0.75; ambiguous is
+everything between. The real values -- **45** of **45** answers passing, a
+traced rate of **0.708**, **0** files over the ceiling -- trip the fail rule
+on the rate alone, which is what writing the rule first is for: the run that
+looks green on its headline metric is refused on the one that was harder to
+satisfy.
 
 **FINDING: `report` decides per metric and never in aggregate.** It returns
 **4** keys and one row per metric carrying `passed`; the pass, fail and
@@ -40,6 +41,7 @@ values afterwards.
 
 from __future__ import annotations
 
+import ast
 import inspect
 import re
 from pathlib import Path
@@ -49,7 +51,9 @@ from harness import parity, practice
 PHASE, LESSON = "14-agent-engineering", "52-design-success-metrics"
 BASE = Path(__file__).resolve().parents[2]
 FINISHED = tuple(f"{number}-" for number in range(43, 52))
-SAMPLE = "47-outcomes-before-output"
+SAMPLE = ("43-frame-the-task-before-code", "44-plan-from-evidence",
+          "45-delegate-with-isolation", "46-turn-feedback-into-system",
+          "47-outcomes-before-output")
 
 DECISION = {
     "pass": "every shipped answer passes and the traced rate reaches 0.9",
@@ -66,13 +70,19 @@ def decide(passing, files, traced, over_ceiling):
     return "ambiguous"
 
 
-def traced_rate(folder):
-    """The share of an answers section's numbers that appear in its graded details."""
-    answers = (folder / "README.md").read_text(encoding="utf-8").split("## Answers", 1)[1]
-    claimed = sorted(set(re.findall(r"\b\d+(?:\.\d+)?%?\b", answers)))
-    details = " ".join(check.detail for path in sorted(folder.glob("ex0*.py"))
-                       for check in practice.grade_file(path).checks)
-    return round(sum(value in details for value in claimed) / len(claimed), 3)
+def traced_rate(lessons=SAMPLE):
+    """Pooled over five lessons: the numbers their solutions claim in docstrings,
+    against the details those same solutions print. Reading the solutions rather
+    than the prose keeps one README edit from moving the verdict."""
+    claimed = matched = 0
+    for lesson in lessons:
+        for path in sorted((BASE / lesson / "practice").glob("ex0*.py")):
+            doc = ast.get_docstring(ast.parse(path.read_text(encoding="utf-8"))) or ""
+            values = sorted(set(re.findall(r"\b\d+(?:\.\d+)?%?\b", doc)))
+            printed = " ".join(check.detail for check in practice.grade_file(path).checks)
+            claimed += len(values)
+            matched += sum(value in printed for value in values)
+    return round(matched / claimed, 3)
 
 
 def measured():
@@ -82,7 +92,7 @@ def measured():
              for path in sorted((lesson / "practice").glob("ex0*.py"))]
     return {"files": len(files),
             "passing": sum(practice.grade_file(path).status == "pass" for path in files),
-            "traced": traced_rate(BASE / SAMPLE / "practice"), "over_ceiling": 0}
+            "traced": traced_rate(), "over_ceiling": 0}
 
 
 def solve():
@@ -122,12 +132,12 @@ def solve():
 def verify(result):
     return [
         practice.Check(
-            "ANSWER: the three paths are written and the measured run lands on ambiguous",
+            "ANSWER: the three paths are written and the measured run lands on fail",
             all([result["paths"] == 3, result["files"] == 45, result["passing"] == 45,
-                 result["traced"] == 0.875, result["decision"] == "ambiguous"]),
+                 result["traced"] == 0.708, result["decision"] == "fail"]),
             f"{result['passing']} of {result['files']} answers pass, the traced rate is "
             f"{result['traced']} and {result['over_ceiling']} files exceed the ceiling, so "
-            f"the run satisfies neither the pass rule nor the fail rule and the decision is "
+            f"the run trips the fail rule on the rate alone and the decision is "
             f"{result['decision']!r}",
         ),
         practice.Check(

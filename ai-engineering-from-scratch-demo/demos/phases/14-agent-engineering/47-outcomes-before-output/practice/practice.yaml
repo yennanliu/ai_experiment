@@ -37,7 +37,7 @@ exercises:
       agrees 15 of 15 times, a comparison that is only meaningful because the constraint exists; a
       preference like 'prefer clear names' leaves all 6 candidates available
   - index: 3
-    slug: the_non_goals_held_in_five_of_six_commits
+    slug: every_file_the_phase_shipped_is_inside_a_practice_directory
     kind: code
     tier: T0
     deps_group: none
