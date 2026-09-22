@@ -1,0 +1,84 @@
+lesson: 41-workbench-for-real-repos
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/41-workbench-for-real-repos/docs/en.md
+exercises:
+  - index: 1
+    slug: the_workbench_reaches_its_first_edit_one_step_later_and_that_is_the_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a sixth outcome: time-to-first-meaningful-edit. How do you measure it cleanly?
+    zh: |
+      加第六項結果：到第一次有意義編輯的時間。你要怎麼乾淨地量它？
+    verifies: >-
+      counting the doc's own numbered pipelines puts the first edit at step 3 of 4 prompt-only and
+      step 4 of 8 guided -- one extra step of setup, and 1 step after the edit against 4, all of them
+      checks; prompt-only touches 3 files of which 2 are outside ALLOWED, so 'meaningful' has to mean
+      in-scope or the metric rewards writing to the release script first; the module defines 5
+      functions, imports no time and returns hardcoded TaskOutcome literals, so a duration field would
+      read 0.0 for both; FORBIDDEN names the release script and nothing reads it, because
+      files_outside_scope is computed as `p not in ALLOWED`
+  - index: 2
+    slug: a_real_second_day_task_slips_on_the_two_outcomes_this_repo_has_no_surface_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the comparison on a real second-day task in your codebase. Where do the workbench numbers slip?
+    zh: |
+      在你程式庫裡一項真正的「第二天」任務上跑這份比較。工作台的數字在哪裡滑掉？
+    verifies: >-
+      scoring the commit that shipped Lesson 40 in this repository -- 8 files, every solution graded
+      in-process -- matches the benchmark on tests_actually_run and acceptance_met and slips on the
+      other two: 1 file outside scope against the claimed 0, and a missing handoff against 'full
+      packet'; the off-scope path is the top-level README.md that scripts/coverage.py regenerates, so
+      a glob contract counts a build byproduct as creep; Lesson 39 over the real artifacts totals 6/10
+      hard_fail with handoff_readiness at 0 because no agent_state.json exists, against the
+      benchmark's hardcoded 9; run_workbench reads no files and main writes the sample app after the
+      outcomes are computed
+  - index: 3
+    slug: the_overhead_is_fixed_so_the_false_negatives_are_the_small_tasks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "false negative" pass: tasks where prompt-only would have been faster and the workbench overhead is real cost. Defend keeping the workbench anyway.
+    zh: |
+      加一趟「偽陰性」檢查：那些只用提示詞會更快、而工作台的開銷是真實成本的任務。就算如此，也替保留工作台辯護。
+    verifies: >-
+      7 of the workbench's 8 steps are not edits, so a one-edit task costs 4 steps prompt-only against
+      8 guided (2.00x, 87.5% fixed overhead) falling to 1.27x at twelve edits, and all 5 enumerated
+      false negatives need one edit or fewer; 0 of prompt-only's 4 steps inspect the diff, so 'it was
+      only one line' is what step 6 of the workbench would have established; 4 extra steps against a
+      12-step redo pays off above a 33.3% failure rate, which the lesson's own cited rates straddle;
+      the acceptance run and the gate are 2 of 8 steps and keep files_outside_scope and acceptance_met
+      measurable while the fast path gives up handoff_quality and reviewer_total by design
+  - index: 4
+    slug: real_llm_noisier_outcomes
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the scripted "agent" with a real LLM call. Which outcomes get noisier?
+    zh: |
+      把那個腳本化的「代理」換成真正的 LLM 呼叫。哪些結果變得更吵？
+    cites: >-
+      The five outcomes measured
+  - index: 5
+    slug: what_survives_the_cut_is_the_two_outcomes_with_units_a_reader_owns
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Author a one-page summary aimed at a non-engineer. What survives the cut?
+    zh: |
+      寫一份給非工程師看的一頁摘要。什麼撐得過刪減？
+    verifies: >-
+      of the 5 outcomes a one-page summary keeps 2 -- tests_actually_run as a yes/no and
+      files_outside_scope as a count -- in 264 words against a 350-word budget with 0 snake_case
+      identifiers left in the text; all 5 outcome names are snake_case and 3 name a workbench surface
+      the reader has never heard of, and reviewer_total (/10) is a scale with no external referent;
+      the report's one explanatory paragraph runs 50 words and names 3 surfaces while the summary
+      makes the same claim naming 0; the benchmark's literals claim 9/10 and 0 off-scope files while
+      Exercise 2's checkable numbers on a shipped commit say 1 off-scope file and a missing handoff
