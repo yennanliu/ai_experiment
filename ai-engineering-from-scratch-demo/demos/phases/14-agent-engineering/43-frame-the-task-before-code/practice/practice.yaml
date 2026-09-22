@@ -1,0 +1,87 @@
+lesson: 43-frame-the-task-before-code
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/43-frame-the-task-before-code/docs/en.md
+exercises:
+  - index: 1
+    slug: a_frame_whose_receipts_all_resolve_and_a_validator_that_never_checks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Frame a real bug from one of your repositories without proposing a solution.
+    zh: |
+      Frame a real bug from one of your repositories without proposing a solution.
+    verifies: >-
+      a frame for a real bug -- Lesson 38's gate writes a signed override log and verify() mentions
+      OVERRIDES_PATH 0 times -- validates with 0 issues and renders Status: READY with all 3 receipts
+      resolving to the lines they cite; validate treats any non-empty string as evidence, so a fact
+      citing 'obviously' passes, with 5 of its 6 branches emptiness tests and 0 opening a file;
+      resolving receipts scores 3 of 3 on the honest frame and 0 when every line number shifts by ten;
+      a goal rewritten as an implementation instruction still validates clean
+  - index: 2
+    slug: the_shipped_example_has_two_facts_and_no_resolvable_receipt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Find one claim in the frame that is actually an assumption. Replace it with evidence.
+    zh: |
+      Find one claim in the frame that is actually an assumption. Replace it with evidence.
+    verifies: >-
+      both facts in the lesson's example() cite files that do not exist -- 0 of 2 receipts resolve and
+      0 of the cited paths are present -- with 'Duplicate errors use status 409' the load-bearing one
+      because it fixes the public contract; validate returns 0 issues and render prints Status: READY
+      for a frame whose every receipt is fictional; the lesson ships code/main.py and
+      code/tests/test_main.py and cites app/accounts.py and tests/test_accounts.py; a replacement
+      receipt naming a real path and line resolves and stops resolving when the line moves by five,
+      while validate reports nothing either way
+  - index: 3
+    slug: a_human_unknown_leaves_the_frame_reading_ready
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a human unknown whose answer would change the public contract.
+    zh: |
+      Add a human unknown whose answer would change the public contract.
+    verifies: >-
+      adding a human unknown -- whether a duplicate returns 409 or 422 to callers already handling 409
+      -- leaves validate at 0 issues and the render at Status: READY, identical to the frame without
+      it; TaskFrame has 6 fields and render prints an Unknowns section while all 6 validator branches
+      read the list zero times; the four classes are decidable, deferred, discoverable and human, and
+      the example's only unknown is a discoverable one sitting in the same untyped list; refusing on
+      any unknown tagged human yields 1 issue and Status: BLOCKED while the discoverable-only frame
+      still passes
+  - index: 4
+    slug: the_broad_path_is_405_files_and_the_receipts_name_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Split one broad allowed path into the smallest safe set.
+    zh: |
+      Split one broad allowed path into the smallest safe set.
+    verifies: >-
+      the phase directory holds 405 files against the 2 the frame's own receipts and acceptance
+      command name, a 202.5x reduction derived rather than negotiated; validate intersects allowed and
+      forbidden as literal strings, so allowing code/** while forbidding code/main.py returns 0
+      issues; the example writes its 2 forbidden entries as globs and its 2 allowed entries as exact
+      files, which is what makes a string intersection meaningless; expanding both sides against the
+      real 7-file lesson directory surfaces code/main.py as the conflict the shipped check misses
+  - index: 5
+    slug: the_scope_receipt_is_the_only_acceptance_line_that_can_fail_on_a_green_test
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a scope receipt to the acceptance evidence.
+    zh: |
+      Add a scope receipt to the acceptance evidence.
+    verifies: >-
+      in a real temp checkout git diff --name-only reports 3 changed paths of which deploy/release.sh
+      is outside the allowed set, while the frame's unittest acceptance line passes either way;
+      validate only checks that acceptance is non-empty, so a frame whose evidence is 'make coffee'
+      returns 0 issues and renders READY; the flagged path is also inside the forbidden deploy/**
+      glob, which Lesson 38 scores at a different severity than an off-scope write; git diff
+      --name-only sees 3 paths where git status --porcelain sees 4, so a new untracked file is
+      invisible to the obvious receipt

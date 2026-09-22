@@ -167,7 +167,10 @@ def main(argv=None) -> int:
 
     phase, _, lesson = args.lesson.strip("/").rpartition("/")
     en_items = coverage.exercise_block(parity.doc_text(phase, lesson, "en"))
-    zh_items = coverage.exercise_block(parity.doc_text(phase, lesson, "zh"))
+    try:  # lessons 43+ upstream ship English only
+        zh_items = coverage.exercise_block(parity.doc_text(phase, lesson, "zh"))
+    except FileNotFoundError:
+        zh_items = []
     if not en_items:
         print(f"{args.lesson}: no ## Exercises block", file=sys.stderr)
         return 1
