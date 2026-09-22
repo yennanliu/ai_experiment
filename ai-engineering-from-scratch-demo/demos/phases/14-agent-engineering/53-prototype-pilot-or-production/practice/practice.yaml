@@ -1,0 +1,85 @@
+lesson: 53-prototype-pilot-or-production
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/53-prototype-pilot-or-production/docs/en.md
+exercises:
+  - index: 1
+    slug: the_stage_ignores_consequence_whenever_the_data_is_synthetic
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Classify three current projects by learning stage, not deployment status.
+    zh: |
+      Classify three current projects by learning stage, not deployment status.
+    verifies: >-
+      three real pieces of work in this repository classify as production, pilot and prototype, and
+      the prototype is the scaffolder fix that ships in scripts/ and is imported by every lesson
+      since; choose_stage tests 'no real users and no real data' first, so a decision at consequence
+      5, irreversible and unready still classifies prototype and draws 3 controls; BuildDecision has 6
+      fields and choose_stage reads 5, never the unknown that names the learning question; the three
+      stages draw 3, 5 and 8 control strings and 0 of them mention configuration, access control or
+      telemetry
+  - index: 2
+    slug: exit_criteria_is_one_string_in_a_list_of_five
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write pilot exit criteria that include a stop decision.
+    zh: |
+      Write pilot exit criteria that include a stop decision.
+    verifies: >-
+      three exit paths written before the run -- expand at a traced rate of 0.9, stop below 0.75,
+      revise otherwise -- land the real pilot on revise with 50 of 50 shipped answers passing and a
+      traced rate of 0.875; required_controls('pilot') returns 5 strings of which one is 'exit
+      criteria' and none holds a number, while plan returns 3 keys; one failing answer moves the same
+      run to stop, so the stop threshold is the one that must exist beforehand; BuildDecision carries
+      no date, window or budget, so a bounded pilot is unenforceable
+  - index: 3
+    slug: the_control_that_keeps_the_prototype_out_is_a_monkeypatch_in_25_files
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a technical control that prevents a prototype from reaching production data.
+    zh: |
+      Add a technical control that prevents a prototype from reaching production data.
+    verifies: >-
+      25 shipped solutions redirect a path into tempfile, 4 of them by rebinding the pack assembler's
+      PACK global, and the reference phase reports 0 modified paths -- the receipt that the control
+      held; PACK and OVERRIDES_PATH are Paths computed at import time, which is what makes rebinding
+      possible without forking the code; required_controls('prototype') returns 3 strings of which 0
+      mention a path, a directory or a credential; one git status over the reference tree is the whole
+      check
+  - index: 4
+    slug: the_first_production_responsibility_is_the_one_nobody_can_skip
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Identify the first operational responsibility that makes the build production.
+    zh: |
+      Identify the first operational responsibility that makes the build production.
+    verifies: >-
+      of the 8 documented production controls this repository carries 4 -- continuous monitoring,
+      rollback, recovery and a retirement path -- and has 0 CI workflows, so even the monitoring runs
+      when somebody remembers; 5 of the 8 controls presuppose that something is watching, which is why
+      continuous monitoring is the first responsibility; operational_readiness is a single bool, so
+      four controls present and eight present are the same input; at consequence 2 and reversible,
+      that one flag decides production against pilot
+  - index: 5
+    slug: the_rollback_is_one_commit_and_the_receipt_has_to_name_the_dependents
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a rollback receipt for the bounded pilot.
+    zh: |
+      Design a rollback receipt for the bounded pilot.
+    verifies: >-
+      reverting the commit that shipped one lesson touches 9 files, all but the generated README
+      inside that lesson, while 7 solutions in four later lessons read its files; the two earliest
+      finished lessons have 7 dependents each and the last five have 0 between them, with 29 edges
+      across the 10 finished lessons; required_controls('pilot') names rollback and not what a
+      rollback would cost, and plan returns 3 keys; recording the dependents is one pass over the tree
+      and it is the half that decides whether a rollback is a revert or a project
