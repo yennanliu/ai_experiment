@@ -1,0 +1,84 @@
+lesson: 44-plan-from-evidence
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/44-plan-from-evidence/docs/en.md
+exercises:
+  - index: 1
+    slug: the_irreversible_item_schedules_into_wave_two_beside_the_docs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a migration item that requires explicit human approval.
+    zh: |
+      Add a migration item that requires explicit human approval.
+    verifies: >-
+      a migration item depending only on the contract schedules into wave 2 beside the docs with 0
+      issues and status ready, putting an irreversible step alongside the item that decides the public
+      contract's wording; WorkItem has 5 fields and none records approval, reversibility or blast
+      radius; validate implements 5 of the lesson's 6 rejection rules and mentions approval or
+      irreversibility 0 times; adding an approval node the migration waits on gives 4 waves and moves
+      the migration last, which then shows the integration gate scheduled in wave 3 before the schema
+      change it is meant to verify
+  - index: 2
+    slug: the_cycle_report_names_every_blocked_item_not_the_two_in_the_loop
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a cycle and explain the hidden product disagreement behind it.
+    zh: |
+      Create a cycle and explain the hidden product disagreement behind it.
+    verifies: >-
+      docs and implementation waiting on each other is a disagreement about who owns the public
+      contract, and one contract node both depend on turns it into 3 waves with docs and
+      implementation running together at 0 issues; with one innocent item downstream the cycle report
+      names 3 items for a 2-item cycle, because execution_waves prints whatever remains when nothing
+      is ready; a cycle costs every other check its output, since plan_document returns waves [] and
+      the one schedulable item loses its ordering too
+  - index: 3
+    slug: two_proofs_in_one_string_pass_the_check_that_exists_to_count_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Split one item that has two proof commands.
+    zh: |
+      Split one item that has two proof commands.
+    verifies: >-
+      an integration item whose proof is two &&-joined commands validates with 0 issues, and splitting
+      it gives 5 items, still 3 waves, and a last wave of two terminal nodes with independent
+      verdicts; the only proof rule is an emptiness test, so the example's prose proof 'review
+      contract' passes and it belongs to the contract item that implementation and docs both depend
+      on; wave widths go from [1, 2, 1] to [1, 2, 2], so the split buys a verdict rather than a step
+  - index: 4
+    slug: the_new_wave_two_item_is_not_something_the_gate_waits_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a work item that can run in the second wave without touching either existing branch.
+    zh: |
+      Add a work item that can run in the second wave without touching either existing branch.
+    verifies: >-
+      a telemetry item depending only on the contract joins wave 2 at 0 issues while the integration
+      gate depends on 2 of the 3 items in that wave, so the gate closes the plan without proving the
+      third; nothing depends on telemetry, so the plan has 2 terminal nodes of 5 items where its
+      author believes it has 1; there are 0 edges between telemetry and integration in either
+      direction, so the wave numbers express no requirement; adding one edge keeps 3 waves and the
+      same wave-two width while making the plan unable to finish without the new item
+  - index: 5
+    slug: the_blocked_plan_renders_no_schedule_in_either_format
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Render the plan as Markdown while keeping JSON as the source of truth.
+    zh: |
+      Render the plan as Markdown while keeping JSON as the source of truth.
+    verifies: >-
+      a Markdown renderer reading only plan_document reproduces all 4 top-level keys and 20 item
+      fields, rendering 3 wave rows and parsing back to the same 4 ids in the same order;
+      plan_document sets waves to [] whenever issues is non-empty, so a plan whose only fault is one
+      empty proof string loses all 3 computable waves and the Markdown inherits the hole;
+      execution_waves runs twice per document and the first result is discarded; all 4 evidence
+      receipts name files that do not exist in the lesson directory
