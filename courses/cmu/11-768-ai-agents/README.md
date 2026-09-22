@@ -11,6 +11,8 @@
 - 20260922
 	- https://youtu.be/AiwCCvFW1uE?si=LSPKALBi8Qc1VwTs
 
+	- https://www.youtube.com/watch?v=6zigF2a-2Pw
+
 
 - 20260920
 	- https://youtu.be/UwfjzyLnvMg?si=4dkdFHblKWI8hzkz
