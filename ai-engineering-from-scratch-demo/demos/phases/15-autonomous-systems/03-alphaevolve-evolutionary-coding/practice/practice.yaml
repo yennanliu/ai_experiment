@@ -1,0 +1,77 @@
+lesson: 03-alphaevolve-evolutionary-coding
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/03-alphaevolve-evolutionary-coding/docs/en.md
+exercises:
+  - index: 1
+    slug: the_flag_keeps_the_evaluator_and_drops_it_from_the_signal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Note the best score trajectory. Disable the held-out evaluator (flag `--no-holdout`) and re-run. Quantify the overfitting.
+    zh: |
+      跑 `code/main.py`。記下最佳分數的軌跡。停用保留評估器（旗標 `--no-holdout`）再跑一次。把過擬合量化。
+    verifies: >-
+      at DEFAULT_SEED the held-out signal reaches train and test MSE 0.0000 at generation 1229 while
+      --no-holdout ends at 2.2917 and 4.3906, a +2.0990 gap, off train trajectories 13.83/3.17/0.00
+      and 22.50/8.00/2.29; run_loop scores every child on the held-out points regardless of the flag,
+      so only signal_of changes; paired over 20 seeds the held-out signal wins 6, loses 4 and ties 10
+      on final test MSE at means 1.90 against 3.58; 5 of the 7 held-out points lie inside the training
+      hull
+  - index: 2
+    slug: the_grid_axis_is_a_quality_ladder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 3 of the AlphaEvolve paper on the MAP-elites grid. Design a feature-vector descriptor for a new problem (e.g. compiler optimization passes) that would keep the search diverse.
+    zh: |
+      讀 AlphaEvolve 論文第 3 節談 MAP-elites 網格的部分。替一個新問題（例如編譯器最佳化 pass）設計一個特徵向量描述子，讓搜尋維持多樣。
+    verifies: >-
+      the proposed operator-mix and leaf-mix descriptor bottoms out at interior rows 1 and 3 of 5
+      while cell_key's depth axis is a ladder -- median elite error 99.6, 57.3, 21.0, 22.3, 14.2, 6.7
+      with the best row at the capped end -- and the replayed archive reproduces run_loop's own best
+      in 10 of 10 seeds; the shipped grid fills 28.4 of its 30 cells and all 30 in 5 of 10 seeds while
+      the proposed one fills 24.3 of 25, so cardinality binds; 2 of mutate's 4 branches grow depth
+  - index: 3
+    slug: 48_multiplication_4x4_result
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      The 48-multiplication 4x4 result improved on Strassen's 49-mul bound after 56 years. Read Appendix F of the paper and explain in three sentences why the evaluator for this problem is particularly easy to get right, and why most domains are not like it.
+    zh: |
+      那個 48 次乘法的 4x4 結果，在 56 年後改進了 Strassen 的 49 乘法界。讀論文附錄 F，用三句話解釋為何這個問題的評估器特別容易做對，以及為何多數領域並非如此。
+    cites: >-
+      What makes the evaluator non-negotiable
+  - index: 4
+    slug: a_measured_evaluator_breaks_at_the_acceptance_test
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Propose one domain where AlphaEvolve would fail. Identify exactly where the evaluator breaks and why.
+    zh: |
+      提出一個 AlphaEvolve 會失敗的領域。精確指出評估器在哪裡壞掉，以及為什麼。
+    verifies: >-
+      scoring the archive by measurement at sigma 1.0 leaves 5 of 29.3 cells held by a program that is
+      not the best that entered them, median regret 0.33 and worst 3.46, against 0 displaced at sigma
+      0; run_loop calls mse twice, both on the child, and 0 times on an incumbent; Candidate's 4
+      fields hold 2 scores and 0 variances or sample counts; the returned best is worse than the best
+      in its own archive in 2 of 10 seeds by up to 1.00, against 0 with an exact evaluator
+  - index: 5
+    slug: the_anti_hacking_clause_is_declared_and_unenforced
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      For a domain you know, write the evaluator signature you would use. Include (a) correctness conditions, (b) performance metric, (c) held-out input generation rule, (d) at least one anti-reward-hacking check.
+    zh: |
+      針對一個你熟悉的領域，寫出你會使用的評估器簽章。包含 (a) 正確性條件、(b) 效能指標、(c) 保留輸入的產生規則、(d) 至少一項反獎勵入侵的檢查。
+    verifies: >-
+      three of the four clauses exist in this repository's own gate -- grade_file's Check list,
+      audit_practice's complexity 8 and 150-line hard ceiling, and the upstream re-read plus spec hash
+      in tests/test_practice.py -- and the anti-reward-hacking one does not: uses_reference appears 4
+      times in harness/manifest.py and 0 times in both gates; mse has 1 except returning inf, 0
+      correctness conditions and 7 literal held-out points; all 4 code files here satisfy the three
+      static clauses
