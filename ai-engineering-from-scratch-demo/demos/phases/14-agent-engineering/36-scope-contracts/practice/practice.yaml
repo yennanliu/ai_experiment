@@ -1,0 +1,85 @@
+lesson: 36-scope-contracts
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/36-scope-contracts/docs/en.md
+exercises:
+  - index: 1
+    slug: the_host_list_is_self_reported_so_an_empty_one_always_passes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `network_egress` field listing allowed external hosts. Refuse runs that touch other hosts.
+    zh: |
+      加一個 `network_egress` 欄位，列出允許的外部主機。拒絕碰到其他主機的執行。
+    verifies: >-
+      network_egress already ships and, against an allowlist of api.anthropic.com, a run reporting two
+      hosts produces 1 blocking network.unallowed_host finding naming the bad one, while the same run
+      reporting no hosts produces 0 findings and passes because the check is guarded by `and
+      run.network_hosts`; over 4 runs -- compliant, violating, empty and a violating run that omits
+      the host -- the checker refuses 1, so the field validates a declaration rather than controlling
+      egress; None means no enforcement and [] means deny-all, with None the field's default; all 4
+      near-miss hosts are blocked by exact string matching, including a legitimate subdomain
+  - index: 2
+    slug: extend_checker_fail_soft
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the checker to fail soft on `docs/**` and hard on `scripts/**`. Justify the asymmetry.
+    zh: |
+      擴充檢查器，讓它對 `docs/**` 軟性失敗、對 `scripts/**` 硬性失敗。替這個不對稱辯護。
+    cites: >-
+      Rollback is part of scope
+  - index: 3
+    slug: a_static_rule_set_derives_the_wrong_files_on_the_second_goal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make the contract derive `allowed_files` from a `goal` field using a static rule set (no LLM). What goes wrong on the first edge case?
+    zh: |
+      讓契約用一套靜態規則（不用 LLM）從 `goal` 欄位推導出 `allowed_files`。第一個邊界情況上會出什麼錯？
+    verifies: >-
+      a 14-rule keyword table over 12 goals derives the right allowlist 7 times, an empty one 2 times,
+      an over-broad union 2 times and a plausible-but-wrong set once; a goal matching no rule yields
+      allowed_files == [] and scope_check reports 3 of 3 touched paths as off-scope, so an
+      unrecognised goal is indistinguishable from a deny-all contract; two rules firing derive 4 globs
+      where the task needed 2, and merging against a project contract intersects it back to app.py and
+      test_app.py, losing docs/** so the over-derivation surfaces one layer from its cause;
+      matches_any uses fnmatch, so config/*.yaml matches config/prod/secrets.yaml while lib/**/*.py
+      misses lib/top.py and **/*.md misses README.md -- 3 of 6 probes against the glob's plain reading
+  - index: 4
+    slug: the_budget_is_checked_once_after_the_work_is_already_done
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `time_budget_minutes` and refuse to continue once the wall clock exceeds it.
+    zh: |
+      加一個 `time_budget_minutes`，並在牆鐘超過它時拒絕繼續。
+    verifies: >-
+      time_budget_minutes already ships and the shipped check fires at 30.1 and 42.1 minutes but not
+      at 29.9 or 30.0, because the comparison is strict -- 2 firings over a 6-point sweep, all of them
+      verdicts on a run that already finished; checking after each of 20 steps stops a breaching run
+      at step 14 and saves 6 steps, 30% of the run, where the end-of-run check saves none;
+      elapsed_minutes defaults to 0.0 and is agent-reported, so a run claiming zero passes any budget,
+      and of RunSummary's 4 fields only touched_files could be verified against the filesystem; the
+      merged budget names the number without naming which contract supplied it
+  - index: 5
+    slug: intersecting_allowed_files_can_empty_the_allowlist_silently
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run two contracts against the same diff. What is the right merge semantics when both apply?
+    zh: |
+      拿兩份契約對同一份 diff 跑。當兩者都適用時，正確的合併語意是什麼？
+    verifies: >-
+      merging the lesson's project-wide and task contracts gives allowed ['app.py', 'test_app.py'], 3
+      forbidden patterns, a 30-minute budget, violation budget 0 and egress ['api.anthropic.com'],
+      with the clean run passing and the creep run producing 5 findings of which 4 block; a task
+      allowing docs/api.md merged with a project that does not drops the path with no finding
+      recording it, so the contract's gap surfaces as the agent's off-scope write; None means no
+      enforcement and [] means deny-all in network_egress, so one sentinel carries two meanings across
+      a fold; violation_budget takes the minimum, so a project-wide budget of 1 is unreachable from a
+      task declaring 0, and only acceptance_criteria grows under merge

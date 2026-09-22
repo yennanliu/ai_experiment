@@ -1,0 +1,79 @@
+lesson: 02-rewoo-plan-and-execute
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/02-rewoo-plan-and-execute/docs/en.md
+exercises:
+  - index: 1
+    slug: the_waves_are_computed_and_then_flattened_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Parallelize worker execution for independent plan nodes. What does it buy you on a 6-node DAG with 2 parallel groups?
+    zh: |
+      讓相互獨立的計畫節點平行執行。在一張有 2 個平行群組的 6 節點 DAG 上，這替你換到了什麼？
+    verifies: >-
+      a 6-node DAG with two parallel groups resolves into waves of 3, 2 and 1, so 6 unit steps become
+      3 -- a 2.00x makespan win capped at 3 concurrent workers, with 6 of 6 evidence values matching
+      the shipped run; topological's own Kahn sweep already computes those waves and returns a flat
+      list; run_rewoo's worker_chars zips declaration order against completion order, mis-associating
+      2 of 3 pairs on a reversed plan while the total stays 108; the demo chain is 3 waves for 3
+      nodes, 1.00x
+  - index: 2
+    slug: the_smallest_change_is_one_more_input_to_the_planner
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a replanner node that fires if any worker returns an error. What is the smallest change to ReWOO that makes it Plan-and-Execute?
+    zh: |
+      加一個重規劃器節點，只要任何 worker 回傳錯誤就觸發。把 ReWOO 變成 Plan-and-Execute 的最小改動是什麼？
+    verifies: >-
+      plan_for goes from 1 input to 2 -- evidence -- which is the whole of Plan-and-Execute; a plan
+      naming an unregistered tool yields 1 error on pass 1, fires the replanner once and ends with 0
+      errors; a search miss returns 'no result for ...' without the error prefix, so it fires the
+      replanner 0 times and reaches the final answer; ScriptedPlanner.plan_for returns the same object
+      for two questions, so the loop needs a bound, and against a tool that always raises it burns 2
+      replans and still ends with 1 error; planner_chars goes 156 to 468
+  - index: 3
+    slug: the_split_fails_on_the_defect_that_costs_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace `Planner` with a small model (7B class) and keep `Solver` on a frontier model. Compare end-to-end quality — where does the split fail?
+    zh: |
+      把 `Planner` 換成小模型（7B 等級），`Solver` 留在前沿模型上。比較端到端品質 —— 這種拆法在哪裡失效？
+    verifies: >-
+      five weak-planner defects give five outcomes -- a dangling #E9 raises RuntimeError after 0 tool
+      calls, an omitted step raises KeyError after 2 of 3, an unregistered tool leaves 1 marked
+      evidence string, a wrong query answers normally after 3, and a shuffled declaration order is
+      byte-identical to the correct plan; only the wrong query is both silent and wrong, with 0 marked
+      evidence strings and 'no result for' in the answer, and it is the one class a frontier solver
+      cannot repair; topological's message names a cycle that is not there
+  - index: 4
+    slug: the_training_data_is_the_teachers_plans_and_the_score_is_the_dag
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 4 of the ReWOO paper on planner distillation. Reproduce the 175B -> 7B result conceptually: what training data do you need, and how do you score plan quality?
+    zh: |
+      讀 ReWOO 論文第 4 節談規劃器蒸餾的部分。概念上重現 175B -> 7B 那個結果：你需要什麼訓練資料，又要怎麼替計畫品質評分？
+    cites: >-
+      Planner distillation
+  - index: 5
+    slug: a_sequence_moves_the_ordering_obligation_to_the_planner
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Port the toy to Plan-and-Act's trajectory shape: plan is a sequence, not a DAG. What tradeoffs change?
+    zh: |
+      把這個玩具移植到 Plan-and-Act 的軌跡形狀：計畫是一個序列，不是 DAG。有哪些取捨變了？
+    verifies: >-
+      the port is run_workers minus topological: the two executors agree on 3 of 3 evidence values on
+      the demo chain, and the 6-node DAG takes 6 sequential steps against 3 waves; that DAG admits 20
+      valid orders and a trajectory stores 1 with no field for the other 19; declared backwards the
+      DAG executor still matches 3 of 3 while the sequence sends 'no result for population of #E1' and
+      rounds the reference name to '2 million'; a dangling #E9 raises in the DAG and becomes evidence
+      in the sequence

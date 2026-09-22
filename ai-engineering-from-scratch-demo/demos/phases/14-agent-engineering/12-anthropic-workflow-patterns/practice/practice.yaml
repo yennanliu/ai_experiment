@@ -1,0 +1,79 @@
+lesson: 12-anthropic-workflow-patterns
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/12-anthropic-workflow-patterns/docs/en.md
+exercises:
+  - index: 1
+    slug: low_confidence_and_unknown_category_reach_the_same_handler
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement routing with a confidence threshold. Below threshold -> escalate to human. Where does the threshold land for a tier-1 support use case?
+    zh: |
+      實作帶信心門檻的路由。低於門檻 -> 升級給人。對一線客服的使用情境來說，那個門檻會落在哪裡？
+    verifies: >-
+      route's classifier is typed str -> str, so a confidence has nowhere to travel and the only way
+      to say 'unsure' is to return a label handlers does not hold -- which reaches the default handler
+      and is byte-identical to a deliberate escalation; over 20 tickets the margin classifier is right
+      14 times, routing everything costs 30 at a 5:1 misroute ratio, and thresholding at 0.3 escalates
+      9, misroutes 0 and costs 9; the optimum stays at 0.3 at ratios 2, 5 and 10 because every error
+      sits at confidence 0.25 or below
+  - index: 2
+    slug: parallel_vote_is_a_list_comprehension
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a timeout to `parallel_vote`. What happens when one call hangs? How do you aggregate with missing votes?
+    zh: |
+      給 `parallel_vote` 加上逾時。當某次呼叫卡住時會發生什麼事？票數缺漏時你要怎麼彙整？
+    verifies: >-
+      parallel_vote is a sequential list comprehension, so with five voters one of which hangs for 30
+      units the shipped loop finishes at 34 against 30 concurrent and 2 with a timeout, and adding a
+      timeout without concurrency saves nothing; the timeout is decisive -- the full vote elects 'no'
+      and the 4 surviving votes elect 'yes' -- and a quorum of 3 returns None when 2 arrive; a 2-2 tie
+      is broken by arrival order; the returned Counter holds 4 of 5 votes with no way to say how many
+      were requested
+  - index: 3
+    slug: the_loop_returns_whatever_it_happened_to_try_last
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Turn `evaluator_optimizer` into a bandit: keep the top-2 outputs across iterations so a late good result doesn't get overwritten by a late bad one.
+    zh: |
+      把 `evaluator_optimizer` 變成一個 bandit：跨迭代保留最好的 2 個輸出，這樣後來一個好結果就不會被後來一個壞結果覆蓋掉。
+    verifies: >-
+      candidate is rebound each iteration and returned after the loop, so across five iterations
+      scoring 3, 9, 4, 2, 1 the shipped loop returns the 1 and a top-2 bandit returns the 9 with the 4
+      as runner-up; the trace already holds every candidate, so the best score in the shipped trace is
+      the same 9; the evaluator is typed Callable[[str, str], tuple[bool, str]] with no number to rank
+      by; on a run that passes, both arms return the same candidate at iteration 2, so the overwrite
+      is invisible on the happy path
+  - index: 4
+    slug: the_chain_forgets_the_input_and_pays_for_the_summary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Combine prompt chaining with routing: a router picks one of three chains. Measure token cost vs a single big-prompt alternative.
+    zh: |
+      把提示詞串接跟路由結合：一個路由器從三條鏈裡挑一條。量它相對於「單一大提示詞」方案的詞元成本。
+    verifies: >-
+      counting the characters ScriptedLLM was handed, three routed chains cost 507 across 9 calls
+      against 283 across 3 for one big prompt -- 1.8x the characters and 3.0x the calls; 90 of the 507
+      characters are intermediate output the system wrote and paid to read back; the router is 3 of
+      the 9 calls and 193 characters, 38.1% of the total, before any work happens; prompt_chain sets
+      current = output, so the original text appears in 3 of the 6 chain prompts, once per input at
+      step one
+  - index: 5
+    slug: count_the_steps_then_count_the_decisions
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one of your production features. Draw the workflow graph. Count steps. Would an agent actually be better here?
+    zh: |
+      挑一項你手上的生產功能。畫出它的工作流圖。數步數。在這裡換成代理真的會比較好嗎？
+    cites: >-
+      Where workflows beat agents

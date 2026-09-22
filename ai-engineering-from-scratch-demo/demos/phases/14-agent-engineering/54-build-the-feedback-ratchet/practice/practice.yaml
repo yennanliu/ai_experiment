@@ -1,0 +1,85 @@
+lesson: 54-build-the-feedback-ratchet
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/54-build-the-feedback-ratchet/docs/en.md
+exercises:
+  - index: 1
+    slug: the_incident_from_this_session_routes_to_the_backlog
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Turn one incident and one user complaint into ratchet actions.
+    zh: |
+      Turn one incident and one user complaint into ratchet actions.
+    verifies: >-
+      two real signals -- the commit that changed a measurement three solutions depended on, and the
+      agent's inability to open the pull request -- route to backlog and policy against the layers
+      that actually owned them, evaluation and policy, so 1 of 2 agree; priority is severity times
+      frequency, so the lesson's own example sorts to [12, 12, 5] and the only authority signal lands
+      last; adding the word 'regression' moves the same incident from backlog to evaluation without
+      changing a fact; promote copies Signal.owner verbatim, so an empty owner produces an action
+  - index: 2
+    slug: the_earliest_layer_for_this_incident_is_not_one_of_the_five
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Name the earliest layer that can prevent each recurrence.
+    zh: |
+      Name the earliest layer that can prevent each recurrence.
+    verifies: >-
+      the complaint's earliest layer is policy and the incident's is the fixture the solution reads,
+      which none of the 5 destinations describes; 0 of the 5 durable artifact paths promote assigns
+      exist in this repository; the test suite caught the incident while the fix lives in three
+      solutions that now pin a commit, and RatchetAction's 7 fields cannot distinguish detection from
+      prevention; the router falls through to backlog, the most expensive destination, and 0 of the 5
+      verification strings name a runnable command
+  - index: 3
+    slug: the_verification_string_becomes_a_command_that_already_exists
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add verification commands or observations to the lab output.
+    zh: |
+      Add verification commands or observations to the lab output.
+    verifies: >-
+      the five canned verification phrases become four runnable commands and one observation, naming 4
+      paths in this repository of which 4 exist; all 5 shipped phrases begin with 'Record' and 0
+      contain a path or an executable; backlog is the destination that cannot have a command, because
+      whether shaped work should exist is not settled by running something; the module executes
+      nothing and the action's 7 fields carry only text, so replacing the phrase changes what a human
+      pastes rather than what the system runs
+  - index: 4
+    slug: the_retirement_condition_names_a_fact_the_action_does_not_carry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Define a retirement condition for a policy rule.
+    zh: |
+      Define a retirement condition for a policy rule.
+    verifies: >-
+      an evaluable retirement condition needs a promotion date, a supplied today and a recurrence
+      count: at 205 days against a 180-day window the quiet rule retires, the recurring one is kept
+      and the same rule before the window closes is held; promote formats expires_after_days into a
+      sentence while frequency is multiplied into priority and never stored, so 0 of the action's 7
+      fields hold a date or a count; the module imports no clock, so evaluation lives outside the
+      artifact; 3 of the docs' 4 retirement reasons are checkable from a log
+  - index: 5
+    slug: the_action_carries_seven_fields_into_a_frame_with_room_for_five
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Trace one accepted correction back into the next task frame.
+    zh: |
+      Trace one accepted correction back into the next task frame.
+    verifies: >-
+      carrying the accepted correction into Lesson 43's TaskFrame maps 5 of the action's 7 fields and
+      drops priority and destination, with validate returning 0 issues either way; TaskFrame has 6
+      fields and none cites the signal, the incident or the action, so the trace runs forward only;
+      the durable artifact yields 1 allowed path that does not exist while the recurrence itself names
+      the 3 solution files the fix actually touched; the ratchet's verification and the frame's
+      acceptance are both command strings sharing 0 identifiers, so making them the same string is
+      what closes the loop

@@ -1,0 +1,85 @@
+lesson: 35-initialization-scripts
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/35-initialization-scripts/docs/en.md
+exercises:
+  - index: 1
+    slug: the_probe_ships_and_a_fresh_lock_skips_it_entirely
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a probe that diffs the current commit against the last-known-good commit and refuses to start if more than 50 files changed.
+    zh: |
+      加一個探測，把當前 commit 跟最後已知良好的 commit 做 diff，若變動超過 50 個檔案就拒絕開始。
+    verifies: >-
+      probe_lkg_diff already ships with LKG_FILE_DIFF_BUDGET = 50 and, run against a real temporary
+      git repository, returns pass at 50 changed files and fail at 51, naming the baseline's short
+      sha, as 1 of 6 probes; main calls lock_is_fresh before run_probes and returns 0 on a hit, so a
+      lock written inside the 24-hour TTL launches without the diff ever being computed; the budget
+      counts files rather than change, so 51 one-line edits fail while 1 file with 5000 changed lines
+      passes; the diff runs with cwd=HERE, the lesson's own code directory, rather than the project
+      the agent is editing
+  - index: 2
+    slug: the_ttl_is_one_day_the_exercise_says_seven
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Wire the script to write a `prereqs.lock` file and refuse to start if the lock is older than seven days.
+    zh: |
+      讓腳本寫出一份 `prereqs.lock` 檔，並在那份鎖超過七天時拒絕開始。
+    verifies: >-
+      LOCK_TTL_SECONDS is 24 hours where the exercise says 168, so locks aged 25, 72 and 167 hours
+      flip from stale to fresh when the constant is corrected, and refusing rather than re-probing is
+      a second change because the stale path falls through to run_probes; _deps_fingerprint hashes 4
+      module literals, so editing a repository file leaves it unchanged while editing the init
+      script's own constants moves it; all 3 malformed lock shapes read False with 0 diagnostics, so a
+      month-old corrupt lock looks like a first run; main checks the lock before writing REPORT_PATH
+      and write_lock runs only after the probes, so a cache hit exits 0 leaving the report describing
+      a run up to 24 hours old
+  - index: 3
+    slug: the_script_cannot_tell_a_dev_dependency_from_a_runtime_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `--fix` flag that auto-installs missing dev dependencies but never modifies runtime dependencies without approval.
+    zh: |
+      加一個 `--fix` 旗標，自動安裝缺失的開發相依，但未經核准絕不修改執行期相依。
+    verifies: >-
+      splitting the requirement into dev and runtime lists and gating on --fix installs 3 of 5 missing
+      dependencies and refuses 2 with 'approval required', exiting 1, where without the flag it
+      installs 0; REQUIRED_DEPS is ['json', 'dataclasses'] with every entry unmarked and the parser
+      carries only no_cache and write_lkg, so the 'never without approval' half is unimplementable
+      against the shipped data; _deps_fingerprint hashes the declared lists rather than what is
+      installed, so a --fix that installs 3 packages leaves the lock fresh; Probe carries 4 fields
+      with detail a str and no list field, and _timed does not preserve the probe's name
+  - index: 4
+    slug: move_probes_from_hardcoded
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Move probes from hardcoded functions to a YAML registry. Defend the trade-off.
+    zh: |
+      把探測從硬寫的函數搬到一份 YAML 註冊表。替這個取捨辯護。
+    cites: >-
+      Fail loud, fail fast, fail in one place
+  - index: 5
+    slug: the_budget_downgrades_a_pass_to_a_warn_and_warn_never_blocks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a timing budget per probe. A probe that runs longer than three seconds is a workbench smell.
+    zh: |
+      替每個探測加上時間預算。跑超過三秒的探測就是工作台的異味。
+    verifies: >-
+      _timed already carries PROBE_BUDGET_SECONDS = 3.0 and rewrites a slow pass into a warn, so
+      probes at 250ms, 4000ms and 8000ms come back pass, warn, warn while ok = all(status != 'fail')
+      stays True and the exit code is unchanged; the elapsed time is compared after the probe returns,
+      so nothing is bounded, and exactly 1 of the 6 shipped probes carries a real bound -- a 2.0s
+      subprocess timeout, below the 3.0s budget; the downgrade applies only when status == 'pass', so
+      a slow failing probe keeps fail and loses its timing note; only lkg_diff can return fail at all,
+      since REQUIRED_DEPS is stdlib, REQUIRED_ENV_VARS is empty and state freshness warns by
+      construction

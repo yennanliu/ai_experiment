@@ -1,0 +1,84 @@
+lesson: 28-orchestration-patterns
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/28-orchestration-patterns/docs/en.md
+exercises:
+  - index: 1
+    slug: removing_the_router_removes_the_only_place_a_rule_can_live
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert a supervisor-worker to a swarm by removing the router. What breaks? What improves?
+    zh: |
+      把一個 supervisor-worker 拿掉路由器改成 swarm。什麼壞了？什麼變好了？
+    verifies: >-
+      on the lesson's 3 tasks the supervisor spends 6 ops and the swarm 5 -- 17% cheaper -- and both
+      produce the same 3 answers because both route with the same classify; the swarm starts at
+      list(SPECIALISTS)[0], so on an 8-task workload skewed to refunds it costs 10 ops and reordering
+      the table so sales comes first costs 15, a 50% swing with no change to any agent, task or
+      answer; the supervisor spends [2, 2, 2] ops per task and the swarm [1, 2, 2]; swarm carries hops
+      as a local and returns tuple[list[str], int], so the hop count is never readable
+  - index: 2
+    slug: the_counter_is_shipped_and_the_task_it_stops_is_dropped
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a hop counter to the swarm: refuse after 3 handoffs. Does it catch A->B->A bouncing?
+    zh: |
+      給 swarm 加一個跳數計數器：超過 3 次交接就拒絕。它抓得到 A->B->A 的彈跳嗎？
+    verifies: >-
+      the shipped swarm already reads while hops < 3 and with a deterministic classify the maximum hop
+      count is 1, so the counter never fires; a router that alternates between two specialists takes
+      hops to [3, 3, 3] and the loop exits by condition rather than break, appending no result line --
+      9 trace lines and 0 answers; a router cycling through four specialists never repeats inside the
+      budget, so the counter fires at 3 hops with 0 answers where remembering visited agents catches
+      the 2-cycle in 1 hop and lets the 4-step route finish; a dropped task costs 3 ops against a
+      handled one's 1, so the total rises from 5 to 9 on failure
+  - index: 3
+    slug: the_flat_router_reads_every_description_on_every_task
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a two-level hierarchical system for a 12-specialist domain. Where does the context budget fail without nesting?
+    zh: |
+      替一個有 12 位專家的領域蓋一套兩層的階層式系統。不做巢狀的話，脈絡預算會在哪裡撐不住？
+    verifies: >-
+      at 350 tokens per specialist description plus a 300-token frame, a flat router over 12
+      specialists costs 4500 prompt tokens and fails a 4000-token budget, where nesting into 4 teams
+      of 3 costs 1700 at the top and 1350 below -- 1700 on the deepest path, 62% less; sweeping
+      population sizes, flat routing first exceeds the budget at 11 specialists and two-level routing
+      survives to 44; hierarchical spends 3 ops per task against supervisor_worker's 2 and the
+      12-specialist version spends the same 3, so depth costs one op per level whatever the width;
+      hierarchical calls classify for top_label and again for sub_label, making 33% of its cost a
+      level that adds no information
+  - index: 4
+    slug: all_four_patterns_route_with_the_same_function
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Profile the four patterns on a production-shaped workload. Which wins on which metric (latency, cost, accuracy, debuggability)?
+    zh: |
+      在一個生產形狀的工作負載上替這四種模式做剖析。哪個在哪項指標上勝出（延遲、成本、準確率、可除錯性）？
+    verifies: >-
+      on a 60-task production-shaped mix the op counts are swarm 90, supervisor 120, hierarchical 180
+      and debate 300, with serial depth per task 1.5, 2.0, 3.0 and 2.0, and all four score 60/60 on
+      the same classifier so accuracy takes 1 distinct value across 4 patterns; debate's three
+      debaters each call the same deterministic classify, costing 2.5x the supervisor with 0 of 60
+      answers differing; across all four traces 0 lines carry a score, a confidence or a reason, lines
+      per answer rank 1.5, 2.0, 3.0 and 4.0, and 180 of debate's 240 lines are three agents repeating
+      one label; debate's 300 ops sit at depth 2.0 while hierarchical's 180 sit at 3.0, so latency and
+      cost pick different losers
+  - index: 5
+    slug: read_anthropic_s_building
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's "Building Effective Agents" post. Map each of your production flows to one of the four. Any that don't map cleanly?
+    zh: |
+      讀 Anthropic 那篇〈Building Effective Agents〉。把你每一條生產流程都對映到四種之一。有哪一條對不乾淨嗎？
+    cites: >-
+      Anthropic's guidance

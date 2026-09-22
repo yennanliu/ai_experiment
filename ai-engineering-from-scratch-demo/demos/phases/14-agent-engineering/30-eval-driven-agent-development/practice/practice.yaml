@@ -1,0 +1,85 @@
+lesson: 30-eval-driven-agent-development
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/30-eval-driven-agent-development/docs/en.md
+exercises:
+  - index: 1
+    slug: the_flaky_case_passes_on_round_two_then_on_round_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take one of your production failures. Write an eval case that reproduces it. Does your agent pass it now?
+    zh: |
+      挑一次你的生產失敗。寫一個能重現它的評測案例。你的代理現在過得了嗎？
+    verifies: >-
+      three defects this phase measured -- Lesson 29's double-draw DLQ, Lesson 26's verb-extracting
+      context-loss detector and Lesson 27's do-prefix refusals -- reproduce as EvalCases that fail 3/3
+      at max_rounds 3 before the fix and pass 3/3 after; _flaky_benchmark_case keeps its attempt
+      counter in a closure, so running evaluator_optimizer on the same case object twice gives rounds
+      (2, 1) with verdicts (True, True); 1 of the 4 shipped proposers takes feedback and never reads
+      it, and CaseResult's 6 fields distinguish refinement from retry nowhere; the loop overwrites
+      feedback each round and returns only the last candidate, so a 3-round failure reports 1 of 3
+      attempts
+  - index: 2
+    slug: a_blended_score_gives_the_proposer_nothing_to_fix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build an LLM-judge rubric for your domain with three dimensions (factual, tone, scope). Score 50 sessions.
+    zh: |
+      替你的領域做一份三個維度（事實、語氣、範圍）的 LLM 裁判評分準則。替 50 個工作階段評分。
+    verifies: >-
+      a three-dimension rubric over 50 sessions converges 50/50 in a mean of 1.8 rounds when the judge
+      names the failing dimension and 10/50 when it returns only a blended score, the other 40
+      exhausting their rounds without improving; the judge is typed Callable[[str], tuple[bool, str]]
+      and evaluator_optimizer passes its reason straight to the proposer, so identical verdicts with
+      different wording move the pass rate from 20.0% to 100.0%; 20 of 50 sessions score at or above
+      0.60 while failing a dimension outright, and requiring every dimension leaves 10 passing before
+      refinement; dropping max_rounds from 3 to 1 takes the naming judge to 10/50 and CaseResult has
+      no field saying the budget was exhausted
+  - index: 3
+    slug: a_five_percent_threshold_needs_twenty_cases_to_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Wire the eval suite into CI. Fail the build on >=5% regression.
+    zh: |
+      把評測套組接進 CI。回歸 >=5% 就讓建置失敗。
+    verifies: >-
+      over the lesson's 4 cases the pass rate takes 5 values and the smallest non-zero regression is
+      25.0%, so every threshold between 0 and 25% behaves identically, where 20 cases make a 5.0% step
+      reachable; ci_gate compares with > rather than >=, so a regression exactly at a binary-exact 25%
+      threshold is allowed where the exercise's stated rule blocks it; ci_gate has 3 parameters, none
+      naming a path or store, and the module defines 0 functions reading or writing a baseline; on 39
+      benchmark cases plus 1 online guardrail, the guardrail failing alone is a 2.5% regression and is
+      allowed, where weighting online cases at 3x makes it 7.1% and blocks
+  - index: 4
+    slug: the_eval_case_records_rounds_and_the_trajectory_is_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a trajectory-efficiency metric: how many steps did the agent take vs a gold trajectory?
+    zh: |
+      加一個軌跡效率指標：代理走了幾步、相對於黃金軌跡是多少？
+    verifies: >-
+      wiring Lesson 20's shipped agents into EvalCases gives [3, 4, 7] steps against gold [3, 4, 5] --
+      1.00x, 1.00x and 1.40x, aggregating to 1.17x -- while all three cases pass in rounds [1, 1, 1];
+      the round counts are identical where the step counts span 2.33x, and CaseResult's 6 fields
+      include 0 step counts, so rounds and steps are uncorrelated by construction; a pass-rate gate
+      sees 3/3 where a 1.2x efficiency gate fails revised_order alone, and an empty trajectory scores
+      0.00x; EvalCase.judge is typed Callable[[str], tuple[bool, str]], so the trajectory has to be
+      serialised into prose for the judge to parse back out
+  - index: 5
+    slug: map_every_phase_14
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Map every Phase 14 lesson to an eval case in your suite. Any missing? That's a gap to close.
+    zh: |
+      把階段 14 的每一課都對映到你套組裡的一個評測案例。有漏的嗎？那就是要補的缺口。
+    cites: >-
+      Tying Phase 14 together

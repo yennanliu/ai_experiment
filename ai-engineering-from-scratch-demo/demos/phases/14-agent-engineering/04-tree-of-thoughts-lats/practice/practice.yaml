@@ -1,0 +1,74 @@
+lesson: 04-tree-of-thoughts-lats
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/04-tree-of-thoughts-lats/docs/en.md
+exercises:
+  - index: 1
+    slug: c_is_not_a_parameter_and_the_answer_is_not_a_search_result
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the toy LATS with UCT c=0.1 vs c=2.0. What changes in the trace?
+    zh: |
+      用 UCT c=0.1 跟 c=2.0 各跑一次那個玩具 LATS。軌跡有什麼變化？
+    verifies: >-
+      mcts takes root, iterations and rng, so c is reachable only by rebinding uct; at 80 iterations
+      c=0.1 and c=2.0 build the same 311 nodes in the same shape, expand 286 times each, disagree on
+      15 visit counts and return the same trace scoring 0.0; at 300 iterations they build 355 against
+      322 nodes, expand 330 against 297 times and differ on 168 visit counts, and still return the
+      same trace scoring 1.0, because mcts closes with max over leaves by value; 0 of 286 leaves are
+      complete at 80 iterations while the instance has 4 winning paths
+  - index: 2
+    slug: a_little_noise_helps_because_the_value_function_is_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the value function for a noisier scorer (add random jitter). Does MCTS still find the best leaf? What is the minimum signal-to-noise it tolerates?
+    zh: |
+      把價值函數換成更吵的評分器（加上隨機抖動）。MCTS 還找得到最好的葉嗎？它能容忍的最低訊噪比是多少？
+    verifies: >-
+      the signal gap is 1.0, so over 30 seeds at 1000 iterations the search wins 30/30 at sigma 0.25
+      (SNR 4), 17/30 at 0.5 (SNR 2) and 3/30 at 1.0; at 300 iterations sigma 0.1 wins 25/30 against a
+      clean 19/30 because the value function's top first move scores 0.0 and is a dead end while a
+      winning move ranks 7 of 24; at sigma 0.5 noise in the closing argmax alone wins 9/30 against
+      21/30 for noise in the rollouts alone; 25 of 27 losses at sigma 1.0 return a complete wrong
+      trajectory
+  - index: 3
+    slug: the_beam_is_already_there_and_38_wide_is_free
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement beam-search ToT (keep top-k at each level) and compare to BFS. Which is better on a tight token budget?
+    zh: |
+      實作 beam-search 版的 ToT（每一層保留 top-k），並跟 BFS 比較。在很緊的詞元預算下，哪個比較好？
+    verifies: >-
+      tot_bfs already keeps top-k per level, so the shipped width 8 answers -0.03 after 152
+      expansions; the narrowest width that finds 24 is 38 at 460 expansions, which is exactly what
+      unpruned BFS costs; widths 4, 8, 16 and 32 all return the same wrong trace while the cost rises
+      from 88 to 438; the winning path ranks 7 of 24, then 38 of 286, then 1 of 1129, so 38 is the
+      threshold to the node; the top-scoring first move scores 0.0 and is a dead end while both
+      solutions start at ranks 7 and 20
+  - index: 4
+    slug: the_rollout_count_is_a_budget_not_a_constant
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read LATS Section 5.1. Reproduce the HumanEval trajectory count: how many rollouts does it take to hit the reported pass@1?
+    zh: |
+      讀 LATS 第 5.1 節。重現那個 HumanEval 的軌跡數：要幾條 rollout 才打得到論文報告的 pass@1？
+    cites: >-
+      LATS (Zhou et al., ICML 2024)
+  - index: 5
+    slug: search_pays_when_the_evaluator_is_cheaper_than_the_policy
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the LATS paper's discussion on "when LATS helps less." Write a one-paragraph decision rule mapping task shape to search strategy.
+    zh: |
+      讀 LATS 論文裡談「LATS 何時幫助較小」的討論。寫一段話的決策規則，把任務形狀對映到搜尋策略。
+    cites: >-
+      The cost reality

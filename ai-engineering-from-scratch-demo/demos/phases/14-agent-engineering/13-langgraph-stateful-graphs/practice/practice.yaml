@@ -1,0 +1,79 @@
+lesson: 13-langgraph-stateful-graphs
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/13-langgraph-stateful-graphs/docs/en.md
+exercises:
+  - index: 1
+    slug: the_checkpoint_keeps_the_pause_flag_so_resume_pauses_again
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a conditional edge from `classify` to `end` when classification confidence is below a threshold. Resume the run after a human sets `route` manually.
+    zh: |
+      加一條從 `classify` 到 `end` 的條件邊，在分類信心低於門檻時走它。等人工把 `route` 手動設好之後再續跑。
+    verifies: >-
+      _classify's else branch returns 'sales', so gibberish is routed to sales and a SAL ticket
+      raised; a confidence-gated edge to END stops it at classify with confidence 0.0 and no ticket,
+      and a manual route resumes to 'sent BUG-zzz qqq'; Runner.run saves the checkpoint before popping
+      _pause_reason, so the stored state still carries the flag and resuming from load_latest pauses
+      at human_gate again while the exception's copy resumes; resume re-runs the paused node, so step
+      reaches 5 over a 4-node path
+  - index: 2
+    slug: the_checkpointer_stores_the_whole_state_every_step
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the SQLite-like fake for a real SQLite checkpointer. Measure per-step serialization overhead.
+    zh: |
+      把那個類 SQLite 的假貨換成真正的 SQLite checkpointer。量逐步的序列化開銷。
+    verifies: >-
+      a stdlib sqlite3 checkpointer writes 3 rows of 90, 120 and 164 bytes -- 374 total -- and
+      round-trips to 3 of 3 in-memory states; the in-memory store keeps the same 3 snapshots holding
+      15 key-value pairs where a delta-encoded checkpointer would write 8 changed keys, so the
+      overhead is the snapshot rather than the backend; a callable in the state is accepted by
+      copy.deepcopy and raises TypeError in json.dumps; the human_gate row carries _pause_reason, so
+      porting the backend ports the resume bug
+  - index: 3
+    slug: immutability_makes_the_merge_possible_not_correct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement parallel edges: two nodes run concurrently, merge by a custom reducer. What does immutable state buy here?
+    zh: |
+      實作平行邊：兩個節點併發跑，再用一個自訂 reducer 合併。不可變狀態在這裡替你換到了什麼？
+    verifies: >-
+      StateGraph._next is typed str | None, so a fan-out cannot be written in the shipped graph; two
+      branches over a shared base merged by a reducer per contested key give an identical result in
+      either order, step 3 and owner 'oncall+triage', while the runner's own last-write-wins rule
+      leaves the two orders disagreeing on owner; both branches compute step + 1 from the same base
+      and return 2, so last-write-wins records 2 for two nodes of work; a node that edits the state in
+      place makes the orders disagree on severity
+  - index: 4
+    slug: a_supervisor_is_a_router_whose_targets_are_agents
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read `langgraph-supervisor` reference. Port the toy to `create_supervisor`. Compare the trace shapes.
+    zh: |
+      讀 `langgraph-supervisor` 的參考文件。把這個玩具移植到 `create_supervisor`。比較兩者的軌跡形狀。
+    cites: >-
+      Three topologies
+  - index: 5
+    slug: a_node_returns_one_dict_so_a_partial_has_nowhere_to_go
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add streaming: each node yields partial state while it runs. Print the deltas as they arrive.
+    zh: |
+      加上串流：每個節點在執行過程中吐出部分狀態。收到 delta 就印出來。
+    verifies: >-
+      NodeFn is Callable[[State], Update] and Runner.run calls fn(state) once, so streaming is a
+      different signature rather than an addition; generator nodes emit 7 deltas across the same
+      4-node path with a final state matching the shipped run on 6 of 6 keys; the runner still saves
+      once per node, so 4 checkpoints cover 7 deltas; the streaming version stops with 1 of
+      human_gate's 2 deltas applied, a state the shipped runner cannot reach because it checks
+      _pause_reason only after the node returns

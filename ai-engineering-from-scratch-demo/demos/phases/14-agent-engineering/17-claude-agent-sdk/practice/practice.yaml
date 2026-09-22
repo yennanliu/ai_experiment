@@ -1,0 +1,74 @@
+lesson: 17-claude-agent-sdk
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/17-claude-agent-sdk/docs/en.md
+exercises:
+  - index: 1
+    slug: the_spawner_folds_nothing_back_so_the_parent_learns_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a subagent spawner that batches 20 tasks into groups of 5 parallel subagents. Measure orchestrator context size vs one-per-task.
+    zh: |
+      加一個子代理生成器，把 20 項任務分批成每組 5 個平行子代理。量它相對於「一項任務一個子代理」的編排者脈絡大小。
+    verifies: >-
+      folding one summary line per subagent, 5 groups of 4 cost the orchestrator 23 tokens against 83
+      for 20 groups of 1 -- 3.6x -- while the inline run costs 107; through the shipped
+      spawn_subagents the parent session holds 0 turns either way, because run_agent appends only to
+      the sub's session; the totals are 145 tokens for five subagents and 280 for twenty against 107
+      inline, so batching hides 122 tokens from the orchestrator and adds work elsewhere;
+      context_tokens is len(text.split()) at 4 sites
+  - index: 2
+    slug: the_hook_cannot_deny_and_cannot_see_the_session
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a `PreToolUse` hook that rate-limits `write_file` calls (5 per minute per session). Trace the behavior.
+    zh: |
+      實作一個 `PreToolUse` 掛鉤，替 `write_file` 呼叫做速率限制（每個工作階段每分鐘 5 次）。把行為追出來。
+    verifies: >-
+      a PreToolUse rate limiter can only refuse by raising: five write_file calls pass and the sixth
+      raises out of run_agent, leaving 5 tool turns in a 6-turn session, with another 5 allowed after
+      the virtual clock passes the window; _dispatch assigns a hook's return value 0 times, so a hook
+      returning False lets all 8 calls through; the hooks run above the try, so session_end fires 0
+      times for the killed session against 2 for one that completed; the hook takes 2 parameters and
+      neither is a session id
+  - index: 3
+    slug: delete_prunes_one_level_so_grandchildren_outlive_the_root
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Wire `list_subkeys` to render a subagent tree. What does deep nesting look like?
+    zh: |
+      把 `list_subkeys` 接起來，畫出一棵子代理樹。深層巢狀長什麼樣子？
+    verifies: >-
+      a recursive walk over list_subkeys renders 13 lines at depths 0 to 2 for a root with 3 children
+      and 9 grandchildren, with ids like root.sub01.sub04; SessionStore.delete removes the root and
+      its 3 children and leaves all 9 grandchildren in list_sessions, reachable by nobody;
+      _sub_counter is per-harness, so the root's children are sub01 to sub03 and the first child's own
+      children are sub04 to sub06; run_agent links a parent only when parent_session is passed, so a
+      direct call leaves 2 sessions and 1 tree node
+  - index: 4
+    slug: registration_moves_from_a_dict_to_a_decorator_and_a_permission
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Port the toy to the real `claude-agent-sdk` Python package. What changes about tool registration?
+    zh: |
+      把這個玩具移植到真正的 `claude-agent-sdk` Python 套件。工具註冊有什麼改變？
+    cites: >-
+      Built-in tools
+  - index: 5
+    slug: managed_is_the_answer_when_the_session_store_is_the_product
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Claude Managed Agents docs. When would you switch from self-hosted to managed?
+    zh: |
+      讀 Claude Managed Agents 的文件。什麼時候你會從自架換到託管？
+    cites: >-
+      Claude Managed Agents

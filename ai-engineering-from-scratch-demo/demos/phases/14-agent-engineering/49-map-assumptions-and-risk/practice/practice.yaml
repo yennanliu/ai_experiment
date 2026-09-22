@@ -1,0 +1,88 @@
+lesson: 49-map-assumptions-and-risk
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/49-map-assumptions-and-risk/docs/en.md
+exercises:
+  - index: 1
+    slug: the_two_riskiest_assumptions_tie_and_the_two_functions_disagree
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write five assumptions for a feature you want to build.
+    zh: |
+      Write five assumptions for a feature you want to build.
+    verifies: >-
+      five assumptions for generating this repository's README answers score 17, 13, 16, 17 and 14, so
+      the top two tie and the map's first row is decided by a tie-break; prioritize sorts by
+      (-risk_score, statement) while next_experiment calls max, which returns the first maximum it
+      meets, so on a tying pair the ranked list and the named experiment disagree; impact times
+      uncertainty reaches 25 while irreversibility adds at most 5, so the only assumption that cannot
+      be undone scores 14 and ranks fourth; any non-empty evidence string marks an assumption tested
+      and removes it from the experiment pool
+  - index: 2
+    slug: the_omitted_assumption_is_the_one_about_the_published_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add one safety assumption that your feature list omitted.
+    zh: |
+      Add one safety assumption that your feature list omitted.
+    verifies: >-
+      the omitted safety assumption -- a wrong number reaches a reader before anyone notices -- scores
+      25 at impact 5, uncertainty 4 and irreversibility 5, lifting the map's top from 17 and changing
+      the next experiment; 6 of the six tests written here name something to observe while the
+      lesson's own safety row names a decision about the build instead; a safety assumption at
+      irreversibility 5 needs a product of at least 13 to beat a value assumption at 17, so the modest
+      version scores 14 and ranks fifth of six; the two assumptions tying at 17 still tie beneath the
+      new top item
+  - index: 3
+    slug: the_threshold_has_nowhere_to_live_and_the_run_it_judges_fails_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Define a threshold that would cause you to stop the build.
+    zh: |
+      Define a threshold that would cause you to stop the build.
+    verifies: >-
+      a stop threshold of 90% traced numbers is judged by a real run: one finished lesson's answers
+      carry 16 distinct numbers of which 14 appear verbatim in its own graded check details, 87.5%, so
+      the rule says stop; the two misses are 43 and 46, lesson references rather than measured claims,
+      so the threshold fired correctly and the conclusion is to fix the metric; Assumption has 6
+      fields whose only numbers are the three risk dimensions, with no place for the threshold, the
+      observed result or the decision; recording the failing result marks the assumption tested and
+      drops it from the open pool
+  - index: 4
+    slug: the_cheap_test_reaches_the_same_verdict_in_every_draw
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace one large experiment with a cheaper decisive test.
+    zh: |
+      Replace one large experiment with a cheaper decisive test.
+    verifies: >-
+      the full experiment traces 67 distinct numbers across five finished lessons and matches 52
+      (77.6%) while the cheap one traces 16 in a single lesson and matches 14 (87.5%), both returning
+      stop at 20.0% of the cost; the per-lesson rates are 72.2, 87.5, 57.1, 90.9 and 87.5 percent, so
+      sampling one particular lesson would have returned continue and only 4 of the 5 draws agree with
+      the full run; the expensive version costs 25 graded files to move the estimate within the same
+      side of the threshold, buying a 33.8-point spread; Assumption.test is one string, so
+      substituting the cheap test leaves no trace of the one it replaced
+  - index: 5
+    slug: the_roadmap_builds_in_the_order_the_risk_map_would_test_last
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare risk ranking with roadmap priority and explain the mismatch.
+    zh: |
+      Compare risk ranking with roadmap priority and explain the mismatch.
+    verifies: >-
+      the safety assumption sits sixth on a natural build order and first by risk score, a
+      displacement of 5 places, with 9 of the 15 pairs inverted between the two sequences; sorting by
+      impact times uncertainty alone leaves the top item unchanged and still inverts 7 pairs, so the
+      irreversibility term only moves 4 assumptions by one place each; the top-risk test cannot run
+      until the feature exists -- 2 of the six tests depend on it -- so the answer is a bounded build
+      rather than a reordering; prioritize returns 8 keys and none records an intended position

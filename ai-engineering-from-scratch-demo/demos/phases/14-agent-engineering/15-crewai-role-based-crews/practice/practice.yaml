@@ -1,0 +1,106 @@
+lesson: 15-crewai-role-based-crews
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/15-crewai-role-based-crews/docs/en.md
+exercises:
+  - index: 1
+    slug: the_declared_dependency_falls_back_to_the_previous_task
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Convert the Sequential crew to a Flow. Count the touchpoints where variability drops. Note where readability dropped.
+    zh: |
+      把 Sequential crew 轉成 Flow。數一數變異度下降的接觸點有幾個。也記下可讀性在哪裡下降了。
+    verifies: >-
+      the Flow reproduces the crew's output verbatim on 3 of 3 strings, making the per-task input
+      decision literal at the cost of 4 decorated functions against 3 Task rows; kickoff computes
+      agent_input = joined or prior, so a task whose declared context produced nothing silently falls
+      back to the previous task's output with 0 warnings; HierarchicalCrew carries max_steps=5 while
+      Flow.kickoff mentions a cap 0 times; a crew entry carries 2 facts and a flow entry 3, the extra
+      one being the topic
+  - index: 2
+    slug: the_entity_store_exists_and_no_crew_ever_writes_to_it
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add entity memory to the crew: facts about a customer persist across kickoffs. Verify retrieval pulls the right entity.
+    zh: |
+      給這個 crew 加上實體記憶：關於某位客戶的事實要跨 kickoff 持久。驗證檢索拉出來的是對的實體。
+    verifies: >-
+      Memory.entity and write_entity are shipped and called by neither crew, so wiring them gives 2
+      customers and 5 facts across two kickoffs with 3 of 3 retrieved for the right one and 0 leaked;
+      _embed seeds a generator from the SHA-256 of the whole string, so an exact match scores 1.0, a
+      one-word edit -0.12 and an unrelated sentence 0.14 -- higher; short_term and long_term are keyed
+      by role, giving 3 roles and no subject across 6 entries; SequentialCrew writes long-term and
+      HierarchicalCrew does not
+  - index: 3
+    slug: the_manager_is_handed_a_set_of_names_and_never_the_output
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Implement a Hierarchical process where the manager refuses to route to the editor until the writer's output has at least three paragraphs. Trace the retry.
+    zh: |
+      實作一個 Hierarchical 流程，讓經理在寫手的輸出不到三段之前，拒絕路由給編輯。把那次重試追出來。
+    verifies: >-
+      HierarchicalCrew calls self.manager.fn(done, [], None), so a gate on the writer's output needs
+      the output passed; with it the first draft is rejected and the run takes 1 retry, 2 writer turns
+      and 5 trace lines before reaching the editor; _writer's text claims '3 paragraphs' and contains
+      0 paragraph breaks while Task.expected_output is read 0 times; done is a set, so after 2 writer
+      turns it still holds 3 entries; max_steps=5 counts manager turns, so a writer that never passes
+      exhausts the run with no error
+  - index: 4
+    slug: the_agent_finds_its_tool_by_searching_for_the_word_search
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Wire a `BaseTool` subclass for a (mocked) web search. Compare the trace shape vs the `@tool` decorator version.
+    zh: |
+      替一個（模擬的）網頁搜尋接上 `BaseTool` 子類別。跟 `@tool` 裝飾器版本比較軌跡形狀。
+    verifies: >-
+      a BaseTool-shaped class and the @tool decorator return the same result on 3 of 3 probes while
+      only the class records calls, 4 of them with arguments; _researcher selects a tool by
+      substring-matching 'search' in the human-readable tool_name, so renaming it to 'Find sources'
+      makes the agent fall back to hard-coded sources with no error; @tool sets 2 attributes against
+      the class's 4, and the docstring is read by nothing; a crew run returns 3 lines and 0 mentioning
+      the tool
+  - index: 5
+    slug: expected_output_is_a_string_that_nothing_reads
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Add `output_pydantic=Brief` to the editor task, where `Brief` has `title`, `summary`, `sections`. Make the writer task output malformed JSON once; verify CrewAI's retry behavior in the trace.
+    zh: |
+      給編輯任務加上 `output_pydantic=Brief`，其中 `Brief` 有 `title`、`summary`、`sections`。讓寫手任務有一次輸出畸形 JSON；在軌跡中驗證 CrewAI 的重試行為。
+    verifies: >-
+      SequentialCrew.kickoff reads expected_output 0 times, so there is no validation to extend; a
+      stdlib Brief plus a parse-and-retry loop turns one malformed output into 1 retry and a 3-field
+      Brief with 2 sections, recording the failure as 'invalid json' rather than raising; the shipped
+      crew passes the broken JSON to the editor and completes in 3 lines whose final output still
+      contains it; the three expected_output strings name three different units; an in-crew retry
+      would leave 3 short-term entries where the wrapper leaves 2
+  - index: 6
+    slug: the_guarantees_skipped_are_the_ones_with_a_schema_behind_them
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read CrewAI's docs intro. Port the toy to the real `crewai` API. Which guarantees did the stdlib version skip?
+    zh: |
+      讀 CrewAI 文件的導論。把這個玩具移植到真正的 `crewai` API。stdlib 版本跳過了哪些保證？
+    cites: >-
+      Four primitives
+  - index: 7
+    slug: the_missing_traces_are_the_ones_between_the_tasks
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Wire AgentOps or Langfuse (Lesson 24) to a real run. Which traces did you miss in the stdlib version?
+    zh: |
+      對一趟真實執行接上 AgentOps 或 Langfuse（第 24 課）。stdlib 版本漏掉了哪些追蹤？
+    cites: >-
+      Where this pattern goes wrong

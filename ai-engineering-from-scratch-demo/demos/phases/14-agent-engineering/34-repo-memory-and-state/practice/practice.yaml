@@ -1,0 +1,90 @@
+lesson: 34-repo-memory-and-state
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/34-repo-memory-and-state/docs/en.md
+exercises:
+  - index: 1
+    slug: the_field_is_refused_before_the_rule_can_read_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `last_human_touch` timestamp. Refuse any agent write within five seconds of a human edit.
+    zh: |
+      加一個 `last_human_touch` 時間戳。在人類編輯後五秒內，拒絕任何代理寫入。
+    verifies: >-
+      a last_human_touch property plus a 5-second window refuses agent writes at 500ms, 2s and 4.9s
+      and allows the other 5 probes, where adding the field without the schema change raises
+      unexpected fields ['last_human_touch']; storing the timestamp in the document commit overwrites
+      makes it self-clearing -- an agent holding a stale copy reinstates the timestamp it read and the
+      guard allows a write after a human edit it never saw, where a sidecar refuses it; StateManager
+      takes 2 constructor arguments, commit takes 1 and calls stat 0 times, so the comparison time
+      comes from the caller; _check_type handles 5 of JSON Schema's 7 types, with no number or boolean
+      branch, so a float timestamp raises 'expected integer, got float'
+  - index: 2
+    slug: one_of_is_a_union_and_the_unexpected_field_rule_is_an_intersection
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the validator to support `oneOf` so a task can be either a build task or a review task with different required fields.
+    zh: |
+      擴充驗證器以支援 `oneOf`，讓一項任務可以是建置任務或審查任務，各有不同的必要欄位。
+    verifies: >-
+      adding a oneOf branch over a build shape requiring acceptance and a review shape requiring
+      reviewer and findings accepts 4 of 6 probes and refuses 2; the shipped validate against a oneOf
+      schema with no sibling properties refuses a valid build task on unexpected fields naming all 5
+      of its keys, so oneOf cannot be a peer clause; a document carrying both acceptance and reviewer
+      matches 0 of 2 branches because each rejects the other's keys, making oneOf and anyOf
+      indistinguishable until the unexpected rule is relaxed, at which point it matches 2 and the
+      keywords disagree; a failed oneOf carries 2 reasons where SchemaError holds 1 string
+  - index: 3
+    slug: unexpected_fields_fires_before_the_version_is_ever_read
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `schema_version` field and write the migration from v1 to v2 (rename `blockers` to `risks`).
+    zh: |
+      加一個 `schema_version` 欄位，並寫出從 v1 到 v2 的遷移（把 `blockers` 改名為 `risks`）。
+    verifies: >-
+      migrating a v1 document moves blockers to risks and bumps schema_version to 2, round-tripping
+      through a v2 schema, while both cross-version loads fail on unexpected fields -- ['risks']
+      reading v2 with the v1 schema and ['blockers'] reading v1 with the v2 schema -- so neither
+      failure mentions the version; load does json, loads, read_text, validate in that order, so
+      version detection needs a seam before the schema is chosen and a migrate-on-load returns version
+      2 with the renamed field; the strict unexpected rule makes migrations mandatory rather than
+      optional; the rename round-trips byte-identically only because risks did not exist in v1
+  - index: 4
+    slug: sqlite_keeps_the_api_and_changes_what_a_write_guarantees
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Move the storage backend from a local file to SQLite. Keep the `StateManager` API identical.
+    zh: |
+      把儲存後端從本地檔案搬到 SQLite。保持 `StateManager` 的 API 完全不變。
+    verifies: >-
+      a stdlib sqlite3 backend exposing the same load and commit signatures and the same validate
+      round-trips 20 of 20 states exactly; replaying both-read-both-commit loses agent A's entry 20 of
+      20 times on the file backend where a WHERE revision = ? guard refuses the second commit 20 of 20
+      times; atomic_write keeps 1 version on disk where appending each commit as a row keeps 41,
+      making history a SELECT; the shipped manager raises FileNotFoundError on a missing file where
+      the SQLite version returns None, so one of the two error paths is outside the API the exercise
+      says to keep
+  - index: 5
+    slug: the_rename_prevents_a_torn_file_and_not_a_lost_update
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run two agents against the same state file with a 50 ms write race. What goes wrong and how does the atomic rename save you?
+    zh: |
+      讓兩個代理對同一個狀態檔跑，中間隔 50 毫秒製造寫入競賽。什麼會出錯，而原子性改名又怎麼救你？
+    verifies: >-
+      modelling a 50ms race as an interleaving, 20 of 20 mid-race reads parse and validate and 0 are
+      torn, while in 20 of 20 the second committer overwrites the first and agent A's touched_files
+      entry is lost; replacing atomic_write with a two-chunk write and reading between the chunks
+      gives 8 JSONDecodeErrors against atomic_write's 0, so the rename buys durability rather than
+      concurrency; StateManager exposes commit and load with load returning Any and no version, mtime
+      or handle, so a read token turns 20 silent overwrites into 20 detected conflicts; atomic_write
+      calls fsync once on the file descriptor and never on the parent directory

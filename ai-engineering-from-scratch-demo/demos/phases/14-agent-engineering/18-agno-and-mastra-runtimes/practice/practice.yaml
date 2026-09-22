@@ -1,0 +1,73 @@
+lesson: 18-agno-and-mastra-runtimes
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/18-agno-and-mastra-runtimes/docs/en.md
+exercises:
+  - index: 1
+    slug: the_loop_disappears_into_the_request_and_so_does_the_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Agno's docs. Port the stdlib ReAct loop (Lesson 01) to Agno. What disappeared? What stayed?
+    zh: |
+      讀 Agno 的文件。把 stdlib 的 ReAct 迴圈（第 01 課）移植到 Agno。什麼消失了？什麼留下來了？
+    verifies: >-
+      Lesson 01's AgentLoop carries llm, tools, max_turns and history where AgnoAgent carries name and
+      fn, and driving the same scripted policy through agno_request_handler returns the same answer
+      with 12 session turns against 12 in AgentLoop.history; the history changes type from list[Turn]
+      with 4 fields to list[str]; max_turns has nowhere to live because the handler calls agent.run
+      exactly once with no cap; the 3-tool registry and its 5 dispatches port unchanged, because
+      dispatch never needed the loop
+  - index: 2
+    slug: the_input_schema_is_a_field_that_dispatch_never_opens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Mastra's docs. Port the same loop to Mastra. What changed in tool typing (Zod vs nothing)?
+    zh: |
+      讀 Mastra 的文件。把同一個迴圈移植到 Mastra。工具定型上有什麼改變（Zod vs 什麼都沒有）？
+    verifies: >-
+      porting the loop gives a 3-entry MastraAgent trace and a 3-step MastraWorkflow while
+      MastraAgent.run reads input_schema 0 times; fn(**args) binds directly, so 2 of 4 probe arguments
+      raise TypeError out of the agent where Lesson 01's registry returns 'error: bad args' as an
+      observation; checked against the declared schema 3 of 4 probes are rejected and 1 passes,
+      against 2 that run unchecked including the wrong-typed one; MastraWorkflow.run and
+      MastraAgent.run contain 0 try blocks between them
+  - index: 3
+    slug: the_handler_times_itself_and_calls_the_number_instantiation
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark: measure agent instantiation latency on your stack. Does Agno's 2μs matter to your workload?
+    zh: |
+      做基準測試：量你自己堆疊上的代理實例化延遲。Agno 那 2μs 對你的工作負載要緊嗎？
+    verifies: >-
+      at the quoted 2us, instantiation is 0.0004% of a 500ms model call, 0.02% of a 10ms local one and
+      1.96% of a 100us in-process one, reaching 1% only when the rest of the request finishes in
+      198us; agno_request_handler starts its timer after the agent exists and times 3 calls inside it,
+      so its microsecond figure is the whole request; AgnoAgent is a dataclass with 2 fields and no
+      __post_init__; AgnoSession.append never trims, leaving 1002 strings resident across 100 sessions
+  - index: 4
+    slug: what_breaks_is_everything_crewai_was_doing_for_you
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Design a migration: if you've been running CrewAI in Python, what breaks if you move to Agno?
+    zh: |
+      設計一次遷移：如果你一直在 Python 裡跑 CrewAI，換到 Agno 會壞掉什麼？
+    cites: >-
+      When to pick each
+  - index: 5
+    slug: source_available_is_not_open_source_and_a_fork_inherits_the_line
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Mastra's `ee/` license terms. What restrictions would affect an open-source fork?
+    zh: |
+      讀 Mastra `ee/` 的授權條款。哪些限制會影響一個開源 fork？
+    cites: >-
+      Where this pattern goes wrong

@@ -1,0 +1,85 @@
+lesson: 52-design-success-metrics
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/52-design-success-metrics/docs/en.md
+exercises:
+  - index: 1
+    slug: three_questions_and_the_third_one_needs_a_metric_the_plan_has_no_kind_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Derive three questions from one outcome goal.
+    zh: |
+      Derive three questions from one outcome goal.
+    verifies: >-
+      three questions derived from this repository's own outcome goal map to an outcome metric, a
+      guardrail and a counter-metric, measured as 45 of 45 shipped answers passing across 9 finished
+      lessons and answers sections averaging 132.7 lines; validate enforces exactly the outcome and
+      guardrail kinds and never mentions 'counter', so a plan whose third metric is a counter-metric
+      reports 'guardrail metric is missing'; reporting with no values at all returns status valid with
+      3 results marked missing, because validity is a property of the plan; MeasurementPlan holds
+      goal, questions and metrics with no link between the last two
+  - index: 2
+    slug: the_counter_metric_finds_the_cost_the_outcome_metric_cannot_see
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a counter-metric that catches cost shifted to another role.
+    zh: |
+      Add a counter-metric that catches cost shifted to another role.
+    verifies: >-
+      11 of the 45 shipped solution files exceed the repository's own 120-line target, the largest at
+      145, and the answers sections average 132.7 lines -- none of it visible to a plan carrying only
+      the outcome metric and its guardrail; the counter-metric is at-most 150 on answer length, which
+      the worst lesson clears by 4 lines; validate returns 0 issues for a plan holding 3 metrics
+      across 3 distinct kinds, so the counter category exists only in a string; report renders 2
+      passing rows and 1 failing row across 4 keys with no aggregate
+  - index: 3
+    slug: population_is_the_field_the_table_asks_for_and_the_dataclass_omits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Define the source, population, and window for every metric.
+    zh: |
+      Define the source, population, and window for every metric.
+    verifies: >-
+      Metric carries 6 fields against the docs table's 7, so population has to become a seventh field
+      or stay unwritten; validate tests 2 of the 3 reproducibility inputs -- a blank window yields
+      'lacks source or window' -- and never mentions population because no field exists; a passing
+      rate of 1.0 over the 45 answers in nine lessons and 1.0 over the 5 in one share threshold,
+      direction and source and are not the same evidence; a plan citing a window of 'vibes' from a
+      source of 'memory' returns 0 issues
+  - index: 4
+    slug: the_boundary_is_inclusive_and_one_way_of_computing_the_rate_fails_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write pass, fail, and ambiguous decisions before generating values.
+    zh: |
+      Write pass, fail, and ambiguous decisions before generating values.
+    verifies: >-
+      pass, fail and ambiguous written before the values land the measured run on ambiguous: 45 of 45
+      answers passing, a traced rate of 0.875 and 0 files over the ceiling satisfy neither rule;
+      report returns 4 keys and 3 rows -- 2 passing, 1 failing -- with no aggregate decision; evaluate
+      compares with <= and >=, so the shipped example's 0.9 against a threshold of 0.9 passes by
+      equality; nine tenths as 9/10 passes an at-least 0.9 while the same nine tenths summed from 0.3
+      gives 0.8999999999999999 and fails
+  - index: 5
+    slug: the_metric_that_cannot_move_is_the_one_the_rule_already_fixes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Identify one metric that is easy to collect but cannot change the decision. Remove it.
+    zh: |
+      Identify one metric that is easy to collect but cannot change the decision. Remove it.
+    verifies: >-
+      solution_files_per_lesson takes 1 distinct value across all 9 finished lessons because one file
+      per exercise is a rule elsewhere in the system, so removing it takes the plan from 4 metrics to
+      3; the trimmed plan keeps an outcome and a guardrail and returns 0 issues, noticing nothing;
+      files_over_line_target over the same 45 files reads 10 against a threshold of 0 and fails, which
+      is the difference between a metric that can move and one that cannot; report renders the
+      constant row with value and passed exactly as it renders a measured pass

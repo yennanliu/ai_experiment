@@ -1,0 +1,85 @@
+lesson: 23-otel-genai-conventions
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/23-otel-genai-conventions/docs/en.md
+exercises:
+  - index: 1
+    slug: the_span_tree_has_no_ids_so_it_cannot_leave_the_process
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Instrument your Lesson 01 ReAct loop with `invoke_agent` (INTERNAL) + per-tool spans. Send to a Jaeger instance.
+    zh: |
+      替你第 01 課的 ReAct 迴圈接上 `invoke_agent`（INTERNAL）加逐工具 span。送進一個 Jaeger 實例。
+    verifies: >-
+      wrapping Lesson 01's ToyLLM.respond and ToolRegistry.dispatch gives 12 spans -- one invoke_agent
+      research_bot INTERNAL span over 6 chat spans and 5 tool_call spans across 3 tools -- with the
+      run still answering correctly; Span carries name, kind, attributes, children, start_ns and
+      end_ns, 0 of them an id, so flattening yields 12 rows with 0 recoverable parent links and an
+      exporter needs trace_id, span_id and parent_span_id; end_span takes no argument, so one extra
+      call pops the root and the next start_span raises IndexError; start_ns comes from
+      perf_counter_ns and the module never calls time_ns, so every start_ns is smaller than the wall
+      clock and cannot become start_time_unix_nano
+  - index: 2
+    slug: the_attribute_key_changes_name_with_the_capture_mode
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add content capture in "references only" mode: prompts to SQLite, span attributes carry only row IDs.
+    zh: |
+      用「只放參照」模式加上內容捕捉：提示詞存進 SQLite，span 屬性只帶列 ID。
+    verifies: >-
+      reimplementing ExternalContentStore over stdlib sqlite3 writes 6 rows for a 3-span trace with
+      integer row ids, and grepping the trace for the card number returns 0 hits against inline
+      capture's 3 while SELECT finds it in 3 rows; the 2 content attribute keys share 0 members across
+      capture modes while the 2 non-content keys are identical, so a query written for one mode
+      matches nothing under the other; inline capture keeps 200 of a 516-character prompt, dropping
+      316 with 0 attributes recording it, where the reference path stores all 516; two
+      ExternalContentStores each mint 'content_001' for different content
+  - index: 3
+    slug: one_attribute_names_one_store_and_the_search_reads_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the spec for `gen_ai.data_source.id`. Wire it into your Lesson 09 Mem0 search.
+    zh: |
+      讀 `gen_ai.data_source.id` 的規格。把它接進你第 09 課的 Mem0 搜尋。
+    verifies: >-
+      instrumenting Lesson 09's Mem0.search emits one tool_call span carrying a single
+      gen_ai.data_source.id while the search reads 2 stores -- VectorStore.search once and
+      KVStore.by_user once -- returning 5 records of which 1 came from the vector index and 4 were
+      reached only through KV; Mem0 owns a GraphStore holding 5 edges that search reads 0 times; the
+      shipped id is a literal at the call site where deriving it from the stores read gives the 2
+      values mem0://kv and mem0://vector; the tool_call span names a model or provider 0 times and
+      Span has 0 parent fields, so the join the spec enables cannot be made
+  - index: 4
+    slug: set_otel_semconv_stability_opt
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Set `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental` and verify your attributes don't get renamed by the collector.
+    zh: |
+      設定 `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental`，並驗證你的屬性不會被 collector 改名。
+    cites: >-
+      Stability
+  - index: 5
+    slug: the_dashboard_needs_two_attributes_the_spans_do_not_carry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a dashboard: "which tool errors correlate with which models" from GenAI attributes alone.
+    zh: |
+      做一個儀表板：只用 GenAI 屬性回答「哪些工具錯誤跟哪些模型相關」。
+    verifies: >-
+      the shipped tool_call span carries gen_ai.data_source.id, gen_ai.operation.name and
+      gen_ai.tool.name, so grouping failures by model over 40 tool spans returns 0 rows, while adding
+      error.type and gen_ai.request.model returns 8 rows across 4 tools and 2 models; the shipped tool
+      span names a model 0 times and Span has 0 id fields, so joining the error to the model needs a
+      parent link that does not exist; Span has 6 fields and 0 of them a status, with 0 shipped
+      attributes matching error or status; over 40 seeded calls the failure rate is 20.0% for
+      claude-opus-4-6 and 65.0% for gpt-5-mini, web_search splitting 20.0% against 80.0%, where the
+      single-number rate of 42.5% describes neither

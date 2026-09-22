@@ -1,0 +1,87 @@
+lesson: 51-write-specifications-that-preserve-judgment
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/51-write-specifications-that-preserve-judgment/docs/en.md
+exercises:
+  - index: 1
+    slug: the_ticket_had_six_sentences_and_four_of_them_were_one_surface
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert a backlog ticket into the six specification surfaces.
+    zh: |
+      Convert a backlog ticket into the six specification surfaces.
+    verifies: >-
+      a real ticket from this repository -- the scaffolder crashing on English-only lessons --
+      converts into six surfaces that compile executable with 0 issues, and 4 of its 6 sentences turn
+      out to be decisions; validate requires a rationale only when the mode is not delegated, so the
+      shipped example's 1 delegated decision ships with an empty rationale and validates clean
+      although the docs say a delegated choice must be explained; the invariant is confirmed by 5 of 5
+      exercises in an English-only manifest against 0 of 5 in a bilingual one while the original
+      instruction cannot be checked from any artifact; compile_contract returns 6 keys, three of them
+      mode buckets, and never counts the decisions
+  - index: 2
+    slug: three_instructions_become_one_invariant_two_examples_and_a_lost_reason
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace three implementation instructions with one invariant and two examples.
+    zh: |
+      Replace three implementation instructions with one invariant and two examples.
+    verifies: >-
+      three implementation instructions naming 3 code symbols collapse into one invariant naming 0,
+      confirmed by 5 of 5 exercises in an English-only manifest and denied by 0 of 5 in a bilingual
+      one; corrupting one exercise's Chinese text drops the invariant to 4 of 5, so a failure appears
+      in the artifact rather than in the scaffolder; the scaffolder has 2 paths, so two examples
+      straddle the branch and a third bilingual lesson adds no coverage; Specification has 6 fields
+      and Decision has 3, and neither links back to the ticket or the commit
+  - index: 3
+    slug: moving_the_production_write_to_delegated_removes_its_rationale_requirement
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Mark every decision and justify each locked or bounded choice.
+    zh: |
+      Mark every decision and justify each locked or bounded choice.
+    verifies: >-
+      all 6 decisions are marked and the 4 constrained ones carry rationales, while moving the
+      production-write decision to delegated deletes its rationale, drops the human checkpoint from 2
+      entries to 1 and still compiles executable with 0 issues; VALID_MODES holds 3 strings checked by
+      membership and consequence, reversibility and authority appear 0 times in validate and
+      compile_contract; a bounded decision's boundary is published from the same rationale field that
+      holds its justification; 2 of the 6 decisions are delegated and 0 carry the explanation the
+      lesson says the agent owes
+  - index: 4
+    slug: two_invariants_two_proofs_and_no_line_between_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a proof receipt for every invariant.
+    zh: |
+      Add a proof receipt for every invariant.
+    verifies: >-
+      pairing the shipped specification's 2 invariants against its 2 proofs covers 1 and leaves the
+      audit-record invariant uncovered while 'ten recorded incident replays' proves the outcome
+      instead; the docs name 5 proof layers including an audit log and 0 of the shipped proofs is one,
+      so adding it takes the list to 3 and closes the gap; proof is a list[str] and validate only
+      tests non-emptiness, so a specification whose proofs prove something else returns 0 issues;
+      compile_contract returns 6 keys and none relates invariants to proofs
+  - index: 5
+    slug: the_constraint_with_no_rationale_is_the_one_the_validator_allows
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove a constraint that has no evidence or risk rationale.
+    zh: |
+      Remove a constraint that has no evidence or risk rationale.
+    verifies: >-
+      the specification carries 2 non-goals, neither sharing vocabulary with any decision's rationale,
+      so removing 'changing alert routing' is a judgment made by reading; the trimmed contract still
+      compiles executable with 0 issues; of the 6 surfaces only decisions carries a rationale field
+      and 4 are lists of bare strings; deleting the non-goal that the locked production-authority
+      decision exists to exclude also reports 0 issues, so both deletions look identical to validate;
+      removing both non-goals is the one case validate catches, as 'non_goals is empty'

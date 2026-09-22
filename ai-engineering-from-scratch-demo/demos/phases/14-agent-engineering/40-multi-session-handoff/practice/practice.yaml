@@ -1,0 +1,83 @@
+lesson: 40-multi-session-handoff
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/40-multi-session-handoff/docs/en.md
+exercises:
+  - index: 1
+    slug: the_filter_as_written_selects_no_assumptions_at_all
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an `assumptions_to_validate` field that surfaces every assumption the builder logged but the reviewer did not score above 1.
+    zh: |
+      加一個 `assumptions_to_validate` 欄位，把每一個建造者記錄下來、但審查者評分沒有超過 1 的假設都浮出來。
+    verifies: >-
+      Lesson 39's score_assumptions returns 2 for any non-empty list and 1 only for an empty one, so
+      'assumptions the reviewer did not score above 1' selects nothing in all 6 cases swept from 0 to
+      5 logged assumptions; DimensionScore carries name, score and note and the note is a count, so no
+      per-assumption verdict exists to join on; the handoff module reads review['verdict'] and
+      review['total'] out of a dict[str, object], so the per-dimension list never reaches the 9-field
+      payload; marking an assumption unvalidated when no command that ran and no file that changed
+      mentions it selects 2 of 3 on a fixture and needs nothing from the reviewer
+  - index: 2
+    slug: the_shipped_trim_gives_the_passing_run_context_and_the_failing_run_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Trim the feedback summary differently for failing runs versus passing ones. Defend the asymmetry.
+    zh: |
+      對失敗與通過的執行，用不同方式修剪回饋摘要。替這個不對稱辯護。
+    verifies: >-
+      on a 20-command log failing at index 2, trim_feedback returns ['c15'..'c19', 'c2'], keeping 0 of
+      the failure's 3 neighbours against 3 under a window while the passing run keeps its full tail of
+      5; tail + nonzero puts the failure at position 6 of 6, after commands that ran fifteen steps
+      later; failed_attempts has no cap, so a 180-command session with 60 failures writes 60 markdown
+      lines and 64 feedback_tail records; dedup by id() collapses the same failing record handed in
+      twice to 1 entry while failed_attempts reports 2
+  - index: 3
+    slug: questions_for_the_human_threshold
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Include a "questions for the human" list. What is the threshold for a question to make it into the packet versus into a chat message?
+    zh: |
+      放進一份「給人類的問題」清單。一個問題要達到什麼門檻，才該進封包而不是進聊天訊息？
+    cites: >-
+      Seven fields every handoff carries
+  - index: 4
+    slug: it_is_already_idempotent_and_that_is_not_the_property_you_want
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make the generator idempotent: running it twice produces the same packet. What needs to be stable for that to hold?
+    zh: |
+      讓產生器冪等：跑兩次產出同一份封包。要讓這件事成立，哪些東西必須是穩定的？
+    verifies: >-
+      generate_handoff has no clock, uuid or mutable hash, so two runs on one snapshot are
+      byte-identical in both markdown and payload; the instability is upstream -- reordering
+      diff_summary['touched'] changes the markdown on an equal file set, appending the generator's own
+      command to the feedback log adds 1 to commands_run and shifts the tail, and reordering the
+      gate's findings reorders open_risks; HandoffPayload has 9 fields and none of branch, head_commit
+      or status, so a re-run and a stale packet are indistinguishable; main writes handoff.md and
+      handoff.json to one path with no history, and derive_risks defaults a missing review total to 10
+      so no review and a perfect review both yield 3 risks
+  - index: 5
+    slug: the_packet_names_two_paths_and_the_next_session_needs_six
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "next session prereqs" section listing exactly the artifacts the next session must load before acting.
+    zh: |
+      加一個「下個工作階段的前置條件」區段，精確列出下個工作階段在行動前必須載入的那些產物。
+    verifies: >-
+      verdict_pointer carries 2 f-string paths that nothing verifies while the next session needs 6
+      artifacts, the 4 unnamed ones being agent_state.json, feature_list.json, the scope contract and
+      feedback_record.jsonl; run against a temp workbench holding four of the six, the prereq check
+      names the 2 missing by path while generate_handoff emits its usual two pointers; the list is an
+      ordering -- state before feature board before scope contract -- because the board says which
+      feature is active and the contract bounds the next diff; the demo's next_action names 0
+      artifacts and 0 commands, so the prereq list is what makes it executable

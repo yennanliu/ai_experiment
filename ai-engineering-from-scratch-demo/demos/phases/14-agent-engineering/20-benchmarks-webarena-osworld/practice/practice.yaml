@@ -1,0 +1,76 @@
+lesson: 20-benchmarks-webarena-osworld
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/20-benchmarks-webarena-osworld/docs/en.md
+exercises:
+  - index: 1
+    slug: success_asks_whether_the_state_happened_not_who_caused_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the toy harness with a second app (a forum). Write 3 tasks plus gold trajectories.
+    zh: |
+      替這個玩具執行框架擴充第二個應用（一個論壇）。寫 3 項任務加黃金軌跡。
+    verifies: >-
+      a forum app with three tasks and gold trajectories reuses the shipped Task dataclass unchanged
+      and succeeds 3/3 at 3, 5 and 5 steps against golds 3, 4 and 5 -- 1.08x over gold; the lesson's
+      module defines 4 top-level functions and 0 of them runs a task, so the run loop has to be
+      rebuilt from main(); a brute-forcer that clears every post and then replies to and upvotes
+      everything, reading no task description, satisfies 3/3 predicates at 27 steps and 2.25x;
+      gold_steps is an int nothing derives, so setting all three golds to 1 turns the same 13 steps
+      into 4.33x with 3 tasks still successful
+  - index: 2
+    slug: efficiency_is_best_on_the_agent_that_does_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add trajectory-efficiency reporting per task. On your toy, is the agent 1x, 2x, or 3x over gold?
+    zh: |
+      加上逐任務的軌跡效率回報。在你的玩具裡，代理是黃金軌跡的 1 倍、2 倍還是 3 倍？
+    verifies: >-
+      per-task efficiency on the shipped toy is 1.00x, 1.00x and 1.40x, aggregating to 1.17x, with
+      only revised_order inside OSWorld-Human's 1.4-2.7x band; revised_order appends a narration line
+      that touches no app method, so it counts 7 steps against 6 calls -- 1.40x against 1.20x, and
+      1.17x against 1.08x in aggregate; total_steps/total_gold is 1.17x where the mean of per-task
+      ratios is 1.13x and dropping the one over-gold task gives 1.00x; an agent returning an empty
+      trace scores 0.00x on every task and succeeds on 0 of 3
+  - index: 3
+    slug: a_scripted_agent_has_no_branch_to_tempt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a "distractor" tool — one the gold trajectory never uses. Does the scripted agent get tempted?
+    zh: |
+      實作一項「誘餌」工具 —— 黃金軌跡從不使用的那種。腳本化的代理會被誘惑嗎？
+    verifies: >-
+      the shipped agents call a distractor search tool 0 times and contain 0 if statements between
+      them, while the same tool offered to a description-overlap chooser is picked on 3/3 tasks; a
+      tempted run still satisfies 3/3 success predicates and efficiency does not move, both runs
+      sitting at 0.92x because search replaces list_items, with padding needed to reach 1.17x; against
+      a gold sequence 3/3 tasks contain a non-gold action and 2 of those match the gold step count
+      exactly; one extra search per task costs 0.92x to 1.17x with success unchanged, and 4 per task
+      are needed to double the headline
+  - index: 4
+    slug: read_osworld_g_how
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read OSWorld-G. How would you separate grounding failures from planning failures in your own evals?
+    zh: |
+      讀 OSWorld-G。在你自己的評測裡，你會怎麼把接地失敗與規劃失敗分開？
+    cites: >-
+      Follow-ups
+  - index: 5
+    slug: read_webarena_s_apps
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read WebArena's apps README. What breaks when you upgrade one of the pinned app versions?
+    zh: |
+      讀 WebArena 那些應用的 README。當你升級其中一個被釘死的應用版本時，什麼會壞掉？
+    cites: >-
+      Where benchmarking goes wrong

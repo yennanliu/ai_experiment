@@ -1,0 +1,77 @@
+lesson: 03-reflexion-verbal-rl
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/03-reflexion-verbal-rl/docs/en.md
+exercises:
+  - index: 1
+    slug: the_binary_evaluator_already_returns_the_scalar
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Switch from binary to scalar evaluator that returns a distance metric (how far from target). Does it converge faster?
+    zh: |
+      從二元評估器換成回傳距離度量（離目標多遠）的純量評估器。它收斂得更快嗎？
+    verifies: >-
+      no faster -- 3 trials either way on identical attempts and deltas [-14, -2, 0], because
+      binary_evaluator already returns the distance as its second element; Actor.act names
+      len(memory.items) once and Reflection.text never, so a reflector writing 'doing great, keep
+      going' converges in the same 3 trials and an evaluator reporting distance 0 every trial drives
+      the identical trajectory; across the two failures the binary verdict takes 1 distinct value and
+      the distance takes 2
+  - index: 2
+    slug: the_ttl_never_fires_because_the_count_bound_is_tighter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a TTL of 10 trials to reflections. Do older reflections hurt or help after that point?
+    zh: |
+      給反思加上 10 次試驗的 TTL。過了那個點之後，較舊的反思是幫倒忙還是幫忙？
+    verifies: >-
+      at trial 15 on an unreachable target the buffer holds 6 with a TTL of 10 and 6 without it, since
+      max_len=6 evicts first, and 10 once the count bound is lifted; trials 3 to 15 are all [6, 7, 7]
+      either way; a TTL of 3 and a TTL of 10 give identical runs while a TTL of 2 holds the Actor at
+      [5, 6, 7] for 14 trials, so age only matters by starving the count; the 6 stored reflections
+      carry 1 distinct text; skipping writes puts the count bound 6 deep and the age bound 9 deep
+  - index: 3
+    slug: the_heuristic_verdict_has_no_channel_to_the_reflector
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement heuristic evaluator: mark the trial as stuck if the same action repeats. How does this interact with Self-Reflector?
+    zh: |
+      實作啟發式評估器：若同一個行動重複出現，就把這次試驗標記為卡住。這跟 Self-Reflector 之間怎麼互動？
+    verifies: >-
+      a repeat-the-action heuristic fires on trials 4 to 8 of an unreachable target and 0 times on the
+      reachable one; SelfReflector.reflect takes attempt and delta only, so the reflection on the
+      fifth stuck trial is identical to the one written when that action was new; seeding the buffer
+      with a single entry -- a true reflection or 'the moon is made of cheese' alike -- converges at
+      trial 2 instead of 3; an Actor cycling 3 distinct wrong answers fails 8 of 8 and is marked stuck
+      0 times
+  - index: 4
+    slug: the_minimum_is_a_signed_magnitude_and_a_reader_for_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run Reflexion with an adversarial Actor that ignores reflections. What is the minimum reflection prompt engineering that forces the Actor to notice them?
+    zh: |
+      用一個會無視反思的對抗性 Actor 來跑 Reflexion。要逼 Actor 注意到那些反思，最少需要多少反思提示詞工程？
+    verifies: >-
+      against an Actor that reads text, 'be more careful next time' never converges in 6 trials and
+      leaves 1 distinct attempt, the lesson's own wording converges at trial 2, and adding an explicit
+      sum constraint also converges at trial 2 -- so a signed magnitude is the minimum and an
+      instruction buys 0 trials; the shipped Actor gives 1 trajectory across all 3 styles; moved to
+      target 24 it fails 6 of 6 on [6, 7, 7] while the reading Actor finds [9, 9, 6] at trial 2
+  - index: 5
+    slug: the_delta_is_the_trial_boundary_not_the_reflection
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 4 of the Reflexion paper on AlfWorld. Reproduce the 130% success-rate improvement conceptually: what is the key delta vs vanilla ReAct?
+    zh: |
+      讀 Reflexion 論文第 4 節談 AlfWorld 的部分。概念上重現那個 130% 的成功率提升：相對於原味 ReAct，關鍵差別是什麼？
+    cites: >-
+      The three components

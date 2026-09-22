@@ -1,0 +1,80 @@
+lesson: 08-memory-blocks-sleep-time-compute
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/08-memory-blocks-sleep-time-compute/docs/en.md
+exercises:
+  - index: 1
+    slug: the_summarizer_returns_a_full_stop_when_nothing_fits
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `block_summarize` tool that replaces the block value with a model-generated summary when `near_limit` returns true. Which trigger threshold minimizes both summarization calls and block overflow?
+    zh: |
+      加一個 `block_summarize` 工具，當 `near_limit` 回傳 true 時，用模型產出的摘要取代區塊值。哪個觸發門檻能同時把摘要呼叫次數與區塊溢位都壓到最低？
+    verifies: >-
+      over 12 appends against a 200-character block whose longest append is 80 characters, thresholds
+      0.50 and 0.60 overflow 0 times and 0.70 onward overflow 3 times, while calls fall 11, 7, 3 -- so
+      the frontier is 0.60, exactly 1 - longest/limit, and the shipped default of 0.8 overflows;
+      _summarize returns '.' when no whole sentence fits, turning the lesson's own 119-character task
+      value into 1 character, a 99.2% loss reported as a successful rewrite; a 72-character value
+      summarises to 73; append stores 39 characters in a block with limit 10
+  - index: 2
+    slug: off_the_critical_path_is_a_convention_not_a_boundary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement sleep-time dedup over archival: two records whose text has >90% token overlap collapse to one. Do it only in the sleep pass, never on the critical path.
+    zh: |
+      在歸檔上實作 sleep-time 去重：兩筆文字詞元重疊 >90% 的紀錄合併成一筆。只在 sleep 那一趟做，絕不要在關鍵路徑上做。
+    verifies: >-
+      a sleep-pass Jaccard scan at 0.9 collapses 3 near-duplicate pairs of 12 records, leaving 9 valid
+      while all 12 remain in all_records(); ArchivalRecord has 3 fields, so a duplicate and a
+      contradicted record are indistinguishable afterwards; against a ten-token record one extra word
+      scores 0.909 and collapses while two score 0.833 and survive; PrimaryAgent holds .archival and
+      invalidate takes no caller, so a primary turn removes a record and 0 of the store's 4 public
+      methods restrict the writer
+  - index: 3
+    slug: the_history_is_shipped_and_the_writer_is_not_in_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Version blocks. On every write record the old value and a diff. Expose `block_history(label)` so operators can debug "why did the agent forget X."
+    zh: |
+      給區塊做版本。每次寫入都記下舊值與一份 diff。暴露 `block_history(label)`，好讓維運者可以除錯「代理為什麼忘了 X」。
+    verifies: >-
+      Block already records the previous value and bumps version on every write, so block_history over
+      three writes gives deltas +52, +69 and -120 with exactly one negative entry, which is the
+      consolidation that left the block holding '.'; append, replace and rewrite take 0 actor
+      parameters between them so the destructive entry is distinguishable only by its sign; 1 of the 3
+      write paths can shrink a block; after three writes the block holds 1 character of value and 173
+      of history with nothing trimming it
+  - index: 4
+    slug: the_protected_block_is_the_one_the_sleep_pass_rewrites
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Treat sleep-time agents as untrusted writers. When they touch the Persona or Safety block, require a second-agent review before committing.
+    zh: |
+      把 sleep-time 代理當成不可信的寫入者。當它們碰到 Persona 或 Safety 區塊時，要求先經第二個代理審查才能提交。
+    verifies: >-
+      of three proposed sleep-time writes 2 touch protected labels, the persona consolidation is
+      rejected for dropping all 4 declared facts and the safety edit approved for keeping them,
+      leaving persona unchanged and 2 writes committed; run unreviewed, SleepTimeAgent.run rewrites a
+      near-limit persona block to '.' -- 4 declared facts to 0 -- reporting 'persona v2 rewritten
+      (1/140)'; the three write methods take 0 actor parameters and BlockStore.create takes label,
+      description and limit, so the gate has to key on the label; the unprotected task block takes the
+      identical rewrite unreviewed
+  - index: 5
+    slug: the_thought_leaves_the_trace_and_the_block_gains_a_type
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Port the example to use the Letta API (`letta_v1_agent`). What changes in the block schema, and how does native reasoning alter the trace shape?
+    zh: |
+      把這個範例移植成使用 Letta API（`letta_v1_agent`）。區塊 schema 有什麼改變，而原生推理又怎麼改變軌跡的形狀？
+    cites: >-
+      Native reasoning

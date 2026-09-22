@@ -1,0 +1,79 @@
+lesson: 06-tool-use-and-function-calling
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/06-tool-use-and-function-calling/docs/en.md
+exercises:
+  - index: 1
+    slug: declining_and_inventing_a_tool_name_are_the_same_event
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "no-op" tool that lets the model explicitly refuse to use any other tool. Measure on a BFCL-like hallucination test.
+    zh: |
+      加一項「no-op」工具，讓模型能明確拒絕使用任何其他工具。在一個 BFCL 式的幻覺測試上量它。
+    verifies: >-
+      over a ten-case fixture split five tool / five no-tool, a model that must always call something
+      scores 5/10 overall and 0/5 on the hallucination half, while a no_tool entry with a reason
+      string takes a correct decliner to 10/10 and 5/5 with 10 ok results; dispatching no_tool against
+      the bare registry returns the same 'error: unknown tool' shape as a bogus name, so refusal and
+      hallucination are one event class; suppressing the call in the runtime instead leaves 5 results
+      for 10 prompts; a decline-everything model also returns 10/10 ok while scoring 5/10
+  - index: 2
+    slug: coercion_uses_pythons_number_parser_not_the_wires
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement argument coercion for int-as-string and float-as-string. Where does coercion start to hide real bugs?
+    zh: |
+      替「int 寫成字串」與「float 寫成字串」實作參數強制轉型。轉型從哪裡開始會掩蓋掉真正的臭蟲？
+    verifies: >-
+      _coerce already converts int-as-string and float-as-string, and '5.0' is a valid number and an
+      invalid integer; against minimum 0 and maximum 100 the string 'nan' is accepted because every
+      NaN comparison is false, while 'inf' gets a clean bound error; of the 7 probe strings the
+      validator accepts only 3 are JSON number tokens -- '5_0' becomes 50, ' 7 ' becomes 7 and an
+      Arabic-Indic digit becomes 5; a tool handed '5_0' is called with 50, ok=True, and the original
+      token recorded nowhere
+  - index: 3
+    slug: the_breaker_counts_ok_false_and_a_bad_argument_is_ok_false
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a per-tool timeout and a circuit breaker (refuse the tool for 60s after 3 consecutive failures). What does this change about how the model recovers?
+    zh: |
+      加上逐工具的逾時與斷路器（連續失敗 3 次後，該工具 60 秒內拒絕服務）。這會改變模型復原的方式嗎？
+    verifies: >-
+      ToolDef carries timeout_s and the source of dispatch mentions timeout 0 times; with the field
+      enforced against a virtual clock, a tool at timeout_s=1.0 called at cost 3.0 times out three
+      times, opens the breaker, and the fourth call never reaches the tool -- 0 executions across 4
+      calls, recovering after 60 virtual seconds; three calls missing a required argument open the
+      breaker with 0 executions and then refuse a correct call; validation error, timeout and open
+      circuit are 3 distinct instructions arriving as one boolean and one text field
+  - index: 4
+    slug: every_turn_picks_the_right_tool_and_six_answers_are_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read BFCL V4 description. Pick one category (e.g. "multi-turn") and run 10 example prompts through your agent. Report pass rate.
+    zh: |
+      讀 BFCL V4 的說明。挑一個類別（例如「多輪」），拿 10 則範例提示詞跑你的代理。回報通過率。
+    verifies: >-
+      on ten two-turn multi-turn prompts scored on the final value, an agent that does not carry state
+      passes 4/10 and one that carries the previous result passes 10/10, the 6 failures being exactly
+      the prompts that refer to the first answer as 'that'; all 20 turns dispatch ok=True with 0
+      validation errors, so the wrong answers are silent; scored on the tool name per turn both agents
+      match 20/20; ToolCall and ToolResult carry 0 session or state fields and dispatch_many has no
+      accumulator
+  - index: 5
+    slug: what_a_real_schema_library_catches_that_the_subset_cannot
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Port the stdlib validator to Pydantic or Zod. What did Pydantic/Zod catch that the toy missed?
+    zh: |
+      把那個 stdlib 驗證器移植到 Pydantic 或 Zod。Pydantic／Zod 抓到了哪些這個玩具漏掉的東西？
+    cites: >-
+      Argument validation

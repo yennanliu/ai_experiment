@@ -1,0 +1,82 @@
+lesson: 32-minimal-agent-workbench
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/32-minimal-agent-workbench/docs/en.md
+exercises:
+  - index: 1
+    slug: adding_a_field_to_the_state_file_breaks_the_loader
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `last_run` timestamp to `agent_state.json`. Refuse to run if the file is older than 24 hours unless an operator confirms.
+    zh: |
+      替 `agent_state.json` 加一個 `last_run` 時間戳。若檔案超過 24 小時未更新，除非維運者確認，否則拒絕執行。
+    verifies: >-
+      a last_run field plus a 24-hour staleness rule on a virtual clock allows 3 of 5 readings (hours
+      1, 23, 24) and refuses 2 (25, 200), with an operator confirmation letting the 25-hour read
+      through; the shipped load_state does AgentState(**raw), so a file with 6 keys against 5
+      dataclass fields raises TypeError on unexpected keyword argument 'last_run', where filtering to
+      known fields on load costs one line; the rule compares a stored instant against the reader's
+      now, so two readers two hours apart disagree about the same file; run_one_turn takes 2 arguments
+      and AgentState has 5 fields, none an approval
+  - index: 2
+    slug: the_puller_takes_the_first_todo_which_is_board_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `priority` field to the task board and change the puller to always pick the highest priority `todo`.
+    zh: |
+      替任務板加一個 `priority` 欄位，並改掉拉取器，讓它永遠挑優先度最高的 `todo`。
+    verifies: >-
+      over 6 shuffled orderings of the same 4 tasks the shipped puller picks 4 different first tasks
+      while a priority puller picks T-003 all 6 times, the two agreeing on the 2 orderings where the
+      array already led with the urgent task; save_board serialises the list as given and the puller
+      takes the head, so array order is an undeclared queue discipline and a status flip rewrites 1 of
+      39 lines; load_board does Task(**t), so a board carrying priority raises TypeError against 5
+      dataclass fields -- the same failure load_state has; 2 tasks share a priority, so sorting by
+      priority alone still consults the array on a tie where (-priority, id) gives 1 distinct pick
+  - index: 3
+    slug: the_array_loses_on_inserts_and_wins_on_field_level_review
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Migrate `task_board.json` to JSON Lines so each task is a line and diffs are clean in version control.
+    zh: |
+      把 `task_board.json` 遷移成 JSON Lines，讓每項任務一行，版本控制裡的 diff 才乾淨。
+    verifies: >-
+      counting changed lines the way git does, with LCS-aligned hunks, inserting a task at the front
+      of a 4-task board changes 9 lines in the indented array and 1 in JSON Lines, swapping two tasks
+      changes 12 and 4, and a status flip is 2 in both; the array's flip line is the status field
+      alone where JSON Lines re-serialises the whole task, so it buys per-task diffs by giving up
+      per-field ones; the same 4 tasks are 38 lines with indent=2 and 4 as JSON Lines -- 9.5 against
+      1.0 per task; of the module's 9 functions 4 name board_path, so the format swaps without
+      touching run_one_turn
+  - index: 4
+    slug: the_router_points_at_a_file_write_initial_never_creates
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a `lint_workbench.py` that fails if `AGENTS.md` is over 80 lines or references a file that does not exist.
+    zh: |
+      寫一支 `lint_workbench.py`，若 `AGENTS.md` 超過 80 行，或參照了不存在的檔案，就讓它失敗。
+    verifies: >-
+      a lint over AGENTS.md fails a freshly laid-down workbench on 1 of its 2 rules: the file is 13
+      lines, inside the 80-line ceiling, and references 3 paths of which docs/agent-rules.md does not
+      exist after write_initial creates its 3 files; at 13 lines the router uses 16.2% of its budget
+      because the one file carrying the startup rules was never written; run_one_turn reads acceptance
+      0 times, and a reachability check would flag 2 of 2 board commands naming test_app.py and
+      docs/api.md; the ceiling is 67 lines away, so the only live rule is the reference check
+  - index: 5
+    slug: decide_which_one_three
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Decide which one of the three files would hurt the most to lose. Defend it.
+    zh: |
+      決定三個檔案中弄丟哪一個最痛。替你的答案辯護。
+    cites: >-
+      agent_state.json is the system of record

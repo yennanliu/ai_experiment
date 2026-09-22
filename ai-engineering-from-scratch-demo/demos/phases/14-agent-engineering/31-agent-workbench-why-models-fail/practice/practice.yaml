@@ -1,0 +1,83 @@
+lesson: 31-agent-workbench-why-models-fail
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/31-agent-workbench-why-models-fail/docs/en.md
+exercises:
+  - index: 1
+    slug: this_repo_scores_ten_of_fourteen_and_handoff_is_zero
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick a repo where you already run an agent. Score the seven surfaces from 0 (missing) to 2 (healthy). What is your weakest surface?
+    zh: |
+      挑一個你已經在上面跑代理的儲存庫。替那七個表面從 0（缺失）到 2（健康）評分。你最弱的表面是哪一個？
+    verifies: >-
+      scoring ai-engineering-from-scratch-demo on checkable artifacts gives instructions 2, state 1,
+      scope 2, feedback 2, verification 2, review 1 and handoff 0 -- 10 of 14, with handoff the
+      weakest because it has no file, no script and no convention; the 4 surfaces scoring 2 are
+      exactly the ones with a script that fails the build and the 2 scoring 1 have an artifact and no
+      gate; stub_agent branches on scope, state, verification and feedback and never reads
+      instructions, review or handoff, so 3 of the 7 surfaces change 0 result fields; removing state
+      changes 0 fields and adds 1 note where removing scope changes files_touched
+  - index: 2
+    slug: both_runs_already_declare_success_and_only_one_earns_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend `main.py` so the prompt-only run also produces a fake "success" claim. Verify the verification gate would have caught it.
+    zh: |
+      擴充 `main.py`，讓只有提示詞那一趟也產出一則假的「成功」宣稱。驗證查證閘門本來會抓到它。
+    verifies: >-
+      stub_agent sets declared_success True in both branches, so the fake claim already ships: both
+      runs report (True, True) against actually_passing (False, True), and a gate that re-checks the 1
+      acceptance criterion against what was touched returns False for prompt-only and True for
+      workbench; the has_verification branch reads 0 of the inputs a gate would need, so an agent that
+      touched 0 files still reports actually_passing True while the real gate returns False; the
+      prompt-only run fails on 2 of the gate's 3 inputs -- no test run and two forbidden files -- and
+      failure_report's 7 keys carry both the claim and the truth
+  - index: 3
+    slug: budget_is_the_eighth_surface_because_a_correct_run_can_cost_anything
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an eighth surface for your own product. Justify why it does not collapse into one of the existing seven.
+    zh: |
+      替你自己的產品加上第八個表面。論證它為何不會塌縮進既有那七個之一。
+    verifies: >-
+      a run that stays inside allowed_files, runs its tests, passes acceptance and hands off while
+      taking 412 steps against a 6-step plan passes 7 of 7 existing surfaces and is refused only by a
+      budget ceiling of 60 -- 68.7x over plan; it does not collapse into scope, because the run
+      touches exactly the allowed files and 0 forbidden ones; it does not collapse into verification,
+      which is triggered on task close and returns True after all 412 steps are spent; it does not
+      collapse into feedback, which records all 412 invocations and has no ceiling and no authority to
+      stop the worker
+  - index: 4
+    slug: scope_catches_it_first_and_verification_never_does
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Re-run the script with a different stub agent that hallucinates an extra file write. Which surface catches it first?
+    zh: |
+      換一個會幻覺出多寫一個檔案的樁代理，再跑一次腳本。哪個表面最先抓到它？
+    verifies: >-
+      a stub that adds config/prod.yaml to an otherwise correct run is refused by scope at position 1
+      of 4 surfaces in execution order, while the shipped verification branch returns actually_passing
+      True regardless and review would flag it at position 4; failure_report's off_scope_writes
+      compares against a hardcoded {app.py, test_app.py} rather than task.allowed_files, so on a task
+      allowing only src/api.py it flags the legitimate write alongside the real violation; stopped at
+      scope the repo has the 2 allowed files and stopped at review it has 3; of the report's 7 keys
+      exactly 1 is derived from observation
+  - index: 5
+    slug: map_five_industry_recurring
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Map the five industry-recurring failure modes from Phase 14 · 26 onto the seven surfaces. Which mode is each surface designed to absorb?
+    zh: |
+      把階段 14 · 26 那五種業界反覆出現的失敗模式對映到七個表面上。每個表面是設計來吸收哪一種模式的？
+    cites: >-
+      Reasoning from primitives, not from vendor taxonomies

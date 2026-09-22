@@ -1,0 +1,89 @@
+lesson: 46-turn-feedback-into-system
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/46-turn-feedback-into-system/docs/en.md
+exercises:
+  - index: 1
+    slug: the_keyword_classifier_agrees_with_one_of_five_real_corrections
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take five corrections from a recent coding session and classify their real owners.
+    zh: |
+      Take five corrections from a recent coding session and classify their real owners.
+    verifies: >-
+      five corrections from the session that produced this repository's practice solutions,
+      hand-labelled with the layer that actually absorbed each one, are routed by choose_target to
+      ['instruction', 'example', 'instruction', 'example', 'scope'] against hand labels ['automation',
+      'test', 'test', 'example', 'instruction'] -- 1 of 5 agree; the router matches 14 keywords over
+      symptom plus cause in fixed order and returns on the first hit; promote writes 'Prevent
+      <normalized cause>' for all five and normalize_cause recognises 3 shapes; the two corrections
+      this repository absorbed into audit_practice.py produce 2 fingerprints and 2 rules, so dedup
+      happens on wording rather than destination
+  - index: 2
+    slug: the_prose_rule_is_two_sentences_and_the_check_is_four_lines
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace one prose rule with an executable test.
+    zh: |
+      Replace one prose rule with an executable test.
+    verifies: >-
+      DESIGN D5's prose rule becomes a four-line check -- imports parity.load_reference and redefines
+      none of the reference module's symbols -- that passes 15 of 15 shipped solutions and refuses a
+      fork shadowing 2 reference symbols; feeding the same correction to promote routes it to
+      instruction with the verification 'Run the instruction linter and scenario check', a control
+      that does not exist, although 5 destinations include test; a paraphrased fork shadows 0 symbols
+      and is refused only by the weaker half of the rule; Control.verification is one of five canned
+      phrases and names no command
+  - index: 3
+    slug: consequence_is_carried_into_the_output_and_never_read
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add consequence weighting so a severe first occurrence can be promoted immediately.
+    zh: |
+      Add consequence weighting so a severe first occurrence can be promoted immediately.
+    verifies: >-
+      adding a one-off preference to the lesson's three corrections leaves the shipped ratchet
+      promoting 4 of 4 while a gate of recurrence>=2 or severity>=3 promotes 3, keeping the
+      first-occurrence regression and dropping the preference; consequence appears 3 times in the
+      module and 0 of them in a condition; the recurrence gate skips only recurrence < 1 and filters 0
+      of the example, a threshold below the minimum possible value; the three consequence strings
+      share 0 words, so a weight map over free text is the keyword-classifier problem and 3 enum
+      levels on the correction would remove the guessing
+  - index: 4
+    slug: the_record_asks_for_eight_fields_and_the_control_carries_six_of_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an owner and retirement date to the lab output.
+    zh: |
+      Add an owner and retirement date to the lab output.
+    verifies: >-
+      Control holds 8 fields covering 6 of the ratchet record's 8 items plus a fingerprint the record
+      never asks for, and adding owner and review_on takes each row to 10 keys; the module imports
+      neither time nor datetime, so a review date must arrive as data -- with today supplied, 3 of 4
+      controls are due and the answer is machine-independent; rewording one correction's cause yields
+      a second fingerprint and a second rule, restarting the review clock; target, rule, verification
+      and fingerprint are all derived from the correction and owner is not
+  - index: 5
+    slug: the_stronger_control_exists_and_it_keeps_less_than_the_sentence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Review one existing agent instruction and delete it only after proving a stronger control exists.
+    zh: |
+      Review one existing agent instruction and delete it only after proving a stronger control exists.
+    verifies: >-
+      audit_practice.py scans for 5 banned strings, reports 0 violations across the 15 shipped
+      solutions and catches 5 of 5 synthetic ones, while the DESIGN sentence refuses nothing; the scan
+      matches the substring anywhere, so a docstring quoting an exercise that uses the word TODO is
+      flagged -- the executable control is broader than the rule it replaces; Control carries symptom,
+      cause and consequence beside the rule, so deleting the enforcement sentence costs none of the
+      reasoning; of the lesson's 4 retirement criteria the deletion satisfies exactly 1, replacement
+      by a stronger executable control

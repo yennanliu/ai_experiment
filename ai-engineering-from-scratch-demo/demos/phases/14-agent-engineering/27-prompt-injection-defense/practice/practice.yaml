@@ -1,0 +1,83 @@
+lesson: 27-prompt-injection-defense
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/27-prompt-injection-defense/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tag_is_a_string_so_the_trust_boundary_is_a_spelling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "source tag" to every piece of content: `user_message`, `tool_output`, `retrieved`. Propagate tags through the message history. Validator refuses `retrieved` content that looks like directives.
+    zh: |
+      給每一段內容加上「來源標籤」：`user_message`、`tool_output`、`retrieved`。讓標籤在訊息歷史中傳播。驗證器要拒絕看起來像指令的 `retrieved` 內容。
+    verifies: >-
+      threading a tagged History through 12 turns and handing assess the accumulated contents refuses
+      6 of 6 poisoned turns, each naming the source, and 0 of 6 clean ones; SourceTag is a bare str
+      alias compared with ==, so poison tagged 'user_message' passes while the same text tagged
+      'user_messge' is refused -- a typo fails closed and a forgery fails open; the same instruction
+      paraphrased without a listed marker passes all 3 untrusted sources; assess scans call.args
+      before it looks at sources, so a user searching for the literal phrase 'ignore all instructions'
+      is refused, and none of the module's 5 classes holds a conversation
+  - index: 2
+    slug: the_guard_reads_one_write_at_a_time_and_payloads_split
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a memory-write guardrail: any memory write that looks like an instruction ("do X", "execute Y") is refused.
+    zh: |
+      實作一個記憶寫入護欄：任何看起來像指令的記憶寫入（「做 X」、「執行 Y」）都拒絕。
+    verifies: >-
+      memory_write_guard refuses 6 of 12 instruction-shaped writes and 5 of 12 benign ones -- recall
+      50.0%, false-positive rate 41.7% -- because its whole behaviour is looks_like_directive; a
+      payload split across two writes scores refuse and allow alone and refuse joined, so the half
+      that does the damage is stored on its own; 6 of the 12 instruction writes are phrased as facts
+      with no marker and no 'do ' prefix and all 6 are stored; the module has 1 write-side guard and 0
+      ways to re-scan stored notes, and the read path uses the same marker list, so the damaging half
+      is allowed on read too
+  - index: 3
+    slug: nothing_in_the_module_ever_looks_at_what_the_agent_says
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a worming attack simulation: injected content tells the agent to include the exploit in its next response. Defend against it.
+    zh: |
+      寫一個蠕蟲化攻擊的模擬：被注入的內容告訴代理要把該利用手法放進它的下一則回應。防住它。
+    verifies: >-
+      an undefended worm spreads 1, 3, 7, 15, 20, 20 across 20 agents and saturates at generation 4,
+      where scanning outbound text before publishing holds it at 1; assess refuses the infected
+      agent's tool call 19 of 19 times and infection still reaches 20, because Executor.run returns a
+      bare str and 0 of the module's 11 functions inspect what was produced; input-only screening
+      infects 20 where output-only and both infect 1; a payload restating the instruction without a
+      listed marker reaches 20 agents under output scanning while taint propagation holds it at 1
+      without reading the text
+  - index: 4
+    slug: read_greshake_et_al
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Greshake et al. end to end. Implement one of the demonstrated exploits in your toy. Fix it.
+    zh: |
+      把 Greshake 等人的論文從頭到尾讀完。在你的玩具裡實作其中一種被實證的利用手法。然後修好它。
+    cites: >-
+      Greshake et al., AISec 2023 (arXiv:2302.12173)
+  - index: 5
+    slug: the_validator_refuses_one_in_five_legitimate_calls
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure: on normal traffic, how often does the PVE validator reject? Target: near-zero on legitimate calls.
+    zh: |
+      量一下：在正常流量上，PVE 驗證器多常拒絕？目標：在合法呼叫上接近零。
+    verifies: >-
+      on 60 legitimate calls containing no attack, the shipped validator refuses 33 -- 55.0% against a
+      target of near-zero -- while catching 6 of 6 real attacks, with the local argument scan used to
+      price variants agreeing with assess on all 66 calls; t.startswith('do ') accounts for 27 of the
+      33 refusals because 9 of the 20 benign queries begin with the word do, and dropping that clause
+      takes the rate to 10.0% with attack recall unchanged; the remaining 6 are users quoting 'drop
+      table' and 'system:', and exempting user-sourced arguments takes the rate to 0.0% with recall
+      still 6 of 6; Validator declares sensitive_tools and assess references only allowed_tools
