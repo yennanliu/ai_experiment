@@ -1,0 +1,88 @@
+lesson: 48-discover-the-real-workflow
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/48-discover-the-real-workflow/docs/en.md
+exercises:
+  - index: 1
+    slug: a_workflow_rebuilt_from_the_log_can_never_be_grounded
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reconstruct one workflow from a log without interviewing anyone.
+    zh: |
+      Reconstruct one workflow from a log without interviewing anyone.
+    verifies: >-
+      reconstructing the per-lesson workflow from this repository's git history and artifacts gives 8
+      ordered steps with 0 ordering issues, every one supported by an artifact, so
+      direct_evidence_ratio is 0.0 and audit reports needs-evidence about a correct reconstruction --
+      'grounded' requires evidence a log cannot contain; the documented ladder has 4 rungs and
+      Evidence.direct is a bool, so 3 of them store identically; 7 of the 8 sources are paths that
+      exist and 1 is a commit the log knows, so 8 of 8 receipts resolve; dropping every confidence to
+      0.01 changes neither the ratio nor the status
+  - index: 2
+    slug: four_reported_claims_and_the_log_corroborates_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Interview a user and mark every claim that still lacks direct evidence.
+    zh: |
+      Interview a user and mark every claim that still lacks direct evidence.
+    verifies: >-
+      of four claims taken from the instruction that started this work, 2 are corroborated by the log
+      -- 8 recent lesson commits carrying 8 distinct lesson numbers, and a branch that is on its
+      remote -- and 2 have no artifact in the repository; recording the corroboration moves
+      direct_evidence_ratio from 0.0 to 0.5; 'commit and push once a lesson is completed' is
+      corroborated only as 'one commit whose subject names one lesson', which is narrower than the
+      sentence; audit returns 5 keys and names no weak claim, so a reader must walk steps to find the
+      2 unsupported ones
+  - index: 3
+    slug: the_recovery_step_is_a_loop_and_the_model_is_a_list
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add one authority boundary and one failure-recovery step.
+    zh: |
+      Add one authority boundary and one failure-recovery step.
+    verifies: >-
+      the happy path audits clean with the audit itself as the actor holding authority, while adding
+      the refusal and the return it causes gives orders [1, 2, 3, 4, 9, 2] and one issue, because a
+      workflow that returns to an earlier step is a graph and order is an integer in a list; the docs'
+      step table asks for 8 fields and WorkflowStep carries 5, leaving authority, trigger, input and
+      output nowhere to go; one shipped solution spells a banned marker at run time because the audit
+      refuses the literal, which is direct evidence of the recovery loop; friction is prose with no
+      counter, so a step that ran once and one that ran four times are identical
+  - index: 4
+    slug: the_two_variants_differ_at_one_step_and_merging_them_breaks_the_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Model two workflow variants without merging them.
+    zh: |
+      Model two workflow variants without merging them.
+    verifies: >-
+      42 of this phase's 54 lessons carry a Chinese document and 12 do not, so the scaffolding step
+      has two real variants; each audits clean alone, while concatenating them gives orders [1, 2, 3,
+      4, 1, 2, 3, 4] and one ordering issue because the model cannot say 'these are two paths'; the
+      paths differ at step 2 and an averaged workflow would read 1.8 documents, which nobody does;
+      renumbering the second path to 5-8 buys a clean report by asserting the eight steps happen in
+      sequence, and audit returns no field naming the variant
+  - index: 5
+    slug: the_scaffold_removes_the_typing_and_leaves_the_measuring
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Identify a proposed feature that removes a visible step but leaves hidden work untouched.
+    zh: |
+      Identify a proposed feature that removes a visible step but leaves hidden work untouched.
+    verifies: >-
+      the scaffolder's template emits a placeholder for the verifies threshold and 0 of the 5 finished
+      lessons' manifests still carry it, so all 25 exercises' thresholds were written by hand after
+      the answer was measured; the placeholder is a banned string in audit_practice.py, so the
+      system's response to un-done hidden work is to block rather than to do it; modelling both paths
+      gives 5 steps before and 4 after while the friction entries stay at 2, attached to steps both
+      versions share; both workflows report direct_evidence_ratio 1.0 at status grounded, so the
+      artifact reports identical numbers before and after the feature
