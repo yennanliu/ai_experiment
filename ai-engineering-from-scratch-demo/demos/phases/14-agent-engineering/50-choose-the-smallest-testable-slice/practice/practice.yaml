@@ -1,0 +1,85 @@
+lesson: 50-choose-the-smallest-testable-slice
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/50-choose-the-smallest-testable-slice/docs/en.md
+exercises:
+  - index: 1
+    slug: the_cheapest_slice_scores_highest_and_proves_half_of_what_matters
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design three slices for the same outcome at different consequence levels.
+    zh: |
+      Design three slices for the same outcome at different consequence levels.
+    verifies: >-
+      three slices at rising consequence score 2.4, 2.0 and 0.526, and the cheapest -- which proves 1
+      assumption against the largest one's 3 -- ranks first; score multiplies consequence by 2 when
+      irreversible and 0.5 when not, so flipping the flag on the largest slice lifts it from 0.526 to
+      0.87 with no change to the work; effort and consequence are added, so a one-day publish of a
+      wrong number and an eleven-day change with no consequence share a denominator of 11; proves is a
+      tuple of strings joined to the assumption map by convention, so a misspelled name makes a slice
+      silently ineligible
+  - index: 2
+    slug: the_proof_set_disqualifies_the_slice_with_the_best_score
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      State the required proof set before scoring them.
+    zh: |
+      State the required proof set before scoring them.
+    verifies: >-
+      the required proof set leaves 2 of 3 candidates eligible and selects the 2.0 slice while the
+      best score in the field is 2.4 and belongs to a rejected one, because choose filters before it
+      compares; the gate is a subset test, so a slice proving an extra assumption stays eligible while
+      one proving 'wrong-number-detected-late' is rejected; an empty required set is a subset of
+      everything, so an unfilled gate leaves all 3 eligible and returns the cheapest; requiring a
+      proof no slice offers raises ValueError instead of recording that nothing qualifies
+  - index: 3
+    slug: dropping_the_prose_keeps_both_proofs_and_raises_the_score
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove one capability while preserving the decisive evidence.
+    zh: |
+      Remove one capability while preserving the decisive evidence.
+    verifies: >-
+      removing prose generation drops effort from 3 to 2 and value from 4 to 3, moving the score from
+      2.0 to 2.286 while both required proofs and eligibility survive; 0 of the 2 required proofs
+      mention prose, because the decisive measurement is a number appearing in a graded check detail;
+      stripping further gives 2.286, 2.8 and 2.4, so the score has an interior maximum unrelated to
+      what the slice proves and only the eligibility gate stops the slide; Slice has 7 fields and none
+      records a capability, so what was dropped lives in the name string
+  - index: 4
+    slug: the_stop_rule_has_five_branches_and_the_artifact_has_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a stop rule for a failed pilot.
+    zh: |
+      Add a stop rule for a failed pilot.
+    verifies: >-
+      a stop rule with 5 branches, none of them 'keep building', maps the pilot's measured 87.5%
+      against a 90% threshold to 'collect better evidence' and a passing 95% to continue; Slice has 7
+      fields and decision returns 3 keys, none holding a stop rule, so the thing written before the
+      pilot does not travel with it; all 5 branches are selected by a measured condition rather than a
+      judgment; the same failure maps to 'test a different mechanism' at 57.1%, so writing the rule
+      first is what stops the result choosing its own interpretation
+  - index: 5
+    slug: the_platform_slice_stays_ineligible_at_any_score
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Identify a reusable platform component that should wait until after the slice.
+    zh: |
+      Identify a reusable platform component that should wait until after the slice.
+    verifies: >-
+      the reusable platform proves 0 of the 2 required assumptions, scores 0.231 with plausible
+      numbers and 18.0 when inflated -- the best of 4 candidates -- and choose still returns the
+      one-lesson pilot because the subset gate runs before the comparison; a platform proving 1 of 2
+      is rejected identically, so partial coverage buys nothing; 3 of the lesson's 5 named false
+      minimums appear in this field; decision returns 3 alternatives with 8 keys each and none names
+      the proof the loser lacked
