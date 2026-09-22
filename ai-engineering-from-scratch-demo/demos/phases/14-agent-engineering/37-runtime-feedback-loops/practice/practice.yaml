@@ -1,0 +1,82 @@
+lesson: 37-runtime-feedback-loops
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/37-runtime-feedback-loops/docs/en.md
+exercises:
+  - index: 1
+    slug: the_runner_never_passes_a_cwd_so_there_is_none_to_record
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `cwd` field per record so the same command run from different directories is distinguishable.
+    zh: |
+      替每筆紀錄加一個 `cwd` 欄位，好讓同一個指令從不同目錄執行時可以分辨。
+    verifies: >-
+      run_with_feedback calls subprocess.run with no cwd, so the same command from two temporary
+      directories gives 1 distinct output through the shipped runner and 2 once cwd is forwarded, with
+      command byte-identical and the new field differing; FeedbackRecord carries 12 fields and 0 of
+      them is a path, so two records for the same argv differ only by a random command_id; the runner
+      takes 4 arguments and passes only command to subprocess.run, leaving cwd, env and stdin
+      unreachable from the call site; a cwd field defaulted to os.getcwd() at construction time reads
+      the runner's directory rather than the subprocess's on 2 of 2 runs
+  - index: 2
+    slug: truncating_before_redacting_drops_the_begin_and_keeps_the_key
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `redaction` step that strips lines matching `^Bearer ` or `password=`. Test on a fixture record.
+    zh: |
+      加一個 `redaction` 步驟，剝掉符合 `^Bearer ` 或 `password=` 的行。在一筆固定樣本紀錄上測試。
+    verifies: >-
+      the 5 shipped redaction patterns replace all 5 single-capture fixture secrets, and a PEM block
+      whose BEGIN line falls in the truncated middle keeps 9 lines of key material and the END marker
+      unredacted; _process_capture documents 'Truncate first, then redact', and redacting the
+      untruncated text before tailing keeps 0 key lines; output containing 200 Bearer tokens records
+      35 redactions because 165 lines were dropped before the patterns ran; the two shapes the
+      exercise names have the loosest anchors, so 'Bearer:ya29...' and 'password is hunter2' both
+      survive as plaintext in a record reporting zero redactions
+  - index: 3
+    slug: the_one_megabyte_cap_is_really_six_and_checked_before_the_write
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Cap total `feedback_record.jsonl` size at 1 MB by rotating to `.1`, `.2` files. Defend the rotation policy.
+    zh: |
+      把 `feedback_record.jsonl` 的總大小限制在 1 MB，超過就輪替到 `.1`、`.2` 檔。替你的輪替政策辯護。
+    verifies: >-
+      ROTATE_BYTES is 1 MB and MAX_ROTATIONS is 5, so appending until rotation cycles leaves 6 files
+      totalling 5 MB with a ceiling of 6 where the exercise asks for 1; maybe_rotate runs before the
+      append and returns early under the cap, so a file at 1048575 bytes is not rotated and then grows
+      past ROTATE_BYTES -- the cap is a floor; deterministic_tail bounds a capture at 35 lines, so
+      truncation rather than ROTATE_BYTES is what keeps a record small; the 6 files carry 0 timestamps
+      in their names, so a time-ordered question means opening every one
+  - index: 4
+    slug: the_chain_is_a_linked_list_and_rotation_can_cut_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `parent_command_id` so retry chains are visible: which command produced the input that the next command consumed.
+    zh: |
+      加一個 `parent_command_id`，讓重試鏈可見：是哪個指令產出了下一個指令所消費的輸入。
+    verifies: >-
+      four linked records give retry_chain the full 4 ids oldest to newest, and deleting the file
+      holding the root returns 3 of 4 with no error and no marker; the walk's `while cursor and cursor
+      in records` terminates identically on a None parent and on a missing one, so a truncated chain
+      and a complete one are the same shape; retry_chain calls load_all once per invocation, so 20
+      chains read the 6 rotation files 20 times -- 120 reads for a question needing 6;
+      parent_command_id is a caller-supplied argument and retry_chain never reads stdout, so nothing
+      checks the child consumed the parent's output, and 1 of the lesson's 5 records carries a parent
+  - index: 5
+    slug: pipe_jsonl_into_tiny
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Pipe the JSONL into a tiny TUI that highlights the latest non-zero exit. Eight key features the TUI must show to be useful in a review.
+    zh: |
+      把 JSONL 導進一個很小的 TUI，把最近一次非零離開碼標出來。列出這個 TUI 要在審查中有用，必須顯示的八項關鍵功能。
+    cites: >-
+      What goes in a feedback record
