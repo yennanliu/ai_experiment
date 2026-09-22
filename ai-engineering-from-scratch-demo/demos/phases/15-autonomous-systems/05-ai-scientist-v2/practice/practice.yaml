@@ -1,0 +1,76 @@
+lesson: 05-ai-scientist-v2
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/05-ai-scientist-v2/docs/en.md
+exercises:
+  - index: 1
+    slug: the_polish_stage_does_not_polish_anything
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` with default parameters. What fraction of loop runs produce a "clean" paper? What fraction produce a paper with an experiment-failure flaw the figure critique polished over?
+    zh: |
+      用預設參數跑 `code/main.py`。有多少比例的迴圈執行產出「乾淨」的論文？有多少比例產出的論文帶著被圖表批評拋光掉的實驗失敗瑕疵？
+    verifies: >-
+      over 20000 trials at DEFAULT_SEED, 34.39% of runs submit, of which 53.87% are clean and 46.13%
+      flawed -- 18.52% of all runs clean, 9.79% with an experiment flaw and 6.07% with a novelty flaw
+      alone; polished_hides_weakness is assigned and never read, so polish_masks_weakness at 0.0, 0.7
+      and 1.0 gives identical submission and flaw shares; f*r/(1-f(1-r)) predicts the 0.2848
+      experiment-flaw share exactly; abandonment splits 19.20%, 11.87% and 34.54% and the largest
+      filter accepts independently of both flaw flags
+  - index: 2
+    slug: better_retries_make_the_output_worse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The defaults already use Beel et al.'s 42% / 25%. Re-run with `--experiment-failure 0.20 --novelty-mislabel 0.10` and then with `--experiment-failure 0.60 --novelty-mislabel 0.40`. How does the polished-but-flawed share shift between the two runs?
+    zh: |
+      預設值已經用了 Beel 等人的 42% / 25%。改用 `--experiment-failure 0.20 --novelty-mislabel 0.10` 再跑一次，然後用 `--experiment-failure 0.60 --novelty-mislabel 0.40` 再跑一次。「拋光但有瑕疵」的占比在兩趟之間怎麼移動？
+    verifies: >-
+      the polished-but-flawed share of submissions moves 0.2076 to 0.6672 between the two runs, a
+      3.2x, and 0.0799 to 0.2084 of all runs, while submissions fall 0.3846 to 0.3124; the closed form
+      1-(1-m)(1-f*r/(1-f(1-r))) gives 0.2088, 0.4636 and 0.6712 against the simulation within 0.0040;
+      sweeping retry_recovery over 0.0 to 1.0 raises the flawed share monotonically from 0.2475 to
+      0.5625, so better recovery makes the papers worse
+  - index: 3
+    slug: read_sakana_s_ai
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Sakana's AI Scientist v2 repo README on sandbox requirements. Name two additional restrictions (beyond Docker) you would apply for a multi-day autonomous run.
+    zh: |
+      讀 Sakana AI Scientist v2 儲存庫 README 關於沙箱需求的部分。針對一趟多天的自主執行，說出你會額外施加的兩項限制（Docker 之外）。
+    cites: >-
+      The sandbox-escape concern
+  - index: 4
+    slug: the_detector_is_a_field_the_loop_computes_and_throws_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Beel et al. Section 4 on presentation-quality gap. Design one additional evaluator that would catch polished-looking but experimentally flawed papers.
+    zh: |
+      讀 Beel 等人第 4 節談呈現品質落差的部分。設計一項額外的評估器，能抓到看起來拋光、實驗卻有瑕疵的論文。
+    verifies: >-
+      the retry flag catches 1959 of 3173 flawed submissions at recall 0.6174 and precision 1.000,
+      because a residual flaw is defined as a retry-recovered experiment; run_one binds and reads
+      `recovered` twice and 0 of Outcome's 6 fields records it; the 1214 misses are 38.26% of flawed
+      submissions and every one carries a novelty flaw alone, drawn before any stage and gating none;
+      the polish stage's only output is a name assigned once and never read
+  - index: 5
+    slug: ninety_percent_recall_costs_eighty_one_percent_of_a_full_read
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Propose a human-review protocol for research-agent outputs that scales better than "a PhD reads every paper." Identify the bottleneck and design around it.
+    zh: |
+      為研究代理的產出提出一套人工審查協定，讓它比「一位博士讀每一篇論文」更能擴展。指認出瓶頸，並圍繞它做設計。
+    verifies: >-
+      reading every retry-recovered paper and sampling the rest at 0.0, 0.25, 0.5 and 1.0 costs 0.285,
+      0.464, 0.642 and 1.0 of a full read for recalls of 0.617, 0.713, 0.809 and 1.0; 90% recall needs
+      a 0.739 sampling rate, which is 81.3% of a full read, so the protocol saves 18.7% and no more;
+      the loop submits one paper per 2.91 runs; raising retry_recovery to 1.0 moves the unsamplable
+      arm from 28.5% to 41.7% of submissions
