@@ -1,0 +1,84 @@
+lesson: 42-agent-workbench-capstone
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/42-agent-workbench-capstone/docs/en.md
+exercises:
+  - index: 1
+    slug: the_schema_that_ships_without_a_doc_is_the_one_the_policy_leans_on
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Decide which optional fifth doc deserves promotion into the canonical pack. Defend the cut.
+    zh: |
+      決定哪一份選配的第五份文件值得升格進正典套件。替你的取捨辯護。
+    verifies: >-
+      scope_contract.schema.json ships 7 properties with 6 required and none of the pack's 4 docs
+      names it, while agent_state is named in docs/agent-rules.md, so the fifth doc is a
+      scope-contract authoring guide; the reliability policy claims five failure modes and only 2 have
+      a script behind them, with scope creep, context loss and tool misuse naming a scope checker, a
+      state writer and a reviewer the pack does not ship; verify_agent.py loads four paths through a
+      defaulting loader, three of which no pack script ever writes, so a fresh install reports passed:
+      true; AGENTS.md names 6 paths to read and the installer creates 4, leaving agent_state.json and
+      task_board.json absent
+  - index: 2
+    slug: an_unknown_flag_is_a_real_install_and_the_guard_is_one_file
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Rewrite the installer as Python with a `--dry-run` flag. Compare ergonomics against bash.
+    zh: |
+      把安裝器改寫成帶 `--dry-run` 旗標的 Python。跟 bash 版比較人體工學。
+    verifies: >-
+      install.sh compares argument one against --force and ignores every other value, so `install.sh
+      --dry-run` on a clean target writes 13 files and exits 0 where a Python rewrite plans the same
+      13 paths and writes 0; the refusal guard reads AGENTS.md alone, so deleting that one file lets a
+      reinstall overwrite the other 12 without --force; the pack ships 15 files and the installer lays
+      down 13, leaving README.md, VERSION and bin/install.sh behind and writing .workbench-version in
+      their place; cp -r unions rather than syncs, so a doc removed upstream stays in the target -- 14
+      files where a fresh install lays down 13
+  - index: 3
+    slug: non_trivial_means_the_repo_changed_it_and_the_lock_records_no_filenames
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `bin/uninstall.sh` that safely removes the pack and refuses if state files have non-trivial history. What counts as non-trivial?
+    zh: |
+      加一支 `bin/uninstall.sh`，安全地移除套件，並在狀態檔有非瑣碎歷史時拒絕。什麼算非瑣碎？
+    verifies: >-
+      in a real git checkout with the pack installed and committed, an uninstall that refuses on dirty
+      working trees and on bytes that no longer match the pack removes 11 of the 12 installed files
+      and refuses on the customised docs/agent-rules.md, while agent_state.json is never a candidate
+      because the pack never wrote it; .workbench-version records '1.0.0' and 0 filenames, so the list
+      has to be re-derived from a pack that may have moved on where a 12-line manifest would not; the
+      three user artifacts absent after install and present after a session survive untouched;
+      removing by name would delete an edited rules doc silently where a content hash catches it
+  - index: 4
+    slug: the_version_is_a_constant_in_the_generator_so_drift_is_the_default
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `lint_pack.py` that fails when the pack drifts from `VERSION`. Wire it into CI for the pack's own repo.
+    zh: |
+      加一支 `lint_pack.py`，當套件與 `VERSION` 漂移時就失敗。把它接進套件自己那個儲存庫的 CI。
+    verifies: >-
+      PACK_VERSION is a module constant written straight into VERSION, so a one-line edit to a doc
+      moves a digest over the 15 shipped files while VERSION still reads 1.0.0 and lint_pack is the
+      only thing that can notice; install.sh copies VERSION into .workbench-version and nothing else,
+      so two installs from different packs at the same version leave identical locks and the lint must
+      run in the pack's own repo; 7 of the 15 files are docs or schemas against 4 scripts, so most
+      edits are patch bumps and a digest cannot say whether a move needed a major; the generator is
+      byte-stable across runs, so the hash has to fold in main.py's source to be total
+  - index: 5
+    slug: migration_runbook_hand_rolled
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Author the migration runbook from a hand-rolled workbench to this pack. What is the order of operations that minimizes downtime?
+    zh: |
+      撰寫從手搓工作台遷移到這份套件的維運手冊。什麼樣的操作順序能把停機時間壓到最低？
+    cites: >-
+      Versioning
