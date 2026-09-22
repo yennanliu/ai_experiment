@@ -40,7 +40,6 @@ what a seventh field would cost.
 from __future__ import annotations
 
 import inspect
-from dataclasses import dataclass
 from pathlib import Path
 
 from harness import parity, practice
@@ -63,16 +62,9 @@ METRICS = [
 ]
 
 
-@dataclass(frozen=True)
-class Populated:
-    """Metric plus the field the docs' table asks for."""
-    name: str
-    direction: str
-    threshold: float
-    window: str
-    source: str
-    kind: str
-    population: str
+def populated(ref):
+    """Metric's fields plus the one the docs' table asks for."""
+    return list(ref.Metric.__dataclass_fields__) + ["population"]
 
 
 def lessons():
@@ -100,8 +92,7 @@ def plan(ref, blank=None):
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     fields = list(ref.Metric.__dataclass_fields__)
-    populated = [Populated(*row[:2], row[2], row[3], row[4], row[5], row[6])
-                 for row in METRICS]
+    fields_with_population = populated(ref)
     all_files, one_lesson = counts()
     validator = inspect.getsource(ref.validate)
     vibes = ref.MeasurementPlan("goal", ["question"], [
@@ -110,8 +101,8 @@ def solve():
     return {
         "metrics": len(METRICS), "fields": fields, "doc_fields": len(DOC_FIELDS),
         "missing": [name for name in DOC_FIELDS if name not in fields],
-        "populated_fields": len(Populated.__dataclass_fields__),
-        "populations": len({row.population for row in populated}),
+        "populated_fields": len(fields_with_population),
+        "populations": len({row[6] for row in METRICS}),
         "name_carries": sum("seconds" in metric.name or "rate" in metric.name
                             for metric in plan(ref).metrics),
         "blank_issues": ref.validate(plan(ref, blank="traced_number_rate")),
