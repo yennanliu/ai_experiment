@@ -20,7 +20,7 @@ exercises:
       3 results marked missing, because validity is a property of the plan; MeasurementPlan holds
       goal, questions and metrics with no link between the last two
   - index: 2
-    slug: the_counter_metric_shows_ten_of_forty_five_files_over_the_line_target
+    slug: the_counter_metric_finds_the_cost_the_outcome_metric_cannot_see
     kind: code
     tier: T0
     deps_group: none
@@ -29,7 +29,7 @@ exercises:
     zh: |
       Add a counter-metric that catches cost shifted to another role.
     verifies: >-
-      10 of the 45 shipped solution files exceed the repository's own 120-line target, the largest at
+      11 of the 45 shipped solution files exceed the repository's own 120-line target, the largest at
       145, and the answers sections average 132.7 lines -- none of it visible to a plan carrying only
       the outcome metric and its guardrail; the counter-metric is at-most 150 on answer length, which
       the worst lesson clears by 4 lines; validate returns 0 issues for a plan holding 3 metrics

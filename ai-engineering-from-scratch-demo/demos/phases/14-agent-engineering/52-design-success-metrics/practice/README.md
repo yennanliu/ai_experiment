@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Derive three questions from one outcome goal. | code | T0 | `ex01_three_questions_and_the_third_one_needs_a_metric_the_plan_has_no_kind_for.py` |
-| 2 | Add a counter-metric that catches cost shifted to another role. | code | T0 | `ex02_the_counter_metric_shows_ten_of_forty_five_files_over_the_line_target.py` |
+| 2 | Add a counter-metric that catches cost shifted to another role. | code | T0 | `ex02_the_counter_metric_finds_the_cost_the_outcome_metric_cannot_see.py` |
 | 3 | Define the source, population, and window for every metric. | code | T0 | `ex03_population_is_the_field_the_table_asks_for_and_the_dataclass_omits.py` |
 | 4 | Write pass, fail, and ambiguous decisions before generating values. | code | T0 | `ex04_the_boundary_is_inclusive_and_one_way_of_computing_the_rate_fails_it.py` |
 | 5 | Identify one metric that is easy to collect but cannot change the decision. Remove it. | code | T0 | `ex05_the_metric_that_cannot_move_is_the_one_the_rule_already_fixes.py` |
@@ -51,12 +51,12 @@ metrics with nothing joining the last two, so a plan with three questions and on
 metric passes, as does one with no questions and three metrics. The derivation this
 lesson teaches leaves no trace in the artifact that records it.
 
-### 2 — the counter-metric shows ten of forty-five files over the line target
+### 2 — the counter-metric finds the cost the outcome metric cannot see
 
 The outcome metric measures the reader. The cost of reaching it lands on two other
 people, and both are measurable from the tree:
 
-- **10 of 45** shipped solution files sit above this repository's own 120-line
+- **11 of 45** shipped solution files sit above this repository's own 120-line
   target, the largest at 145 — maintainer cost.
 - The answers sections average **132.7** lines, worst case 146 — reviewer cost.
 

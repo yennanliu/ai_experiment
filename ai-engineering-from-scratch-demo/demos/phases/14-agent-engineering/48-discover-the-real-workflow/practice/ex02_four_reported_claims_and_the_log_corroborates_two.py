@@ -61,8 +61,11 @@ def git(*args):
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
 
 
+ANCHOR = "a992f27"  # the lesson-46 commit: a fixed window, not a sliding one
+
+
 def lesson_numbers(count=8):
-    subjects = git("log", "--format=%s", "-n", str(count), "--", BASE).splitlines()
+    subjects = git("log", "--format=%s", "-n", str(count), ANCHOR, "--", BASE).splitlines()
     return [match.group(1) for subject in subjects
             if (match := re.search(r"lesson (\d+)", subject))]
 
@@ -119,7 +122,7 @@ def verify(result):
                  result["reported"] == ["the pull request is where this lands",
                                         "a reviewer reads the answers before the code"]]),
             f"{result['corroborated']} of {result['claims']} claims are backed by the log: "
-            f"{result['lessons']} recent lesson commits carry {result['distinct']} distinct "
+            f"{result['lessons']} anchored lesson commits carry {result['distinct']} distinct "
             f"lesson numbers and the branch is on its remote. {result['reported']} have no "
             "artifact in this repository",
         ),

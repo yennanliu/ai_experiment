@@ -14,7 +14,7 @@ generated file.** `43-frame-the-task-before-code/practice` and
 `44-plan-from-evidence/practice` overlap in **0** paths, schedule as
 `[['lesson-43', 'lesson-44'], ['integration']]`, and the plan validates
 `ready`. The one path neither worker may own is the repository's top-level
-`README.md`: **6** of the last **6** lesson commits touch it, because
+`README.md`: **6** of the six lesson commits ending at a fixed anchor touch it, because
 `scripts/coverage.py` rewrites it from the manifests.
 
 **FINDING: the contract in the docs has 6 fields and `WorkUnit` has 5.**
@@ -64,9 +64,12 @@ def git(*args):
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
 
 
+ANCHOR = "a992f27"  # the lesson-46 commit: a fixed window, not a sliding one
+
+
 def history(count=6):
-    """The last lesson commits, and how many README files each one touches."""
-    shas = git("log", "--format=%H", "-n", str(count), "--", BASE).split()
+    """Six lesson commits ending at the anchor, and which touch the root README."""
+    shas = git("log", "--format=%H", "-n", str(count), ANCHOR, "--", BASE).split()
     rows = []
     for sha in shas:
         files = [line for line in git("show", "--name-only", "--format=", sha).splitlines()
@@ -114,7 +117,7 @@ def verify(result):
                  result["units"] == 3, result["root_touched"] == result["commits"] == 6]),
             f"the two workers overlap in {len(result['conflicts'])} paths and schedule as "
             f"{result['waves']}; the top-level README is touched by "
-            f"{result['root_touched']} of the last {result['commits']} lesson commits "
+            f"{result['root_touched']} of the {result['commits']} anchored lesson commits "
             "because scripts/coverage.py rewrites it, so it belongs to the integrator",
         ),
         practice.Check(
