@@ -1,0 +1,78 @@
+lesson: 02-star-family-reasoning
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/02-star-family-reasoning/docs/en.md
+exercises:
+  - index: 1
+    slug: the_shipped_shortcut_is_pruned_not_reinforced
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the simulator. Set the shortcut frequency to zero, then to 0.4. How much does final accuracy diverge between the two runs, even though both hit >90% on the training distribution?
+    zh: |
+      跑那個模擬器。把捷徑頻率設成零，再設成 0.4。就算兩趟在訓練分布上都打到 >90%，最終準確率的差距有多大？
+    verifies: >-
+      over seeds 0-9 the clean run ends at 97.7% ID and 97.6% OOD against 92.0% and 87.9% for the
+      shortcut run, both clearing 90% in-distribution and diverging 5.8 points there against 9.6 held
+      out; the shortcut share falls monotonically from 0.400 to 0.114 by round 5 and 0.011 by round
+      10, so it is pruned rather than reinforced; replaying star_round's own update in closed form
+      lands within 0.002 of the simulation and puts break-even at a 0.71 hit rate; at parity with
+      sound reasoning the same rule grows the share to 0.660
+  - index: 2
+    slug: the_held_out_set_is_one_literal_and_never_a_gate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a held-out OOD test to the simulator. Draw problems from a different distribution and evaluate the bootstrapped model on both in-distribution and OOD sets. Quantify the gap.
+    zh: |
+      給模擬器加一組保留的分布外測試。從另一個分布抽題，並在分布內與分布外兩組上評測自舉過的模型。把落差量化。
+    verifies: >-
+      the bootstrapped shortcut model scores 92.1% in-distribution and 88.2% held out, a 3.9-point gap
+      against -0.1 for the clean run, matching the closed form 0.35 x share with a worst residual of
+      0.4 points; Model.sample separates the distributions with 0.40 and 0.05 and nothing else,
+      capping the gap at 0.35; star_round takes no OOD argument and names on_ood once, to pass False,
+      while report_round prints the column; the soundness fraction differs by at most 0.019 between
+      distributions
+  - index: 3
+    slug: read_quiet_star_paper
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Quiet-STaR paper (arXiv:2403.09629) Section 3. Explain the "end-of-thought" token and the mixing-weight head in three sentences each.
+    zh: |
+      讀 Quiet-STaR 論文（arXiv:2403.09629）第 3 節。各用三句話解釋「思考結束」詞元與那個混合權重頭。
+    cites: >-
+      Quiet-STaR: per-token internal rationales
+  - index: 4
+    slug: the_soundness_bit_is_present_and_the_filter_never_reads_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare STaR's keep-if-correct filter to a process-supervised alternative that rewards each rationale step independently. Identify the labelling cost difference and the plausible quality difference.
+    zh: |
+      把 STaR 的「對了就留」過濾器，跟一個獨立獎勵每一個理由步驟的過程監督替代方案做比較。指出標註成本的差別，以及可能的品質差別。
+    verifies: >-
+      switching star_round's filter from the answer to the soundness bit ends at sound 0.992 and
+      shortcut 0.004 against 0.872 and 0.116, a 29x quality difference, for the same 1000 labelled
+      traces at k labels each -- and 0 of Trace's 3 fields is a step, so k is not in this module;
+      keep-if-correct retains 0.40 of samples of which 0.50 is a shortcut or a guess; 600 of 1000
+      samples are discarded each round; star_round names rationale_sound 0 times and vstar_infer reads
+      it 2
+  - index: 5
+    slug: the_delta_test_is_weakest_where_it_is_needed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design one evaluation that would catch shortcut rationales in a deployed model. It does not have to be perfect — it has to break the simplest shortcuts a STaR loop would reinforce.
+    zh: |
+      設計一項評測，能在部署後的模型中抓到捷徑式理由。它不必完美 —— 它只要能打破 STaR 迴圈會強化的那些最簡單的捷徑就好。
+    verifies: >-
+      the ID-minus-OOD accuracy gap equals 0.35 x the shortcut share with 0.0 residual at every round,
+      walking 14.0, 14.0, 11.6, 8.6, 6.0 and 4.1 points, so the detector is 3.4x weaker at the round
+      you would ship; report_round's 500 items per arm give a 1.7-point standard error at 92.0%
+      accuracy, making the final 4.1-point gap 2.4 sigma when three sigma needs 791 per arm; 0 of the
+      module's three measurement functions derives the 0.35 scale factor
