@@ -1,0 +1,83 @@
+lesson: 38-verification-gates
+phase: 14-agent-engineering
+source: phases/14-agent-engineering/38-verification-gates/docs/en.md
+exercises:
+  - index: 1
+    slug: a_missing_coverage_report_is_a_warning_and_passes_the_gate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `coverage_floor` check: the test command must produce a coverage report with at least 80%. Decide which artifact carries the floor.
+    zh: |
+      加一項 `coverage_floor` 檢查：測試指令必須產出覆蓋率至少 80% 的報告。決定由哪份產物帶著那個地板值。
+    verifies: >-
+      COVERAGE_FLOOR_DEFAULT is 0.80 with --floor overriding it and coverage_report supplying both
+      compared numbers, so a task at 62% blocks at the default and --floor 0.60 alone still blocks on
+      coverage.regression -- what passes is a report omitting `previous`; an Artifacts with
+      coverage_report=None yields one coverage.missing finding at warn and passes, so the floor is
+      unenforceable exactly when the test command failed to run; the delta comparison calls
+      math.isclose twice so 0.85 to 0.84 warns, while the floor is a bare `<` so 0.7999999999999999
+      blocks and 0.80 passes; VerdictReport does not record which floor was applied
+  - index: 2
+    slug: strict_promotes_everything_including_the_finding_that_means_no_data
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Support a `--strict` mode that promotes every `warn` to `block`. Document the cases where strict mode is the right default.
+    zh: |
+      支援一個 `--strict` 模式，把每個 `warn` 升成 `block`。把「嚴格模式才是對的預設」的那些情況寫成文件。
+    verifies: >-
+      strict promotes the 3 warn codes -- coverage.minor_regression, coverage.missing and
+      scope.off_scope -- of the 8 the gate emits, flipping 1 of the lesson's 3 demo tasks from [True,
+      False, False] to [False, False, False]; coverage.missing fires when coverage_report is None, so
+      a task whose coverage tool crashed blocks under strict on that finding alone with the detail
+      'cannot enforce floor'; verify rewrites every warn in one comprehension, so of the 8 subsets of
+      the warn codes the flag reaches 2; VerdictReport carries a strict flag and promoted findings
+      arrive as block with no memory of having been warnings
+  - index: 3
+    slug: the_json_has_a_field_the_summary_must_not_repeat
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make the gate produce a Markdown summary in addition to JSON. Defend which fields belong in the summary.
+    zh: |
+      讓閘門除了 JSON 之外也產出一份 Markdown 摘要。替「哪些欄位該進摘要」辯護。
+    verifies: >-
+      a Markdown summary carrying passed, task_id, head_commit and the blocking findings renders a
+      failing task in 10 lines against the JSON's 42 while naming all 5 blocking findings; passed is
+      computed after strict promotion, so the summary must render '(strict)' explicitly or a reader
+      re-running non-strict sees a pass; the task's 6 findings span 6 codes and 2 severities in source
+      order, so grouping by severity is what puts the 5 blocks first; coverage is 2 numbers that
+      answer a decision question while the feedback log is 35 captured lines per command and lives on
+      Artifacts rather than VerdictReport
+  - index: 4
+    slug: the_exemption_needs_a_timestamp_the_scope_report_does_not_carry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `time_since_last_human_touch` check: any file edited within 60 seconds of a human keystroke is exempt from off-scope flags.
+    zh: |
+      加一項 `time_since_last_human_touch` 檢查：任何在人類敲鍵盤後 60 秒內被編輯的檔案，豁免於範圍外標記。
+    verifies: >-
+      a 60-second window over five off-scope paths at 5, 45, 61, 600 and 3600 seconds exempts 2 and
+      flags 3, where the shipped gate emits one finding listing all 5 because off_scope_writes is a
+      list of strings with no timestamps; Artifacts has 7 fields and scope_report is typed dict[str,
+      object], so the timestamps arrive inside it and both call sites in the gate change with it;
+      Finding carries code, severity and detail with nowhere to record 'considered and excused'; the
+      one-sided window exempts 2 of 5 where a symmetric one exempts 4, and the case the rule is meant
+      to cover is a human editing a file the agent already touched
+  - index: 5
+    slug: run_gate_real_agent
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Run the gate on a real agent diff from your product. How many findings are real and how many are noise? Where does the gate need to grow?
+    zh: |
+      拿你產品裡一份真實的代理 diff 跑這道閘門。有幾項發現是真的、幾項是雜訊？閘門還需要在哪裡長大？
+    cites: >-
+      Refuse without exception
