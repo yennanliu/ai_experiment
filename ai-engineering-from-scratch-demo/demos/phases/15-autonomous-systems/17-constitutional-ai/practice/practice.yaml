@@ -1,0 +1,74 @@
+lesson: 17-constitutional-ai
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/17-constitutional-ai/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fourth_tier_is_a_field_the_resolver_never_reads
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the hardcoded prohibition fires even when helpfulness is high. Modify the resolver to weight helpfulness above ethics; observe the failure mode.
+    zh: |
+      跑 `code/main.py`。確認即使「有幫助」很高，硬寫的禁令仍然會觸發。把裁決器改成把有幫助的權重放在倫理之上；觀察失敗模式。
+    verifies: >-
+      resolve reads safety, ethics and guidelines -- 3 of the 4 tier fields -- and never
+      score.helpfulness, and it calls hardcoded_block before touching the score at all, so the
+      prohibition is not outranked by helpfulness but unread; promoting helpfulness above ethics
+      requires writing the first comparison that reads it and flips 2 of the 8 cases from refuse to
+      allow; 1 of the 8 cases matches the 6-entry prohibition list while 5 are stopped by reweightable
+      tiers; the flipped cases return the same reason string the benign case gets
+  - index: 2
+    slug: read_claude_constitution_public
+    kind: explain
+    tier: T2
+    deps_group: llm
+    en: |
+      Read the Claude Constitution (public, 79 pages, CC0). Identify one principle you believe is under-specified. Write two paragraphs explaining the specific ambiguity and proposing a tighter formulation.
+    zh: |
+      讀 Claude 憲章（公開、79 頁、CC0）。找出一項你認為規定不足的原則。寫兩段話，解釋那個具體的模糊之處，並提出更緊的表述。
+    cites: >-
+      What reason-based alignment catches and misses
+  - index: 3
+    slug: the_operator_boundary_is_a_list_the_resolver_cannot_see
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a soft-coded default set for a customer-support agent. What does the operator adjust? What can the operator not touch? Justify each boundary.
+    zh: |
+      替一個客服代理設計一組軟寫的預設。營運方調整什麼？營運方碰不到什麼？替每條界線辯護。
+    verifies: >-
+      seven adjustable defaults and four fixed ones under one rule -- adjustable if it cannot turn a
+      refuse into an allow; the blocking threshold is a bare literal appearing 3 times in resolve, and
+      raising it from 3 to 5 turns 3 of the 8 cases into allows with no rename and no edit to the
+      prohibition list; resolve returns its reason as a free string with no structure, so an operator
+      controlling wording controls the record; resolve takes action and score and reads module
+      constants, with 0 configuration objects
+  - index: 4
+    slug: read_bai_et_al
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Bai et al. 2022 CAI paper. Describe one case where Constitutional AI's critique-and-revise loop would produce a worse outcome than a blanket rule. Identify the class.
+    zh: |
+      讀 Bai 等人 2022 年的 CAI 論文。描述一個案例：憲章式 AI 的批評—修訂迴圈會產生比一條一律禁止的規則更差的結果。指出那個類別。
+    cites: >-
+      The 2022 CAI training
+  - index: 5
+    slug: an_overlay_that_can_only_narrow
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Anthropic's 2023 participatory experiment found ~50% divergence between public and corporate principles. Pick one category where this matters for production deployment (e.g., political neutrality). Propose a design that lets operators express their own values while the hardcoded prohibitions remain untouched.
+    zh: |
+      Anthropic 2023 年的參與式實驗發現公眾與公司原則之間約有 50% 分歧。挑一個對生產部署有影響的類別（例如政治中立）。提出一套設計，讓營運方能表達自己的價值，同時硬寫的禁令維持不受影響。
+    verifies: >-
+      ordering verdicts allow < modify < refuse and composing by the stricter of the two, an overlay
+      that tries to allow everything makes 0 of the 8 verdicts more permissive while a scoping overlay
+      makes 2 stricter and 0 looser; resolve takes action and score and offers 0 overlay arguments,
+      registries or hooks, so the composition point does not exist; an overlay takes only the action
+      and never sees TierScore, so the blocking threshold that turns 3 cases into allows when moved is
+      unreachable from it

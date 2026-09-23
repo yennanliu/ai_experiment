@@ -1,0 +1,82 @@
+lesson: 01-long-horizon-agents
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/01-long-horizon-agents/docs/en.md
+exercises:
+  - index: 1
+    slug: the_thirty_hour_crossing_lands_between_two_rows
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the simulator. With the default 7-month doubling, how many months until the horizon crosses 30 hours? 168 hours? Plot the two crossings.
+    zh: |
+      跑那個模擬器。用預設的 7 個月翻倍時間，還要幾個月時程才會跨過 30 小時？168 小時呢？把這兩個交叉點畫出來。
+    verifies: >-
+      the 30-hour crossing is month 7.70 and the 168-hour crossing month 25.09, 1.10 and 3.58
+      doublings, plotted at months 8 and 25 on a 36-month ASCII axis; horizon_projection prints 4
+      crossing targets and 30 is not one of them while 168 is; the 6-month grid reads 25.4 hr at month
+      6 and 45.9 hr at month 12, so 0 of its 7 rows lands within an hour of 30; the 17.40-month gap
+      between the crossings is identical at baselines of 7, 14 and 28 hours because it is
+      7*log2(168/30)
+  - index: 2
+    slug: halving_the_failure_rate_doubles_the_trajectory
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Set per-step reliability to 0.995. What trajectory length still clears 50% end-to-end reliability? Compare to 0.99 and 0.999. Per-step reliability has exponential consequences at scale.
+    zh: |
+      把每步可靠度設成 0.995。什麼長度的軌跡仍然過得了 50% 的端到端可靠度？拿它跟 0.99 與 0.999 比較。每步可靠度在規模上有指數級的後果。
+    verifies: >-
+      50% end-to-end allows 68, 138 and 692 steps at 0.99, 0.995 and 0.999, growing 2.03x and 5.01x,
+      so the length tracks 1/(1-p); ln2/(1-p) predicts 69.3, 138.6 and 693.1, worst error 1.31 steps;
+      the lesson's own 'ok' bar of 0.95 allows only 5, 10 and 51 steps, a constant 13.5x shorter, and
+      50% is where it starts printing 'coin flip or worse'; 1 of the 8 shipped cases uses 0.995, at
+      200 steps scoring 36.7%, and the guard returns 1000000000 above 1.0 while raising ValueError at
+      0.0
+  - index: 3
+    slug: the_success_criterion_has_no_slot_in_the_config
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read METR's Time Horizon 1.1 blog post. Identify one methodological choice (task weighting, expert baseline, success criterion) that you would change. Write one paragraph explaining why.
+    zh: |
+      讀 METR 的 Time Horizon 1.1 部落格文章。找出一項你會改掉的方法論選擇（任務加權、專家基線、成功判準）。寫一段話解釋為什麼。
+    verifies: >-
+      the lesson writes '50%' 8 times and '80%' 0, and HorizonConfig's 3 fields hold no success
+      criterion; 1 of the 5 numeric functions takes a target success probability and it is
+      max_steps_for_target, on the reliability half; a horizon a factor 2, 4, 5 or 8 stricter is the
+      median horizon from 7.0, 14.0, 16.25 or 21.0 months ago; all 4 shipped crossing targets sit
+      above the 14-hour baseline and return positive months, so 0 of them reaches the negative-month
+      branch the stricter criterion needs
+  - index: 4
+    slug: the_skill_fails_its_own_reliability_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one production agent workflow you know. Estimate the median trajectory length in tool calls. Multiply by your best guess of per-step reliability. Is the resulting end-to-end number honest with your users?
+    zh: |
+      挑一個你熟悉的生產代理工作流。估算它以工具呼叫計的軌跡長度中位數。乘上你對每步可靠度的最佳猜測。得出的端到端數字，對你的使用者誠實嗎？
+    verifies: >-
+      the shipped skill names 17 obligations -- 5 produce steps, 3 hard rejects, 3 refusal rules and 6
+      memo fields -- scoring 41.8%, 84.3% and 91.8% end-to-end at the 0.95, 0.99 and 0.995 it
+      prescribes, 0 of 3 reaching 'ok'; 0 of its 6 output fields reports the memo's own reliability
+      and all 4 uses of the word are about the task judged; a 95% end-to-end allows 1, 5 and 10 steps
+      against the skill's 17; 0 of its 6 gates names the memo
+  - index: 5
+    slug: the_gap_is_shaved_off_the_half_that_does_not_compound
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the 2026 International AI Safety Report section on eval-context gaming. Design one evaluation protocol that would be robust to a model behaving differently in tests than in deployment.
+    zh: |
+      讀 2026 年《International AI Safety Report》談評測脈絡操弄的那一節。設計一套評測協定，讓它對「模型在測試中的行為與部署時不同」具有穩健性。
+    verifies: >-
+      a clean 68-step run at 0.99 scores 50.5%, and degrading to 0.90 on Anthropic's 12% and 78%
+      gaming rates gives per-step 0.9792 and 0.9198 and end-to-end 23.9% and 0.3%, against the shipped
+      horizon shave of 0.8x and 0.6x; deploy_gap_note calls only fmt_hours and print, reaching 0 of
+      the 2 compounding functions; 3 of its 9 rows use a gap of 0.0; 1 of the 5 protocol rules holds
+      and the module's 4 demo functions take 0 parameters

@@ -1,0 +1,79 @@
+lesson: 11-browser-agents
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/11-browser-agents/docs/en.md
+exercises:
+  - index: 1
+    slug: the_sanitizer_reports_stripping_and_the_attack_lands
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Identify which attack the sanitizer catches but the read/write boundary does not, and which attack only the read/write boundary catches.
+    zh: |
+      跑 `code/main.py`。指認出哪個攻擊是淨化器抓得到、讀／寫邊界抓不到的，以及哪個攻擊只有讀／寫邊界抓得到。
+    verifies: >-
+      over the 3-by-4 grid the read/write boundary stops both attacks, so the set caught by the
+      sanitizer alone is empty and the boundary-only set is the URL-fragment injection; on the
+      visible-text case the sanitizer leaves the agent posting to /api/post while the boundary returns
+      no write, so the two defenses disagree about what catching means; rewriting the payload's verb
+      to Send, Submit, Deliver or Forward lands the attack in 4 of 5 cases while all 5 still report
+      stripped rules; run_agent follows an injection on one literal substring test
+  - index: 2
+    slug: the_tight_rule_is_tuned_to_one_payload_s_syntax
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the sanitizer to detect one class of HashJack-style URL-fragment injection. Measure the false-positive rate on benign URLs with legitimate fragments.
+    zh: |
+      擴充淨化器，讓它偵測某一類 HashJack 式的 URL 片段注入。在帶有合法片段的良性 URL 上量偽陽性率。
+    verifies: >-
+      over 14 labelled benign URLs with legitimate fragments, a broad fragment rule fires on 2 for a
+      14.29% false-positive rate and a tight one on 0, with both catching the lesson's payload; the
+      same instruction written as prose under a differently-named key evades both, because each keys
+      on the parameter name; sanitizer takes html only while run_agent builds context from 2 sources
+      and sanitizes 1; the read/write boundary stops the fragment case with no rule and cannot
+      false-positive because it reads no content
+  - index: 3
+    slug: the_boundary_takes_the_action_and_never_reads_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one real browser-agent workflow you know (e.g., "book a flight"). List every read and every write. Mark which writes need HITL and why.
+    zh: |
+      挑一個你熟悉的真實瀏覽器代理工作流（例如「訂機票」）。列出每一次讀與每一次寫。標出哪些寫入需要 HITL，以及為什麼。
+    verifies: >-
+      booking a flight enumerates 9 reads and 5 writes, of which 3 cannot be undone without a third
+      party -- passenger identity, payment and the itinerary email; rw_boundary_allows takes
+      content_origin and action and never mentions action in its body, so in the happy path it
+      approves 5 of 5 writes and blocks 0, including the 2 that move money or identity; 4 of the 9
+      reads render third-party content, the sanitizer sees one page of HTML at a time, and the origin
+      bit the boundary trusts is set by the agent itself
+  - index: 4
+    slug: read_webarena_verified_iclr
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the WebArena-Verified ICLR 2026 paper. Identify one category of task where the original WebArena's scoring was unreliable and explain how the Verified subset resolves it.
+    zh: |
+      讀 WebArena-Verified 的 ICLR 2026 論文。指認出原始 WebArena 評分不可靠的一類任務，並解釋 Verified 子集怎麼解決它。
+    cites: >-
+      BrowseComp vs OSWorld vs WebArena
+  - index: 5
+    slug: the_canary_fires_where_no_other_defense_is_standing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a memory canary for a browser-agent setting. What would you store, where, and what triggers the alarm?
+    zh: |
+      替一個瀏覽器代理情境設計一個記憶金絲雀。你會存什麼、存在哪，以及什麼會觸發警報？
+    verifies: >-
+      a credential-shaped token tripping on any outbound payload containing it appears in 3 of the
+      grid's 12 cells and 0 benign cells, precision 1.0, with a prefix matching the real secret; the
+      read/write boundary stops 0 of those 3 leaking cells, so the canary is the only layer covering
+      them; run_agent reads 0 credential stores and takes the secret from a module constant, so there
+      is nowhere to seed the token; it performs 0 sends and returns a 4-field AgentResult, so the
+      alarm's call site does not exist

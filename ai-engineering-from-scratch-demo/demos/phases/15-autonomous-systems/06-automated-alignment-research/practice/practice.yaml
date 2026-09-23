@@ -1,0 +1,74 @@
+lesson: 06-automated-alignment-research
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/06-automated-alignment-research/docs/en.md
+exercises:
+  - index: 1
+    slug: free_wins_by_a_constant_the_simulator_cannot_vary
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare the "fixed-workflow" vs "free-decomposition" settings. Does free decomposition always win, or are there problem classes where the fixed workflow is competitive?
+    zh: |
+      跑 `code/main.py`。比較「固定工作流」與「自由分解」兩種設定。自由分解永遠贏嗎，還是有些問題類別裡固定工作流是有競爭力的？
+    verifies: >-
+      the regime term is additive, so the free regime beats the fixed one by exactly 0.025 on all 5
+      tasks -- measured within 0.005 over 20000 draws each -- while spreads are 0.0722 against 0.2201,
+      a 3.0x, so a free draw beats a fixed draw only 54% of the time and 24.77% fall below the fixed
+      floor; 3.72% of free draws fall outside [0, 1] in closed form against 0.0% for fixed; solve
+      names `agent` once, in its signature; run_regime's 15 records per regime give the 0.025 gap 6%
+      power
+  - index: 2
+    slug: the_chain_catches_the_edit_and_not_the_rewrite
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the simulator so one agent attempts log tampering. Confirm the append-only log detects it. Write one paragraph describing exactly what the detection signature looks like in the log.
+    zh: |
+      修改模擬器，讓其中一個代理嘗試竄改日誌。確認那份僅可附加日誌偵測得到。寫一段話，精確描述那個偵測特徵在日誌裡長什麼樣子。
+    verifies: >-
+      verify() flags exactly record 12 of 15 -- recomputed hash differing from the stored one while
+      prev_hash still matches its predecessor -- and both following records verify clean, so the break
+      does not propagate; re-posting the tampered records recomputes every hash and verify() returns 0
+      flags, leaving only the head 11cb5fb4fa631b2c against 759402faba5d56e3 as evidence; Forum has 2
+      fields, a constant genesis and 3 methods, none taking an expected head, and tamper_demo claims a
+      cross-check it never performs
+  - index: 3
+    slug: read_anthropic_s_weak
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's weak-to-strong AAR report. Identify the specific sub-task the AARs beat human researchers on. What made it amenable to automation?
+    zh: |
+      讀 Anthropic 那份弱到強的 AAR 報告。指認出 AAR 打敗人類研究者的那個具體子任務。是什麼讓它適合被自動化？
+    cites: >-
+      The architecture (as publicly described)
+  - index: 4
+    slug: the_ab_test_needs_forty_five_times_the_shipped_sample
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a task-queue allocation policy that balances AAR flexibility (better results) against prescribed-workflow constraints (easier audit). Describe how you would A/B test the two.
+    zh: |
+      設計一套任務佇列分派政策，在 AAR 的彈性（較好的結果）與規定死的工作流限制（較好稽核）之間取平衡。描述你會怎麼 A/B 測試這兩者。
+    verifies: >-
+      a two-sigma tail-fit allocation rule routes 2 of the 5 tasks to free decomposition, and settling
+      the 0.025 mean gap at 80% power and alpha 0.05 needs 674 runs per arm against run_regime's 15 --
+      a factor of 44.9, giving the shipped comparison 6.16% power and 18.94% at 100 records;
+      ForumRecord's 6 fields hold 0 measures of decomposition, steps or review time, so the trade-off
+      has a measurable on one side only; solve ignores its agent argument and each regime gets its own
+      Forum, so the arms share no instance to pair on
+  - index: 5
+    slug: read_rsp_v3_0
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read RSP v3.0's AI R&D-4 threshold. In one paragraph, describe what you think would cross it that AAR currently does not.
+    zh: |
+      讀 RSP v3.0 的 AI R&D-4 門檻。用一段話描述你認為什麼會跨過它，而 AAR 目前並沒有。
+    cites: >-
+      The compression risk

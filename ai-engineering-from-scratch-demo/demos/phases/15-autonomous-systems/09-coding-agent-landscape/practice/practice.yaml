@@ -1,0 +1,74 @@
+lesson: 09-coding-agent-landscape
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/09-coding-agent-landscape/docs/en.md
+exercises:
+  - index: 1
+    slug: the_turn_saving_and_the_blast_radius_are_the_same_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. How many turns does each scaffold take on the same task set? What is the per-action blast radius of each?
+    zh: |
+      跑 `code/main.py`。在同一組任務上，各鷹架各花幾輪？各自每個行動的爆炸半徑是多少？
+    verifies: >-
+      both scaffolds pass 3 of 3, JSON in 4 turns at blast radius 1 and CodeAct in 2 turns at radius
+      3; swept over 0 to 3 remaining bugs, JSON turns run 1, 2, 3, 4 -- bugs plus one -- while CodeAct
+      runs 1, 2, 2, 2 and its observed radius runs 0, 1, 2, 3, so the two turns saved equal the two
+      files added; JSON's radius is the literal 1 at every size while CodeAct's is measured, and at
+      zero bugs the scaffold that touched nothing reports the smaller number; both step methods apply
+      the fix before returning and only the done field is ever read back
+  - index: 2
+    slug: read_openhands_paper_arxiv
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OpenHands paper (arXiv:2407.16741). The paper argues CodeAct beats JSON tool calls on complex tasks. Identify one failure mode the paper acknowledges and write one sentence on when that mode would dominate in production.
+    zh: |
+      讀 OpenHands 論文（arXiv:2407.16741）。論文主張 CodeAct 在複雜任務上勝過 JSON 工具呼叫。找出論文自己承認的一種失敗模式，並用一句話說明那種模式在生產環境何時會占主導。
+    cites: >-
+      CodeAct vs JSON tool calls
+  - index: 3
+    slug: the_scaffold_gap_is_widest_for_mediocre_models
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one task from your bug backlog that would require 10+ lines of change across two files. Estimate the end-to-end success probability for a frontier model under (a) JSON tool calls and (b) CodeAct. Justify the gap.
+    zh: |
+      從你的臭蟲待辦清單中挑一項需要跨兩個檔案改 10 行以上的任務。估算一個前沿模型在 (a) JSON 工具呼叫與 (b) CodeAct 之下的端到端成功機率。替那個落差辯護。
+    verifies: >-
+      enforcing uses_reference is a real two-file change here -- the field is parsed 4 times in
+      harness/manifest.py, read 0 times by either gate and declared 0 times in this lesson's
+      practice.yaml -- so at the scaffolds' own turn counts it is 3 JSON turns against 2, giving
+      0.8574 and 0.9025 end-to-end at 95% per-step; the difference p^2 - p^3 peaks at p = 0.667 with
+      0.1481 and falls to 0.0098 at 0.99, and across 2, 5 and 10 files it is 0.0451, 0.1674 and
+      0.3337, so it scales with the file count and not the line count
+  - index: 4
+    slug: excluding_the_easy_tail_reorders_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      SWE-bench Verified has 161 single-file, 1–2 line tasks. Construct a score that excludes them. How does the leaderboard shuffle?
+    zh: |
+      SWE-bench Verified 有 161 項單檔、1–2 行的任務。造一個把它們排除掉的分數。排行榜怎麼洗牌？
+    verifies: >-
+      the constructed score (500V - 161e)/339 over the 339 remaining tasks is affine and increasing in
+      the published score, so at e = 1 the 70-80% band becomes 55.75-70.50% with the ranking preserved
+      exactly; dH/dV is 1.475, so a two-point Verified gap becomes 0.029 on the hard subset; a swap
+      needs an easy-tail gap of 3.11x the Verified gap, 6.21 points at two points apart, which no
+      leaderboard publishes; SWE-bench Pro's 23-59% overlaps the predicted band by only 3.25 points,
+      so removing the tail is not the same operation as raising the floor
+  - index: 5
+    slug: read_introducing_swe_bench
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read "Introducing SWE-bench Verified" (OpenAI). Explain the specific methodology used to remove ambiguous tasks, and name one category the curation would miss.
+    zh: |
+      讀〈Introducing SWE-bench Verified〉（OpenAI）。解釋它用來移除語意含糊任務的那套具體方法論，並說出一個那份策展會漏掉的類別。
+    cites: >-
+      SWE-bench, one paragraph

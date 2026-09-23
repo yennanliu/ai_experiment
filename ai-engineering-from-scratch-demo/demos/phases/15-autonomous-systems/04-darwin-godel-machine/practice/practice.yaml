@@ -1,0 +1,74 @@
+lesson: 04-darwin-godel-machine
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/04-darwin-godel-machine/docs/en.md
+exercises:
+  - index: 1
+    slug: the_ceiling_is_a_quarter_and_the_loop_reaches_it_at_generation_four
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` with default flags. Note the score trajectory and the final agent's tool composition.
+    zh: |
+      用預設旗標跑 `code/main.py`。記下分數軌跡與最終代理的工具組成。
+    verifies: >-
+      the default run prints two improvements -- 0.00 at generation 0 and 0.25 at generation 4 -- and
+      nothing for the other 199 generations, finishing on ['collapse', 'nop'] with reported equal to
+      true at 0.25; brute-forcing all 1555 operator sequences up to length 4 puts the reachable
+      ceiling at 0.25 by 'collapse' alone, because 6 of the 8 cases want title case and 0 of the 6
+      tools provide it; the archive key starts with len(ops), so the winner's no-op faces no
+      competition
+  - index: 2
+    slug: the_hack_is_free_for_two_hundred_generations
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run with `--reward-hack-allowed`. Compare score trajectories. How many generations until the loop learns to inflate score? What does the "winner" actually do?
+    zh: |
+      用 `--reward-hack-allowed` 跑。比較分數軌跡。要幾個世代迴圈才學會灌分？那個「贏家」實際上做了什麼？
+    verifies: >-
+      all 20 seeds learn to inflate, first between generations 1 and 83 with a median of 17.5 and
+      generation 3 at the shipped seed; final true score is 0.25 in 10 of 10 seeds open and closed
+      alike, so the channel buys 0.07 to 0.29 of reported score and none of behaviour; the archive
+      holds 17-23 cells closed against 44-77 open, because each bonus opens a bucket no honest agent
+      can reach; mutate raises the bonus at probability 0.08 with 0 lowering branches, and at 2000
+      generations reported reaches 0.48-0.65 while true falls below 0.25 in 2 of 5 seeds
+  - index: 3
+    slug: read_section_5_dgm
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Section 5 of the DGM paper on the reward-hacking case study. Identify exactly what the agent edited and why the change raised score without improving behavior.
+    zh: |
+      讀 DGM 論文第 5 節談獎勵入侵的個案研究。精確指出代理編輯了什麼，以及為何那項改動在行為沒改善的情況下拉高了分數。
+    cites: >-
+      The reward-hacking demonstration
+  - index: 4
+    slug: every_file_that_decides_the_score_is_inside_the_agent_s_repo
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an evaluator firewall for a DGM-style loop in a repo you know. Identify every file the agent could edit that would change the evaluator's output.
+    zh: |
+      替一個你熟悉的儲存庫，替一個 DGM 式迴圈設計評估器防火牆。指認出代理可以編輯、且會改變評估器輸出的每一個檔案。
+    verifies: >-
+      8 of 8 scoring inputs -- the solution file holding verify(), practice.yaml,
+      tests/test_practice.py, harness/practice.py, harness/tiers.py, harness/parity.py,
+      scripts/audit_practice.py and scripts/check_deps.py -- resolve inside this repository and 0 in
+      the reference checkout; practice.yaml declares tier 5 times and tiers.selected is True for T0
+      and False for T3 under the ceiling CI sets, so one token turns a failure into a passing skip;
+      the lesson's docs/en.md is the one input already outside reach
+  - index: 5
+    slug: dgm_paper_reports_improvements
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      The DGM paper reports that improvements generalize across models. Read Section 4 on cross-model transfer and explain in three sentences why scaffolding-level changes would be more portable than model-specific fine-tuning.
+    zh: |
+      DGM 論文回報那些改善能跨模型一般化。讀第 4 節談跨模型轉移的部分，用三句話解釋為何鷹架層級的改動會比模型專屬的微調更可攜。
+    cites: >-
+      What DGM actually improved

@@ -1,0 +1,83 @@
+lesson: 16-checkpoints-rollback
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/16-checkpoints-rollback/docs/en.md
+exercises:
+  - index: 1
+    slug: the_retry_short_circuits_before_the_verify_it_motivates
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Verify the four scenarios. For the crash-during-commit case, confirm the action fires exactly once across retries.
+    zh: |
+      跑 `code/main.py`。驗證那四種情境。對於「提交中途崩潰」那一種，確認跨多次重試該行動恰好觸發一次。
+    verifies: >-
+      crashing after the side effect moves 100 and the retry returns idempotent-skip with 100 moved in
+      total, so the injected crash does fire exactly once; crashing one instruction earlier leaves the
+      committed marker with 0 moved and the retry still returns idempotent-skip, so exactly once
+      becomes never; committed is one of the 4 terminal states and the short-circuit precedes the
+      post-action read, so the record stays committed and verify never runs; DB is a module global
+      whose 1500 starting balance is 1300 by scenario 3
+  - index: 2
+    slug: one_duplicate_per_retry_and_no_bound_on_retries
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the "mark as done first, then do it" pattern so the status write fires after the action. Rerun the crash scenario. Measure how many duplicate actions fire.
+    zh: |
+      把「先標記完成、再去做」這個模式改成狀態寫入在行動之後才觸發。重跑崩潰情境。量有幾次重複行動被觸發。
+    verifies: >-
+      with the status write moved after the side effect, 1, 2 and 3 retries move 200, 300 and 400
+      against a flat 100 for the shipped order -- one duplicate per attempt with no cap; retrying
+      until the precondition bites stops at 13 transfers, since 1500 down to a 200 floor at 100 each
+      is 13, so a business rule ends the loop rather than the checkpoint; verify compares
+      last_transfer_id to txid and duplicates set the same id, so after 3 executions moving 300 it
+      still matches
+  - index: 3
+    slug: the_shipped_rollback_is_compensating_and_calls_itself_a_restore
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a rollback plan for a specific production action (e.g., "post to a Slack channel"). Classify as in-band, compensating, or out-of-band. Justify the choice.
+    zh: |
+      替一項特定的生產行動（例如「發文到某個 Slack 頻道」）設計一份回捲計畫。把它分類為帶內、補償或帶外。替你的選擇辯護。
+    verifies: >-
+      a Slack rollback plan is 3 steps across in-band, compensating and out-of-band of which 1 is a
+      guarantee; the module's own rollback_transfer restores 3 of 3 database fields through 3 further
+      writes while its comment calls it a restore, so by the observer test it is compensating; DB
+      holds 3 keys and 0 is a history, so the distinction is invisible here; the checkpoint record
+      carries 6 fields and 0 is a rollback plan, so the no-op class the lesson says must be named has
+      no representation
+  - index: 4
+    slug: five_states_four_persisted_transitions_and_one_that_is_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take one workflow you know. Identify every state transition. Mark each with a durability requirement (persist / do not persist). Count the ones you are currently not persisting.
+    zh: |
+      挑一條你熟悉的工作流。指認出它的每一次狀態轉移。替每一次標上持久性需求（持久化／不持久化）。數一數你目前沒有持久化的那些。
+    verifies: >-
+      run_transfer names 5 states, calls cp.save 4 times and changes the world once, so 0 transitions
+      go unpersisted; the committed marker is written before the side effect and never rewritten, so
+      one stored value covers both intent recorded and effect applied; a crashed transaction is stuck
+      at committed, making verified and rolled-back -- 2 of the 5 states -- reachable only when the
+      failure does not happen; the audit count is 0 and the operational count is 1
+  - index: 5
+    slug: the_shipped_assertion_cannot_tell_rolled_back_from_never_ran
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Rehearsed-rollback test: design an end-to-end test that runs a real workflow, crashes it, and confirms the rollback path fires. What does the test assert?
+    zh: |
+      演練過的回捲測試：設計一項端到端測試，跑一條真實工作流、讓它崩潰，並確認回捲路徑有觸發。這項測試斷言什麼？
+    verifies: >-
+      a rehearsed-rollback test needs 4 assertions -- the effect landed at balance 1400, the state is
+      restored to 1500, the checkpoint records rolled-back and the return says verify-fail-rolled-back
+      -- and the shipped scenario asserts 1 of them; that assertion is also True across a workflow
+      that never executed, so it cannot distinguish reversed from never applied; the shipped rollback
+      does satisfy the other three, restoring 3 of 3 fields, so instrumenting the side effect is the
+      whole delta between a demonstration and a test

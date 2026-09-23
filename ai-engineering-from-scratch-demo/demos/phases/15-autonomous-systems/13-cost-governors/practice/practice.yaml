@@ -1,0 +1,78 @@
+lesson: 13-cost-governors
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/13-cost-governors/docs/en.md
+exercises:
+  - index: 1
+    slug: the_velocity_limit_is_eighty_three_times_above_what_the_request_cap_allows
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the velocity limit fires before the iteration cap on a polling-loop trajectory. Now disable the velocity limit and measure how much the agent "spends" before the iteration cap catches it.
+    zh: |
+      跑 `code/main.py`。確認在輪詢迴圈的軌跡上，速度限制比迭代上限先觸發。接著停用速度限制，量在迭代上限抓到它之前，代理「花掉」多少。
+    verifies: >-
+      the layered stack stops at max_turns on turn 200 having spent $4.32, and disabling the velocity
+      limit gives the identical turns, tokens, dollars and stopping reason; the polling loop burns
+      $0.048 a minute against a $5.00 limit, a factor of 104.2, and max_tokens_per_request of 10000
+      permits at most $0.06 a minute, 83.3x below the velocity threshold, so no trajectory respecting
+      the request cap can trip it; the request cap never truncates because 8000 is under 10000, and
+      10000 turns of pure loop reach $239.52 against a $500 monthly cap
+  - index: 2
+    slug: the_two_rankings_disagree_so_one_number_cannot_say_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a per-tool cap set for a browser agent (Lesson 11). Which tool needs the tightest cap? Which tool can run unbounded without risk?
+    zh: |
+      替一個瀏覽器代理（第 11 課）設計一組逐工具上限。哪項工具需要最緊的上限？哪項工具可以無界執行而沒有風險？
+    verifies: >-
+      the tightest cap belongs on the one irreversible tool at 1 call per run behind a human tap, and
+      0 of the 4 tools run unbounded without risk; a 10000-token page read is $0.03 a call, 50x a
+      click, so the dollar ranking is read, write, click, type while the irreversibility ranking is
+      its near-reverse; Governor carries 12 fields and 0 name a tool, and the simulator implements 5
+      of the lesson's 12 control types without the per-tool cap; a page read is max_tokens_per_request
+      to the token
+  - index: 3
+    slug: read_microsoft_agent_governance
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Microsoft Agent Governance Toolkit docs. List every cap type the toolkit names. Map each to one of the failure modes (runaway loop, slow leak, bad release, surge).
+    zh: |
+      讀 Microsoft Agent Governance Toolkit 的文件。列出該工具組點名的每一種上限型別。把每一種對映到某個失敗模式（失控迴圈、緩慢滲漏、糟糕版本、暴衝）。
+    cites: >-
+      The cost-governor stack
+  - index: 4
+    slug: two_times_covers_estimate_error_and_not_the_failure_mode
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Price an overnight unattended run for a realistic task (e.g., "triage 50 issues in a repo"). Set `max_budget_usd` at 2x your point estimate. Justify the 2x.
+    zh: |
+      替一項實際的任務（例如「檢傷分類一個儲存庫裡的 50 個 issue」）估算隔夜無人看管執行的價格。把 `max_budget_usd` 設在你點估計的 2 倍。替那個 2 倍辯護。
+    verifies: >-
+      50 issues at 12 turns is 600 turns at $0.0075 each, a $4.50 point estimate and a $9.00 cap at
+      2x; doubling the per-issue turn count lands exactly on the cap while a looping run reaches it
+      after 375 turns, short of the 600 the job needs and behind max_turns at 200; the lesson's own
+      case study is a 4.0x overrun described in its prose as a tripling, and both figures exceed the
+      prescribed 2x; max_budget_usd compares a running total to a constant, and 1 of the stack's 12
+      controls is about rate
+  - index: 5
+    slug: a_token_rate_trigger_fires_nine_turns_into_the_loop
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Claude Code's `max_budget_usd` fires on session aggregate cost. Design a complementary velocity limit you would enforce externally. What triggers the cut-off, and what does re-enable look like?
+    zh: |
+      Claude Code 的 `max_budget_usd` 是以工作階段的總成本觸發。設計一項你會在外部強制執行的互補速度限制。什麼觸發那次切斷，而重新啟用長什麼樣子？
+    verifies: >-
+      a token-rate trigger at 2x the 5000-tokens-a-minute baseline sits at 10000 against a 16000 loop
+      rate and fires on turn 39 -- 9 turns into the loop and 161 before max_turns -- at $0.46 of the
+      $4.32 the shipped stack allows; one module constant converts tokens to dollars, which is how the
+      shipped dollar threshold ends up 83.3x above what the request cap permits; windows of 10, 5 and
+      2 minutes fire on turns 39, 34 and 31; Run carries 5 fields and 0 record a re-enable
