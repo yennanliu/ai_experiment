@@ -1,0 +1,78 @@
+lesson: 12-durable-execution
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/12-durable-execution/docs/en.md
+exercises:
+  - index: 1
+    slug: the_durable_count_does_not_depend_on_the_crash_point
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Observe the difference in activity-execution count between naive retry and replay. Change the crash point and show the replay count changes accordingly.
+    zh: |
+      跑 `code/main.py`。觀察天真重試與重播之間，activity 執行次數的差別。改變崩潰的位置，展示重播次數也跟著改變。
+    verifies: >-
+      crashing after activity 1 or 2 costs 4 and 5 naive activity starts against 3 and 3 durable, so
+      the durable total equals the 3 distinct activities and does not move with the crash point;
+      lookup matches on name, args and status rather than position, so the same activity twice with
+      the same arguments gives 1 start, 2 events and a replay line on the first pass; a crash inside
+      an activity leaves an orphaned started event, so after one crash and a retry the log holds 3
+      events of which 2 are starts; append rewrites the whole file with no temp file, rename or fsync
+  - index: 2
+    slug: two_sessions_on_one_log_replay_each_other
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert the toy engine to use `thread_id` explicitly. Simulate two concurrent sessions sharing the engine and confirm their event logs do not collide.
+    zh: |
+      把這個玩具引擎改成明確使用 `thread_id`。模擬兩個共用該引擎的併發工作階段，並確認它們的事件日誌不會相撞。
+    verifies: >-
+      two sessions sharing one EventLog produce 3 run lines and 3 replay lines for 3 total starts, so
+      the second session executes nothing and inherits the first's results; folding a thread id into
+      lookup and append restores 6 starts across two thread ids in one file; an event carries 4 keys
+      and none is a thread, run or time, so the collision is silent; EventLog has 3 methods, 1 field,
+      no lock and no sequence number
+  - index: 3
+    slug: the_clock_is_read_where_the_log_cannot_see_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take one activity in the toy engine. Introduce a non-determinism (a wall-clock timestamp inside a workflow decision). Demonstrate the divergence on replay. Explain how real engines handle this (side-effect registration, `Workflow.now()` APIs).
+    zh: |
+      挑這個玩具引擎裡的一項 activity。引入一項非決定性（在工作流決策裡放一個牆鐘時間戳）。示範重播時的分歧。解釋真實引擎怎麼處理這件事（副作用註冊、`Workflow.now()` API）。
+    verifies: >-
+      a wall-clock branch inside the workflow makes a pure replay execute 1 new activity -- starts go
+      3 then 4 -- and return a different result, while the same read registered as an activity
+      executes 0 new ones and returns the same result; an event carries name, args, status and result,
+      so a decision leaves no trace; the fix is 1 decorator and 0 engine changes, which is what
+      Workflow.now() is; because lookup keys on arguments, now() called twice with no arguments
+      returns the same recorded instant
+  - index: 4
+    slug: read_langchain_runtime_behind
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the LangChain "Runtime behind production deep agents" post. List every state that the runtime persists and name which failure mode each covers.
+    zh: |
+      讀 LangChain 那篇〈Runtime behind production deep agents〉。列出那個執行環境持久化的每一項狀態，並說出每一項各涵蓋哪種失敗模式。
+    cites: >-
+      Checkpoints keyed by `thread_id`
+  - index: 5
+    slug: eleven_segments_because_thirty_five_minutes_squares
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a checkpoint policy for a 6-hour autonomous coding task. Where do you checkpoint? What does resume-on-crash look like? What requires fresh HITL?
+    zh: |
+      替一項 6 小時的自主寫程式任務設計一套檢查點政策。你在哪裡設檢查點？崩潰後續跑長什麼樣子？什麼需要新的 HITL？
+    verifies: >-
+      360 minutes is 10.3x METR's 35-minute degradation point, so one stretch carries 105.8x the
+      baseline failure rate and 11 segments carry 0.9x each; halving the segment gives 21 boundaries
+      at 0.2x and doubling it gives 6 at 4.0x, so risk moves by the square and human cost linearly;
+      each lookup parses the whole log, so replaying a 360-activity segment parses 129960 event
+      records; 1 of the 3 activities is documented as having a side effect and an event's 4 keys
+      record none of that
