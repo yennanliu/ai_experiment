@@ -1,0 +1,73 @@
+lesson: 18-llama-guard
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/18-llama-guard/docs/en.md
+exercises:
+  - index: 1
+    slug: normalization_doubles_the_hit_rate_and_leaves_seven_of_twelve
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the classifier catches the raw malicious input but misses the emoji-smuggled version. Add a normalization step and measure the new hit rate.
+    zh: |
+      跑 `code/main.py`。確認分類器抓得到原樣的惡意輸入，卻漏掉 emoji 走私版。加一個正規化步驟，並量新的命中率。
+    verifies: >-
+      over 12 labelled variants of one intent the shipped classifier catches 2 -- the raw and
+      uppercase forms, 16.7% -- and normalization lifts that to 5, 41.7%, recovering the zero-width,
+      Cyrillic and fullwidth cases; the 7 survivors split 2 Greek lookalikes missing from a 16-entry
+      Cyrillic map and 5 that break the word boundary rather than the characters, so broadening the
+      map raises the ceiling to 58.3% and no further; 8 of the taxonomy's 10 patterns are
+      boundary-anchored; the output rail flags 2 of 3 outputs on key shape
+  - index: 2
+    slug: read_mlcommons_13_hazard
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the MLCommons 13-hazard taxonomy and the Llama Guard 4 S1–S14 list. Identify the category in S1–S14 that has no direct mapping in the original 13-hazard set; explain why S14 Code Interpreter Abuse is specifically relevant to Phase 15.
+    zh: |
+      讀 MLCommons 的 13 類危害分類法與 Llama Guard 4 的 S1–S14 清單。找出 S1–S14 中在原本 13 類裡沒有直接對應的那一類；解釋為何 S14 程式碼直譯器濫用對階段 15 特別相關。
+    cites: >-
+      Llama Guard 4 additions
+  - index: 3
+    slug: the_dialog_rail_catches_two_of_three_phrasings
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a NeMo Guardrails dialog rail for a customer-support bot that must never discuss diagnosis. Write it in plain English (Colang is similar). Test it against three phrasings of a diagnosis-seeking question.
+    zh: |
+      替一個絕不能討論診斷的客服機器人設計一條 NeMo Guardrails 對話護欄。用白話寫它（Colang 也差不多）。拿三種求診斷問題的說法去測它。
+    verifies: >-
+      a keyword-shaped diagnosis rail fires on 2 of 3 phrasings and refuses 0 of 7 benign support
+      questions, missing the one that displaces the subject onto a friend; broadening it to catch that
+      phrasing reaches 3 of 3 and refuses 2 of the 7 benign questions; the shipped taxonomy matches 10
+      phrases against a single message with no conversation state, so a rail ported into it becomes
+      another keyword list; a 9-term topic allowlist catches 3 of 3 and refuses 0 of 7
+  - index: 4
+    slug: read_huang_et_al
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Huang et al. (arXiv:2504.11168). Pick one attack category (emoji smuggling, homoglyph, paraphrase) and propose a mitigation. Name the mitigation's own failure mode.
+    zh: |
+      讀 Huang 等人（arXiv:2504.11168）。挑一類攻擊（emoji 走私、同形異義字、改寫）並提出一項緩解。說出那項緩解自己的失敗模式。
+    cites: >-
+      Where classifiers lose
+  - index: 5
+    slug: the_casual_number_is_the_false_positive_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 72.54% ASR for NeMo Guard Detect on jailbreak benchmarks is measured under adversarial craft. Design an evaluation protocol that measures classifier ASR under casual (non-adversarial) user distribution. What number would you expect, and why does that number matter separately?
+    zh: |
+      NeMo Guard Detect 在越獄基準上那 72.54% 的 ASR，是在對抗性設計之下量的。設計一套評測協定，量分類器在隨意（非對抗性）使用者分布下的 ASR。你預期會是什麼數字，而那個數字為何要另外看？
+    verifies: >-
+      over 12 labelled benign messages the shipped classifier flags 1 -- an 8.3% false-positive rate
+      -- while 0 are attacks, so the casual attack success rate is 0% and uninformative; the 72.54%
+      adversarial figure divides by attempted attacks and a casual rate divides by all traffic, so the
+      two cannot be compared; the flagged message is a locked-out user matching the lock-picking rule
+      under S2_non_violent_crimes while the pipe-organ question matches nothing; classify_raw returns
+      0 confidences, so there is no threshold to sweep

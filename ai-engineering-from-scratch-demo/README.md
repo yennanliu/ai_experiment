@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**1341 / 2150 exercises** (62.4%) across 20 phases.
+**1346 / 2150 exercises** (62.6%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -64,7 +64,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `12-multimodal-ai` | 125 | 125 | 25 |
 | ✅ `13-tools-and-protocols` | 148 | 148 | 27 |
 | ✅ `14-agent-engineering` | 272 | 272 | 54 |
-| 🚧 `15-autonomous-systems` | 110 | 85 | 17 |
+| 🚧 `15-autonomous-systems` | 110 | 90 | 18 |
 | ⬚ `16-multi-agent-and-swarms` | 123 | 0 | 0 |
 | ⬚ `17-infrastructure-and-production` | 140 | 0 | 0 |
 | ⬚ `18-ethics-safety-alignment` | 150 | 0 | 0 |
