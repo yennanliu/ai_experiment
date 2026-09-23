@@ -1,0 +1,75 @@
+lesson: 14-kill-switches-canaries
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/14-kill-switches-canaries/docs/en.md
+exercises:
+  - index: 1
+    slug: the_breaker_fires_on_turn_seven_and_the_canary_never_fires
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the circuit breaker fires on turn 5 (fifth identical call) and the canary fires on turn 9 (fake-key read).
+    zh: |
+      跑 `code/main.py`。確認斷路器在第 5 輪（第五次一模一樣的呼叫）觸發，而金絲雀在第 9 輪（讀取假金鑰）觸發。
+    verifies: >-
+      the identical burst starts at action 3 against a threshold of 5, so the breaker opens on turn 7
+      rather than 5, and run_trajectory breaks there so the canary read at action 9 is never reached
+      -- canary_hits is 0 in both shipped scenarios; moving the canary read to the front makes it fire
+      once and the breaker on turn 8, so the detectors are sequential rather than independent; 2 of
+      the 3 detectors break the loop and 1 continues; with the switch on, 1 of the 9 actions executes
+  - index: 2
+    slug: the_ewma_follows_the_drift_it_is_meant_to_flag
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a statistical detector: EWMA z-score on tool-call rate. Feed in a trajectory that drifts slowly and show the detector never fires. Now add a hard limit (no more than 50 tool calls in 10 minutes) and show the hard limit fires on the same trajectory.
+    zh: |
+      加一個統計偵測器：對工具呼叫率做 EWMA z 分數。餵進一條緩慢漂移的軌跡，展示偵測器從未觸發。接著加一項硬性限制（10 分鐘內工具呼叫不得超過 50 次），並展示同一條軌跡上硬性限制會觸發。
+    verifies: >-
+      over 120 minutes of a linear ramp from 1.0 to 6.9 calls a minute the EWMA z-score peaks at 0.99
+      against a 3-sigma threshold and never fires, while 50 calls in a 10-minute window crosses at
+      minute 87 where the rate is 5.3; the largest single-minute residual across the ramp is 0.50
+      calls; the same endpoints reached as a step at minute 60 -- 474 total calls either way -- peak
+      at z 11.8 and fire at minute 60, and the hard limit fires at 67
+  - index: 3
+    slug: the_detector_only_looks_at_two_of_nine_actions
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a canary token set for a browser agent (Lesson 11). List at least three canaries and what each would detect.
+    zh: |
+      替一個瀏覽器代理（第 11 課）設計一組金絲雀詞元。列出至少三個金絲雀，以及每一個會偵測到什麼。
+    verifies: >-
+      four canaries at four boundaries -- file read, outbound fetch, outbound message and inbound
+      session use -- of which 1 sits at the boundary check_read covers; the canary runs only for kind
+      'read', which is 2 of the 9 shipped actions, while 7 are tool calls of which 6 are themselves
+      reads; check_read tests membership in 2 literal paths, so of three spellings of the same file
+      only the seeded one fires; the 3 detectors inspect no destination
+  - index: 4
+    slug: read_cilium_network_policy
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Cilium network-policy docs. Describe an egress-redirect quarantine flow concretely: which policy selector, which pod, which egress rewrite, which alert. What governs the wall-clock latency from "decide to quarantine" to "first redirected packet"?
+    zh: |
+      讀 Cilium 的網路政策文件。具體描述一條對外流量改道的隔離流程：哪個政策選擇器、哪個 pod、哪條對外改寫、哪個警報。從「決定隔離」到「第一個被改道的封包」之間，牆鐘延遲由什麼主導？
+    cites: >-
+      Quarantine via eBPF datapath redirect
+  - index: 5
+    slug: the_half_open_state_is_named_in_a_comment
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Define a re-enable procedure for a kill-switched agent. Who can re-enable? What must be documented? What must change about the agent before re-enable?
+    zh: |
+      替一個被斷路開關關掉的代理定義一套重新啟用程序。誰可以重新啟用？必須記錄什麼？在重新啟用之前，代理必須改變什麼？
+    verifies: >-
+      a breaker re-enabled against the same trajectory opens again on turn 5 and the class exposes no
+      reset, so re-enable is not a transition the code has; state is annotated closed, open and
+      half_open and only open is ever assigned; EXTERNAL_KILL_SWITCH is a module-scope dict under a
+      comment saying the agent cannot write it, and main writes it twice from the same process; the
+      two detectors hold 4 fields between them and 0 record an operator, a time or a reason
