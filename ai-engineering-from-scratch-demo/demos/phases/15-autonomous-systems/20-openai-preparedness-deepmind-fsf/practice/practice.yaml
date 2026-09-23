@@ -1,0 +1,75 @@
+lesson: 20-openai-preparedness-deepmind-fsf
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/20-openai-preparedness-deepmind-fsf/docs/en.md
+exercises:
+  - index: 1
+    slug: two_capabilities_are_verifiable_and_two_are_never_printed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the diff tool's output matches the policies for at least two capabilities you can verify against the source documents.
+    zh: |
+      跑 `code/main.py`。挑至少兩項你能對照原始文件驗證的能力，確認 diff 工具的輸出與政策相符。
+    verifies: >-
+      the headline restates 2 of the 7 capabilities across 3 policies, of which 5 of the 6
+      classifications appear verbatim in the tables and DeepMind's long-range autonomy is summarised
+      as 'domain-folded', so the confirmable set is the set the lesson repeats and the other 21-entry
+      tables have no in-lesson corroboration; main diffs 5 of the 7 keys, leaving cyber_uplift and
+      bio_uplift in all three tables and out of the output; OpenAI carries 2 classifications and 2
+      actions across 7 rows against 6 actions each for the other two
+  - index: 2
+    slug: read_openai_preparedness_framework
+    kind: explain
+    tier: T2
+    deps_group: llm
+    en: |
+      Read OpenAI Preparedness Framework v2 in full. Identify each Research Category. For each, write one sentence on why it is in Research rather than Tracked.
+    zh: |
+      完整讀完 OpenAI Preparedness Framework v2。指認出每一個研究類別。對每一個各寫一句話，說明它為何落在研究而非追蹤。
+    cites: >-
+      OpenAI Preparedness Framework v2 (April 2025)
+  - index: 3
+    slug: read_deepmind_fsf_v3
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read DeepMind FSF v3 in full, plus the April 2026 Tracked Capability Levels update. Identify ML R&D autonomy level 1's specific evaluation criteria. How would you measure it externally?
+    zh: |
+      完整讀完 DeepMind FSF v3，加上 2026 年 4 月的 Tracked Capability Levels 更新。指認出 ML 研發自主性等級 1 的具體評測準則。你會怎麼從外部量它？
+    cites: >-
+      DeepMind Frontier Safety Framework v3 (September 2025; Tracked Capability Levels added April 17,
+      2026)
+  - index: 4
+    slug: the_sandbagging_test_has_to_be_one_the_model_cannot_recognise
+    kind: code
+    tier: T2
+    deps_group: none
+    en: |
+      Sandbagging is in OpenAI's Research Categories. Design an evaluation that would force a sandbagging model to reveal its actual capability. Reference the Lesson 1 eval-context-gaming discussion.
+    zh: |
+      Sandbagging 落在 OpenAI 的研究類別。設計一項評測，能逼一個放水的模型露出它真實的能力。參照第 1 課關於評測脈絡操弄的討論。
+    verifies: >-
+      a four-arm protocol over one task distribution has exactly 1 arm the model cannot recognise --
+      an undeclared production sample -- so sandbagging shows as a gap between arms rather than a low
+      score in any; the three policies file sandbagging as Research, an eval-context gap and deceptive
+      alignment monitoring, and 1 of the 3 names something that runs; at Lesson 1's documented 12% and
+      78% gaming rates a 68-step trajectory at 0.99 per-step falls from 0.505 to 0.239 and 0.003; 0 of
+      the three sandbagging entries mention data governance
+  - index: 5
+    slug: the_capability_they_agree_on_is_the_one_no_one_folds
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare the three policies on a specific capability (your choice). Name which policy's classification you find most rigorous and which least. Justify with source text.
+    zh: |
+      針對一項特定能力（你自己挑）比較這三份政策。說出你認為哪一份政策的分類最嚴謹、哪一份最不嚴謹。用原文佐證。
+    verifies: >-
+      on undermining_safeguards the three classify it as Research, a hardcoded prohibition and
+      deceptive alignment monitoring, and only Anthropic's action names something that happens without
+      a review; across all 7 capabilities the actions name a runtime in 0, 3 and 4 rows respectively
+      and OpenAI's column holds 2 distinct strings; the 3 capabilities OpenAI files as Tracked are the
+      shared set and 2 of them are the ones main never prints; the strictest classification is also
+      the narrowest, catching 1 of 8 cases in Lesson 17
