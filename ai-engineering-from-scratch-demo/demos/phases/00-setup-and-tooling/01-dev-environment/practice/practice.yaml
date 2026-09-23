@@ -1,0 +1,56 @@
+lesson: 01-dev-environment
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/01-dev-environment/docs/en.md
+exercises:
+  - index: 1
+    slug: the_preflight_grades_seventeen_of_seventy_seven_pairs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the verification script and fix any failures
+    zh: |
+      執行驗證腳本，把所有失敗的項目修掉
+    verifies: >-
+      the preflight runs and its verdict reads 17 of the 77 route-probe pairs -- 7 routes times 11
+      probes, with only route.required executed by default and only those reaching passed == total; 6
+      probes (cargo, gpu, julia, jupyter, matplotlib, torch) are required on 0 routes, so no failure
+      of theirs can make the script exit non-zero. gpu_result has 5 returns and both Result(False,
+      ...) fire before the import, so every outcome after it succeeds -- including 'CPU only' -- is a
+      PASS on the probe labelled Accelerator backend. uv is absent from all 11 probes while 1 fix
+      string tells the reader to run it and 4 tell them python3 -m pip. beginner and ml-foundations
+      share a next command whose file has 0 imports, and only ml-foundations requires numpy to reach
+      it
+  - index: 2
+    slug: a_zero_byte_torch_py_passes_and_then_kills_the_run
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a Python virtual environment for this course and install PyTorch
+    zh: |
+      為本課程建立一個 Python 虛擬環境，並安裝 PyTorch
+    verifies: >-
+      a 0-byte torch.py at the front of sys.path flips module_result('torch') to ok=True with a detail
+      naming this interpreter, because find_spec never executes the module; the same file then reaches
+      torch.cuda inside gpu_result and raises AttributeError, which its 1 except Exception does not
+      cover -- so the one probe that really imports escapes print_probe and main and the preflight
+      exits on a traceback instead of a verdict. 0 of the 11 probes read sys.prefix, VIRTUAL_ENV or
+      any other test for an active virtual environment, and 4 fix strings install with python3 -m pip
+      against PATH while 0 name the sys.executable the probe reports on
+  - index: 3
+    slug: every_row_of_the_language_table_points_at_the_wrong_phases
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a "hello world" in all four languages and run each one
+    zh: |
+      用四種語言各寫一支「hello world」，並逐一執行
+    verifies: >-
+      all four rows of the Used In table miss: Rust names phases 12 and 15-17 and 0 of the tree's 10
+      .rs files are there (they are in 00, 04, 06, 07, 10, including this lesson's own main.rs);
+      Python names phases 1-12, which holds 238 of 643 .py files, so 37%, with the other 405 in phases
+      00 and 13-19. The header names 3 languages, the intro and the exercise name four, and code/
+      ships 3 of them -- Julia is missing. A Python hello world runs and prints 'hello world'; the
+      other 3 toolchains are optional on the beginner route the preflight defaults to
