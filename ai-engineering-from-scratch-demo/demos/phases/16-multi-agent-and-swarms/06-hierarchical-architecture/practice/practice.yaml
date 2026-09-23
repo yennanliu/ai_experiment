@@ -1,0 +1,75 @@
+lesson: 06-hierarchical-architecture
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/06-hierarchical-architecture/docs/en.md
+exercises:
+  - index: 1
+    slug: the_question_is_gone_after_one_hand_off
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` and compare happy vs perturbed. How many levels of manager hand-off does it take before the top output fully diverges from the user's question?
+    zh: |
+      跑 `code/main.py`，比較順利與被擾動兩條路徑。要經過幾層經理交接，頂層輸出才會完全偏離使用者的問題？
+    verifies: >-
+      of the user question's 5 content words, the branch task keeps 5, the leaf question keeps 1 and
+      the leaf answer keeps 0 -- full divergence one hand-off below the top, on the happy path.
+      SubManager.run reads self.split.get(w.name, task) and all 4 of 4 workers have an entry, so the
+      branch task reaches 0 leaves. Happy and perturbed both reach 0/5 at the top synthesis. An
+      unknown label propagates 'no such sub-manager' verbatim into the top synthesis, and main()
+      passes only valid labels in 2 of 2 runs, so that path runs 0 times
+  - index: 2
+    slug: a_third_level_needs_a_type_the_lesson_does_not_have
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a third level (top → sub → sub-sub → worker). Measure how often the perturbed path corrects itself vs fully diverges as depth grows.
+    zh: |
+      加上第三層（頂層 → 子 → 子子 → worker）。量測隨著深度增加，被擾動的路徑自我修正與完全偏離的比例各是多少。
+    verifies: >-
+      LeafOutput and SubSummary share 0 field names and SubManager.run aggregates l.answer, so nesting
+      one SubManager in another raises AttributeError -- a third level is a type change. With an
+      adapter, surviving overlap is 0 of 5 at depths 2, 3 and 4 on both label sets, 0 corrections in 6
+      runs, because each level joins its children's strings and cannot reintroduce a word. Worker
+      invocations go 8, 16, 32 with depth while branches[].leaves stays 4, so the trace records one
+      level however deep the tree goes
+  - index: 3
+    slug: the_canary_cannot_answer_the_question_it_is_asked
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a "canary" worker at each sub-manager that is always asked the original user question unchanged. Use the canary answer to detect decomposition drift. How should the manager react when the canary disagrees with the synthesized answer?
+    zh: |
+      在每個子經理處實作一個「金絲雀」worker，它永遠被問原封不動的使用者問題。用金絲雀的答案來偵測分解漂移。當金絲雀與綜合出來的答案不一致時，經理該怎麼反應？
+    verifies: >-
+      all 3 canaries asked the user's question unchanged return the fallback, because _match_key finds
+      no keyword and returns 'default', a key 0 of 4 workers declare -- so 'canary disagrees therefore
+      drift' fires on every branch of the happy path and only 'answered and disagreed' carries
+      information. Both fallbacks fire on the same input. The canary answer and the branch summary
+      share 0 content words, so any non-exact comparison returns disagree structurally. The shipped
+      workers get a constant brief in 4 of 4 cases, so the canary would be the only path by which the
+      question reaches a leaf
+  - index: 4
+    slug: read_crewai_process_hierarchical
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read CrewAI's `Process.hierarchical` docs. Identify one concrete guardrail CrewAI applies (step limit, manager_llm constraint) and describe what failure mode it targets.
+    zh: |
+      讀 CrewAI 的 `Process.hierarchical` 文件。指認出 CrewAI 施加的一項具體護欄（步數限制、manager_llm 限制），並描述它針對的是哪種失敗模式。
+    cites: >-
+      Role-framework implementation
+  - index: 5
+    slug: nested_langgraph_supervisors_versus_crewai
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Compare nested LangGraph supervisors to CrewAI hierarchical. Which makes reconciliation loops cheaper to detect?
+    zh: |
+      把巢狀的 LangGraph supervisor 跟 CrewAI 的階層式做比較。哪一個讓調和迴圈更便宜地被偵測到？
+    cites: >-
+      Graph-framework implementation
