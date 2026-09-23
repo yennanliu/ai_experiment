@@ -1,0 +1,76 @@
+lesson: 04-primitive-model
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/04-primitive-model/docs/en.md
+exercises:
+  - index: 1
+    slug: all_three_orchestrators_produce_the_same_transcript
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` three times with different agent policies. Observe how the orchestrator choice changes which agents run.
+    zh: |
+      用不同的代理策略跑 `code/main.py` 三次。觀察編排者的選擇如何改變哪些代理會被執行。
+    verifies: >-
+      static, handoff-driven and LLM-selected produce the same 3 messages in the same order with the
+      same content -- 0 of 3 pairs differ, so the demo's closing claim is refuted by its own output.
+      Sweeping the researcher's handoff target over all 4 values, the static and round-robin
+      transcripts match in 4 of 4 and only the handoff orchestrator moves, in 3. After a static run 3
+      of 3 messages carry a handoff key and StaticOrchestrator.run never reads one. A self-handoff
+      emits exactly max_steps = 10 messages and returns normally. max_steps is a slice in 1
+      orchestrator and a range in 2
+  - index: 2
+    slug: nothing_in_the_agent_primitive_can_say_not_yet
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a fourth orchestrator type: a queue-driven one where agents poll shared state for work. What deadlock can happen, and how do you detect it?
+    zh: |
+      實作第四種編排者型別：佇列驅動的那種，代理輪詢共享狀態取工作。會發生什麼樣的死鎖，而你要怎麼偵測它？
+    verifies: >-
+      a circular-precondition team stalls on sweep 1 with 3 agents waiting and a healthy team on sweep
+      2 with 0, so a zero-append sweep alone is ambiguous and the deadlock signal is that sweep plus a
+      non-empty waiting set. All 3 shipped policies contain exactly 1 return and 0 early exits and
+      Message is a bare dict, so readiness must live in a table the orchestrator keeps. With the
+      shipped policies the queue orchestrator reproduces the same 3 messages as the static one.
+      Polling the writer first reaches the 'no research yet' branch no shipped orchestrator can, and
+      the reviewer's substring gate then returns needs revision
+  - index: 3
+    slug: rewrite_the_langgraph_quickstart_as_primitives
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Take the LangGraph quickstart (https://docs.langchain.com/oss/python/langgraph/workflows-agents) and rewrite it as the four primitives. Which of LangGraph's abstractions map 1:1 and which are convenience wrappers?
+    zh: |
+      拿 LangGraph 的快速上手（https://docs.langchain.com/oss/python/langgraph/workflows-agents）改寫成那四個原語。LangGraph 的哪些抽象是 1:1 對映，哪些只是便利包裝？
+    cites: >-
+      How every 2026 framework maps to it
+  - index: 4
+    slug: read_the_openai_swarm_cookbook
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OpenAI Swarm cookbook (https://developers.openai.com/cookbook/examples/orchestrating_agents). Identify which of the four primitives Swarm makes most ergonomic, and which one it pushes to the caller.
+    zh: |
+      讀 OpenAI Swarm 的 cookbook（https://developers.openai.com/cookbook/examples/orchestrating_agents）。指認出 Swarm 把四個原語中的哪一個做得最人體工學，又把哪一個推給了呼叫者。
+    cites: >-
+      The stateless insight
+  - index: 5
+    slug: the_only_order_the_demo_runs_is_the_one_where_it_does_not_matter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Find one framework in this table that hides shared state entirely. Explain what breaks when agents need to coordinate across handoffs without re-reading history.
+    zh: |
+      在這張表裡找出一個完全把共享狀態藏起來的框架。解釋當代理需要跨交接協調、又不重讀歷史時，什麼會壞掉。
+    verifies: >-
+      of the 6 framework rows, OpenAI Swarm / Agents SDK is the only one whose shared-state cell is
+      "caller's problem", and all 3 shipped policies read more than the previous message. Run as
+      researcher, writer, researcher, reviewer, the full pool returns approved and a pool projected to
+      the last message returns needs revision, with nothing raised. Run as researcher, researcher,
+      writer, the full pool joins 2 notes and the projected one 1. Under the strictly linear order all
+      3 orchestrators actually produce, the two pools give byte-identical output
