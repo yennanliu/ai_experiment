@@ -1,0 +1,80 @@
+lesson: 15-propose-then-commit
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/15-propose-then-commit/docs/en.md
+exercises:
+  - index: 1
+    slug: the_key_covers_three_of_the_seven_fields
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm that a retry of an approved proposal uses the durable record and does not re-execute. Now change the idempotency key to include a timestamp and show the retry double-executes.
+    zh: |
+      跑 `code/main.py`。確認對一項已核准提議的重試會使用那筆持久紀錄，而不會重新執行。接著把冪等鍵改成包含時間戳，並展示重試會重複執行。
+    verifies: >-
+      a committed record short-circuits, so commit plus two retries produces 1 side effect, while
+      three proposals under a timestamped key produce 3; the idempotency key hashes thread_id, action
+      and payload -- 3 of the proposal's 7 fields -- so re-proposing the same payload under a
+      different intent returns the existing committed record and the new intent is never stored;
+      commit short-circuits on status rather than on the key, and never reads ack_mode, so a
+      rubber-stamped approval executes exactly as a checklist approval does
+  - index: 2
+    slug: verify_reads_the_list_execute_wrote
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the proposal record with a `rollback` field. Simulate an execution whose verify step fails. Show the rollback firing automatically.
+    zh: |
+      替提議紀錄擴充一個 `rollback` 欄位。模擬一次查證步驟失敗的執行。展示回捲自動觸發。
+    verifies: >-
+      1 of the proposal's 7 fields is named rollback and 0 hold a callable; verify searches the list
+      execute appended to, so it returns True in 5 of 5 trials after a real execute and False only
+      once an execute with no side effect is substituted, at which point an added rollback callable
+      fires once; commit calls verify once inside a print and returns True regardless; 1 of the 3
+      shipped proposals declares no in-band rollback and is the one approved with rollback_ready=True;
+      0 of the 3 rollback strings restore the prior state
+  - index: 3
+    slug: read_microsoft_agent_framework
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Microsoft Agent Framework's `RequestInfoEvent` docs. Identify one metadata field the API includes that the toy engine is missing. Add it and explain what it protects against.
+    zh: |
+      讀 Microsoft Agent Framework 的 `RequestInfoEvent` 文件。找出一個該 API 有、而這個玩具引擎缺少的中繼資料欄位。把它加上去，並解釋它防的是什麼。
+    cites: >-
+      The idempotency key
+  - index: 4
+    slug: the_third_question_has_no_true_answer_for_a_public_post
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a challenge-and-response checklist for a specific action (e.g., "post to a public Twitter account"). What three questions must the reviewer answer? Why those three?
+    zh: |
+      替一項特定行動（例如「發文到一個公開的 Twitter 帳號」）設計一份挑戰—回應檢查清單。審查者必須回答哪三個問題？為什麼是那三個？
+    verifies: >-
+      three questions -- content, audience, withdrawal -- map exactly onto checklist_approve's
+      understood, verified and rollback_ready parameters; answered honestly for a public post the
+      third is False, the checklist rejects, the status stays waiting and 0 side effects occur,
+      against a commit and 1 side effect if it is ticked anyway; the shipped run passes
+      rollback_ready=True for the proposal whose rollback field begins 'no in-band rollback' and the
+      function never reads the record; 1 of the 8 answer combinations approves and the other 7 reject
+      with one message
+  - index: 5
+    slug: one_of_the_three_shipped_actions_needs_no_store
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one case where a synchronous "Approve?" prompt would be sufficient (no durable store needed). Explain why, and name the risk class you are accepting.
+    zh: |
+      挑一個「同步的『核准？』提示就夠了（不需要持久儲存）」的案例。解釋為什麼，並說出你正在接受的那類風險。
+    verifies: >-
+      of the 3 shipped proposals exactly 1 declares reversibility in its blast radius -- the
+      single-row db.update -- while email.send declares no in-band rollback; the same payload proposed
+      twice into one store produces 1 side effect, so what a synchronous prompt gives up is the
+      approval surviving a process death rather than bounded side effects; 2 of the 3 blast radii are
+      denominated in time; and checklist_approve writes status='approved' without reading the current
+      status, so re-approving a committed proposal executes it again -- 2 side effects against 1
