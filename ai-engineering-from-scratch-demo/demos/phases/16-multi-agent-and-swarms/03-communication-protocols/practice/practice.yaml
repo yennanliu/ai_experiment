@@ -1,0 +1,84 @@
+lesson: 03-communication-protocols
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/03-communication-protocols/docs/en.md
+exercises:
+  - index: 1
+    slug: send_message_returns_before_the_work_it_started
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Multi-hop task delegation.** Extend the `TaskManager` so an agent handler can delegate subtasks to other agents. The researcher receives a task, delegates "search" and "summarize" subtasks to two specialist agents, waits for both to complete, then merges the results into its own artifacts.
+    zh: |
+      **多跳任務委派。** 擴充 `TaskManager`，讓代理處理器能把子任務委派給其他代理。研究員收到一項任務，把「搜尋」與「摘要」兩個子任務委派給兩個專家代理，等兩者都完成，再把結果合併進自己的產物。
+    verifies: >-
+      the multi-hop runs 3 tasks -- researcher plus search and summarize awaited together -- and the
+      researcher ends completed with 2 merged artifacts. processTask is called in 1 place and awaited
+      in 0, so its first two statements run before sendMessage returns: sendMessage assigns state
+      "submitted" and hands back a task already reading "working". A listener subscribed at the first
+      possible moment hears 1 of the task's 2 status updates. Task declares 5 fields and 0 name a
+      parent, and createTask mints a fresh random contextId when none is passed
+  - index: 2
+    slug: there_is_nothing_to_stream_because_nothing_is_appended
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Streaming audit trail.** Modify the `AuditableRunner` to support streaming mode. Instead of waiting for the full result, yield `AuditEntry` updates in real-time as trajectory entries are added. Use an async generator that produces audit snapshots.
+    zh: |
+      **串流稽核軌跡。** 修改 `AuditableRunner` 以支援串流模式。不要等完整結果，而是在軌跡條目被加入時即時吐出 `AuditEntry` 更新。用一個產出稽核快照的非同步產生器。
+    verifies: >-
+      against the shipped promise-shaped handler a streaming runner yields 2 snapshots for a 6-step
+      run, its trajectory length jumping 0 to 6; re-typed as an async generator the same run yields 8.
+      entry.trajectory is assigned in 1 place, after await handler(input) returns, and pushed in 1
+      other, the error path. AuditEntry declares 5 statuses and "awaiting" appears once in the module,
+      in that union, assigned by no code path. entry.status = "failed" appears twice and
+      entry.completedAt twice, so the missing-handler failure has no end time
+  - index: 3
+    slug: both_verification_methods_hold_the_same_key
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **DID rotation.** Add key rotation to the `IdentityRegistry`. An agent should be able to publish a new DID document with updated keys while maintaining a `previousDid` reference. Verifiers should accept signatures from both the current and previous key during a grace period.
+    zh: |
+      **DID 輪替。** 替 `IdentityRegistry` 加上金鑰輪替。代理應該能發布一份帶更新金鑰的新 DID 文件，同時維持一個 `previousDid` 參照。驗證者在寬限期內應該同時接受當前與前一把金鑰的簽章。
+    verifies: >-
+      inside the grace window a registry walking the previousDid chain accepts 2 of 2 signatures and
+      after it 1 of 2. createIdentity computes publicKeyDer once and writes it into 2 entries, so the
+      Ed25519VerificationKey2020 and X25519KeyAgreementKey2019 methods share 1 key. humanAuthorization
+      is built as [] in the only constructor and pushed to 0 times, so requiresHumanAuth is true for 0
+      of the document's 2 key ids. delegateTask verifies over message.id, so rewriting every part
+      while keeping the id leaves the signature valid
+  - index: 4
+    slug: the_three_round_cap_is_never_reached
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Protocol negotiation.** Implement ANP's meta-protocol concept. Two agents exchange `protocolNegotiation` messages with candidate formats (e.g., "I can speak JSON-RPC" vs "I prefer REST"). After max 3 rounds, they agree on a format or timeout. The agreed format determines which `TaskManager` or `AuditableRunner` they use.
+    zh: |
+      **協定協商。** 實作 ANP 的後設協定概念。兩個代理交換帶候選格式的 `protocolNegotiation` 訊息（例如「我會說 JSON-RPC」對上「我偏好 REST」）。最多 3 回合之後，它們要嘛達成格式共識、要嘛逾時。達成共識的格式決定它們使用哪個 `TaskManager` 或 `AuditableRunner`。
+    verifies: >-
+      over all 4096 ordered preference pairs across four formats, 3964 share a format and every one
+      agrees -- 3796 in one round and 168 in two -- while 132 share none. No pair takes 3 rounds, so
+      the cap changes the outcome for 0 pairs, and a one-shot exchange of whole capability sets
+      settles all 4096 in 1. capabilities.streaming is declared 3 times and read 0, and delegateTask
+      has 0 capability branches. delegateTask calls auditRunner.run and then taskManager.sendMessage,
+      so the port counts 2 executions of the target agent per delegation
+  - index: 5
+    slug: the_cache_removes_the_scans_and_not_the_stampede
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Rate-limited discovery.** Add a `RateLimitedRegistry` wrapper that caches Agent Card lookups with a configurable TTL and limits discovery queries per agent per second. Simulate a thundering herd of 100 agents discovering each other on startup and measure the difference.
+    zh: |
+      **有速率限制的發現。** 加一個 `RateLimitedRegistry` 包裝器，用可設定的 TTL 快取 Agent Card 查找，並限制每個代理每秒的發現查詢數。模擬 100 個代理在啟動時彼此發現的驚群效應，並量出差別。
+    verifies: >-
+      a herd of 100 agents costs 10000 tag comparisons through the shipped registry and 100 through a
+      TTL cache -- one miss and 99 hits, 100x less. discoverAndDelegate selects candidates[0] in 1
+      place, so with 10 agents carrying the tag all 100 callers pick 1 target. Over a 30-tick TTL the
+      herd sees 10 candidates while the registry holds 11 and the newcomer appears in 0 cached
+      results. The 2 discovery methods scan different fields: skill.tags for one, defaultInputModes or
+      skill.inputModes for the other
