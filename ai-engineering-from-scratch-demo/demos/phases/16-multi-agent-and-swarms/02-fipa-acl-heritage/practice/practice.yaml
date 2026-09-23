@@ -1,0 +1,77 @@
+lesson: 02-fipa-acl-heritage
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/02-fipa-acl-heritage/docs/en.md
+exercises:
+  - index: 1
+    slug: the_round_trip_has_no_return_leg
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Observe the round-trip encoding. Identify which FIPA performative corresponds to `tools/call`, `resources/read`, and A2A task creation.
+    zh: |
+      跑 `code/main.py`。觀察那趟往返編碼。指認出 `tools/call`、`resources/read` 與 A2A 任務建立各自對應哪個 FIPA performative。
+    verifies: >-
+      tools/call maps to request, resources/read to query-ref and A2A task creation to request -- 3
+      message types onto 2 performatives. The module defines 4 functions named *_to_acl and 0 named
+      acl_to_*, under a banner writing the arrow as <->, so the round trip has no return leg. The MCP
+      message sets :language JSON while render() writes {self.content!r}, so the line is {'symbol':
+      'IBM'} and json.loads raises JSONDecodeError. PERFORMATIVES holds 16 names and the module
+      constructs 7; the other 9 -- agree, cancel, confirm, disconfirm, failure, inform,
+      not-understood, query-if, refuse -- are a whitelist only
+  - index: 2
+    slug: a_retry_reruns_an_auction_whose_answer_cannot_change
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the contract-net demo with a `cancel` performative that lets the manager withdraw the task mid-bid. What failure case does `cancel` solve that retries alone do not?
+    zh: |
+      替合約網示範擴充一個 `cancel` performative，讓管理者能在投標進行中撤回任務。`cancel` 解決了哪個單靠重試解決不了的失敗案例？
+    verifies: >-
+      re-issuing the cfp adds 3 messages to a 9 message log and re-awards worker-b, the same winner,
+      because the bids are fixed data and the scoring deterministic; the cancel is 1 message to the
+      awarded bidder in conversation cn-1 and is the only one that reaches a committed worker. cancel
+      is already in the 16-name PERFORMATIVES and is 1 of the 9 never constructed. ACLMessage has 9
+      fields with reply_with present and in_reply_to absent, and reply_with is set by 5 constructors
+      and read twice, both inside render(). The objective price + eta/10 flips between worker-b and
+      worker-c at a divisor of 7.5, and worker-a wins at no divisor at all
+  - index: 3
+    slug: read_fipa_acl_message_structure
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read FIPA ACL Message Structure (http://www.fipa.org/specs/fipa00037/) sections 4.1–4.3. Pick one performative not covered in this lesson and describe its modern JSON-RPC analog.
+    zh: |
+      讀 FIPA ACL Message Structure（http://www.fipa.org/specs/fipa00037/）第 4.1–4.3 節。挑一個本課沒涵蓋的 performative，描述它在現代 JSON-RPC 中的對應物。
+    cites: >-
+      The twenty FIPA performatives (partial list)
+  - index: 4
+    slug: read_liu_et_al_on_interoperability
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Liu et al., arXiv:2505.02279. For each of MCP, A2A, ACP, ANP, list the FIPA performative families they keep and drop.
+    zh: |
+      讀 Liu 等人，arXiv:2505.02279。針對 MCP、A2A、ACP、ANP 各自列出它們保留與丟掉的 FIPA performative 家族。
+    cites: >-
+      The 2026 specs, mapped to speech-act heritage
+  - index: 5
+    slug: the_schema_cannot_key_on_the_performative
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a minimal JSON-Schema for the `content` field of a `request` performative in your own system. What does that schema give you that pure natural-language does not, and what does it cost?
+    zh: |
+      替你自己系統中 `request` performative 的 `content` 欄位設計一份最小的 JSON Schema。那份 schema 給了你什麼純自然語言給不了的東西，而它的代價是什麼？
+    verifies: >-
+      the lesson builds 2 request messages whose content is a dict and a str, so {"type": "object"}
+      admits 1 of 2 and the only performative-keyed schema admitting both is {} with 0 keywords; two
+      ontology-keyed schemas admit 2 of 2 and constrain 5 keywords. The module builds envelopes under
+      5 ontologies and 3 languages, so the ontology-keyed design costs five artefacts. __post_init__
+      raises once, checking performative against a 16-name whitelist and leaving the other 8 fields
+      free. A tools/call with empty arguments builds a valid ACLMessage and is rejected by the
+      lookup_stock schema on the missing symbol
