@@ -27,11 +27,15 @@ matmul is actually the work, and the narrow widths are reported without being
 asserted on.
 
 **FINDING: bytes/time answers with the array size and the machine, not with a
-link.** On the same machine the figure moves about **3-4x** with the size -- the
-6.8 MB of segment inputs copy at 75 GB/s and a single 67 MB array at 20 GB/s,
-because one fits in L3 and the other does not. Across machines the same
-measurement moves again: a CI runner reports 15 GB/s and 4.9 GB/s for the same
-two copies, a fifth of this machine's. PCIe gen4 x16 is a fixed 25 GB/s, and the
+link.** On the same machine the figure moves about **3x** with the size -- a
+0.26 MB array copies at 69 GB/s and a 67 MB one at 22 GB/s, because one fits in
+L3 and the other does not. Across machines it moves further, and it moves
+*direction*: a CI runner reports **1 GB/s** for the small array against **11
+GB/s** for the large one, inverting the order, because at 0.26 MB the figure is
+per-call overhead wearing a bandwidth's units. So what is asserted is the
+disagreement between the two sizes and not its sign -- **1.5x** apart either
+way, at memory-bandwidth scale. An earlier version required the cached array to
+be the faster one and failed on the host that reported it slower. PCIe gen4 x16 is a fixed 25 GB/s, and the
 simulation lands above it, below it, or nowhere near it depending on what it is
 run on. A list in the same address space cannot be slower than memcpy, and a
 link is the only thing that makes offload a decision.
@@ -165,6 +169,7 @@ def solve():
 
 def verify(result):
     band, ratios, even = result["bandwidth"], result["ratios"], result["breakeven"]
+    spread = max(band["cached"], band["stream"]) / min(band["cached"], band["stream"])
     plain, wide = result["defaults"], result["wide"]
     return [
         practice.Check(
@@ -178,13 +183,12 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: bytes/time answers with the array size and the machine, not with a link",
-            band["cached"] > 1.5 * band["stream"] and 1e8 < band["stream"] < 1e12,
-            f"the same memcpy answers {band['cached'] / 1e9:.0f} GB/s on a 0.26 MB array and "
-            f"{band['stream'] / 1e9:.0f} GB/s on a 67 MB one -- "
-            f"{band['cached'] / band['stream']:.1f}x apart on one machine, for no reason but "
-            f"what fits in cache. The exercise's own {band['moved'] / 1e6:.1f} MB of segment "
-            f"inputs land at {band['segment'] / 1e9:.0f} GB/s here and 15 GB/s on a CI runner. "
-            "PCIe gen4 x16 is a fixed 25 GB/s; this is above it, below it or neither, by host",
+            spread > 1.5 and all(1e7 < v < 1e13 for v in (band["cached"], band["stream"])),
+            f"the same memcpy answers {band['cached'] / 1e9:.1f} GB/s on a 0.26 MB array and "
+            f"{band['stream'] / 1e9:.1f} GB/s on a 67 MB one -- {spread:.1f}x apart for no "
+            f"reason but what fits in cache, and which is faster is a property of the host. "
+            f"The {band['moved'] / 1e6:.1f} MB of segment inputs land at "
+            f"{band['segment'] / 1e9:.1f} GB/s here; PCIe gen4 x16 is a fixed 25 GB/s",
         ),
         practice.Check(
             "FINDING: 3,511 FLOPs are spent per byte copied, so no clock will see them",
