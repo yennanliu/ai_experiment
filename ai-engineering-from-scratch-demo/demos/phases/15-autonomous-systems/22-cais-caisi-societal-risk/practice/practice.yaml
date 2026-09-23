@@ -1,0 +1,74 @@
+lesson: 22-cais-caisi-societal-risk
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/22-cais-caisi-societal-risk/docs/en.md
+exercises:
+  - index: 1
+    slug: the_clean_deployment_gets_no_kill_switch
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Feed in three synthetic deployments at different scales. Confirm the four-risk tags match what you would expect; identify one case where the tool under- or over-tags.
+    zh: |
+      跑 `code/main.py`。餵進三個不同規模的合成部署。確認那四項風險標記符合你的預期；找出一個工具貼標過少或過多的案例。
+    verifies: >-
+      the three shipped deployments tag 0, 3 and 4 of the four risks, and turning the frontier agent
+      internal drops malicious_use because the rule is a conjunction with public_facing, so insider
+      misuse is unrepresentable; the clean deployment tags 0 risks and therefore receives 0 of the 14
+      mitigations, including no kill switch, under the only branch with no list; the organizational
+      mitigation list names 4 sub-levers while Deployment carries 0 field for safety culture; the
+      rogue-AI tag fires at an absolute 4.0 hours and the mid deployment sits on it
+  - index: 2
+    slug: read_cais_four_risk
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the CAIS four-risk paper in full. Pick one risk category and write two paragraphs on what you believe is the most important 2026 development in that category.
+    zh: |
+      完整讀完 CAIS 的四風險論文。挑一個風險類別，寫兩段話說明你認為該類別在 2026 年最重要的發展是什麼。
+    cites: >-
+      The four-risk framework
+  - index: 3
+    slug: read_current_draft_california
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read a current draft of California SB-53. Identify one provision you believe strengthens the catastrophic-risk posture and one you believe weakens it. Justify both.
+    zh: |
+      讀一份加州 SB-53 的當前草案。指認出一項你認為強化了災難性風險姿態的條文，以及一項你認為弱化了它的條文。兩者都要辯護。
+    cites: >-
+      California SB-53
+  - index: 4
+    slug: the_weakest_lever_is_the_auditor_living_in_the_tree
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick a production AI deployment you know (yours or a published one). Score it against the organizational-risk sub-levers: safety culture, audit rigor, multi-layered defenses, information security. Which is weakest? What would it cost to bring it to par?
+    zh: |
+      挑一次你熟悉的生產 AI 部署（你自己的或公開的）。對照組織風險的子槓桿替它評分：安全文化、稽核嚴謹度、多層防禦、資訊安全。哪一項最弱？把它拉到及格要花多少成本？
+    verifies: >-
+      scoring this repository's own gate, 8 of the 8 paths that decide whether a solution passes sit
+      inside the tree the agent edits and 0 outside it, against 4 gate scripts holding 0 credentials
+      -- so audit rigor is the weakest sub-lever and the fix is a package boundary; independent_audit
+      is one boolean covering three distinguishable situations; 1 of the 4 sub-levers, safety culture,
+      resolves to no artifact in the tree; the defence layers were added incrementally while audit
+      independence admits no partial credit
+  - index: 5
+    slug: split_the_lever_that_cannot_tell_three_situations_apart
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sketch a 2028 version of the four-risk framework that reflects one year of additional capability and one year of additional deployment experience. What would you add, remove, or regroup?
+    zh: |
+      勾勒一個 2028 年版的四風險框架，反映多一年的能力進展與多一年的部署經驗。你會加什麼、拿掉什麼，或重新分組什麼？
+    verifies: >-
+      the 2028 sketch takes 4 categories to 5 and 8 fields to 9, splitting organizational risk into
+      controls-present and controls-independent and adding a safety_culture field; a deployment with
+      no gates and one whose gates the agent can edit tag identically under the 2026 rule and receive
+      the same 4-item mitigation list, while the split fails them 2 and 1 times; malicious_use is a
+      conjunction of 2 booleans, one of which should become a severity multiplier; 1 of the 4 risks is
+      internal to the org and 3 are structural
