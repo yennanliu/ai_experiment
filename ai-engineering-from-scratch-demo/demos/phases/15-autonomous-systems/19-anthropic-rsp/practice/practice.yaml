@@ -1,0 +1,73 @@
+lesson: 19-anthropic-rsp
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/19-anthropic-rsp/docs/en.md
+exercises:
+  - index: 1
+    slug: full_automation_of_ai_rd_does_not_cross_the_ai_rd_threshold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Feed in three synthetic models at different capability levels. Confirm the threshold evaluator behaves as expected and produces the right affirmative-case template.
+    zh: |
+      跑 `code/main.py`。餵進三個不同能力等級的合成模型。確認門檻評估器的行為符合預期，並產出正確的正面論證樣板。
+    verifies: >-
+      the two shipped models sit at 0 and 3 triggers while the rule turns between 1 and 2, so the
+      demonstration omits both boundary cases; a model at rd_automation_share 1.00 with the other
+      measures at today's levels reports 1 trigger and does not cross, because a count cannot weigh
+      one saturated measure against two floors; the seventh affirmative-case section appears above a
+      0.20 gaming rate -- 6 sections at 12% and 7 at 28% -- after the threshold decision already used
+      the inflated numbers; AI_RD_4_THRESHOLDS holds 3 floats
+  - index: 2
+    slug: read_rsp_v3_0
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read RSP v3.0 in full (32 pages). Identify every commitment that lives in the "industry-wide recommendation" tier. Which of those commitments would have been "Anthropic unilateral" in v2?
+    zh: |
+      完整讀完 RSP v3.0（32 頁）。指認出每一項住在「全業界建議」層的承諾。其中哪些在 v2 裡本來會是「Anthropic 單方面」？
+    cites: >-
+      The two-tier mitigation schedule
+  - index: 3
+    slug: four_factors_one_delta_and_no_weights
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read SaferAI's RSP grading methodology. Reproduce their 1.9 score for v3.0 by applying their rubric to the document. Which rubric row drove the downgrade most?
+    zh: |
+      讀 SaferAI 的 RSP 評分方法論。把他們的評分準則套用到這份文件上，重現他們給 v3.0 的 1.9 分。哪一列評分準則最主導那次降評？
+    verifies: >-
+      the score moves 2.2 to 1.9, a delta of -0.30 across 4 named factors with 1 equation, so equal
+      weighting at -0.075 each and pause-only at -0.30 both satisfy it exactly and the rubric is not
+      reproducible from what is published; the drop is 13.6% of the prior score on a 1.0-4.0 scale and
+      crosses a band boundary; 3 of the 4 factors describe replacing a checkable statement with a
+      reviewable one and 1 describes who checks; the module itself keeps 3 quantitative thresholds
+  - index: 4
+    slug: a_threshold_in_hours_expires_in_ten_months
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2023 pause commitment was removed. Propose a replacement commitment that preserves the credibility of the policy while acknowledging the 2026 benchmark-rescaling problem.
+    zh: |
+      2023 年的暫停承諾被移除了。提出一項替代承諾，既保住這份政策的可信度，又承認 2026 年基準重新校尺的問題。
+    verifies: >-
+      the module's 40.0-hour METR gate against a stated 14.0-hour horizon is 10.6 months away at
+      Lesson 1's 7-month doubling, so the quantitative threshold was about to be reached rather than
+      unreachable; expressed as a ratio the same gate is 2.86x the prior generation, and under 2x, 5x
+      and 10x benchmark rescalings the absolute gate moves to 80, 200 and 400 hours while the relative
+      gate does not move; 3 of the 4 downgrade factors are about documents and 1 about an action, so
+      the replacement keeps the pause and changes only its trigger
+  - index: 5
+    slug: compare_rsp_v3_0
+    kind: explain
+    tier: T2
+    deps_group: llm
+    en: |
+      Compare RSP v3.0 to OpenAI Preparedness Framework v2 (Lesson 20). Pick one area where v3.0 is stronger. Pick one area where the Preparedness Framework is stronger.
+    zh: |
+      把 RSP v3.0 跟 OpenAI Preparedness Framework v2（第 20 課）比較。挑一個 v3.0 比較強的面向。再挑一個 Preparedness Framework 比較強的面向。
+    cites: >-
+      Removing the pause clause
