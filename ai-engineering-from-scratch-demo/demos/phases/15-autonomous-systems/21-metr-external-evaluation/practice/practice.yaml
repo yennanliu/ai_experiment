@@ -1,0 +1,74 @@
+lesson: 21-metr-external-evaluation
+phase: 15-autonomous-systems
+source: phases/15-autonomous-systems/21-metr-external-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fit_does_not_match_the_ground_truth_it_was_given
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the fit's 50% horizon matches the synthetic ground truth. Now halve the task-time grid; does the horizon estimate change meaningfully?
+    zh: |
+      跑 `code/main.py`。確認擬合出的 50% 時程與那份合成基準真值相符。接著把任務時間格點減半；時程估計有明顯改變嗎？
+    verifies: >-
+      at the shipped seed the clean fit reports 11.30 hours against a synthetic ground truth of 14.0,
+      a 19.3% underestimate, and halving the sample to 80 tasks gives 9.98 at 28.7% -- a change of
+      1.31 hours, smaller than either error; over 20 seeds the median estimate is 13.27 with a range
+      of 11.06 to 35.49 and the shipped draw sits in the lower quarter; the three flattest slopes
+      carry the longest horizons because horizon_at divides by the slope; the 10% horizon is 55.09
+      hours against 11.30 at 50% and 2.32 at 90%
+  - index: 2
+    slug: read_metr_s_time
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read METR's Time Horizon 1.1 blog post. Identify the specific tasks where reliability is highest and where it is lowest. Explain why the gap exists.
+    zh: |
+      讀 METR 的 Time Horizon 1.1 部落格文章。指認出可靠度最高與最低的那些具體任務。解釋那個落差為何存在。
+    cites: >-
+      Why horizons are upper bounds
+  - index: 3
+    slug: read_metr_s_measuring
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read METR's "Measuring Autonomous AI Capabilities" resources. List the HCAST task categories. Pick one category you would weight more heavily for a production task and justify why.
+    zh: |
+      讀 METR 的〈Measuring Autonomous AI Capabilities〉資源。列出 HCAST 的任務類別。挑一個你會替某項生產任務加重權重的類別，並說明理由。
+    cites: >-
+      Benchmark suites
+  - index: 4
+    slug: gaming_and_fit_error_are_the_same_size
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Introduce eval-context gaming into the simulator: flip ~20% of failed tasks to success. Report the new horizon. This approximates what a gaming rate of 20% does to the observed number.
+    zh: |
+      把評測脈絡操弄引入模擬器：把約 20% 失敗的任務翻成成功。回報新的時程。這近似 20% 的操弄率對觀察到的數字會造成什麼影響。
+    verifies: >-
+      a 20% gaming rate moves the observed 50% horizon from 11.30 to 14.63 hours, +3.33, which lands
+      0.63 from the 14.0-hour ground truth while the honest fit is 2.70 away; fit error spans 11.06 to
+      35.49 hours across seeds while gaming at 10, 20 and 40 percent gives 13.25, 14.63 and 44.56, so
+      the two effects overlap in magnitude and direction; the fitted slope flattens monotonically from
+      -1.387 to -0.854 as the rate climbs, and at 40% the horizon is 3.2x the truth at 0.62 of the
+      clean slope
+  - index: 5
+    slug: six_hundred_tasks_for_a_number_worth_quoting
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an internal horizon evaluation on your own bug backlog or a representative task set. Describe the data collection, the fit, and what the output tells you. Compare to METR numbers.
+    zh: |
+      在你自己的臭蟲待辦清單或一組代表性任務上，設計一次內部的時程評測。描述資料收集、擬合，以及輸出告訴你什麼。拿它跟 METR 的數字比較。
+    verifies: >-
+      each task contributes 2 values and the interquartile spread of the estimate runs 0.71, 0.40,
+      0.29, 0.17 and 0.14 of the median at 40, 80, 160, 320 and 640 tasks, so only 320 and 640 hold
+      the spread at or under 20%; the estimator samples expert times across about 3 decades, from 0.05
+      to 47.6 hours, and a backlog clustered in one decade gives the fit no leverage on the slope; the
+      fit returns 2 parameters so the internal report is 3 numbers; a clean fit on 160 tasks lands
+      19.3% from the same ground truth through sampling alone
