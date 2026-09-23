@@ -1,0 +1,54 @@
+lesson: 02-git-and-collaboration
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/02-git-and-collaboration/docs/en.md
+exercises:
+  - index: 1
+    slug: the_workflow_pushes_to_the_repo_it_later_says_you_cannot
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Fork this repo, clone your fork, create a branch called `my-progress`, make a file, commit it, push it
+    zh: |
+      Fork 這個儲存庫，clone 你的 fork，開一個叫 `my-progress` 的分支，建一個檔案、提交、推上去
+    verifies: >-
+      the local half of the exercise runs for real -- branch my-progress, 1 commit ahead of main,
+      notes.md in its tree -- and the push exits 128 on "'origin' does not appear to be a git
+      repository", the first step needing a second machine. Line 62 of the lesson is `git push origin
+      main` and line 78, 16 lines later, is "only maintainers have write access"; token, ssh,
+      credential, authenticate, PAT and password appear 0 times, so the authenticated step has no
+      instructions. The Use It table lists 6 commands while Build It demonstrates 5 it omits (config,
+      fetch, merge, pull, status) and lists git log, which no block uses
+  - index: 2
+    slug: the_rule_that_hides_weights_also_hides_a_source_package
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a `.gitignore` that excludes model checkpoint files (`.pt`, `.pth`, `.safetensors`)
+    zh: |
+      寫一份 `.gitignore`，排除模型檢查點檔案（`.pt`、`.pth`、`.safetensors`）
+    verifies: >-
+      the three asked-for patterns make git check-ignore claim all 3 sample weight files and leave
+      train.py alone. Lines 49, 50 and 52 of the root .gitignore already are those patterns and 51,
+      53, 54 add *.onnx, *.bin and *.h5 -- 6 of its 94. Line 45 is models/ and line 44 is data/, and
+      check-ignore blames line 45 for
+      phases/01-math-foundations/01-linear-algebra-intuition/code/models/encoder.py, so a source
+      package named models/ is invisible to git add with no error. After committing model.pt, ignoring
+      *.pt and changing it, git status still reports 'M model.pt' and check-ignore claims 0 paths
+  - index: 3
+    slug: the_checkout_that_grades_this_has_one_commit_in_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Look at the commit history of this repo with `git log --oneline` and read how lessons were added
+    zh: |
+      用 `git log --oneline` 看這個儲存庫的提交歷史，讀讀各個單元是怎麼被加進來的
+    verifies: >-
+      20 phase and 523 lesson directories all carry a two-digit prefix, so the order lessons were
+      added sorts out of names with 0 commits present. A 3-commit repository cloned with --depth=1
+      reports 1 commit while ls-files and the tree hash are identical. The workflow runs 2
+      actions/checkout steps, pins 1 to fetch-depth: 1 and lets the other take the default of 1, so
+      `git log --oneline` returns one line in CI. The reference checkout and the practice repository
+      have different git directories and different HEADs
