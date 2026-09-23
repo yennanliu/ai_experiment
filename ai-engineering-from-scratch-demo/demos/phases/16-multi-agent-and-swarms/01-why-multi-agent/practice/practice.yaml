@@ -1,0 +1,54 @@
+lesson: 01-why-multi-agent
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/01-why-multi-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fourth_specialist_costs_five_times_what_the_split_saves
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth specialist: a "tester" agent that receives code from the coder and review feedback from the reviewer, then writes tests
+    zh: |
+      加上第四位專家：一個「測試者」代理，接收來自寫程式代理的程式碼與來自審查者的審查回饋，然後寫測試
+    verifies: >-
+      the tester agent is a fourth createSpecialist fed the two messages addressed to it, and it
+      reverses the lesson's conclusion: the pipeline goes from 1652 to 2238 tokens against the single
+      agent's 1745, so 493 worse (28%) where it had been 93 better. The flat +500 in fakeLLMCall
+      contributes 1500 of 1745 tokens (86%) and 1500 of 1652, leaving 245 against 152 of actual
+      context. The single-agent system prompt numbers 4 steps and the function makes 3 fakeLLMCall
+      invocations, so 'Write tests' is charged and never run; calls is Math.floor(Math.random() * 5) +
+      1, so the third printed metric is noise
+  - index: 2
+    slug: the_loop_has_no_way_to_stop_early_because_nothing_can_approve
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the pipeline so the reviewer can send feedback back to the coder for a revision loop (max 2 rounds)
+    zh: |
+      修改這條管線，讓審查者可以把回饋送回給寫程式代理做一輪修訂（最多 2 回合）
+    verifies: >-
+      each revision round is two calls costing exactly 1140 tokens; 2 rounds take the pipeline from
+      1652 to 3932 tokens and 3 to 7 calls, 125% above the single agent's 1745. LLMResponse declares 3
+      fields -- output, tokens, calls -- none a verdict, and fakeLLMCall has 1 output expression, a
+      constant template of its own input, so nothing can approve and the cap is the only stopping
+      rule. Every message in every round is 98 characters, so the context cannot grow and the single
+      agent's variable cost is 245 tokens against a flat 1500; a revision is fixed price regardless of
+      how much there is to revise
+  - index: 3
+    slug: the_fan_out_already_exists_and_throws_the_review_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert the sequential pipeline into a fan-out: run the researcher and a "requirements analyzer" agent in parallel, then merge their outputs before passing to the coder
+    zh: |
+      把這條循序管線改成扇出：平行跑研究員與一個「需求分析師」代理，再把它們的輸出合併後傳給寫程式代理
+    verifies: >-
+      the fan-out costs 2238 tokens and 4 calls against the pipeline's 1652 and 3 -- 586 more, 35% --
+      for 3 sequential 50ms ticks either way, so parallelism buys no wall clock. multiAgentFanOut
+      makes 4 agent calls and 3 messages.push, never pushing the reviewer's result, and builds content
+      by mapping over messages, so 550 tokens are spent, counted and absent from the output. The
+      pipeline uses 2 message filters for 3 calls and the fan-out 1 for 4; 3 specialists are module
+      constants and the fourth is built inline inside Promise.all
