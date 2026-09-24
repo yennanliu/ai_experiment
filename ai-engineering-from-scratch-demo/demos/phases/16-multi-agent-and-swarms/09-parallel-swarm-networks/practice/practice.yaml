@@ -1,0 +1,75 @@
+lesson: 09-parallel-swarm-networks
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/09-parallel-swarm-networks/docs/en.md
+exercises:
+  - index: 1
+    slug: the_swarm_wins_because_the_slow_tasks_happen_to_be_queued_first
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. How much faster is swarm than sequential on the variable-duration workload? How much faster than fixed assignment?
+    zh: |
+      跑 `code/main.py`。在這份時長不一的工作負載上，swarm 比循序快多少？比固定指派快多少？
+    verifies: >-
+      sequential 2.0s, fixed 1.7s and swarm 0.5s give 4.0x and 3.4x, reproduced by the reference
+      schedulers with sleeps scaled by 1/4 within 20%. worker 0 holds 5 tasks, not 4. Over the 70
+      distinct orders of the same 8 tasks the swarm reaches 0.5s on 16 and takes 0.6/0.7/0.8s on
+      34/16/4 -- make_tasks queues slow first, which is LPT. A task_id % 4 fixed assignment finishes
+      in 0.5s, equal to the swarm. The swarm's counts are {2,2,2,2} where the lesson says it
+      distributes unevenly
+  - index: 2
+    slug: low_priority_starves_exactly_when_high_priority_alone_fills_the_workers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a priority queue variant (use `queue.PriorityQueue`). Assign priority by task "importance" field. Observe whether low-priority tasks ever starve under continuous load.
+    zh: |
+      加一個優先佇列變體（用 `queue.PriorityQueue`）。依任務的「重要性」欄位指派優先度。觀察在持續負載下，低優先度任務會不會餓死。
+    verifies: >-
+      with 4 workers, 0.1s tasks and k high-priority arrivals per slot, the low task runs at slot 0
+      for k=3 and never in 100 slots for k=4 or 5. run_swarm prefills and exits on queue.Empty, and
+      Task has no importance field. (priority, Task) raises TypeError on the first tie. Linear aging
+      is the static key p + a*arrival: at a=0.1 the low task runs at slot 10 (k=4) and 12 (k=5). At
+      k=5 the backlog is 101 with and without aging
+  - index: 3
+    slug: the_worker_with_the_most_tasks_is_the_least_loaded
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a hot-spot detector: log when any worker processes 3× more tasks than the slowest worker. What does that indicate about task-duration distribution?
+    zh: |
+      實作一個熱點偵測器：當任何 worker 處理的任務數是最慢 worker 的 3 倍時就記錄。那件事透露了什麼關於任務時長分布的資訊？
+    verifies: >-
+      on 1x1.2s + 12x0.1s the swarm's counts are [1,4,4,4] (the reference swarm agrees): the count
+      detector flags workers 1-3, busy 0.4s, while worker 0, busy 1.2s, is the makespan -- a busy-time
+      detector flags [0]. Over the 70 orders of the shipped workload the count detector fires on 54,
+      all slower than 0.5s, and is silent on the 16 that reach it. Fixed assignment's {5,1,1,1} trips
+      it, the swarm's {2,2,2,2} does not
+  - index: 4
+    slug: read_matrix_paper_arxiv
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Matrix paper (arXiv:2511.21686) abstract and Section 3. Identify one specific tradeoff Matrix accepts (scalability gain) and one it gives up (traceability, determinism).
+    zh: |
+      讀 Matrix 論文（arXiv:2511.21686）的摘要與第 3 節。指認出 Matrix 接受的一項具體取捨（擴展性上的收穫），以及它放棄的一項（可追溯性、決定性）。
+    cites: >-
+      Matrix (arXiv:2511.21686)
+  - index: 5
+    slug: splitting_the_swarm_by_type_rebuilds_fixed_assignment
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert the swarm demo to use a `queue.Queue` of (task_type, payload) tuples, with workers subscribing only to specific types. What routing rules make sense when tasks are heterogeneous?
+    zh: |
+      把 swarm 示範改成使用 (task_type, payload) 元組的 `queue.Queue`，並讓 worker 只訂閱特定型別。當任務是異質的時候，什麼樣的路由規則才合理？
+    verifies: >-
+      on one shared queue.Queue with 2 slow and 2 fast subscribers, re-queueing costs 14 wasted gets
+      for 8 tasks; an orphan type keeps a worker that stops only on queue.Empty spinning to the
+      1000-get cap. Strict slow/fast splits 1/3, 2/2, 3/1 finish at 1.6, 0.8, 0.8s against 0.5s
+      untyped -- at least 60% slower. 2/2 with fallback stealing finishes at 0.6s
