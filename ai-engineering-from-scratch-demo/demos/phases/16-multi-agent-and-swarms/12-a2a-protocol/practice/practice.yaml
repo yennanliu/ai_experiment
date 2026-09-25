@@ -1,0 +1,76 @@
+lesson: 12-a2a-protocol
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/12-a2a-protocol/docs/en.md
+exercises:
+  - index: 1
+    slug: the_submitted_state_is_already_gone_when_the_201_says_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the client discovers the server and receives the correct artifact.
+    zh: |
+      跑 `code/main.py`。確認客戶端發現得了伺服器，並收到正確的產物。
+    verifies: >-
+      the lesson's run_client, served on port 0, reaches completed with issues ['no return statement',
+      'no function definition'] and lines=3 for 2-line code (count('\n') + 1 counts the trailing
+      newline). do_POST's 'submitted' is a literal and the store already reads 'working' when create()
+      returns in at least 45 of 50 creates. run_client takes 1 URL from the card and hardcodes 2, and
+      the card's endpoint is localhost:8765, so 5 of 5 requests needed redirecting. An unknown skill
+      is answered submitted and later failed
+  - index: 2
+    slug: adding_a_skill_means_replacing_two_module_globals
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second skill to the server (e.g., "summarize"). Update the Agent Card. Write a client that picks the skill based on task type.
+    zh: |
+      替伺服器加上第二項技能（例如「summarize」）。更新 Agent Card。寫一個依任務型別挑技能的客戶端。
+    verifies: >-
+      a registry store plus a card whose skills carry id, name, description and tags lets a client
+      route review -> review-python and summarize -> summarize by tag. TaskStore._run holds the only
+      dispatch and A2AHandler reads the module globals STORE and AGENT_CARD, so both had to be
+      rebound. Validating the body's skill against the card refuses an unknown skill with 400 and 0
+      task records. The shipped card's skills are ['review-python'], strings
+  - index: 3
+    slug: one_open_stream_blocks_every_other_request
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement an SSE streaming endpoint: `/tasks/{id}/events` that emits state changes. What does the client need to do differently?
+    zh: |
+      實作一個 SSE 串流端點：`/tasks/{id}/events`，發出狀態變化。客戶端需要做哪些不一樣的事？
+    verifies: >-
+      on ThreadingHTTPServer two subscribers each receive ['working', 'completed'] over one request,
+      never submitted. On the lesson's HTTPServer a card GET made during a stream waits more than 0.1s
+      (threaded: under 0.1s) and a second subscriber receives only ['completed']. The shipped handler
+      answers /tasks/abc/events with 404 'not found'. TaskStore has 0 condition variables, events or
+      callbacks
+  - index: 4
+    slug: five_of_the_six_core_operations_are_404
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the A2A spec (https://a2a-protocol.org/latest/specification/). Identify three things the spec mandates that this demo does not implement.
+    zh: |
+      讀 A2A 規格（https://a2a-protocol.org/latest/specification/）。指認出三項規格要求、而這個示範沒有實作的東西。
+    verifies: >-
+      against the running demo: /.well-known/agent-card.json is 404 and agent.json 200; the card lacks
+      5 of the 8 AgentCard fields a2a.proto marks REQUIRED and its skills are strings. Of the 6 core
+      REST endpoints in spec §5.3 only GET /tasks/{id} answers 200, and 'canceled' appears nowhere. A
+      malformed JSON body gets RemoteDisconnected, and POST /message:stream gets 404 where §3.3.4
+      requires 400. The task has a flat state and no status, and the artifact is {type, data}
+  - index: 5
+    slug: compare_a2a_agent_card
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Compare A2A (Agent Card discovery) to MCP (server-side capability listing via `listTools`). What is the tradeoff between self-describing agents and capability-probing?
+    zh: |
+      把 A2A（Agent Card 式的發現）跟 MCP（透過 `listTools` 的伺服器端能力列舉）做比較。自我描述的代理與能力探測之間的取捨是什麼？
+    cites: >-
+      The MCP/A2A split
