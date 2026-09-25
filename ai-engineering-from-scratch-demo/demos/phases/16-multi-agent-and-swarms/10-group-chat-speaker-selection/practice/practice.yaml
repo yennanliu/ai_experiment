@@ -1,0 +1,70 @@
+lesson: 10-group-chat-speaker-selection
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/10-group-chat-speaker-selection/docs/en.md
+exercises:
+  - index: 1
+    slug: round_robin_ships_the_bug_because_the_manager_speaks_between_review_and_fix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare the conversation under round-robin vs LLM-selected. Which agent dominates under each?
+    zh: |
+      跑 `code/main.py`。比較輪替與 LLM 選擇之下的對話。各自是哪個代理主導？
+    verifies: >-
+      round-robin counts are coder 2, reviewer 1, manager 1 against the demo's 'equal turn' claim;
+      LLM-style is 2/2/2. Round-robin ends coder TERMINATE with return a - b shipped: coder_policy
+      reads only the last non-coder message, the manager's. Over the 6 team orders 3 ship the bug,
+      exactly those where the manager follows the reviewer. The working orders need 8, 9 and 10 turns,
+      so under max_rounds=8 one finishes
+  - index: 2
+    slug: a_speak_cap_either_changes_nothing_or_blocks_the_fix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "max-speaks-per-agent" rule in the selector. How does it affect the transcript?
+    zh: |
+      在選擇器裡加一條「每個代理最多發言 N 次」的規則。它怎麼影響逐字稿？
+    verifies: >-
+      no agent exceeds 2 speaks in either demo run, so cap 2 leaves both transcripts identical; cap 1
+      ends all 7 conversations (LLM-style + 6 round-robin orders) after 3 turns shipping a - b.
+      Conversations shipping a + b by cap are 0, 4, 4, 4 for caps 1, 2, 3, uncapped. At cap 2, 3
+      round-robin orders end by selector exhaustion with no TERMINATE
+  - index: 3
+    slug: the_goal_check_already_exists_one_turn_late_inside_the_manager
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a goal-reached termination: stop when the reviewer returns "approved." How often does it trigger before the round cap?
+    zh: |
+      實作目標達成終止：審查者回傳「approved」就停。它在回合上限之前多常觸發？
+    verifies: >-
+      under max_rounds=8 the approval check fires in 4 of 7 conversations, strictly before the cap in
+      3: LLM-style at turn 5, round-robin orders at 6, 7, 8; never in the demo's round-robin run.
+      manager_policy already TERMINATEs on an approval, so LLM-style saves exactly 1 turn. The orders
+      needing 9 and 10 turns stop at 7 and 8. Its 3 misses are exactly the 3 conversations shipping a
+      - b
+  - index: 4
+    slug: read_autogen_groupchat_default_selector
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the AutoGen stable docs on GroupChat (https://microsoft.github.io/autogen/stable/user-guide/core-user-guide/design-patterns/group-chat.html). Identify the default selector used by `GroupChatManager`.
+    zh: |
+      讀 AutoGen 穩定版關於 GroupChat 的文件（https://microsoft.github.io/autogen/stable/user-guide/core-user-guide/design-patterns/group-chat.html）。指認出 `GroupChatManager` 使用的預設選擇器。
+    cites: >-
+      The ConversableAgent API
+  - index: 5
+    slug: compare_ag2_groupchat_with_autogen_v04
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the AG2 repo (https://github.com/ag2ai/ag2) and compare its v0.2 GroupChat to the v0.4 event-driven version. What concrete property (throughput, fault-tolerance, composability) does v0.4 add?
+    zh: |
+      讀 AG2 儲存庫（https://github.com/ag2ai/ag2），把它的 v0.2 GroupChat 跟 v0.4 事件驅動版做比較。v0.4 具體加上了哪一項性質（吞吐量、容錯、可組合性）？
+    cites: >-
+      Lineage: forks and mergers
