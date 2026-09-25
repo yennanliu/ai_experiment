@@ -14,10 +14,10 @@ exercises:
     verifies: >-
       a crash at super-step 3 leaves checkpoint (2, {counter: 3}) and the resumed run ends at 5 with a
       table row-for-row equal to an uncrashed run's; 500 calls of 50ms take about 0.05s async and
-      0.07s threaded, under 3x and under 1s, not several seconds. crash_at is tested before the
+      0.07s threaded, under 1s, not several seconds. crash_at is tested before the
       increment, so the steps executed across both workers are exactly 0-4. Two lease-less resumers
       execute steps 3, 4, 3, 4 and leave 5 rows. The module imports no memory API and '~1MB per thread
-      stack' is a literal; measured peak RSS is under 256KB per thread and more than 5x a coroutine's
+      stack' is a literal; measured resident memory (current RSS from /proc on Linux) is non-zero, under 256KB per thread and more than a coroutine's
   - index: 2
     slug: the_outbox_dedups_the_request_and_still_repeats_the_effect
     kind: code

@@ -8,13 +8,16 @@ checkpoint table against an uncrashed run's, and then asking which crashes
 the demo can express at all; "measure" is taken literally for both of the
 quantities the lesson promises, wall clock and memory.
 
-**ANSWER: resume works, and threads are 1.3x slower, not "several seconds".**
+**ANSWER: resume works, and threads are a small factor slower, not "several
+seconds".**
 Worker 1 crashes at super-step 3 with checkpoint (2, {counter: 3}); worker 2
 resumes and ends at 5, and the table it leaves is row-for-row the table of a
 run that never crashed. On the lesson's 500 calls of 50ms, asyncio takes about
-0.05s and threads about 0.07s -- the lesson's "thread version takes several
-seconds" is off by two orders of magnitude, because a thread costs tens of
-microseconds to start against a 50ms sleep.
+0.05s and threads 0.07s here (0.16s on a CI runner, 2.9x) -- the lesson's
+"thread version takes several seconds" is off by one to two orders of
+magnitude, because a thread costs tens of microseconds to start against a
+50ms sleep. The ratio is host-dependent; the check asserts only that the
+threaded run stays under a second.
 
 **FINDING: the crash can only happen between steps.** `crash_at` is tested
 *before* the increment, so every simulated crash falls right after a committed
@@ -29,14 +32,18 @@ a clean run's. The double execution leaves no trace to detect it by.
 
 **FINDING: memory is never measured.** The lesson says the demo reports "peak
 memory (approximated)"; the module imports nothing that can read memory and
-the "~1MB per thread stack" is a string literal. Measured as peak RSS in a
-fresh interpreter, a sleeping thread costs tens of KB resident and a pending
-coroutine about 1.5KB -- roughly 20x, an order of magnitude and not the
-"orders of magnitude" claimed, and far from 1MB per thread.
+the "~1MB per thread stack" is a string literal. Measured as resident memory in a
+fresh interpreter, a sleeping thread costs tens of KB and a pending coroutine
+about 1.5KB on macOS -- more than a coroutine, and nowhere near 1MB per
+thread, because a thread's stack is reserved virtually and only its touched
+pages become resident.
 
 Structure: `crash_then_resume()` drives the reference `run_agent_with_checkpoint`
-against its `CheckpointStore`; `per_unit_rss()` runs a subprocess because peak
-RSS is a high-water mark and must start from a clean process.
+against its `CheckpointStore`; `per_unit_rss()` runs a subprocess so the reading
+starts from a clean process. It reads *current* RSS from /proc on Linux: there
+`ru_maxrss` is a high-water mark that interpreter start-up already exceeds, so
+the growth from 500 threads reads as 0. macOS has no /proc, and its
+`ru_maxrss` (in bytes) climbs with the threads.
 """
 
 from __future__ import annotations
@@ -53,9 +60,11 @@ from harness import parity, practice
 PHASE, LESSON = "16-multi-agent-and-swarms", "22-production-scaling-queues-checkpoints"
 N = 500
 PROBE = """
-import asyncio, resource, sys, threading, time
-scale = 1 if sys.platform == 'darwin' else 1024
-rss = lambda: resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * scale
+import asyncio, os, resource, sys, threading, time
+def rss():
+    if os.path.exists('/proc/self/statm'):
+        return int(open('/proc/self/statm').read().split()[1]) * os.sysconf('SC_PAGE_SIZE')
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 base = rss()
 if sys.argv[1] == 'thread':
     ts = [threading.Thread(target=time.sleep, args=(0.3,)) for _ in range({n})]
@@ -128,10 +137,9 @@ def verify(result):
     ratio = result["threads"] / result["async"]
     return [
         practice.Check(
-            "ANSWER: resume works, and threads are ~1.3x slower, not several seconds",
+            "ANSWER: resume works, and threads are a small factor slower, not several seconds",
             all([resume["crashed_at"] == (2, {"counter": 3}), resume["finals"] == [5],
-                 resume["rows"] == result["clean_rows"], result["threads"] < 1.0,
-                 ratio < 3]),
+                 resume["rows"] == result["clean_rows"], result["threads"] < 1.0]),
             f"crash leaves {resume['crashed_at']}, resume ends at {resume['finals'][0]} with "
             f"a table identical to a clean run's; {N} calls take {result['async']:.3f}s async "
             f"and {result['threads']:.3f}s threaded, {ratio:.2f}x",
@@ -152,9 +160,10 @@ def verify(result):
         practice.Check(
             "FINDING: memory is never measured",
             all([not result["reads_memory"], result["literal"],
-                 result["thread_rss"] < 256 * 1024, result["thread_rss"] > 5 * result["coro_rss"]]),
+                 0 < result["thread_rss"] < 256 * 1024,
+                 result["thread_rss"] > result["coro_rss"]]),
             f"no memory API is imported and '~1MB per thread stack' is a literal; measured "
-            f"peak RSS is {result['thread_rss'] / 1024:.1f}KB per thread against "
+            f"resident memory is {result['thread_rss'] / 1024:.1f}KB per thread against "
             f"{result['coro_rss'] / 1024:.1f}KB per coroutine",
         ),
     ]

@@ -26,13 +26,14 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 ### 1 — resume works because the crash is placed where nothing can go wrong
 
-**Resume works, and threads are about 1.3x slower than asyncio, not "several
-seconds".** Worker 1 crashes at super-step 3 and leaves the checkpoint
+**Resume works, and threads are a small factor slower than asyncio, not
+"several seconds".** Worker 1 crashes at super-step 3 and leaves the checkpoint
 `(2, {"counter": 3})`. Worker 2 resumes and finishes at 5. The table it leaves
 matches, row for row, the table of a run that never crashed. On the lesson's
-500 calls of 50ms each, asyncio takes about 0.05s and threads about 0.07s.
-Starting a thread costs tens of microseconds, which is nothing next to a 50ms
-sleep.
+500 calls of 50ms each, asyncio takes about 0.05s and threads about 0.07s
+here, 0.16s on a CI runner. Starting a thread costs tens of microseconds,
+which is nothing next to a 50ms sleep. The ratio varies by host, so the check
+asserts only that the threaded run stays under a second.
 
 Two things make the resume look better than it is.
 
@@ -49,10 +50,13 @@ so nothing records that the work was done twice.
 
 Finally, **the demo never measures memory**, though the lesson says it reports
 "peak memory (approximated)". The module imports no memory API, and "~1MB per
-thread stack" is a hard-coded string. Measured as peak RSS in a fresh
-interpreter, a sleeping thread costs about 36KB resident and a pending
-coroutine about 1.4KB. That is roughly 25x: a real difference, but one order
-of magnitude, not the "orders of magnitude" claimed, and far below 1MB.
+thread stack" is a hard-coded string. Measured as resident memory in a
+fresh interpreter, a sleeping thread costs about 36KB and a pending coroutine
+about 1.4KB on macOS. A thread does cost more, but it is nowhere near 1MB: its
+stack is reserved virtually, and only the pages it touches become resident.
+On Linux the probe reads current RSS from `/proc`, because there `ru_maxrss`
+is a high-water mark that interpreter start-up already exceeds, and the growth
+from 500 threads reads as 0.
 
 ### 2 — the outbox dedups the request and still repeats the effect
 
