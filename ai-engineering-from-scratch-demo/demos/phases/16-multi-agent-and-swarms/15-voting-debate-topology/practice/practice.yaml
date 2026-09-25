@@ -1,0 +1,76 @@
+lesson: 15-voting-debate-topology
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/15-voting-debate-topology/docs/en.md
+exercises:
+  - index: 1
+    slug: the_debate_rounds_buy_tokens_and_never_move_the_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Plot the coordination-tax curve for graph topology: accuracy vs N, tokens vs N. At what N does the curve inflect?
+    zh: |
+      跑 `code/main.py`。替圖形拓撲畫出協調稅曲線：準確率對 N、詞元對 N。曲線在哪個 N 出現反曲？
+    verifies: >-
+      exact homogeneous graph accuracy for N=1..9 is 0.72, 0.72, 0.8087, 0.8087, 0.8624, 0.8624,
+      0.8984, 0.8984, 0.9238 at 800 tokens per agent, with odd-N gains shrinking monotonically -- no
+      inflection; the reference bench lands within 0.08. rounds 1-4 give the same final answer 600 of
+      600 times. Even N equals N-1 exactly. steps is 4 at every N and graph/N=7 over star/N=3 is 4.7x,
+      not ~7x
+  - index: 2
+    slug: heterogeneity_only_helps_by_splitting_the_wrong_vote
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement A-HMAD: three agents with deliberately different biases. How does the all-same-bias baseline compare to A-HMAD on the monoculture attack from Lesson 14?
+    zh: |
+      實作 A-HMAD：三個帶刻意不同偏誤的代理。在第 14 課那個單一栽培攻擊上，全同偏誤的基線跟 A-HMAD 相比如何？
+    verifies: >-
+      on Lesson 14's monoculture profile plurality, CP-WBFT and DecentLLMs all return 42%; with the
+      three shared-model answers split, plurality and DecentLLMs return 4.2% and CP-WBFT returns None
+      (0.443 of the confidence, under 0.5). At p=0.72 same-bias N=3 scores 0.8087 and different-bias
+      0.8652, a gain of p(1-p)^2; [0.9,0.6,0.6] scores 0.936 against 0.816 reversed. The heterogeneous
+      flag also changes accuracies, and heterogeneous loses 5 of the bench's 12 cells
+  - index: 3
+    slug: a_judge_that_scores_consensus_is_a_conformity_meter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "judge" role to the graph topology that does not vote, only scores the final consensus. Does this change the emergent conformity behavior?
+    zh: |
+      替圖形拓撲加一個「裁判」角色：它不投票，只替最終共識評分。這會改變那個浮現的從眾行為嗎？
+    verifies: >-
+      a copy of run_graph matches the reference answer and tokens on 600 seeded runs. A judge gating
+      on agreement >= 0.8 lifts switches from 94 to 139 over 200 debates at N=5 with all 200 finals
+      and accuracy 0.905 unchanged. Mean agreement rises 0.756, 0.850, 0.916, 0.945 over rounds 1-4 at
+      constant accuracy, and wrong finals score 0.821 against 0.853 for right ones
+  - index: 4
+    slug: conformity_is_a_literal_and_no_setting_of_it_changes_an_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the AgentVerse paper (ICLR 2024). Identify which emergent behavior your implementation exhibits most strongly. Can you elicit the opposite behavior by a prompt change?
+    zh: |
+      讀 AgentVerse 論文（ICLR 2024）。指認出你的實作最強烈展現哪一種浮現行為。你能靠改提示詞誘導出相反的行為嗎？
+    verifies: >-
+      conformity probability 0.0, 0.4 and 1.0 give identical final answers on 200 seeds at N=5,
+      accuracy 0.905; a contrarian rule gives 0.555, flipping 85 right-to-wrong and 15 wrong-to-right.
+      SimAgent's only method is answer, so volunteer behavior cannot occur. The lesson's 'even when
+      the critic is wrong' gloss and its omission of destructive behavior are checked against its text
+  - index: 5
+    slug: graph_wins_by_one_voter_and_loses_the_token_column
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read MultiAgentBench (arXiv:2503.01935) Section 4 (topology experiments). Reproduce the "graph-wins-research" result on one task from the paper using your harness.
+    zh: |
+      讀 MultiAgentBench（arXiv:2503.01935）第 4 節（拓撲實驗）。用你的執行框架，在論文中的一項任務上重現那個「圖形贏研究」的結果。
+    verifies: >-
+      exact accuracy at N=5: graph 0.8624, star 0.8087, tree 0.72, chain 0.72; graph at N=3,5,7 equals
+      star at N=4,6,8 exactly, while graph's tokens are 2x star's. run_tree's final equals its left
+      half's majority on 600 of 600 runs. The chain recurrence holds P(right) at 0.72 for every length
+      and the reference samples within 0.08 of it
