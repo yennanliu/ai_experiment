@@ -1,0 +1,75 @@
+lesson: 17-generative-agents-simulation
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/17-generative-agents-simulation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_invitations_are_scripted_by_index_so_agents_five_to_nine_never_hear
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm 3+ agents converge at the party. Increase agents to 10 — does the emergence still happen?
+    zh: |
+      跑 `code/main.py`。確認有 3 個以上的代理在派對匯集。把代理數增加到 10 —— 那個浮現還會發生嗎？
+    verifies: >-
+      run_simulation converges 5/5, 5/10 and 5/25 at n=5, 10, 25 -- the same five agents -- and raises
+      IndexError at n=3 and 4; agents 5-9 hold 0 memories. Agent's 4 public methods take no other
+      agent, so the three tick branches in run_simulation are the only inviters; an agent-driven relay
+      through the same observe converges 10/10 and 25/25. update_plan plans tick 5 for an invitation
+      at tick 3, ticks=5 converges 0/5, and the relay reaches 64 of 100 by the deadline.
+      retrieve_top_k is called by neither run_simulation nor Agent
+  - index: 2
+    slug: without_reflection_nobody_comes_because_reflection_is_the_only_wire
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Remove the reflection step. What does behavior look like? Map to the ablation finding in Park 2023.
+    zh: |
+      拿掉反思那一步。行為變成什麼樣子？把它對映到 Park 2023 的消融發現。
+    verifies: >-
+      with reflect a no-op 1 of 5 agents converge against 5 of 5 -- only the seeded host -- where
+      Park's no-reflection condition fell from 29.89 to 26.88 TrueSkill, above the 22.95 human
+      crowdworker. Moving reflect's keyword test into update_plan reproduces every final location and
+      plan, and the belief is a fixed string with no host, place or time. 3 of 6 phrasings of one
+      invitation form a belief; reflect never lowercases
+  - index: 3
+    slug: the_talk_cannot_spread_and_when_it_can_the_first_invitation_wins
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Introduce a competing seeded goal ("Klaus wants to give a research talk at 5pm"). Do agents split, or does one goal dominate? What determines it?
+    zh: |
+      引入一個競爭的種子目標（「Klaus 想在下午 5 點做一場研究演講」）。代理會分裂，還是某一個目標會主導？是什麼決定的？
+    verifies: >-
+      on reference Agents with Klaus as agent-4 the party ends with agents 0-3 and the Library with
+      Klaus alone: talk invitations lack 'party at'. With reflection keyed by place the split is 3-2,
+      agent-3 going where it was invited first because act takes the first matching plan; delaying
+      each talk invitation one tick leaves Klaus alone. Talk at importance 10 against party at 6 gives
+      the identical split
+  - index: 4
+    slug: the_fifth_guest_is_turned_away_and_never_tries_again
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add spatial constraints: Hobbs Cafe holds at most 4 agents. Does the simulation handle overflow gracefully, or does it hit the "single-person bathroom" failure pattern?
+    zh: |
+      加上空間限制：Hobbs Cafe 最多容納 4 個代理。這個模擬能優雅地處理溢位，還是會撞上那個「單人廁所」的失敗樣式？
+    verifies: >-
+      the reference puts 5 agents in HobbsCafe and never names a capacity. Enforcing 4 refuses agent-4
+      at tick 5 and it is still home at tick 11 with the refusal in memory, since act needs p.tick ==
+      tick. Visiting agents in reverse refuses agent-0, the host. Retrying every tick gives 7 refusals
+      and 0 admissions, because act never moves anyone out
+  - index: 5
+    slug: read_park_et_al_section_six
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Park et al. (arXiv:2304.03442) Section 6 (emergent behavior experiments). Identify one behavior not reproducible in your miniature. What component of the architecture would you need to enhance?
+    zh: |
+      讀 Park 等人（arXiv:2304.03442）第 6 節（浮現行為實驗）。指認出一項你的縮影版重現不了的行為。你需要強化架構中的哪個組件？
+    cites: >-
+      The Valentine's Day emergence
