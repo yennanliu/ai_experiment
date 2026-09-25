@@ -566,7 +566,8 @@ async function autoApplyBatch(startIndex = 0, count = 10) {
     // Step through the modal (max 10 steps)
     for (let step = 0; step < 10; step++) {
       // Unanswered screening question: stop so the user answers it truthfully
-      const empty = [...document.querySelectorAll('.jobs-easy-apply-modal input[required], .jobs-easy-apply-modal select[required]')].filter(el => !el.value);
+      const empty = [...document.querySelectorAll('.jobs-easy-apply-modal :is(input, select, textarea)')]
+        .filter(el => el.matches(':invalid') || (el.getAttribute('aria-required') === 'true' && !el.value.trim())); // :invalid covers unchecked required radios/checkboxes
       if (empty.length) { console.log('Paused: screening question needs your answer'); return; }
 
       const next = window.clickModalNext();
@@ -634,9 +635,12 @@ const CONFIG = {
   delayBetweenApps: { min: 2000, max: 4000 },
 };
 
-// Inject helpers first: evaluate INJECT_AUTOMATION_HELPERS from run_linkedin_automation.js
-// (defines window.getJobs, clickJob, clickEasyApply, clickNext, checkSuccess, closeModal)
-eval(INJECT_AUTOMATION_HELPERS);
+// Inject helpers first. INJECT_AUTOMATION_HELPERS is a string constant in
+// run_linkedin_automation.js (Node), so it does not exist in the page. Either run
+// STEP 4 of MCP_COMMANDS in that file (mcp__chrome-devtools__evaluate_script with the
+// helper body), or paste the body of INJECT_AUTOMATION_HELPERS into this console.
+// It defines window.getJobs, clickJob, clickEasyApply, clickNext, checkSuccess, closeModal.
+if (typeof window.getJobs !== 'function') throw new Error('Inject the automation helpers first');
 
 // Then run batch
 async function runBatch() {
@@ -674,7 +678,8 @@ async function runBatch() {
       // Step through the modal
       for (let step = 0; step < 10; step++) {
         // Unanswered screening question: stop so the user answers it truthfully
-        const empty = [...document.querySelectorAll('.jobs-easy-apply-modal input[required], .jobs-easy-apply-modal select[required]')].filter(el => !el.value);
+        const empty = [...document.querySelectorAll('.jobs-easy-apply-modal :is(input, select, textarea)')]
+          .filter(el => el.matches(':invalid') || (el.getAttribute('aria-required') === 'true' && !el.value.trim())); // :invalid covers unchecked required radios/checkboxes
         if (empty.length) {
           console.log(`⏸️  Paused on ${job.title}: screening question needs your answer`);
           return;

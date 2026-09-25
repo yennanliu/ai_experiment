@@ -128,7 +128,7 @@ await applyTab.bringToFront();
 ### Step 3: Select Cover Letter (自訂推薦信1)
 ```javascript
 // Click to open dropdown - find parent of "系統預設" span
-await page.evaluate(() => {
+await applyTab.evaluate(() => {
   const elements = Array.from(document.querySelectorAll('*'));
   const systemDefault = elements.find(el => el.textContent === '系統預設' && el.tagName === 'SPAN');
 
@@ -137,10 +137,10 @@ await page.evaluate(() => {
   }
 });
 
-await page.waitForTimeout(500);
+await applyTab.waitForTimeout(500);
 
 // Select the cover letter option by clicking the multiselect option
-await page.evaluate(() => {
+await applyTab.evaluate(() => {
   const options = document.querySelectorAll('.multiselect__option');
 
   options.forEach(option => {
@@ -155,7 +155,7 @@ await page.evaluate(() => {
 
 ### Step 4: Submit Application
 ```javascript
-await page.evaluate(() => {
+await applyTab.evaluate(() => {
   const submitButton = Array.from(document.querySelectorAll('button')).find(el =>
     el.textContent.includes('確認送出')
   );
@@ -164,7 +164,7 @@ await page.evaluate(() => {
   }
 });
 
-await page.waitForTimeout(3000);
+await applyTab.waitForTimeout(3000);
 ```
 
 **Success Indicator:** Page redirects to `/job/apply/done/?jobNo=XXXXX&jobsource=joblist_search`

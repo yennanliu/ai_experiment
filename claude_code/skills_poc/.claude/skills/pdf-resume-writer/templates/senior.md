@@ -7,7 +7,7 @@ LinkedIn: linkedin.com/in/sarahjohnson | GitHub: github.com/sarahjohnson
 
 ## PROFESSIONAL SUMMARY
 
-Staff Software Engineer with 10+ years of experience architecting and building large-scale distributed systems at FAANG companies. Deep expertise in cloud infrastructure, microservices, system design, and technical leadership. Track record of leading critical initiatives, mentoring engineers, and driving technical excellence across organizations.
+Staff Software Engineer with 10+ years of experience architecting and building large-scale distributed systems at large technology companies. Deep expertise in cloud infrastructure, microservices, system design, and technical leadership. Track record of leading critical initiatives, mentoring engineers, and driving technical excellence across organizations.
 
 ## TECHNICAL EXPERTISE
 

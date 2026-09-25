@@ -398,9 +398,11 @@ When helping with resumes:
 ### Using Pandoc (Recommended):
 
 ```bash
-# Install pandoc (if not installed)
-# macOS: brew install pandoc
-# Linux: sudo apt-get install pandoc
+# Install pandoc and a TeX engine that provides xelatex (if not installed)
+# macOS: brew install pandoc && brew install --cask basictex
+# Linux: sudo apt-get install pandoc texlive-xetex
+# mainfont must be installed locally (check with: fc-list | grep -i "<font>");
+# Calibri ships with Microsoft Office. Without it, use e.g. "DejaVu Sans" or "Liberation Sans".
 
 # Generate PDF from Markdown
 pandoc resume.md -o FirstName_LastName_Resume.pdf \
