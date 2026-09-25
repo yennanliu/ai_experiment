@@ -1,0 +1,80 @@
+lesson: 25-case-studies-2026-sota
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/25-case-studies-2026-sota/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fifteen_x_is_against_a_chat_and_the_mapper_has_no_field_for_the_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Anthropic Research system post end-to-end. Identify three design decisions that would change if you replaced Opus 4 with a smaller model (e.g., Haiku 4).
+    zh: |
+      把 Anthropic Research 系統那篇貼文從頭到尾讀完。指認出三項若把 Opus 4 換成較小模型（例如 Haiku 4）就會改變的設計決策。
+    verifies: >-
+      the reference Design's 7 fields and the Research case's 4 patterns name no model, token budget
+      or call count, so none of the three decisions a smaller model changes (lead model,
+      effort-scaling tiers, token budget) has an input. The lesson's '15x tokens per query vs
+      single-agent' is the post's 15x against a chat; against a 4x single agent it is 3.75x. The
+      lesson and the mapper claim a verifier role; the post's roles are LeadResearcher, subagents and
+      a CitationAgent for attribution
+  - index: 2
+    slug: peer_review_implies_four_roles_and_six_artifacts_and_the_mapper_needs_one_boolean
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read MetaGPT Sections 3-4 (arXiv:2308.00352). Encode one SOP from your own domain (not software) as role prompts. How many roles does the SOP imply?
+    zh: |
+      讀 MetaGPT 第 3-4 節（arXiv:2308.00352）。把你自己領域（非軟體）中的一份 SOP 編碼成角色提示詞。那份 SOP 蘊含幾個角色？
+    verifies: >-
+      journal peer review as 7 (role, reads, publishes) steps implies 4 roles by actor and 6 artifact
+      schemas, the editor publishing 3; its DAG is 6 stages deep because the 2 reviewer steps run
+      together. The reference map_to_case sends the same SOP to metagpt_chatdev with
+      roles_distinct=True and to anthropic_research with it False
+  - index: 3
+    slug: the_only_answer_that_dehallucinates_is_the_verifiers_own_tests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read ChatDev (arXiv:2307.07924). Identify the mechanism of "communicative dehallucination." Implement it in one of your existing multi-agent systems.
+    zh: |
+      讀 ChatDev（arXiv:2307.07924）。指認出「溝通式去幻覺」的機制。在你現有的某套多代理系統裡把它實作出來。
+    verifies: >-
+      in Lesson 08's pipeline, guessing through 4 operations from the buggy a * b takes 4 artifacts
+      and 7 messages, all 4 approved by the critic; asking the planner first takes 3 messages and
+      ships a + b. The signature admits 4 of 4 candidates and the description is the wish verbatim;
+      only a test case narrows to 1, and a lookup table over the tests passes the reference verifier.
+      Asked about a product wish, the planner answers with the sum's tests and a + b ships approved
+      and passed
+  - index: 4
+    slug: the_rare_agent_that_obeys_the_feed_exists_only_at_population_scale
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read about OpenClaw and Moltbook. Pick one specific failure mode that emerged at population scale that would not appear in a 5-agent system. How would you engineer against it?
+    zh: |
+      讀關於 OpenClaw 與 Moltbook 的資料。挑一個在族群規模上浮現、而在 5 代理系統中不會出現的具體失敗模式。你會怎麼在工程上防它？
+    verifies: >-
+      at an assumed 1-in-1000 rate of agents that obey feed instructions, a 5-agent system holds one
+      with probability 0.50% while 1.5M agents hold 1500; at reach 2000 per repost the payload passes
+      1000 agents at tick 11 and ends at 1304, and a reach cap of 500 ends it at 2. 1.5M agents over
+      17,000 owners is 88 each. map_to_case reads n_agents_expected 0 times; 1 of 3 CASES carries a
+      security pattern; the lesson's Moltbook date and first release name disagree with Wikipedia
+  - index: 5
+    slug: this_build_is_the_research_shape_and_the_mapper_files_it_under_metagpt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick your current multi-agent project. Which of the three case studies is the closest reference? Which design decisions from that case study have you NOT yet adopted? Write down one you will adopt this quarter.
+    zh: |
+      挑你當前的多代理專案。三份案例研究中哪一份是最接近的參考？那份案例研究中，有哪些設計決策你「還沒」採用？寫下你這一季會採用的其中一項。
+    verifies: >-
+      this Phase 16 build follows 3 of the Research case's 4 patterns, 1 of MetaGPT's and 0 of
+      OpenClaw's; the reference mapper files it under metagpt_chatdev as engineering and
+      anthropic_research as research. Flipping verification_required or runtime_duration_hours changes
+      0 of 64 mappings, and automation maps to MetaGPT or Research depending on roles_distinct, with
+      no case of its own
