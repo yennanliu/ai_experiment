@@ -1,3 +1,8 @@
+---
+name: pdf-resume-writer
+description: Produce a finished ATS-friendly resume as a PDF (Markdown/HTML source plus the conversion command) for software-engineering roles. Use when the user wants a resume generated or exported as a PDF file; for reviewing or rewriting resume content without producing a file, use resume-writer.
+---
+
 # PDF Resume Writer
 
 Professional PDF resume/CV writer specialized in creating ATS-friendly, visually appealing resumes for Software Engineering positions at top tech companies (FAANG: Facebook/Meta, Amazon, Apple, Netflix, Google, Microsoft, and other leading tech firms).
@@ -24,7 +29,7 @@ Create professionally formatted PDF resumes that:
 - Prioritize readability and scannability
 - Focus on quantifiable achievements
 - Use action verbs and impact metrics
-- Keep it concise (1 page for <5 years, 2 pages for 5+ years)
+- Keep it concise (1 page for <10 years of experience, 2 pages for 10+ years)
 
 ### 3. FAANG-Optimized
 - Emphasize measurable impact and scale
@@ -83,38 +88,6 @@ Create professionally formatted PDF resumes that:
 - "Worked on database optimization"
 - "Helped with migration project"
 - "Responsible for data pipeline"
-
-### Quantifiable Metrics to Include
-
-**Performance:**
-- Response time improvements (ms, seconds)
-- Throughput increases (requests/second, transactions/day)
-- Latency reductions
-- System uptime/reliability percentages
-
-**Scale:**
-- Number of users impacted
-- Data volume processed
-- Traffic handled
-- System capacity
-
-**Business Impact:**
-- Cost savings (dollars, percentage)
-- Revenue generated or influenced
-- Efficiency gains (time saved, automation hours)
-- User engagement increases
-
-**Code Quality:**
-- Test coverage percentages
-- Bug reduction rates
-- Code review metrics
-- Deployment frequency
-
-**Team Impact:**
-- Number of engineers mentored
-- Cross-team collaborations
-- Projects led
-- Documentation created
 
 ## Technical Skills Section
 
@@ -274,13 +247,13 @@ GitHub: github.com/username/project | Live Demo: project-url.com
 ## Length Guidelines
 
 ### 1 Page (Preferred):
-- 0-5 years of experience
+- Under 10 years of experience
 - New graduates
 - Career changers
 - Most mid-level roles
 
 ### 2 Pages (Acceptable):
-- 5+ years of experience
+- 10+ years of experience
 - Senior engineers
 - Multiple relevant positions
 - Significant achievements requiring detail
@@ -316,53 +289,11 @@ GitHub: github.com/username/project | Live Demo: project-url.com
 ✗ Colored backgrounds or watermarks
 ✗ Headers/footers with important info
 
-## Action Verb Bank
-
-### Leadership & Management:
-Led, Directed, Managed, Coordinated, Supervised, Mentored, Coached, Drove, Spearheaded, Orchestrated
-
-### Technical Development:
-Developed, Engineered, Built, Designed, Implemented, Architected, Programmed, Coded, Created, Deployed
-
-### Improvement & Optimization:
-Optimized, Improved, Enhanced, Upgraded, Refactored, Streamlined, Accelerated, Reduced, Increased, Automated
-
-### Analysis & Problem-Solving:
-Analyzed, Debugged, Troubleshot, Resolved, Investigated, Diagnosed, Identified, Evaluated, Assessed
-
-### Collaboration & Communication:
-Collaborated, Partnered, Coordinated, Communicated, Presented, Documented, Contributed, Participated
-
-### Innovation & Initiative:
-Pioneered, Initiated, Introduced, Launched, Established, Founded, Innovated, Prototyped, Experimented
-
 ## PDF Generation Process
 
 ### Tools & Methods:
 
-**Option 1: Markdown → PDF (Recommended)**
-- Write content in clean markdown format
-- Use pandoc or similar tools to convert to PDF
-- Apply professional CSS/template for styling
-- Benefits: Version control friendly, easy to update
-
-**Option 2: LaTeX (Professional, Complex)**
-- Use templates like moderncv, awesome-cv
-- Professional typography and layout control
-- Steep learning curve but excellent results
-- Best for academic or highly technical resumes
-
-**Option 3: HTML/CSS → PDF**
-- Write in HTML with CSS styling
-- Convert using tools like wkhtmltopdf, puppeteer
-- Full design control
-- Good for custom designs
-
-**Option 4: Python (Automated)**
-- Use libraries like ReportLab, fpdf, or WeasyPrint
-- Programmatic PDF generation
-- Great for batch processing or templates
-- Can integrate with databases
+Default: write the resume in Markdown and convert it with pandoc (command below). Use HTML + WeasyPrint only when the layout needs custom CSS.
 
 ### Recommended Workflow:
 
@@ -379,7 +310,7 @@ Before submitting to FAANG companies:
 
 **Content:**
 - [ ] All bullets start with strong action verbs
-- [ ] Every achievement includes quantifiable metrics
+- [ ] Achievements carry metrics the candidate can support (missing numbers flagged as placeholders, none invented)
 - [ ] Technical skills are current and accurate
 - [ ] Experience demonstrates scale and impact
 - [ ] Shows collaboration and leadership
@@ -407,218 +338,7 @@ Before submitting to FAANG companies:
 
 ## Sample Resume Templates
 
-### Template 1: Entry-Level SWE (New Grad)
-
-```markdown
-# JANE DOE
-
-Email: jane.doe@email.com | Phone: (123) 456-7890 | Location: San Francisco, CA
-LinkedIn: linkedin.com/in/janedoe | GitHub: github.com/janedoe
-
-## EDUCATION
-
-**Bachelor of Science in Computer Science**
-Stanford University | Stanford, CA | Graduation: June 2024
-GPA: 3.9/4.0 | Dean's List (All Semesters) | Relevant Coursework: Algorithms, Operating Systems, Distributed Systems, Machine Learning
-
-## TECHNICAL SKILLS
-
-**Languages:** Python, Java, C++, JavaScript, TypeScript, SQL
-**Frameworks & Libraries:** React, Node.js, Express, Flask, Django, TensorFlow
-**Databases & Tools:** PostgreSQL, MongoDB, Redis, Git, Docker, AWS, Linux
-**Technologies:** REST APIs, GraphQL, Microservices, CI/CD, Agile/Scrum
-
-## EXPERIENCE
-
-**Software Engineering Intern**
-Meta | Menlo Park, CA | June 2023 – September 2023
-
-• Developed new feed ranking feature using Python and PyTorch, increasing user engagement by 12% across 10M+ daily active users
-• Optimized GraphQL API queries reducing average response time by 45% (800ms to 440ms) through caching and batching strategies
-• Collaborated with cross-functional team of 8 engineers, 2 PMs, and 1 designer in Agile environment to ship feature to production
-• Wrote comprehensive unit and integration tests achieving 95% code coverage, preventing 3 critical bugs from reaching production
-
-**Software Engineering Intern**
-Amazon | Seattle, WA | June 2022 – August 2022
-
-• Built internal automation tool using Java and Spring Boot, reducing manual deployment time by 80% (2 hours to 24 minutes)
-• Designed and implemented RESTful API supporting 500+ daily requests with 99.9% uptime and sub-200ms latency
-• Refactored legacy codebase improving code maintainability, reducing lines of code by 30% while maintaining functionality
-• Presented technical demo to 50+ engineers across AWS teams, receiving positive feedback and adoption commitments
-
-## PROJECTS
-
-**Distributed Task Scheduler** | Go, Redis, PostgreSQL, Docker
-• Built distributed job scheduling system handling 10,000+ tasks/day with fault tolerance and automatic retry mechanisms
-• Implemented priority queue and worker pool architecture achieving 99.9% task completion rate with sub-second latency
-• Deployed using Docker Compose with load balancing, horizontal scaling, and monitoring dashboards
-GitHub: github.com/janedoe/distributed-scheduler
-
-**Real-Time Collaboration Platform** | React, Node.js, WebSocket, MongoDB
-• Created real-time document collaboration application supporting 100+ concurrent users with operational transformation
-• Implemented JWT authentication, role-based access control, and end-to-end encryption for security
-• Achieved sub-50ms sync latency and 99.95% message delivery rate
-Live Demo: collab-platform.com | GitHub: github.com/janedoe/collab-platform
-
-## LEADERSHIP & ACTIVITIES
-
-• **Teaching Assistant** – Data Structures & Algorithms (CS106B) | Assisted 200+ students, led weekly sections
-• **Hackathon Winner** – TreeHacks 2023 | Built AI-powered code review tool, 1st place out of 100+ teams
-• **Open Source Contributor** – Contributed 15+ pull requests to Kubernetes and TensorFlow projects
-```
-
-### Template 2: Mid-Level SWE (3-7 years)
-
-```markdown
-# JOHN SMITH
-
-San Francisco, CA | john.smith@email.com | (123) 456-7890
-LinkedIn: linkedin.com/in/johnsmith | GitHub: github.com/johnsmith
-
-## SUMMARY
-
-Software Engineer with 5 years of experience building scalable distributed systems and cloud infrastructure at high-growth startups. Expert in backend development, microservices architecture, and AWS cloud services. Proven track record of improving system performance, reducing costs, and leading cross-functional initiatives.
-
-## TECHNICAL SKILLS
-
-**Languages:** Python, Go, Java, JavaScript, SQL
-**Frameworks:** Django, Flask, Spring Boot, Node.js, React
-**Databases:** PostgreSQL, MySQL, MongoDB, Redis, Elasticsearch, DynamoDB
-**Cloud & DevOps:** AWS (EC2, S3, Lambda, RDS, ECS, CloudFormation), Docker, Kubernetes, Terraform, Jenkins, GitHub Actions
-**Technologies:** Microservices, REST APIs, GraphQL, Kafka, RabbitMQ, gRPC, CI/CD
-
-## PROFESSIONAL EXPERIENCE
-
-**Senior Software Engineer**
-Stripe | San Francisco, CA | March 2022 – Present
-
-• Led migration of payment processing system to event-driven microservices architecture using Kafka and Go, improving system throughput by 300% (5K to 20K transactions/second) while reducing latency by 60%
-• Designed and implemented distributed rate limiting service handling 100M+ API requests/day with 99.99% availability
-• Optimized database queries and implemented caching layer using Redis, reducing database load by 70% and saving $100K annually in RDS costs
-• Mentored 4 junior engineers on system design, code quality, and best practices; led 20+ code reviews weekly
-• Collaborated with product, design, and data science teams to ship 15+ features impacting 500K+ merchants globally
-
-**Software Engineer**
-Airbnb | San Francisco, CA | June 2019 – March 2022
-
-• Built real-time booking availability system processing 50M+ queries/day using Go, PostgreSQL, and Redis with 99.95% uptime
-• Developed fraud detection pipeline using Python and Apache Spark, analyzing 10TB+ of data monthly and reducing fraudulent bookings by 35%
-• Led initiative to adopt Kubernetes for deployment, reducing deployment time from 45 minutes to 5 minutes and improving rollback safety
-• Implemented comprehensive monitoring and alerting using Datadog and PagerDuty, reducing mean time to resolution (MTTR) by 40%
-• Participated in on-call rotation supporting critical payment and booking systems serving 50M+ users
-
-**Software Engineer**
-Startup Inc. | San Francisco, CA | July 2017 – June 2019
-
-• Full-stack development of SaaS platform using React, Node.js, and PostgreSQL serving 10K+ enterprise customers
-• Architected and implemented REST API with OAuth 2.0 authentication handling 1M+ requests/day
-• Reduced API response time by 50% through database query optimization, indexing, and N+1 query elimination
-• Built CI/CD pipeline using Jenkins and Docker, enabling daily deployments and reducing release cycle from weekly to daily
-
-## EDUCATION
-
-**Bachelor of Science in Computer Science**
-University of California, Berkeley | Berkeley, CA | Graduated: May 2017
-GPA: 3.8/4.0 | Tau Beta Pi Engineering Honor Society
-
-## CERTIFICATIONS & ADDITIONAL
-
-• AWS Certified Solutions Architect – Professional
-• Google Cloud Professional Cloud Architect
-• Published technical blog on distributed systems with 10K+ monthly readers
-• Conference Speaker: Presented "Building Fault-Tolerant Microservices" at QCon SF 2023
-```
-
-### Template 3: Senior SWE (8+ years)
-
-```markdown
-# SARAH JOHNSON
-
-Seattle, WA | sarah.johnson@email.com | (123) 456-7890
-LinkedIn: linkedin.com/in/sarahjohnson | GitHub: github.com/sarahjohnson
-
-## PROFESSIONAL SUMMARY
-
-Staff Software Engineer with 10+ years of experience architecting and building large-scale distributed systems at FAANG companies. Deep expertise in cloud infrastructure, microservices, system design, and technical leadership. Track record of leading critical initiatives, mentoring engineers, and driving technical excellence across organizations.
-
-## TECHNICAL EXPERTISE
-
-**Languages:** Java, Python, Go, C++, JavaScript, TypeScript, SQL
-**Frameworks & Platforms:** Spring Boot, Django, Node.js, React, Kubernetes, AWS, GCP
-**Distributed Systems:** Microservices, Event-Driven Architecture, Message Queues (Kafka, RabbitMQ, SQS)
-**Databases:** PostgreSQL, MySQL, Cassandra, DynamoDB, Redis, Elasticsearch, MongoDB
-**Infrastructure:** Docker, Kubernetes, Terraform, CloudFormation, Helm, Service Mesh (Istio)
-**Specialties:** System Design, Performance Optimization, Technical Leadership, Distributed Systems
-
-## PROFESSIONAL EXPERIENCE
-
-**Staff Software Engineer**
-Google | Seattle, WA | January 2020 – Present
-
-• Led architecture and development of Google Cloud Storage API gateway serving 1B+ requests/day with 99.999% SLA across 20+ regions
-• Designed multi-region disaster recovery strategy reducing RTO from 4 hours to 15 minutes and RPO from 1 hour to near-zero
-• Drove technical direction for team of 15 engineers, defining roadmap, conducting design reviews, and establishing engineering best practices
-• Optimized hot path in storage service reducing P99 latency by 40% (from 500ms to 300ms) while handling 10x traffic growth
-• Led incident response for critical production issues affecting millions of users, driving root cause analysis and preventive measures
-• Mentored 8 engineers across L3-L5 levels on system design, architecture, and career development; 3 promoted under my guidance
-
-**Senior Software Engineer**
-Amazon Web Services (AWS) | Seattle, WA | March 2016 – January 2020
-
-• Architected and built serverless compute service handling 10M+ Lambda function invocations/day with sub-second cold start times
-• Led cross-team initiative to migrate legacy monolith to microservices using Kubernetes and service mesh, improving development velocity by 50%
-• Designed cost optimization strategy for EC2 fleet reducing infrastructure costs by $5M annually while maintaining performance SLAs
-• Built real-time monitoring and anomaly detection system using machine learning, reducing incident detection time by 60%
-• Collaborated with 5 engineering teams, PM, and leadership on multi-quarter initiatives impacting AWS's core compute platform
-• On-call leader for critical services; reduced P1 incidents by 70% through proactive monitoring and system improvements
-
-**Software Engineer II**
-Microsoft | Redmond, WA | June 2013 – March 2016
-
-• Developed distributed caching layer for Azure Storage reducing database load by 80% and improving API latency by 50%
-• Built automated testing framework increasing test coverage from 60% to 95%, catching 100+ bugs before production
-• Implemented continuous deployment pipeline enabling daily releases with automated rollback, reducing deployment-related incidents by 90%
-• Led technical design for new Azure Blob Storage feature serving 100K+ enterprise customers globally
-
-## TECHNICAL LEADERSHIP & IMPACT
-
-**System Design & Architecture:**
-• Designed 10+ large-scale distributed systems handling billions of requests
-• Expert in microservices, event-driven architecture, and cloud-native design patterns
-• Led architecture reviews and provided guidance across multiple teams
-
-**Performance & Reliability:**
-• Consistently improved system latency by 30-60% through optimization
-• Achieved 99.99%+ uptime for mission-critical services
-• Reduced infrastructure costs by $5M+ through efficiency improvements
-
-**Mentorship & Team Building:**
-• Mentored 15+ engineers across junior to senior levels
-• Conducted 100+ technical interviews, raising hiring bar
-• Led onboarding programs for new team members
-
-## EDUCATION & CREDENTIALS
-
-**Master of Science in Computer Science**
-Carnegie Mellon University | Pittsburgh, PA | Graduated: 2013
-Specialization: Distributed Systems | GPA: 3.9/4.0
-
-**Bachelor of Science in Computer Science**
-Massachusetts Institute of Technology (MIT) | Cambridge, MA | Graduated: 2011
-GPA: 3.8/4.0 | Recipient: MIT Presidential Fellowship
-
-## PUBLICATIONS & PATENTS
-
-• Patent: "Method for Distributed Cache Invalidation in Multi-Region Systems" (US Patent #10,123,456)
-• Publication: "Scaling Microservices: Lessons from 1B+ Daily Requests" – IEEE Cloud Computing Conference 2022
-• Technical Blog: 50+ articles on distributed systems with 100K+ total readers
-
-## AWARDS & RECOGNITION
-
-• Google Peer Bonus Award (3x) – For exceptional technical contributions
-• AWS Bar Raiser – Certified technical interviewer maintaining hiring standards
-• Speaker: QCon, AWS re:Invent, Google Cloud Next
-```
+Illustrative templates live in `templates/`: `entry.md` (new grad), `mid.md` (3-7 years), `senior.md` (8+ years). Adapt their structure only — never reuse their employers, schools, or numbers.
 
 ## Usage Instructions
 
@@ -628,7 +348,7 @@ When using this skill:
 2. **Assess Level**: Determine candidate's experience level (entry, mid, senior)
 3. **Optimize Content**:
    - Rewrite bullets using action verb + task + tech + metrics formula
-   - Add quantifiable achievements
+   - Surface quantifiable achievements the candidate can support; where a number is missing, ask or leave a placeholder like [X%] — never invent metrics
    - Remove fluff and irrelevant content
    - Tailor to FAANG requirements
 4. **Apply Formatting**: Use appropriate template and professional styling
@@ -638,8 +358,6 @@ When using this skill:
 
 ## Tools to Use
 
-- **Read**: Load existing resume content
-- **Write**: Create formatted resume files (markdown, LaTeX, HTML)
 - **Bash**: Run PDF conversion tools (pandoc, pdflatex, wkhtmltopdf, weasyprint)
 - Do not use **Edit** for major rewrites - use **Write** with complete new content
 
@@ -702,17 +420,6 @@ pip install weasyprint
 weasyprint resume.html FirstName_LastName_Resume.pdf
 ```
 
-### Using Python (ReportLab):
-
-```python
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-
-# Create PDF with professional styling
-# [Code example for generating PDF]
-```
-
 ### Using LaTeX:
 
 ```bash
@@ -725,7 +432,7 @@ pdflatex resume.tex
 
 Before delivering final PDF:
 
-1. **ATS Test**: Upload to free ATS checker (jobscan.co, resumeworded.com)
+1. **ATS Test**: Confirm the PDF has selectable text and standard headings; suggest the user run an ATS checker themselves if they want one
 2. **Visual Check**: Verify formatting, spacing, alignment
 3. **Content Review**: Check for typos, consistency, accuracy
 4. **File Check**: Ensure PDF is readable, searchable, and not image-based

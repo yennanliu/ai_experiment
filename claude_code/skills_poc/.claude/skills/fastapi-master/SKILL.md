@@ -71,16 +71,24 @@ project/
 
 ```python
 # app/main.py
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.v1.router import api_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: initialize database, cache, etc.
+    yield
+    # Shutdown: cleanup resources
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs",
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -94,23 +102,13 @@ app.add_middleware(
 
 # Include routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-@app.on_event("startup")
-async def startup_event():
-    # Initialize database, cache, etc.
-    pass
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # Cleanup resources
-    pass
 ```
 
 ### 2. Configuration with Pydantic Settings
 
 ```python
 # app/config.py
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 class Settings(BaseSettings):
@@ -129,9 +127,7 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 settings = Settings()
 ```
@@ -140,7 +136,7 @@ settings = Settings()
 
 ```python
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -161,8 +157,7 @@ class UserInDB(UserBase):
     is_active: bool = True
     created_at: datetime
 
-    class Config:
-        from_attributes = True  # For SQLAlchemy models
+    model_config = ConfigDict(from_attributes=True)  # For SQLAlchemy models
 
 class User(UserInDB):
     pass
@@ -379,13 +374,14 @@ user_crud = CRUDUser()
 
 ```python
 # app/core/security.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+from jwt.exceptions import InvalidTokenError
+from pwdlib import PasswordHash
 from app.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = PasswordHash.recommended()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -396,9 +392,9 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode.update({"exp": expire})
@@ -413,7 +409,7 @@ def decode_access_token(token: str) -> Optional[dict]:
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError:
+    except InvalidTokenError:
         return None
 ```
 
@@ -471,53 +467,9 @@ def test_create_user(client):
     assert "id" in data
 ```
 
-## Best Practices Checklist
-
-### API Design
-- [ ] Use proper HTTP methods (GET, POST, PUT, PATCH, DELETE)
-- [ ] Return appropriate status codes
-- [ ] Include response models for all endpoints
-- [ ] Version your API (e.g., /api/v1/)
-- [ ] Use plural nouns for resource endpoints (/users, /items)
-- [ ] Implement pagination for list endpoints
-
-### Security
-- [ ] Use OAuth2 with Password (and hashing), Bearer with JWT tokens
-- [ ] Hash passwords with bcrypt
-- [ ] Validate all input with Pydantic
-- [ ] Implement rate limiting for public endpoints
-- [ ] Use HTTPS in production
-- [ ] Set appropriate CORS policies
-- [ ] Implement proper authorization checks
-
-### Database
-- [ ] Use async database drivers (asyncpg, aiomysql)
-- [ ] Implement connection pooling
-- [ ] Use migrations (Alembic)
-- [ ] Index frequently queried fields
-- [ ] Use transactions for multi-step operations
-- [ ] Implement soft deletes when appropriate
-
-### Performance
-- [ ] Use async/await for I/O operations
-- [ ] Implement caching (Redis)
-- [ ] Use background tasks for long-running operations
-- [ ] Optimize database queries (N+1 prevention)
-- [ ] Enable response compression (gzip)
-- [ ] Use CDN for static files
-
-### Code Quality
-- [ ] Type hints everywhere
-- [ ] Comprehensive docstrings
-- [ ] Unit tests with >80% coverage
-- [ ] Integration tests for critical paths
-- [ ] Proper error handling and custom exceptions
-- [ ] Logging with appropriate levels
-- [ ] Environment-based configuration
-
 ## Common Pitfalls to Avoid
 
-1. **Don't mix sync and async** - Use async throughout or none at all
+1. **Don't block inside `async def`** - Use `def` endpoints (run in a threadpool) or async drivers for blocking I/O
 2. **Don't use mutable defaults** - Use `None` and create in function body
 3. **Don't skip input validation** - Always use Pydantic models
 4. **Don't hardcode secrets** - Use environment variables
@@ -532,8 +484,8 @@ def test_create_user(client):
 ```txt
 fastapi[all]
 uvicorn[standard]
-python-jose[cryptography]
-passlib[bcrypt]
+pyjwt
+pwdlib[argon2]
 sqlalchemy
 alembic
 pydantic-settings

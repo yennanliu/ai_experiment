@@ -81,29 +81,6 @@ Use the **CAR Method** (Context, Action, Result):
 - Improved customer satisfaction scores from 3.2 to 4.7/5.0 by implementing new feedback system and training program for 20+ support staff
 - Led cross-functional sales initiative that generated $2.3M in new revenue, exceeding quarterly target by 28%
 
-### Powerful Action Verbs by Category
-
-**Leadership:**
-- Directed, Led, Managed, Supervised, Orchestrated, Spearheaded, Coordinated, Championed
-
-**Achievement:**
-- Achieved, Delivered, Exceeded, Surpassed, Accomplished, Attained, Earned
-
-**Improvement:**
-- Optimized, Enhanced, Improved, Streamlined, Transformed, Revitalized, Upgraded, Modernized
-
-**Creation:**
-- Developed, Created, Designed, Built, Established, Launched, Implemented, Pioneered
-
-**Analysis:**
-- Analyzed, Evaluated, Assessed, Researched, Investigated, Audited, Forecasted
-
-**Communication:**
-- Presented, Communicated, Negotiated, Collaborated, Facilitated, Articulated
-
-**Technical:**
-- Programmed, Engineered, Architected, Automated, Integrated, Debugged, Deployed
-
 ### Keywords and ATS Optimization
 
 1. **Mirror Job Description**
@@ -124,43 +101,6 @@ Use the **CAR Method** (Context, Action, Result):
    - Adequate white space
    - Bullet points over paragraphs
 
-## Industry-Specific Guidelines
-
-### Technology/Engineering
-- Include GitHub profile and portfolio
-- List specific technologies, frameworks, and tools
-- Highlight open-source contributions
-- Emphasize system design and architecture
-- Include metrics: performance improvements, user growth, system uptime
-
-### Business/Finance
-- Focus on revenue, cost savings, ROI
-- Include certifications (CPA, CFA, MBA)
-- Emphasize strategic initiatives
-- Highlight process improvements
-- Use business terminology appropriately
-
-### Marketing/Creative
-- Include portfolio link
-- Highlight campaign results and metrics
-- Show brand growth and engagement
-- Mention tools (Adobe Creative Suite, marketing platforms)
-- Demonstrate cross-channel expertise
-
-### Healthcare
-- List licenses and certifications prominently
-- Emphasize patient outcomes
-- Include specialized skills and procedures
-- Mention compliance and safety records
-- Use medical terminology appropriately
-
-### Education
-- Highlight teaching methodologies
-- Include student outcomes and improvements
-- Mention curriculum development
-- Show educational technology proficiency
-- List relevant certifications
-
 ## Resume Review Checklist
 
 When reviewing a resume, check for:
@@ -172,7 +112,7 @@ When reviewing a resume, check for:
 - [ ] Consistent verb tense (past for previous roles, present for current)
 - [ ] Quantified results wherever possible
 - [ ] No personal pronouns (I, me, my)
-- [ ] No gaps in employment explained
+- [ ] Employment gaps addressed where relevant
 
 ### Format
 - [ ] One page for <10 years experience, two pages for 10+ years
@@ -189,19 +129,6 @@ When reviewing a resume, check for:
 - [ ] Skills section matches job requirements
 - [ ] Contact information complete and professional
 - [ ] LinkedIn profile URL included and updated
-
-## Common Mistakes to Avoid
-
-1. **Generic Resumes** - Always customize for each application
-2. **Duty Descriptions** - Focus on achievements, not responsibilities
-3. **Too Long** - Be concise and relevant
-4. **Objective Statements** - Skip or replace with professional summary
-5. **Irrelevant Information** - No personal details (age, marital status, photo)
-6. **Unexplained Gaps** - Address employment gaps tactfully
-7. **Outdated Format** - Use modern, clean design
-8. **Missing Keywords** - Ensure ATS compatibility
-9. **No Metrics** - Always quantify achievements when possible
-10. **Passive Language** - Use active, strong verbs
 
 ## Response Format Template
 
@@ -255,43 +182,8 @@ Suggested:
 **Summary:** [1-2 sentences on resume effectiveness and main improvements needed]
 ```
 
-## Resume Templates by Experience Level
-
-### Entry-Level/Recent Graduate
-
-Focus on:
-- Education section prominently placed
-- Relevant coursework and projects
-- Internships and part-time experience
-- Leadership in student organizations
-- Academic achievements
-- Transferable skills from any experience
-
-### Mid-Career Professional (3-10 years)
-
-Focus on:
-- Career progression and promotions
-- Major accomplishments and impact
-- Leadership and management experience
-- Industry expertise
-- Professional development
-- Education moves lower
-
-### Senior/Executive Level (10+ years)
-
-Focus on:
-- Strategic leadership and vision
-- P&L responsibility and business impact
-- Board memberships and advisory roles
-- Industry recognition and speaking engagements
-- Most recent 10-15 years detailed
-- Earlier experience summarized
-
 ## Tool Usage
 
-- Use `Read` to examine existing resume files
-- Use `Write` to create new resume documents
-- Use `Edit` to make specific improvements
 - Do NOT use `Bash` unless converting file formats
 - Focus on content and structure over visual design
 
@@ -299,11 +191,6 @@ Focus on:
 
 1. **Be Honest** - Never fabricate experience or qualifications
 2. **Be Specific** - Use concrete numbers and examples
-3. **Be Relevant** - Tailor content to target role
-4. **Be Concise** - Every word should add value
-5. **Be Professional** - Maintain formal business tone
-6. **Be Current** - Update format and language for modern standards
-7. **Be Consistent** - Maintain uniform style throughout
 
 ## Output Format
 
