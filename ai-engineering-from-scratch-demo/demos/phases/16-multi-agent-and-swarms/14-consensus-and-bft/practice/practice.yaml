@@ -1,0 +1,79 @@
+lesson: 14-consensus-and-bft
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/14-consensus-and-bft/docs/en.md
+exercises:
+  - index: 1
+    slug: cp_wbft_ships_the_monoculture_answer_until_the_clones_drop_below_0_56
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm plurality fails the monoculture attack but CPWBFT partially mitigates it when the monoculture confidence is below 0.7.
+    zh: |
+      跑 `code/main.py`。確認相對多數在單一栽培攻擊上失敗，但當單一栽培的信心低於 0.7 時，CP-WBFT 部分緩解了它。
+    verifies: >-
+      plurality and CP-WBFT both return 42% at the shipped clone confidences 0.70/0.68/0.72; swept in
+      0.01 steps, CP-WBFT answers 4.2% up to 0.55 and 42% from 0.56 (3c = 1.67), not below 0.7.
+      DecentLLMs scores equal-confidence clones 3.0 at every level from 0.30 to 0.95. All three
+      aggregators agree in all 4 scenarios; every scenario has 2 clusters so the 0.5 threshold cannot
+      reject. arXiv:2511.10400's highest-average rule answers 4.2% on monoculture and 42% on the
+      byzantine lie
+  - index: 2
+    slug: an_abstention_decides_a_tie_by_speaking_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth attack pattern: **silent abstention** — one agent refuses to answer ("I don't know"). How should each aggregator treat abstentions? Implement your choice.
+    zh: |
+      加上第四種攻擊樣式：**沉默棄權** —— 一個代理拒絕回答（「我不知道」）。每個彙整器該怎麼對待棄權？把你的選擇實作出來。
+    verifies: >-
+      each of 5 agents abstaining in each of 4 scenarios (20 runs): plurality goes from 8 wrong to 2
+      wrong and 6 escalated, CP-WBFT from 2 wrong and 3 rejected to 2 wrong and 18 right, DecentLLMs
+      unchanged at 4 wrong. 3 sycophancy runs flip shipped plurality to 42% by dict insertion order; 3
+      monoculture runs make CP-WBFT reject. 3 abstainers of 5 make every shipped aggregator return "I
+      don't know", and canonical() splits "I don't know."
+  - index: 3
+    slug: the_lie_sits_between_the_two_paraphrases_so_no_threshold_works
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the semantic clustering from string canonicalization to embedding-similarity (use any open-source embedding model). What happens to the sycophancy attack?
+    zh: |
+      把語意分群從字串正規化換成嵌入相似度（用任何開源嵌入模型）。奉承攻擊會發生什麼變化？
+    verifies: >-
+      with a character 2-3-gram stand-in embedding and leader clustering, "42%" and "4.2%" are 0.504
+      similar, so at every threshold up to 0.50 all three aggregators return 42% from one 5-vote
+      cluster (CP-WBFT weight 3.12 of 3.12). With the lesson's paraphrases at 0.447 and 0.522, 0 of 57
+      threshold x aggregator runs return 4.2%. Numeric canonicalisation returns 4.2% for all 3
+      aggregators on both vote sets
+  - index: 4
+    slug: calibration_fixes_overconfidence_and_monoculture_is_not_overconfidence
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read CP-WBFT (arXiv:2511.10400). Implement the confidence-probe calibration step (a separate calibration model checks each agent's self-reported confidence). Measure the accuracy gain on the monoculture scenario.
+    zh: |
+      讀 CP-WBFT（arXiv:2511.10400）。實作那個信心探針的校準步驟（用一個獨立的校準模型檢查每個代理自我回報的信心）。量它在單一栽培情境上的準確率增益。
+    verifies: >-
+      over the 8 enumerated outcomes, clones right together with probability a and diverse agents at
+      0.8: self-reported CP-WBFT scores exactly a; calibrated scores 0.736/0.800/0.700/0.900 at a =
+      0.3/0.5/0.7/0.9 -- +30 points at 0.5, 0 at 0.7 -- while counting the clones as one voter scores
+      0.864 at 0.7. Calibration flips the shipped vote list only for a <= 0.53
+  - index: 5
+    slug: neither_catches_the_deceiver_one_refuses_and_one_obeys_speaking_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read "Can AI Agents Agree?" (arXiv:2603.01213). Reproduce a simplified scalar-agreement experiment: three agents, one scalar question, the deceptive-persona prompt. Does CPWBFT or DecentLLMs catch it?
+    zh: |
+      讀〈Can AI Agents Agree?〉（arXiv:2603.01213）。重現一個簡化版的純量一致實驗：三個代理、一道純量問題、那段欺瞞人設的提示詞。CP-WBFT 或 DecentLLMs 抓得到它嗎？
+    verifies: >-
+      over 51 x 51 honest pairs x 3 positions per strategy (7803 runs), the far lie leaves the
+      lesson's CP-WBFT with no decision on 7650 and never invalid, and DecentLLMs invalid on 2550 --
+      all with the deceiver speaking first. DecentLLMs equals plurality on 23409 of 23409 runs. The
+      highest-average rule is invalid on 7803 of 7803; the median is valid on 7803 far-lie runs and
+      invalid on 7650 between-lie runs
