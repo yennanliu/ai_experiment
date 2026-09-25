@@ -7,8 +7,8 @@ Automated job application system for 104.com.tw using Playwright MCP tools.
 
 ### Step 1: Navigate to Job Search Page
 ```javascript
-// Navigate to the search results page
-await page.goto('https://www.104.com.tw/jobs/search/?page=6&keyword=++++%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&jobsource=joblist_search&order=15&remoteWork=1,2&area=6001001000,6001002000');
+// Navigate to the search results page (the `page` param selects the results page)
+await page.goto('https://www.104.com.tw/jobs/search/?page=1&keyword=++++%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B%E5%B8%AB&jobsource=joblist_search&order=15&remoteWork=1,2&area=6001001000,6001002000');
 ```
 
 ### Step 2: Login (if needed)
@@ -119,8 +119,10 @@ await page.evaluate(() => {
 
 ### Step 2: Switch to New Tab
 ```javascript
-// Switch to the newly opened tab
-await page.bringToFront(); // or use tab selection
+// The apply form opens in a new tab; Steps 3-4 run on that tab, not on the search page
+const pages = page.context().pages();
+const applyTab = pages[pages.length - 1];
+await applyTab.bringToFront();
 ```
 
 ### Step 3: Select Cover Letter (自訂推薦信1)
@@ -218,14 +220,12 @@ Reason: (if skipped/failed)
 
 ---
 
-## Next Steps for Full Automation
+## Not Yet Implemented
 
-1. Create a loop to process all 18 jobs found on page 6
-2. Implement pagination to move to page 7, 8, etc.
-3. Add persistent logging to JSON file to track applied jobs
-4. Add daily application limit safeguard
-5. Implement retry mechanism (max 2 retries per job)
-6. Add screenshot on failure for debugging
+1. Add persistent logging to JSON file to track applied jobs
+2. Add daily application limit safeguard
+3. Implement retry mechanism (max 2 retries per job)
+4. Add screenshot on failure for debugging
 
 ---
 
@@ -269,20 +269,3 @@ async function autoApplyJobs(startPage = 6) {
 }
 ```
 
----
-
-## Status: Testing Complete ✓
-
-**Test Results:**
-- ✅ Successfully applied to: **Analytical Engineer** at 保誠人壽保險_總公司
-- ✅ Confirmed all steps working with correct selectors
-- ✅ Documentation updated with accurate findings (2026-02-25)
-
-**Verified Process:**
-1. Click `.apply-button__button` DIV on job listing → Opens new tab
-2. Switch to new tab with application form
-3. Select "自訂推薦信1" from cover letter dropdown
-4. Click "確認送出" button
-5. Success page shows "應徵成功"
-
-Ready for full automation! 🚀
