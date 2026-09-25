@@ -340,17 +340,19 @@ Set confidence between 0 and 1 and keep reasoning to a brief explanation."""
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        response = self.client.messages.parse(
-            model=ModelTier.HAIKU.value,
-            max_tokens=256,
-            messages=[{
-                "role": "user",
-                "content": self.CLASSIFICATION_PROMPT.format(task=task)
-            }],
-            output_format=_ClassificationOutput,
-        )
-
-        parsed = response.parsed_output
+        try:
+            response = self.client.messages.parse(
+                model=ModelTier.HAIKU.value,
+                max_tokens=256,
+                messages=[{
+                    "role": "user",
+                    "content": self.CLASSIFICATION_PROMPT.format(task=task)
+                }],
+                output_format=_ClassificationOutput,
+            )
+            parsed = response.parsed_output
+        except ValueError:  # truncated or schema-invalid output (JSON/ValidationError)
+            parsed = None
         if parsed is not None:
             classification = ClassificationResult(
                 complexity=parsed.complexity,
@@ -386,6 +388,11 @@ Set confidence between 0 and 1 and keep reasoning to a brief explanation."""
             confidence=classification.confidence,
             classification=classification,
         )
+
+
+def _response_text(response: anthropic.types.Message) -> str:
+    """First text block; Sonnet 5 and Opus 5 think by default, so content[0] may be a thinking block."""
+    return next((b.text for b in response.content if b.type == "text"), "")
 
 
 class _ClassificationOutput(BaseModel):
@@ -430,17 +437,19 @@ Consider:
 
     def _evaluate_quality(self, task: str, response: str) -> float:
         """Evaluate response quality using Haiku."""
-        eval_response = self.client.messages.parse(
-            model=ModelTier.HAIKU.value,
-            max_tokens=64,
-            messages=[{
-                "role": "user",
-                "content": self.QUALITY_PROMPT.format(task=task, response=response)
-            }],
-            output_format=_QualityScore,
-        )
-
-        parsed = eval_response.parsed_output
+        try:
+            eval_response = self.client.messages.parse(
+                model=ModelTier.HAIKU.value,
+                max_tokens=64,
+                messages=[{
+                    "role": "user",
+                    "content": self.QUALITY_PROMPT.format(task=task, response=response)
+                }],
+                output_format=_QualityScore,
+            )
+            parsed = eval_response.parsed_output
+        except ValueError:  # truncated or schema-invalid output (JSON/ValidationError)
+            parsed = None
         if parsed is None:
             return 50.0  # Default to middle score
         return min(100.0, max(0.0, float(parsed.score)))
@@ -458,7 +467,7 @@ Consider:
             messages=[{"role": "user", "content": task}]
         )
         return (
-            response.content[0].text,
+            _response_text(response),
             response.usage.input_tokens,
             response.usage.output_tokens,
         )
@@ -617,7 +626,7 @@ class HybridRouter(RoutingStrategy):
                 messages=messages,
             )
             result = ExecutionResult(
-                content=response.content[0].text,
+                content=_response_text(response),
                 model_used=decision.model,
                 input_tokens=response.usage.input_tokens,
                 output_tokens=response.usage.output_tokens,

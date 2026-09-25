@@ -75,20 +75,22 @@ class Router:
 
     def _llm_classify(self, task: str) -> RouteResult:
         """Use LLM for nuanced task classification."""
-        response = self._client.messages.parse(
-            model=self.model,
-            max_tokens=500,
-            system="""Classify the task and recommend agents, listing them in execution order. Available roles:
+        try:
+            response = self._client.messages.parse(
+                model=self.model,
+                max_tokens=500,
+                system="""Classify the task and recommend agents, listing them in execution order. Available roles:
 - analyst: requirements, analysis, problem decomposition
 - developer: coding, implementation, bug fixes
 - reviewer: code review, quality checks, security
 - doc_writer: documentation, explanations
 The orchestrator role is reserved for the coordinator; don't recommend it.""",
-            messages=[{"role": "user", "content": f"Task: {task}"}],
-            output_format=_Classification,
-        )
-
-        parsed = response.parsed_output
+                messages=[{"role": "user", "content": f"Task: {task}"}],
+                output_format=_Classification,
+            )
+            parsed = response.parsed_output
+        except ValueError:  # truncated or schema-invalid output (JSON/ValidationError)
+            parsed = None
         if parsed is None:
             return RouteResult(
                 primary_agent=AgentRole.DEVELOPER,

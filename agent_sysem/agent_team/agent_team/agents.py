@@ -108,7 +108,8 @@ class Agent:
                 messages=messages,
             )
 
-            content = response.content[0].text
+            # With adaptive thinking on by default, content may start with a thinking block
+            content = next((b.text for b in response.content if b.type == "text"), "")
             tokens = response.usage.input_tokens + response.usage.output_tokens
 
             return AgentResponse(
