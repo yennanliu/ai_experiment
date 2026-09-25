@@ -77,7 +77,7 @@ class AgentResponse:
 class Agent:
     """A specialized agent with a specific role."""
     role: AgentRole
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-5"
     max_tokens: int = 4096
     _client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic, repr=False)
 
