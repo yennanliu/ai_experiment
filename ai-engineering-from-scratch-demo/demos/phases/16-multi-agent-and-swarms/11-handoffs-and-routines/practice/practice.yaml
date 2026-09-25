@@ -1,0 +1,73 @@
+lesson: 11-handoffs-and-routines
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/11-handoffs-and-routines/docs/en.md
+exercises:
+  - index: 1
+    slug: the_second_turn_is_refund_and_it_refunds_order_42
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`, triage to the refund agent. Confirm the second turn's active agent is refund.
+    zh: |
+      跑 `code/main.py`，檢傷分類到退款代理。確認第二輪的活躍代理是退款代理。
+    verifies: >-
+      the demo's 4 scenarios have 1 message each, so none reaches a second turn. Re-run, turn 2
+      'thanks!' is answered by refund with no handoff between -- and prints 'Refund processed for
+      order 42.', the router's default, as does 'order #77.'. Handoff tools per agent are [3, 0, 0,
+      0], so turn 3's sales request is a third refund. scripted_router has 4 branches on current.name
+      and never reads instructions
+  - index: 2
+    slug: the_fallback_cannot_be_triage_because_triage_is_half_the_loop
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a loop-detection rule: if the same two agents have handed off 3 times in a row, force an exit. Design the fallback.
+    zh: |
+      加一條迴圈偵測規則：若同樣兩個代理連續交接 3 次，就強制退出。設計那個退路。
+    verifies: >-
+      with refund handing back when there is no order number, 'I want a refund' runs to the 50-hop cap
+      with no rule and stops after 3 handoffs at a human fallback that asks for the order. Falling
+      back to triage, one of the pair, fires the rule 48 times and still hits the cap. A ring kept
+      across turns fires once on three user-driven turns; reset per turn, 0. The shipped run_swarm
+      stringifies a second handoff: the user sees Agent(name='triage', ...) from refund
+  - index: 3
+    slug: the_summary_must_keep_what_the_next_agents_tools_take
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OpenAI Agents SDK docs on handoff filters. Implement a "summarize-on-handoff" version: the outgoing agent compresses context to a bullet summary before the incoming agent takes over.
+    zh: |
+      讀 OpenAI Agents SDK 關於交接過濾器的文件。實作一個「交接時摘要」版本：外出的代理在接手者上場之前，把脈絡壓縮成條列摘要。
+    verifies: >-
+      with order 77 named the turn before the handoff, a signature-driven summary (14 chars, from
+      process_refund's order_id) and the full history (57 chars) refund 77, while 5-word bullets (23
+      chars) refund 42. On the reference, scripted_router takes (current, user_msg) and the same run
+      refunds 42: no filter can matter. Both lossy runs are successful refunds of the wrong order
+  - index: 4
+    slug: one_injected_turn_owns_the_rest_of_the_session
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare the Swarm handoff to a GroupChatManager selector. Which pattern makes prompt injection worse, and why?
+    zh: |
+      把 Swarm 的交接跟 GroupChatManager 的選擇器做比較。哪一種模式讓提示詞注入更嚴重，為什麼？
+    verifies: >-
+      one injected refund turn plus 3 honest support turns: run_swarm refunds on 4 of 4, a
+      latest-message selector on 1 of 4 with the rest opening tickets, a transcript-reading selector
+      on 4 of 4. The injected turn refunds the user-typed order 1234; 'not a refund request' is routed
+      to refund. Triage holds 3 handoff tools, a 4-agent mesh 12, against 1 selector
+  - index: 5
+    slug: read_swarm_cookbook_identify_one
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Swarm cookbook (https://developers.openai.com/cookbook/examples/orchestrating_agents). Identify one explicit design decision Swarm makes that OpenAI Agents SDK changed or kept.
+    zh: |
+      讀 Swarm 的 cookbook（https://developers.openai.com/cookbook/examples/orchestrating_agents）。指認出 Swarm 做的一項明確設計決策，並說明 OpenAI Agents SDK 是改掉它還是保留它。
+    cites: >-
+      OpenAI Agents SDK (March 2025)
