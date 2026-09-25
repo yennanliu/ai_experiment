@@ -1,0 +1,81 @@
+lesson: 23-failure-modes-mast-groupthink
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/23-failure-modes-mast-groupthink/docs/en.md
+exercises:
+  - index: 1
+    slug: the_breaker_opens_once_and_never_closes_so_it_caps_the_storm_by_switching_the_service_off
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm the circuit breaker caps the retry storm. Vary the failure threshold and observe the tradeoff.
+    zh: |
+      跑 `code/main.py`。確認斷路器把重試風暴封頂。改變失敗門檻並觀察那個取捨。
+    verifies: >-
+      on 200 requests the breaker takes calls 328 -> 140 and successes 189 -> 113; over thresholds
+      0.05..1.0 calls and successes fall together and 0.9 and above equal no breaker. The breaker
+      makes one transition, closed -> open at call 140, because its 0.5s cooldown is wall-clock and
+      the run takes under a millisecond. load = total_calls // 10 never decays: the run ends failing
+      74% of calls, and a breaker that can half-open gets 204 successes against 241 at 1000 requests;
+      with load over the last 20 requests the storm is 3870 calls / 71 successes and the breaker gets
+      176. Amplification is 1.64x under a 4x ceiling; of four classes Build It names, only
+      CircuitBreaker exists
+  - index: 2
+    slug: monoculture_drift_raises_agreement_so_a_drop_alarm_never_fires
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a **slow-failure proxy**: agreement rate across 3 parallel agents. When it drops sharply, trigger an alert. Simulate a monoculture drift by gradually correlating agent outputs.
+    zh: |
+      實作一個**慢性失敗的代理指標**：3 個平行代理之間的一致率。當它急遽下降時觸發警示。透過逐步讓代理輸出相關化來模擬一次單一栽培漂移。
+    verifies: >-
+      with 3 agents at p = 0.7 over 4 wrong answers, pairwise agreement rises 0.5125 -> 1.0 as drift
+      goes 0 -> 1 while majority accuracy falls 0.784 -> 0.7; over a seeded 100-window timeline the
+      drop alarm fires 0 times and a rise alarm from window 12. Independent agents at p = 0.9 and
+      drift 8/13 both agree 0.8125, at majority accuracy 0.972 and 0.7323. One agent at 0.3 drops
+      agreement to 0.3458. categorize_incident returns unknown for demo incidents 3 and 4 and files a
+      three-symptom incident as spec alone
+  - index: 3
+    slug: read_cemri_et_al
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Cemri et al. (arXiv:2503.13657). Pick one of their 7 MAS systems and map its top 3 failure categories. How do these compare to what MAST predicts?
+    zh: |
+      讀 Cemri 等人（arXiv:2503.13657）。挑他們 7 套多代理系統中的一套，對映出它前 3 名的失敗類別。這些跟 MAST 所預測的相比如何？
+    cites: >-
+      MAST categories
+  - index: 4
+    slug: conformity_leaves_the_voted_answer_unchanged_and_erases_the_dissent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Groupthink paper (arXiv:2508.05687). Identify which of the five patterns is hardest to detect in production. Propose a proxy metric.
+    zh: |
+      讀團體迷思那篇論文（arXiv:2508.05687）。指認出那五種樣式中，在生產環境最難偵測的是哪一種。提出一項代理指標。
+    verifies: >-
+      enumerating 125 joint answers, the conformity rule leaves majority accuracy at 0.784 while
+      unanimity rises 0.3447 -> 0.8481 and unanimous-and-wrong 0.0017 -> 0.0641; the exposure-gain
+      proxy is +0.3356 for conformity and 0 for non-revising patterns. Drift c = 0.6884 and
+      independent p = 0.9201 end at the same 0.8481 agreement. The lesson says 'Five related failures'
+      and GROUPTHINK has 5 keys, none about communication
+    cites: >-
+      Groupthink family (arXiv:2508.05687)
+  - index: 5
+    slug: a_validator_that_watches_the_symptom_approves_switching_the_service_off
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a STRATUS-style detection-diagnosis-validation trio for a specific multi-agent system you know. Which symptoms does detection watch for? What mitigations does diagnosis recommend? How does validation confirm they work?
+    zh: |
+      替一套你熟悉的特定多代理系統，設計一組 STRATUS 式的偵測—診斷—驗證三人組。偵測要盯哪些症狀？診斷會建議哪些緩解？驗證怎麼確認它們有效？
+    verifies: >-
+      detection fires at 1.64 calls per request against a 1.5 budget; diagnosis is ('unknown',
+      ['cascade'], 'circuit breaker'); the symptom validator passes the breaker at 0.7 while a
+      no-regression validator rejects it, success 0.945 -> 0.565. The symptom validator ranks
+      threshold 0.05 best (26 calls, 25 served) and passes every threshold below 0.9. With load over
+      the last 20 requests the breaker lifts 71 -> 176 and both validators accept
