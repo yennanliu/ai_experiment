@@ -1,0 +1,78 @@
+lesson: 16-negotiation-bargaining
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/16-negotiation-bargaining/docs/en.md
+exercises:
+  - index: 1
+    slug: og_narrator_wins_the_deal_rate_by_giving_the_buyers_surplus_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm OG-Narrator beats naive-LLM on deal rate. By how much?
+    zh: |
+      跑 `code/main.py`。確認 OG-Narrator 在成交率上勝過天真 LLM。多多少？
+    verifies: >-
+      the lesson's bench prints 605/1000 naive and 892/1000 OG-Narrator, a 28.7-point gap outside the
+      claimed 15-25. 719 of 892 OG deals close at the buyer's opening bid; mean buyer surplus per
+      trial is 5.39 against naive's 10.83 and the seller's 25.06 against 8.37, where arXiv:2402.15813
+      claims 10x profit. All 108 OG no-deals have a ZOPA <= 13 and every gap >= 14 deals, against
+      main()'s 'converges on every trial'. Buyer concession 0.1/0.5/0.9 leaves 892 deals;
+      og_narrator_bargain reads state.seller_min
+  - index: 2
+    slug: a_persona_only_moves_the_price_the_seller_can_still_move
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement **persona-based payoff improvement** (arXiv:2402.05863) — the buyer adopts a "desperate to buy this week" persona in the narration only, offer generator unchanged. Does the deal rate or payoff change?
+    zh: |
+      實作**基於人設的收益改善**（arXiv:2402.05863）—— 買方只在敘述中採用「這週非買到不可」的人設，出價產生器不變。成交率或收益有變嗎？
+    verifies: >-
+      seller_response(state, rng, concession) has no message channel, so with the persona OG's 892 and
+      naive's 615 deals are identical, every OG buyer price unchanged. A seller that reads 'desperate'
+      and concedes 0.5 instead of 0.3 lifts naive's buyer surplus 10.92 -> 12.58 (+15%) and OG's 5.39
+      -> 5.48 (+1.7%) while OG's deals go 892 -> 1000
+  - index: 3
+    slug: the_state_has_no_private_side_and_the_buyer_does_better_without_the_secret
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement chain-of-thought **concealment**: maintain a private scratchpad string that is not passed to the counterpart. What happens if you accidentally leak it (simulate by swapping the channels)?
+    zh: |
+      實作思維鏈的**隱藏**：維護一個不會傳給交易對手的私人暫存簿字串。若你不小心洩漏了它會怎樣（把通道對調來模擬）？
+    verifies: >-
+      og_narrator_bargain reads state.seller_min and seller_response reads state.buyer_max only in an
+      opening branch reached 0 times. Guessing seller_min = 50 raises OG's deals 892 -> 940 and buyer
+      surplus 5.39 -> 7.34. With scratchpad and message swapped, a seller holding at the leaked
+      reservation and settling in the last round gets 1000 deals and cuts buyer surplus to 2.23; one
+      that only holds gets 0 deals
+  - index: 4
+    slug: the_award_rule_is_one_number_the_manager_never_states
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend Contract Net to N-bidder auction with reserve price. When bids all exceed reserve, how does the manager decide between lowest-price and highest-quality? Which award rule do you pick and why?
+    zh: |
+      把合約網擴充成帶底價的 N 投標者拍賣。當所有出價都超過底價時，管理者要怎麼在最低價與最高品質之間抉擇？你挑哪條授予規則，為什麼？
+    verifies: >-
+      on the demo's bids with a 30-minute deadline the on-time probabilities are 0.82, 0.77, 0.999 and
+      the value rule V*P - expected spend awards worker-b below V = 10.66 and worker-c above.
+      conf/price orders bids as price/conf and awards worker-b; adding 10 to every price moves it to
+      worker-c. Over 1000 seeded 10-bidder auctions conf/price agrees with the value rule 800 times at
+      V = budget and 584 at 3x, mean on-time probability 0.866 against 0.916 and 0.959
+  - index: 5
+    slug: two_aggressive_bargainers_almost_never_trade
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Bhattacharya et al. 2025 on Harvard Negotiation Project metrics. Implement two bargainers with different styles (aggressive vs fair). Measure payoff variance under symmetric and asymmetric pairings.
+    zh: |
+      讀 Bhattacharya 等人 2025 年談哈佛談判專案指標的部分。實作兩個風格不同的議價者（進取型 vs 公平型）。量測對稱與非對稱配對下的收益變異。
+    verifies: >-
+      on the lesson's 1000 draws fair-fair deals 1000 times with payoff variance 0.0004 per side and
+      aggressive-aggressive 39 times with 0.0082 and 0.0107, all 961 failures 5-round timeouts.
+      Aggressive takes 0.819 as buyer and 0.871 as seller against fair. Identical fair styles split
+      0.434/0.566

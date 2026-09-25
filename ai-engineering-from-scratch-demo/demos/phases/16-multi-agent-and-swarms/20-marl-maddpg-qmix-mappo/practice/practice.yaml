@@ -1,0 +1,72 @@
+lesson: 20-marl-maddpg-qmix-mappo
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/20-marl-maddpg-qmix-mappo/docs/en.md
+exercises:
+  - index: 1
+    slug: three_ctde_rows_are_one_policy_and_it_splits_pellets_one_agent_should_take
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Measure the steps-to-goal gap between independent and MAPPO-style agents. Does the gap grow or shrink on a 6x6 grid?
+    zh: |
+      跑 `code/main.py`。量獨立代理與 MAPPO 式代理之間抵達目標步數的差距。在 6x6 網格上，那個差距是變大還是變小？
+    verifies: >-
+      over the demo's 500 seeds the independent-vs-MAPPO gap is 0.486 steps (3.212 vs 2.726, 15.1%) at
+      4x4 and 0.640 (4.654 vs 4.014, 13.8%) at 6x6 -- it grows in steps and holds in share. The
+      lesson's ~6/~3.5/optimal-3 is off: the BFS joint optimum averages 2.698. MADDPG, QMIX and MAPPO
+      agree on 500 of 500 episodes at both sizes. The distinct-pellet critic exceeds the optimum in 13
+      and 31 episodes, 12 and 26 of them because it minimises the sum and not the longer walk, and
+      loses to independent on seed 262. move_or_wait is called 0 times; no collision cost
+  - index: 2
+    slug: the_race_is_decided_at_spawn_and_a_team_reward_cannot_see_who_won
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a competitive variant: two agents, one pellet, only the first to reach gets reward. Which pattern handles competition cleanly? MADDPG historically.
+    zh: |
+      實作一個競爭變體：兩個代理、一顆獎勵球，只有先抵達的那個拿到獎勵。哪個樣式乾淨地處理得了競爭？歷史上是 MADDPG。
+    verifies: >-
+      with one pellet and first-to-reach reward, the team return is 1 in every one of 500 episodes
+      (variance 0) while agent 0's own return has variance 0.25 -- only a per-agent critic sees the
+      competition. The closer agent wins 500 of 500, so no policy changes an outcome. Env cannot
+      record a collector, 85 of 500 starts are simultaneous, and loop order gives them all to agent 0
+      (256 to 244). With one pellet _assigned_targets returns (p, p) and run_maddpg_style matches
+      run_independent on 500 of 500
+  - index: 3
+    slug: read_maddpg_arxiv_1706
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read MADDPG (arXiv:1706.02275) Section 3. Implement the exact critic update rule symbolically in pseudocode in your own words.
+    zh: |
+      讀 MADDPG（arXiv:1706.02275）第 3 節。用你自己的話，以偽代碼象徵性地實作出那條確切的 critic 更新規則。
+    cites: >-
+      MADDPG (2017) — the CTDE pattern
+  - index: 4
+    slug: read_mappo_arxiv_2103
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read MAPPO (arXiv:2103.01955). Why do the authors argue centralized value + PPO beats off-policy MARL on their benchmarks? List the three strongest claims.
+    zh: |
+      讀 MAPPO（arXiv:2103.01955）。作者為何主張在他們的基準上，集中式價值 + PPO 勝過 off-policy 的 MARL？列出三項最強的主張。
+    cites: >-
+      MAPPO (2022) — the overlooked default
+  - index: 5
+    slug: the_demos_ctde_runs_its_critic_on_every_deploy_step
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Apply CTDE as a design pattern to a hypothetical LLM-agent system (e.g., research agent + summarizer + coder). What is the joint information available at design time that is not available at runtime?
+    zh: |
+      把 CTDE 當成設計模式套用到一個假想的 LLM 代理系統（例如研究代理 + 摘要者 + 寫程式的）。哪些聯合資訊在設計時可得、在執行期卻不可得？
+    verifies: >-
+      run_maddpg_style's docstring says only the actors run at deploy, yet _assigned_targets reads
+      both positions on 1363 of its 1363 steps. Decentralized role conventions using only an agent's
+      own index and the pellets score 3.154, 3.048 and 3.088 against 3.212 independent and 2.726 joint
+      -- the best recovers 34% of the gap and none reaches the joint policy

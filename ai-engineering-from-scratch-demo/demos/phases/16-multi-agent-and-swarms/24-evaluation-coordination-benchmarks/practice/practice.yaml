@@ -1,0 +1,72 @@
+lesson: 24-evaluation-coordination-benchmarks
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/24-evaluation-coordination-benchmarks/docs/en.md
+exercises:
+  - index: 1
+    slug: b_is_cheapest_per_milestone_on_every_seed_and_never_the_most_accurate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Identify which of the three simulated systems has the best cost-per-milestone. Does it match the highest raw-accuracy system?
+    zh: |
+      跑 `code/main.py`。指認出三套被模擬系統中「每里程碑成本」最好的那一套。它跟原始準確率最高的那一套一致嗎？
+    verifies: >-
+      system-B is cheapest per milestone ($0.164) and system-A most accurate (0.731 held); over 400
+      seeds B is cheapest on 400 and A most accurate on at least 98%. A and C cost $0.3825 and $0.3820
+      in expectation, and A is cheaper on 35-55% of seeds. The seen-held > 0.1 flag fires on the
+      uncontaminated B and C on 8-20% of seeds and on A on over 90%. The takeaways calling B
+      lowest-accuracy and C middle are false: B's held 0.681 > C's 0.550 and C is lowest on 98%+ of
+      seeds. cost/mil divides by the milestone rate, so B's per-milestone cost is $0.041;
+      random_baseline returns 0.15 for every rng
+  - index: 2
+    slug: read_multiagentbench_arxiv_2503
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read MultiAgentBench (arXiv:2503.01935). For your own task domain, decide which of the four topologies MARBLE would recommend. Justify from the paper's results.
+    zh: |
+      讀 MultiAgentBench（arXiv:2503.01935）。針對你自己的任務領域，判斷 MARBLE 會建議四種拓撲中的哪一種。用論文的結果來論證。
+    cites: >-
+      MultiAgentBench (MARBLE) — ACL 2025
+  - index: 3
+    slug: read_swe_bench_pro
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the SWE-bench Pro paper. What specifically makes it contamination-resistant? Could the same technique be applied to other benchmarks you care about?
+    zh: |
+      讀 SWE-bench Pro 論文。具體是什麼讓它抗汙染？同樣的技術能不能套用到其他你在意的基準上？
+    cites: >-
+      SWE-bench Pro — the reality check
+  - index: 4
+    slug: the_signal_is_the_channel_ablation_not_a_random_constant
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read COMMA's finding on multimodal coordination. Design a simple multimodal coordination task you could add to your internal benchmark. What would count as a useful signal?
+    zh: |
+      讀 COMMA 關於多模態協調的發現。設計一項你可以加進內部基準的簡單多模態協調任務。什麼才算是有用的訊號？
+    verifies: >-
+      on a 4-wire, 3-stage solver/expert task the channel-cut arm scores the exact random baseline, SR
+      (1/4)^3 = 0.0156 and PSR 0.109, within 0.005 and 0.01 over 20000 episodes, while fidelity 0.8
+      scores a PSR over 0.5 higher; the lesson's random_baseline returns 0.15 for every rng. A
+      two-proportion test at 5%/80% needs under 100 episodes per arm for COMMA's 41.74-vs-18.70 gap
+      and over 3000 for a 3-point gap; 160 per arm resolve 0.16
+  - index: 5
+    slug: marbles_three_percent_grades_f_and_the_rubric_grades_one_claim_two_ways
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Apply the benchmark-claims checklist to one recent multi-agent paper's headline result. What grade would you give the claim?
+    zh: |
+      把那份基準宣稱檢查清單套用到近期某篇多代理論文的頭條結果上。你會給那個宣稱什麼評級？
+    verifies: >-
+      encoding skill-benchmark-reader's rubric, MARBLE's cognitive-planning +3% fails contamination,
+      baseline, statistics, diversity and cost -- D by count, F by the no-statistics disqualifier. The
+      lesson's own scorecard (n_seen=40, random_baseline constant, one task family) is D by count and
+      F by hard rejects. A claim missing only its baseline is B by count and F by hard reject

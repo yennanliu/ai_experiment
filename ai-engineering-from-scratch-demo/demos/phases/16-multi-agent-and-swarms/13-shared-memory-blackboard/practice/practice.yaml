@@ -1,0 +1,74 @@
+lesson: 13-shared-memory-blackboard
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/13-shared-memory-blackboard/docs/en.md
+exercises:
+  - index: 1
+    slug: run_two_flags_the_lie_and_ships_the_same_verdict
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm run 1 propagates the hallucination and run 2 catches it.
+    zh: |
+      跑 `code/main.py`。確認第 1 趟把幻覺傳播出去，而第 2 趟抓到了它。
+    verifies: >-
+      run 1's analyst recommends adoption on 42%; run 2's verifier returns 1 finding, flags entry 0,
+      and the analyst's verdict is byte-identical to run 1's -- analyst_agent never reads flags and
+      both pools hold 3 entries, so the promised retraction is never written. Only entry 0 has a
+      source_uri, so 0 of the 2 derived entries repeating 42% are flaggable. The honest summary is
+      truncated to 'reports a 4.' by split('.'). prompt_hash is identical across honest and poisoned
+      runs. The analyst recommends adoption exactly when '42%' is present
+  - index: 2
+    slug: a_number_check_catches_both_and_the_shipped_verifier_cannot_see_b
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a second hallucination: agent B invents a dataset size. The verifier should catch both without being hand-tuned for either.
+    zh: |
+      加上第二個幻覺：代理 B 發明了一個資料集大小。查證者應該在沒有針對任一者手動調校的情況下，兩個都抓到。
+    verifies: >-
+      with paper-1's decimal dropped and the summarizer inventing 50,000 examples, a rule flagging any
+      number absent from every fetched source flags entries [0, 2, 3] and not the honest paper-2
+      write; the shipped verifier flags [0] only, since the summarizer writes source_uri=None. A
+      faithful paraphrase is flagged by the shipped content != truth and passed by the number check.
+      On the honest pipeline the number check flags the truncated summary. A summary claiming a
+      12,500% improvement over paper-1 gets 0 flags because 12,500 is in paper-2
+  - index: 3
+    slug: partitions_stop_poison_flowing_upstream_and_not_down
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Switch the full pool to a blackboard with topic partitions (`prices`, `summaries`, `analyses`). Which poisoning scenarios does topic partitioning make harder to pull off, and which does it not help with?
+    zh: |
+      把完整池換成帶主題分割（`prices`、`summaries`、`analyses`）的黑板。主題分割讓哪些投毒情境更難成功，又對哪些沒有幫助？
+    verifies: >-
+      on the reference Blackboard with the chain prices -> summaries -> analyses, an injected entry
+      reaches 2 agents from prices, 1 from summaries and 0 from analyses, and the retriever's 42%
+      still ends in 'Recommend adoption'. publish accepts any writer on any topic; a four-line owner
+      check rejects it. A subscriber editing the entry it is handed rewrites read_topic under
+      writer='retriever', and MessagePool.read_all shares entries the same way. A raising first
+      subscriber leaves the second with 0 entries while the topic stores 1
+  - index: 4
+    slug: read_hayes_roth_blackboard_control
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read Hayes-Roth (1985, "A Blackboard Architecture for Control"). Identify two control patterns from the paper not discussed in this lesson that 2026 systems would benefit from.
+    zh: |
+      讀 Hayes-Roth（1985，〈A Blackboard Architecture for Control〉）。指認出論文中兩項本課沒討論、而 2026 年的系統會受益的控制模式。
+    cites: >-
+      Blackboard precedent (Hayes-Roth, 1985)
+  - index: 5
+    slug: read_ca_mcp_shared_context_store
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read CA-MCP (arXiv:2601.11595). Map its Shared Context Store to either the MessagePool or Blackboard class in `code/main.py`. Which primitives does CA-MCP add on top?
+    zh: |
+      讀 CA-MCP（arXiv:2601.11595）。把它的 Shared Context Store 對映到 `code/main.py` 裡的 MessagePool 或 Blackboard 類別。CA-MCP 在上面加了哪些原語？
+    cites: >-
+      The two main topologies

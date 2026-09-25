@@ -1,0 +1,77 @@
+lesson: 21-agent-economies
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/21-agent-economies/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fair_split_is_one_the_best_pair_would_walk_away_from
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm Shapley values sum to total value (efficiency axiom). Change the value function; do Shapley allocations change in the expected direction?
+    zh: |
+      跑 `code/main.py`。確認各 Shapley 值加總等於總價值（效率公理）。改變那個價值函數；Shapley 的配置有往預期方向改變嗎？
+    verifies: >-
+      exact Shapley 0.5083/0.3333/0.1583 sums to 1.0; bumping each of the 7 coalitions by 0.1 moves
+      members and non-members by the closed-form weights in 7 of 7 cases, and lifting {coder,
+      researcher} costs the reviewer 0.0333, twice each member's gain. 200 samples miss by <0.01 using
+      800 calls against exact's 24. coder+researcher get 0.8417 against v=0.85, so the split is
+      outside the core. No exact/sampled dispatch, shapley(), second_price_auction() or slashing
+      exists. Reputation routing prints +3.6%; over 1000 seeds the mean is 3.5% and 5% land in the
+      claimed 10-20%
+  - index: 2
+    slug: sampling_four_agents_costs_more_than_computing_them_exactly
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement Shapley *sampling* (Monte Carlo over K orderings). How does K affect approximation accuracy? Compare to exact for N=4.
+    zh: |
+      實作 Shapley *取樣*（對 K 種排序做蒙地卡羅）。K 如何影響近似準確度？在 N=4 上與精確版比較。
+    verifies: >-
+      on a 4-agent quadratic game the mean worst-agent error over 200 seeds is 0.0604, 0.0197, 0.0063
+      at K=10, 100, 1000 (ratio 3.1 vs sqrt 10). K=24 costs 120 calls, equal to exact enumeration, and
+      misses by 0.040. The subset form reads 16 coalitions and matches to 1e-12. 24 draws with
+      replacement see 15.3 distinct orders; without replacement they are exact. Every sampled
+      allocation sums to v(grand), so efficiency cannot detect error
+  - index: 3
+    slug: every_profitable_coalition_is_a_bidding_ring
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a coalition-forming step before the auction: agents can merge into teams and bid as a unit. Which coalitions form? Is the outcome Pareto-better than individual bidding?
+    zh: |
+      在拍賣之前加一個聯盟形成步驟：代理可以合併成團隊並以整體競標。哪些聯盟會形成？結果在帕累托意義上比個別競標更好嗎？
+    verifies: >-
+      of the 26 teams of two or more run through second_price, 7 gain and all hold agent-c and
+      agent-a; gains run 0.05 to 0.37 and agent-c wins every run, so welfare stays 0.95 and the gain
+      equals the auctioneer's lost revenue. The grand coalition leaves one bid and second_price
+      returns None. shapley_exact splits the 4-ring's 0.37 with equal shares for the winner and the
+      runner-up
+  - index: 4
+    slug: read_google_research_mechanism
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Google Research mechanism-design post. Identify one assumption that, if violated, breaks truthfulness. What does that failure mode look like in an LLM setting?
+    zh: |
+      讀 Google Research 那篇機制設計貼文。指認出一項一旦被違反就會破壞誠實性的假設。那個失敗模式在 LLM 場景中長什麼樣子？
+    cites: >-
+      Second-price auction for aggregation
+  - index: 5
+    slug: a_hundred_samples_cost_more_calls_than_exact_shapley_over_ten_agents
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the AAMAS 2025 decentralized LaMAS paper. Implement their Shapley step over 10 agents on a synthetic task. How long does exact computation take? How close does sampling get with 100 draws?
+    zh: |
+      讀 AAMAS 2025 的去中心化 LaMAS 論文。在一項合成任務上對 10 個代理實作他們的 Shapley 步驟。精確計算要花多久？取樣 100 次能逼近到什麼程度？
+    verifies: >-
+      on a 10-agent, 20-skill coverage game with a closed-form Shapley value, shapley_exact makes
+      N!(N+1) calls -- 40,320 at N=7, matching the closed form to 1e-12, and 39,916,800 at N=10; the
+      subset form reads 1,024 coalitions and matches to 1e-12; 100 samples cost 1,100 calls and miss
+      by 0.0133 on values averaging 0.08. Cloning the agent with the most shared skills lifts its
+      operator's Shapley total by 42% with v unchanged

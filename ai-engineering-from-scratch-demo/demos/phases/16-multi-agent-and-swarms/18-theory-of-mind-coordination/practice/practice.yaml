@@ -1,0 +1,80 @@
+lesson: 18-theory-of-mind-coordination
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/18-theory-of-mind-coordination/docs/en.md
+exercises:
+  - index: 1
+    slug: the_prime_is_a_seating_chart_and_the_belief_model_does_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm first-order ToM reduces duplication rate by ~7x. Does the gap persist when you scale to 5 agents and 5 boxes?
+    zh: |
+      跑 `code/main.py`。確認第一階 ToM 把重複率降低約 7 倍。當你放大到 5 個代理與 5 個箱子時，那個差距還在嗎？
+    verifies: >-
+      the ported trial equals run_trial on all 800 shipped trials. Zeroth-order duplicates 0.965 per
+      trial at 3x3 and 1.97 at 5x5, first-order ToM 0.00 at both, and both complete 200 of 200 -- not
+      ~7x, not ~60%/~95%. Unprimed ToM equals zeroth-order on 400 of 400 trials. The primed turn-0
+      choices are [0..n-1] on every seed, and an agent that takes box i matches ToM on every trial.
+      The module has no ToMAgent and no other_models
+  - index: 2
+    slug: second_order_helps_only_when_exactly_one_agent_is_left_with_one_box
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement second-order ToM (agent A models what B thinks about C). Does it improve over first-order? On what tasks?
+    zh: |
+      實作第二階 ToM（代理 A 模型化 B 對 C 的想法）。它有比第一階更好嗎？在什麼任務上？
+    verifies: >-
+      second-order ToM equals first-order on 800 of 800 trials, primed or not. With one silent agent
+      in the prime first-order duplicates 1.04, 1.615, 2.525 per trial at 3x3, 4x4, 5x5 -- above
+      zeroth-order's 0.965, 1.40, 1.97 -- and second-order 0.00 at all three; with two silent agents
+      both give 2.65
+  - index: 3
+    slug: one_wrong_belief_costs_half_a_collision_and_only_before_turn_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Inject a **hallucination** into the ToM state: randomly flip one belief per turn. How much does this degrade first-order performance?
+    zh: |
+      對那份 ToM 狀態注入一個**幻覺**：每輪隨機翻轉一個信念。這讓第一階的表現退化多少？
+    verifies: >-
+      one random belief flip per turn takes first-order ToM from 0.00 to 0.505 duplications per trial
+      at 3x3 and 0.47 at 5x5 while the zeroth-order control moves under 0.05. 101 of 101 and 94 of 94
+      duplications fall on turn 0. Of every one-belief rewrite of the prime, exactly the no-ops (6 of
+      18, 20 of 100) are harmless, the worst collides on 200 of 200 seeds, and the means are 0.491 and
+      0.49
+  - index: 4
+    slug: the_horizon_never_arrives_because_every_episode_ends_by_turn_three
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Li et al. (arXiv:2310.10701). Reproduce the "long-horizon degradation" finding: as turns grow from 10 to 30, how does your first-order ToM performance change?
+    zh: |
+      讀 Li 等人（arXiv:2310.10701）。重現那個「長時程退化」的發現：當輪數從 10 增加到 30 時，你的第一階 ToM 表現怎麼變？
+    verifies: >-
+      zeroth-order, first-order and hallucinated first-order give identical results on every trial at
+      10, 20 and 30 turns at 3x3 and 5x5; the longest episode is 3 turns. The prime leaves the n + 2
+      observation window after 3 turns at 3x3 and 2 at 5x5. 4 agents on 3 boxes give 0 full
+      completions and 1.85 duplications at both horizons, using 10.0 and 30.0 turns
+    cites: >-
+      Li et al. (arXiv:2310.10701)
+  - index: 5
+    slug: the_synergy_is_all_in_the_no_tom_runs_and_it_is_the_collision_rule
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Riedl 2025 (arXiv:2510.05174). Implement the higher-order synergy statistic on your simulation logs. Is the effect present without the ToM prompt condition?
+    zh: |
+      讀 Riedl 2025（arXiv:2510.05174）。在你的模擬日誌上實作那個高階綜效統計量。在沒有 ToM 提示詞條件時，那個效果存在嗎？
+    verifies: >-
+      Williams-Beer I_min PID of pairwise TDMI on padded logs: 3x3 zeroth-order synergy 0.48 of 0.965
+      bits, under 0.1 with the target shuffled; primed ToM exactly 0. The synergy is above 0.8 bits at
+      turn 0 -> 1 and 0 after. S_macro is negative zeroth-order and 0 under ToM. At 5x5 the shuffled
+      control exceeds 70% of the measured synergy
+    cites: >-
+      Riedl 2025 (arXiv:2510.05174)

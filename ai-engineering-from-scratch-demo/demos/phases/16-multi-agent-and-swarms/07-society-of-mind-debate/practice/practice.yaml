@@ -1,0 +1,80 @@
+lesson: 07-society-of-mind-debate
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/07-society-of-mind-debate/docs/en.md
+exercises:
+  - index: 1
+    slug: the_debate_ends_further_from_the_truth_than_it_started
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`, then set the round count to 5 and watch diminishing returns. At which round does additional convergence stop?
+    zh: |
+      跑 `code/main.py`，接著把回合數設成 5，看報酬遞減。到第幾回合，額外的收斂就停了？
+    verifies: >-
+      revise is applied in place over a live list, so the second agent averages against the first's
+      revised answer -- a Gauss-Seidel sweep, not Du et al.'s simultaneous update. As shipped the
+      error over six rounds runs 2.24, 2.43, 2.48, 2.50, 2.50, 2.50, monotone increasing against a
+      round-0 control of 1.83, leaving the team 36% further from the truth after three rounds; it is
+      worse than the control at all 6 confidence permutations. With a snapshot the debate reaches
+      0.889 at round 1 and holds it exactly, so there are no diminishing returns because after round 1
+      there are none
+  - index: 2
+    slug: the_adversary_breaks_convergence_under_both_update_rules
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth agent with an adversarial role: always disagree with the current majority. Does this break or improve convergence?
+    zh: |
+      加上第四個帶對抗角色的代理：永遠不同意當前的多數。這是打破還是改善了收斂？
+    verifies: >-
+      an adversary answering mean + 5 each round keeps agreement at 0.00 for all 10 rounds under both
+      update rules and drives the error to 9.009 shipped and 5.81 simultaneous by round 5 -- averaging
+      has no fixed point once one answer is an offset from the average. Against the correct
+      three-agent settle of 0.889 that is 6.5x the error. DebateAgent.revise is a concrete
+      two-parameter method with 0 abstract bases, so an adversarial role cannot be a DebateAgent at
+      all
+  - index: 3
+    slug: agreement_is_a_measure_of_spread_and_says_nothing_about_truth
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Plot (print) the agreement score per round (fraction of agents on the majority answer). When does it hit 1.0 and is that equivalent to "correct"?
+    zh: |
+      畫出（印出）每回合的一致度分數（站在多數答案那一邊的代理比例）。它什麼時候會打到 1.0，而那等同於「正確」嗎？
+    verifies: >-
+      agreement reaches 1.00 at round 3 while the error is 2.4842 and rising, and at round 1 with
+      error 0.8889 under a simultaneous update -- full agreement at two different wrong answers.
+      agreement_score computes the fraction within tol of the mean, not of a majority answer, and with
+      3 distinct answers there is no majority. The score is monotone because every revision is a
+      convex combination, so 1.00 is absorbing. tol is absolute, so scaling the problem by 100 moves
+      the round it hits 1.00 from 3 to 6
+  - index: 4
+    slug: the_rounds_knob_is_inert_once_the_update_is_correct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Du et al. Section 4 ablations. Replicate the "agents-only" vs "rounds-only" vs "both" result using this code.
+    zh: |
+      讀 Du 等人第 4 節的消融實驗。用這份程式碼重現「只有代理」對「只有回合」對「兩者」那個結果。
+    verifies: >-
+      the three arms replicate Du et al. under neither rule: as shipped control 1.8333, agents-only
+      1.5039, rounds-only 2.4991 and both 1.5367, so rounds have the wrong sign; simultaneous they are
+      1.8333, 0.9444, 0.8889 and 0.9444, where every arm beats the control but both equals agents-only
+      to four decimals -- the rounds knob contributes 0 because the weighted mean is a fixed point
+      after round 1. fresh_team seeds random and then builds 3 agents from literals, sampling random 0
+      times, so seeds 1 and 2 give identical teams; math is used 0 times
+  - index: 5
+    slug: read_should_we_be_going_mad
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read "Should we be going MAD?" (arXiv:2311.17371) and list two debate variants beyond round-robin — e.g., judge-led, chain-of-debate, adversarial.
+    zh: |
+      讀〈Should we be going MAD?〉（arXiv:2311.17371），列出兩種輪替制以外的辯論變體 —— 例如由裁判主持、辯論鏈、對抗式。
+    cites: >-
+      Heterogeneous debate

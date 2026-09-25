@@ -1,0 +1,77 @@
+lesson: 22-production-scaling-queues-checkpoints
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/docs/en.md
+exercises:
+  - index: 1
+    slug: resume_works_because_the_crash_is_placed_where_nothing_can_go_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Confirm checkpoint resume works; measure async vs thread concurrency difference.
+    zh: |
+      跑 `code/main.py`。確認檢查點續跑有效；量測非同步與執行緒在併發上的差異。
+    verifies: >-
+      a crash at super-step 3 leaves checkpoint (2, {counter: 3}) and the resumed run ends at 5 with a
+      table row-for-row equal to an uncrashed run's; 500 calls of 50ms take about 0.05s async and
+      0.07s threaded, under 1s, not several seconds. crash_at is tested before the
+      increment, so the steps executed across both workers are exactly 0-4. Two lease-less resumers
+      execute steps 3, 4, 3, 4 and leave 5 rows. The module imports no memory API and '~1MB per thread
+      stack' is a literal; measured resident memory (current RSS from /proc on Linux) is non-zero, under 256KB per thread and more than a coroutine's
+  - index: 2
+    slug: the_outbox_dedups_the_request_and_still_repeats_the_effect
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement an **outbox** table: every tool call writes to outbox first, then a separate goroutine/task executes. Verify idempotency by running the tool call twice.
+    zh: |
+      實作一張 **outbox** 表：每一次工具呼叫都先寫進 outbox，再由另一個 goroutine／task 去執行。把工具呼叫跑兩次來驗證冪等性。
+    verifies: >-
+      an outbox on the reference CheckpointStore's connection, keyed on (thread_id, super_step): the
+      same call issued twice leaves 1 row and 1 execution, and two workers resuming a crashed thread
+      cause 5 effects for 5 steps against 7 inline. An executor crashing after the effect re-sends: 2
+      effects when the tool ignores the key, 1 when it dedups. A varying payload rolled back with its
+      checkpoint executes attempt-2; committed separately it executes attempt-1 while the checkpoint
+      says attempt-2
+  - index: 3
+    slug: a_fifty_fifty_split_means_the_old_version_never_drains
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Simulate a **rainbow deploy**: two concurrent runtime versions; route half of new thread_ids to each; confirm that in-flight threads on the old version are not interrupted.
+    zh: |
+      模擬一次**彩虹式部署**：兩個併行的執行環境版本；把新的 thread_id 一半路由到各一邊；確認舊版本上進行中的執行緒沒有被打斷。
+    verifies: >-
+      ten v1 threads (goal 5) paused at super-step 2 finish at 5 when pinned; resumed by v2 (goal 7)
+      all end at 7, 10 mixed-version runs, because the checkpoints table has only thread_id,
+      super_step and state_json. Under a 50/50 split of 2 arrivals per tick, v1 never falls below 4
+      in-flight after tick 5; routing all new threads to v2 drains it at tick 3. hash() moves between
+      350 and 650 of 1000 ids across hash seeds; crc32 splits stably
+  - index: 4
+    slug: read_langgraphs_runtime_doc_identify
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read LangGraph's runtime doc (linked below). Identify which features of the runtime would take the longest to replicate in a hand-rolled FastAPI + Postgres version. Is that a reason to adopt, or can you defer?
+    zh: |
+      讀 LangGraph 的執行環境文件（下方連結）。指認出該執行環境中哪些功能，在手搓的 FastAPI + Postgres 版本裡最花時間重現。那是採用它的理由，還是你可以延後？
+    cites: >-
+      A checkpoint-per-step runtime
+  - index: 5
+    slug: the_admin_queue_needs_a_batch_and_gets_one_message_per_three_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read MegaAgent (arXiv:2408.09955) Section 3. The two-layer coordination (intra-group + inter-group admin chat) is explicit. Sketch how you would map this to a message queue with two queue families.
+    zh: |
+      讀 MegaAgent（arXiv:2408.09955）第 3 節。那兩層協調（組內 + 組間管理聊天）是明寫的。勾勒出你會怎麼把它對映到帶兩個佇列家族的訊息佇列上。
+    verifies: >-
+      590 agents as 59 groups of 10 on two queue families built from the reference AgentQueue: an
+      all-hands round costs 8,732 deliveries against 347,510 flat, with 1 hop intra-group and 3
+      across. An admin holding 58 inbound summaries drains in 174 steps on the reference queue and 3
+      with a batch Processing state. The RESPONSE branch is one assignment, 2 replies remain in the
+      demo's out_queue, and nothing pops from it

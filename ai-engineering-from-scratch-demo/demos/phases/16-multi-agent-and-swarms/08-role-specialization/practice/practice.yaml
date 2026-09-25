@@ -1,0 +1,75 @@
+lesson: 08-role-specialization
+phase: 16-multi-agent-and-swarms
+source: phases/16-multi-agent-and-swarms/08-role-specialization/docs/en.md
+exercises:
+  - index: 1
+    slug: the_static_check_catches_the_code_that_memorised_the_tests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` and observe how the verifier catches the bug the critic missed. Add a static-analysis check (count occurrences of `return`) as an additional verifier. What does it catch that the runtime test misses?
+    zh: |
+      跑 `code/main.py`，觀察查證者如何抓到批評者漏掉的那個臭蟲。加一項靜態分析檢查（數 `return` 出現的次數）當成額外的查證者。它抓到了什麼執行期測試漏掉的東西？
+    verifies: >-
+      a branch table returning 3, 30 and 0 on the spec's own three cases and a * b elsewhere passes
+      the critic's 3 checks and all 3 tests while carrying 4 returns against the correct version's 1
+      -- the runtime test cannot catch it because the tests are its only oracle. verifier's docstring
+      claims a sandbox while exec(art.code, ns, ns) leaves __builtins__ present and import os working.
+      run_pipeline's second branch catches every verifier failure, so the critic's notes can never
+      reach the verdict when both object. planner carries the wish in 1 of 4 Spec fields and literals
+      the rest
+  - index: 2
+    slug: the_questions_that_flow_up_are_the_fields_nobody_checks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a 5th role: "requirements analyst" that translates user wish into planner-ready spec. What communicative dehallucination requests should flow up to it?
+    zh: |
+      加上第 5 個角色：「需求分析師」，把使用者的願望翻譯成規劃者可用的規格。有哪些溝通式去幻覺的請求應該往上流到它那裡？
+    verifies: >-
+      of the 4 Spec fields, task_name is read by 2 roles and tests by 1, while signature and
+      description are read by 0 -- those are the requests that must travel up, because no downstream
+      role has an oracle for them. def add_two(*args) contradicts the stated signature and is approved
+      by the critic and passed by the verifier. Both executors ignore the spec parameter entirely, so
+      the role most likely to find a gap never looks, and Artifact's 1 field leaves a request nowhere
+      to go
+  - index: 3
+    slug: read_metagpt_section_three_agents
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read MetaGPT Section 3 ("Agents"). List the input/output schema of each of MetaGPT's 5 roles.
+    zh: |
+      讀 MetaGPT 第 3 節（「Agents」）。列出 MetaGPT 那 5 個角色各自的輸入／輸出 schema。
+    cites: >-
+      MetaGPT's SOP pattern
+  - index: 4
+    slug: read_chatdevs_chat_chain_diagram
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read ChatDev's chat-chain diagram (arXiv:2307.07924 Figure 3). Identify where communicative dehallucination breaks a loop that would otherwise be infinite.
+    zh: |
+      讀 ChatDev 的聊天鏈圖（arXiv:2307.07924 圖 3）。指認出溝通式去幻覺在哪裡打斷了一個否則會無限下去的迴圈。
+    cites: >-
+      ChatDev's communicative dehallucination
+  - index: 5
+    slug: two_of_the_specs_four_fields_already_have_no_oracle
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      PwC's 7× accuracy gain came from verification loops. Hypothesize three tasks where adding a verifier would not help — where deterministic checking of correctness is impossible or prohibitively expensive.
+    zh: |
+      PwC 那 7 倍的準確率增益來自驗證迴圈。假設出三種「加了查證者也幫不上忙」的任務 —— 也就是對正確性做決定性檢查不可能、或代價高到不划算的那些。
+    verifies: >-
+      the three classes are unbounded, erased and judgement properties, and the module has one of
+      each: description is a claim over an infinite domain checked at 3 points, signature is erased at
+      runtime so *args passes, and the critic exists because taste cannot be a VerifierReport. 2 of 4
+      Spec fields are read by 0 roles and the 2 that are read are exactly those with a mechanical
+      oracle. Both the memorised and the widened artifact are (approved, passed). The critic's 3
+      checks are all decidable
