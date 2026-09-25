@@ -15,8 +15,6 @@ Reference: https://yennj12.js.org/yennj12_blog_V4/posts/model-tiering-cost-optim
 
 from __future__ import annotations
 
-import json
-import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -28,9 +26,9 @@ from pydantic import BaseModel
 
 class ModelTier(str, Enum):
     """Claude model tiers from cheapest to most capable."""
-    HAIKU = "claude-3-5-haiku-latest"
-    SONNET = "claude-sonnet-4-20250514"
-    OPUS = "claude-opus-4-20250514"
+    HAIKU = "claude-haiku-4-5"
+    SONNET = "claude-sonnet-5"
+    OPUS = "claude-opus-5"
 
 
 class TaskComplexity(str, Enum):
@@ -55,11 +53,11 @@ class TaskCategory(str, Enum):
     GENERAL = "general"            # General purpose
 
 
-# Pricing per 1M tokens (as of 2025)
+# Pricing per 1M tokens (USD, Anthropic first-party list price)
 MODEL_PRICING = {
-    ModelTier.HAIKU: {"input": 0.80, "output": 4.00},
-    ModelTier.SONNET: {"input": 3.00, "output": 15.00},
-    ModelTier.OPUS: {"input": 15.00, "output": 75.00},
+    ModelTier.HAIKU: {"input": 1.00, "output": 5.00},
+    ModelTier.SONNET: {"input": 2.00, "output": 10.00},
+    ModelTier.OPUS: {"input": 5.00, "output": 25.00},
 }
 
 
@@ -307,12 +305,6 @@ class LLMClassifierRouter(RoutingStrategy):
 
 Task: {task}
 
-Respond with a JSON object containing:
-- complexity: one of [trivial, simple, moderate, complex, expert]
-- category: one of [extraction, code, analysis, reasoning, translation, summarization, creative, security, general]
-- confidence: float between 0 and 1
-- reasoning: brief explanation of your classification
-
 Classification criteria:
 - trivial: Single-step, obvious tasks (e.g., "What is 2+2?")
 - simple: Basic tasks with clear logic (e.g., "Translate hello to Spanish")
@@ -320,7 +312,7 @@ Classification criteria:
 - complex: Tasks requiring deep reasoning (e.g., "Design a caching strategy")
 - expert: Tasks requiring expert-level capability (e.g., "Prove this mathematical theorem")
 
-Respond ONLY with the JSON object, no other text."""
+Set confidence between 0 and 1 and keep reasoning to a brief explanation."""
 
     COMPLEXITY_TO_MODEL = {
         TaskComplexity.TRIVIAL: ModelTier.HAIKU,
@@ -348,31 +340,25 @@ Respond ONLY with the JSON object, no other text."""
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        response = self.client.messages.create(
+        response = self.client.messages.parse(
             model=ModelTier.HAIKU.value,
             max_tokens=256,
             messages=[{
                 "role": "user",
                 "content": self.CLASSIFICATION_PROMPT.format(task=task)
-            }]
+            }],
+            output_format=_ClassificationOutput,
         )
 
-        try:
-            result_text = response.content[0].text
-            # Extract JSON from response
-            json_match = re.search(r'\{[^}]+\}', result_text, re.DOTALL)
-            if json_match:
-                data = json.loads(json_match.group())
-            else:
-                data = json.loads(result_text)
-
+        parsed = response.parsed_output
+        if parsed is not None:
             classification = ClassificationResult(
-                complexity=TaskComplexity(data.get("complexity", "moderate")),
-                category=TaskCategory(data.get("category", "general")),
-                confidence=float(data.get("confidence", 0.5)),
-                reasoning=data.get("reasoning", ""),
+                complexity=parsed.complexity,
+                category=parsed.category,
+                confidence=min(1.0, max(0.0, parsed.confidence)),
+                reasoning=parsed.reasoning,
             )
-        except (json.JSONDecodeError, ValueError, KeyError):
+        else:
             # Fallback classification
             classification = ClassificationResult(
                 complexity=TaskComplexity.MODERATE,
@@ -402,6 +388,17 @@ Respond ONLY with the JSON object, no other text."""
         )
 
 
+class _ClassificationOutput(BaseModel):
+    complexity: TaskComplexity
+    category: TaskCategory
+    confidence: float
+    reasoning: str
+
+
+class _QualityScore(BaseModel):
+    score: int  # 0-100
+
+
 class DynamicEscalationRouter(RoutingStrategy):
     """
     Dynamic quality escalation: start cheap, upgrade if needed.
@@ -418,9 +415,7 @@ Consider:
 - Accuracy and correctness
 - Completeness
 - Clarity and coherence
-- Relevance to the task
-
-Respond with ONLY a number between 0 and 100."""
+- Relevance to the task"""
 
     def __init__(
         self,
@@ -435,21 +430,20 @@ Respond with ONLY a number between 0 and 100."""
 
     def _evaluate_quality(self, task: str, response: str) -> float:
         """Evaluate response quality using Haiku."""
-        eval_response = self.client.messages.create(
+        eval_response = self.client.messages.parse(
             model=ModelTier.HAIKU.value,
-            max_tokens=32,
+            max_tokens=64,
             messages=[{
                 "role": "user",
                 "content": self.QUALITY_PROMPT.format(task=task, response=response)
-            }]
+            }],
+            output_format=_QualityScore,
         )
 
-        try:
-            score_text = eval_response.content[0].text.strip()
-            score = float(re.search(r'\d+', score_text).group())
-            return min(100.0, max(0.0, score))
-        except (ValueError, AttributeError):
+        parsed = eval_response.parsed_output
+        if parsed is None:
             return 50.0  # Default to middle score
+        return min(100.0, max(0.0, float(parsed.score)))
 
     def _execute_with_model(
         self,
