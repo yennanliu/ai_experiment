@@ -89,6 +89,7 @@ def verify(result):
         practice.Check(
             "ANSWER: Together at both volumes, $0.176 per 1,000",
             all([result["cheapest"] == {10: "Together", 10_000: "Together"},
+                 t["Together"] == {10: 0.176, 10_000: 0.176},
                  t["Baseten"] == {10: 79200.0, 10_000: 79.2},
                  all(t[n][10] == t[n][10_000] for n in ("Fireworks", "Together", "Replicate")),
                  result["passes"] == (4_500_000, 886_336)]),

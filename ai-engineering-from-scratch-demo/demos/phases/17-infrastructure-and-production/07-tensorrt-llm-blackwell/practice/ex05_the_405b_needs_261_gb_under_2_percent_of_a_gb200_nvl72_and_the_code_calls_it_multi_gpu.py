@@ -32,11 +32,14 @@ cache as well as the weights, so the bytes per step are 1.29x what
 `decode_throughput` charges. That function has no context-length input.
 
 Structure: `real_kv_gb()` is the reference's own KV formula with the real
-shape; `solve()` reads everything else from the reference.
+shape; `printed_row()` captures `print_stack`'s own GB200 line; `solve()` reads
+everything else from the reference.
 """
 
 from __future__ import annotations
 
+import contextlib
+import io
 import math
 
 from harness import parity, practice
@@ -49,6 +52,14 @@ RACK_GB, SUPERCHIP_GB, GPUS = 13_400, 372, 72  # NVIDIA GB200 NVL72 spec
 
 def real_kv_gb(kv_bits):
     return LAYERS * 2 * KV_HEADS * HEAD_DIM * SEQ * kv_bits / 8 / 1e9
+
+
+def printed_row(ref, name):
+    """The line `print_stack` itself prints for the stack called `name`."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        ref.print_stack(PARAMS, PARAMS, SEQ)
+    return next(line for line in out.getvalue().splitlines() if line.startswith(name))
 
 
 def solve():
@@ -69,6 +80,7 @@ def solve():
         "real_total": round(weights + real_kv, 1),
         "real_seqs": math.floor((RACK_GB - weights) / real_kv),
         "stack_gb": nvl.hbm_gb,
+        "nvl_row": printed_row(ref, nvl.name),
         "code_rack_gb": nvl.hbm_gb * GPUS,
         "kv_share": round(kv / (weights + kv), 2),
         "kv_inputs": ref.decode_throughput.__code__.co_varnames[
@@ -99,8 +111,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: print_stack would label this multi-GPU on the GB200 NVL72 row",
-            r["total"] > r["stack_gb"],
-            f"hbm_gb = {r['stack_gb']} is one GPU; the rack is {r['code_rack_gb']} GB by the "
+            r["nvl_row"].endswith("(multi-GPU)") and r["total"] > r["stack_gb"],
+            f"print_stack prints {r['nvl_row'].split()[-1]!r} on that row; hbm_gb = {r['stack_gb']} is one GPU; the rack is {r['code_rack_gb']} GB by the "
             f"module's own per-GPU number and {RACK_GB} GB by NVIDIA's",
         ),
         practice.Check(

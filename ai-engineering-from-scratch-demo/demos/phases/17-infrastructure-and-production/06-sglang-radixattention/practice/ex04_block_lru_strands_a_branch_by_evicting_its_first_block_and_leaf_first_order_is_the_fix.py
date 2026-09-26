@@ -18,7 +18,9 @@ blocks are unreachable but still resident. At 200 blocks tree LRU hits 85.3%
 and block LRU 82.1%, with up to 20 dead blocks. At 250 blocks the figures are
 91.9% and 87.4%, with 34 dead. Below one request's 180 blocks, at the shipped
 160, block LRU evicts SYSTEM's first block and hits 0.0%, with all 160 blocks
-stranded at peak; tree LRU keeps 76.8%.
+stranded at peak; tree LRU keeps 76.8%. Tree LRU strands
+20 blocks there too, and only there: with no running-request lock, a request
+longer than the budget makes it evict its own newest leaf and insert past it.
 
 **FINDING: what matters is the eviction order, not the data structure.** Break
 block LRU's ties suffix-first instead -- evict the end of the longest path
@@ -89,8 +91,11 @@ def reference_stranded(ref, reqs):
     for r in reqs:
         cache.walk(r.segments)
         cache.insert(r.segments)
-        peak = max(peak, sum(v[0] for k, v in cache.nodes.items()
-                             if len(k) > 1 and k[:-1] not in cache.nodes))
+        reachable = set()
+        for k in sorted(cache.nodes, key=len):
+            if len(k) == 1 or k[:-1] in reachable:
+                reachable.add(k)
+        peak = max(peak, sum(v[0] for k, v in cache.nodes.items() if k not in reachable))
     return peak
 
 
@@ -110,12 +115,12 @@ def verify(result):
             "ANSWER: block LRU evicts a cold branch's first block and strands the rest",
             all([tree[200] == (0.8531, 0), block[200] == (0.8211, 20),
                  tree[250] == (0.9187, 0), block[250] == (0.8744, 34),
-                 block[160] == (0.0, 160), tree[160][0] == 0.7681]),
+                 block[160] == (0.0, 160), tree[160] == (0.7681, 20)]),
             f"(hit rate, peak stranded blocks) tree {tree} vs block {block}",
         ),
         practice.Check(
             "FINDING: what matters is the eviction order, not the data structure",
-            all(suffix[b][0] == tree[b][0] for b in (200, 250, 300))
+            all(suffix[b] == tree[b] for b in (200, 250, 300))
             and suffix[160][0] == 0.8046,
             f"block LRU with suffix-first ties {suffix} against tree {tree}",
         ),

@@ -52,6 +52,7 @@ from harness import parity, practice
 
 PHASE, LESSON = "17-infrastructure-and-production", "01-managed-llm-platforms"
 T_IN, T_OUT, SLA = 30_000_000, 15_000_000, 100
+COMPLIANCE = ("baa", "hipaa", "region", "residen", "complian")  # any field naming one
 
 
 def on_demand(p):
@@ -96,7 +97,8 @@ def solve():
         "reference": reference_verdicts(ref),
         "azure_od": on_demand(azure),
         "fields": fields,
-        "compliance": [f for f in fields if f in ("baa", "region", "residency")],
+        "compliance": [f for f in fields if any(k in f for k in COMPLIANCE)],
+        "p99_by_fiat": "ttft_p50 * 1.5" in source,
         "unused": [m for m in ("random", "statistics") if f"{m}." not in source],
         "doc": (
             "No non-OpenAI models" in doc,
@@ -138,7 +140,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the code cannot see two of the three requirements, and the third is set by fiat",
-            result["compliance"] == [] and result["unused"] == ["random", "statistics"],
+            (result["compliance"], result["p99_by_fiat"], result["unused"])
+            == ([], True, ["random", "statistics"]),
             f"Platform fields {result['fields']}; PTU P99 = P50 x 1.5; imported and unused: "
             f"{result['unused']}",
         ),

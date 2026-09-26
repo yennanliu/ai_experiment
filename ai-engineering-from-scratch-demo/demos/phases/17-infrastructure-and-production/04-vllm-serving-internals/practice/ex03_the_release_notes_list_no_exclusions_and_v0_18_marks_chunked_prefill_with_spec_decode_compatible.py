@@ -16,8 +16,8 @@ incompatible pairs, 8 of them with speculative decoding.** Speculative
 decoding (SD) is incompatible with LoRA, pooling, encoder-decoder models,
 async output processing, multi-step, best-of, beam search and prompt embeds.
 Chunked prefill (CP) is incompatible with encoder-decoder and multi-step.
-Encoder-decoder also excludes prefix caching (APC), LoRA, async output and
-prompt embeds. Pooling excludes logprobs, prompt logprobs, async output,
+Encoder-decoder also excludes prefix caching (APC), LoRA, async output,
+multi-step and prompt embeds. Pooling excludes logprobs, prompt logprobs, async output,
 multi-step, best-of, beam search and prompt embeds. Multi-step excludes LoRA,
 best-of and beam search. Prompt embeds excludes prompt logprobs and
 multimodal. Three pairs are partial: pooling with CP, pooling with APC, and

@@ -80,8 +80,8 @@ pool.
 
 Karpenter also now has a third policy, `Balanced`. The defaults are
 `WhenEmptyOrUnderutilized` with `0s`, so omitting the block gives you the
-trap. The lesson's code models no NodePool. The nearest knob, making every
-node warm, takes QUEUE_DEPTH drops from 64 to 44.
+trap. The lesson's code models no NodePool. The nearest knob, provisioning
+nodes instantly (the model still loads), takes QUEUE_DEPTH drops from 64 to 44.
 
 ### 3 — "GPUs available" is a cluster sum no scheduler uses, so 392 of 609 available states cannot place an 8-GPU pod
 

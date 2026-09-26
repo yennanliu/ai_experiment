@@ -22,7 +22,8 @@ prefill at 5% and needs 146% of KV. Each signal is blind to the other role.
 tokens do exactly.** 4000 seeded arrivals, 80% 500-token and 20%
 16000-token prompts, at 70% prefill load: the correlation of TTFT wait
 with requests ahead is 0.80, and with tokens ahead it is 1.0. With exactly 2
-requests ahead the wait runs from 0.03s to 1.97s, 63x. The lesson says
+requests ahead the wait runs from 0.03s to 1.97s, 63x. Tokens ahead are summed from
+the queue's remaining prompt tokens, not derived from the wait. The lesson says
 "prefill pods scale on queue depth"; the depth has to be in tokens.
 
 **FINDING: on decode pods a queue signal fires only after KV is full.** Decode
@@ -39,6 +40,7 @@ Little's law over mean context.
 
 from __future__ import annotations
 
+import itertools
 import random
 import statistics
 
@@ -54,14 +56,17 @@ def prefill_queue(n=4000, seed=0, load=0.7):
     """Per arrival: (requests ahead, tokens ahead, wait seconds)."""
     rng = random.Random(seed)
     rate = load * PREFILL_TPS / (0.8 * 500 + 0.2 * 16_000)
-    clock, finishes, rows = 0.0, [], []
+    clock, jobs, rows = 0.0, [], []  # jobs: (start, finish, prompt tokens), FIFO
     for _ in range(n):
         clock += rng.expovariate(rate)
         prompt = 16_000 if rng.random() < 0.2 else 500
-        ahead = sum(1 for f in finishes[-50:] if f > clock)
-        start = max(clock, finishes[-1] if finishes else 0.0)
-        finishes.append(start + prompt / PREFILL_TPS)
-        rows.append((ahead, (start - clock) * PREFILL_TPS, start - clock))
+        # the backlog as a scheduler would read it: the requests still in the
+        # queue and the prompt tokens they have left, not the wait itself
+        live = list(itertools.takewhile(lambda job: job[1] > clock, reversed(jobs)))
+        tokens = sum(p if s >= clock else p * (f - clock) / (f - s) for s, f, p in live)
+        start = max(clock, jobs[-1][1] if jobs else 0.0)
+        jobs.append((start, start + prompt / PREFILL_TPS, prompt))
+        rows.append((len(live), tokens, start - clock))
     return rows
 
 
@@ -89,6 +94,7 @@ def solve():
         "r_requests": statistics.correlation([a for a, _, _ in rows], waits),
         "r_tokens": statistics.correlation([k for _, k, _ in rows], waits),
         "at2": (min(at2), max(at2)),
+        "max_ahead": max(a for a, _, _ in rows),
         "kv_up_rate": rate_at("reasoning", KV_UP),
         "queue_rate": rate_at("reasoning", 1.0),
         "ref_service": (ref.REQUEST_PREFILL_SEC, ref.REQUEST_DECODE_SEC),
@@ -122,10 +128,12 @@ def verify(result):
                     round(result["r_tokens"], 6) == 1.0,
                     round(lo, 2) == 0.03,
                     round(hi, 2) == 1.97,
+                    round(hi / lo) == 63,
                 ]
             ),
             f"corr(wait, requests ahead) {result['r_requests']:.3f}, corr(wait, tokens "
-            f"ahead) {result['r_tokens']:.3f}; with 2 ahead the wait is {lo:.2f}-{hi:.2f}s",
+            f"ahead) {result['r_tokens']:.3f}; with 2 ahead the wait is {lo:.2f}-{hi:.2f}s "
+            f"({hi / lo:.0f}x); up to {result['max_ahead']} requests queue",
         ),
         practice.Check(
             "FINDING: on decode pods a queue signal fires only after KV is full",

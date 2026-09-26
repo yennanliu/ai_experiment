@@ -80,7 +80,7 @@ to 24.
 | unbounded | 96.0% | 79.5% |
 
 With memory free, ordering costs 16.6 points. At 160 blocks the loss is
-60.6 points, because 24 branches compete for a cache that cannot hold even one
+60.6 points, 44.0 of which appear only under the budget, because 24 branches compete for a cache that cannot hold even one
 180-block request. Fixing the order is still the lever: it also shrinks the
 working set the budget has to hold.
 
@@ -131,10 +131,14 @@ Measured on the lesson's RAG workload at 16-token blocks:
 
 | budget | tree LRU | block LRU (front-first ties) | block LRU (suffix-first ties) |
 |---:|---:|---:|---:|
-| 160 | 76.8% | 0.0%, all 160 blocks stranded | 80.5% |
+| 160 | 76.8%, 20 stranded | 0.0%, all 160 blocks stranded | 80.5%, 1 stranded |
 | 200 | 85.3% | 82.1%, 20 stranded | 85.3% |
 | 250 | 91.9% | 87.4%, 34 stranded | 91.9% |
 | 300 | 95.1% | 94.1%, 32 stranded | 95.1% |
+
+At 160 even tree LRU strands blocks: one request is 180 blocks, and with no
+lock on the running request it evicts its own newest leaf and inserts past
+it. SGLang pins in-flight blocks, so this row is a toy artifact.
 
 The last column shows the real lever is eviction *order*. A flat block pool
 that evicts the ends of paths first matches the tree. The tree makes that

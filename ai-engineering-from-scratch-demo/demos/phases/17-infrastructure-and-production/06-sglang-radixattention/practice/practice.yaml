@@ -33,8 +33,9 @@ exercises:
       fixed order 0.6906 vs the shipped scrambled workload 0.0844, and a controlled permutation of
       workload_rag 0.0546..0.1512 over seeds 0-4; SYSTEM is first in 25 of 80 requests and distinct
       3-segment heads go 4 -> 24. With the budget removed fixed is 0.9602 and scrambled 0.7946 (16.6
-      points), against 60.6 points at 160 blocks. The hit rate falls 8.2x and prefill tokens computed
-      rise 70800 -> 209500 (2.96x), not the 6.4x Use It names
+      points), against 60.6 points at 160 blocks, so 44.0 points appear only under the budget. The hit
+      rate falls 8.2x and prefill tokens computed rise 70800 -> 209500 (2.96x), not the 6.4x Use It
+      names
   - index: 3
     slug: the_system_prompt_costs_250_mib_once_and_16_copies_cost_3_9_gib
     kind: code
@@ -62,9 +63,10 @@ exercises:
     verifies: >-
       at 16-token-block granularity on the RAG workload, (hit rate, peak stranded blocks) is tree LRU
       (0.8531, 0) vs block LRU with front-first ties (0.8211, 20) at 200 blocks and (0.9187, 0) vs
-      (0.8744, 34) at 250; at 160 block LRU hits 0.0 with all 160 blocks stranded while tree LRU keeps
-      0.7681. Block LRU with suffix-first ties equals tree LRU at 200/250/300 and gets 0.8046 at 160.
-      The reference RadixCache holds up to 4 unreachable blocks and hits 0.6906 at 160
+      (0.8744, 34) at 250; at 160, below one 180-block request, block LRU hits 0.0 with all 160 blocks
+      stranded while tree LRU keeps (0.7681, 20). Block LRU with suffix-first ties equals tree LRU at
+      200/250/300 and gets 0.8046 at 160. The reference RadixCache holds up to 4 unreachable blocks
+      and hits 0.6906 at 160
   - index: 5
     slug: the_8_percent_trace_fails_two_diagnostics_and_the_budget_is_the_bigger_one
     kind: code

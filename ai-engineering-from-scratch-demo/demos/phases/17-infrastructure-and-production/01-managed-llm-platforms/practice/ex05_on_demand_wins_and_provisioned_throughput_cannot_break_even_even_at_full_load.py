@@ -37,7 +37,8 @@ Bedrock still serves costs $6/$30, double its launch price, and Bedrock's
 lifecycle page says no new Provisioned Throughput can be created for a
 Legacy model.
 
-Structure: `PAGES` holds the figures read off the pages; `monthly()` prices
+Structure: `PAGES` holds the figures read off the pages (recorded, not
+re-fetched at test time -- the third check tests only the lesson's side); `monthly()` prices
 one path; `solve()` compares the three and tests Provisioned Throughput at
 full load.
 """
@@ -83,6 +84,8 @@ def solve():
             monthly(0, bedrock.per_mtok_output, capacity, 0),
         ),
         "doc_range": "$21-$50/hr" in parity.doc_text(PHASE, LESSON),
+        "doc_3_7": "You picked Claude 3.7 Sonnet" in parity.doc_text(PHASE, LESSON),
+        "ref_pt_hourly": bedrock.ptu_hourly,
     }
 
 
@@ -113,15 +116,20 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the pages do not carry the numbers the exercise asks for",
+            # The page facts are recorded in PAGES (read 2026-09-26) and are not
+            # re-fetched at test time; what this checks is the lesson side of each
+            # comparison -- the range it quotes, the floor the code prices, and the
+            # model it opens with.
             all(
                 [
                     result["doc_range"],
-                    "account team" in PAGES["bedrock_pt"],
-                    not PAGES["azure_openai_lists_claude"],
-                    not PAGES["anthropic_lists_3_7"],
+                    result["ref_pt_hourly"] == 21.0,
+                    result["doc_3_7"],
                 ]
             ),
-            "Bedrock withholds PT prices (the lesson's $21-$50/hr is not on the page); Azure "
+            f"the lesson quotes $21-$50/hr and the code prices PT at "
+            f"${result['ref_pt_hourly']:.0f}/hr; recorded page facts (2026-09-26, not "
+            "re-fetched): Bedrock withholds PT prices; Azure "
             "OpenAI lists no Claude; Claude 3.7 Sonnet is off Anthropic's price list; legacy "
             f"Claude 3.5 Sonnet on Bedrock is ${PAGES['bedrock_legacy_3_5_sonnet'][0]:.0f}/"
             f"${PAGES['bedrock_legacy_3_5_sonnet'][1]:.0f}",

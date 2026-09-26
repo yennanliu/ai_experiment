@@ -167,7 +167,7 @@ The lesson's simulator cannot show this symptom at its own concurrency
 points. It charges a second full pass (`reroll_ms`) on every rejected step,
 so a zero-acceptance step costs 2.05 plain steps per token. Its P99 is
 +35%..+116% over alpha 0.3..0.9 at concurrency 1, 32 and 256, and all 15 rows
-`main()` prints are tagged TAIL. The tail also shrinks as concurrency grows:
+`main()` prints (alpha 0.30..0.80 at concurrency 32, 128, 256) are tagged TAIL. The tail also shrinks as concurrency grows:
 alpha 0.7 goes from +98.5% at 1 to +13.3% at 512 and -15.2% at 1024. That is
 the opposite of the lesson's warning.
 

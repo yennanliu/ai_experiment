@@ -25,9 +25,10 @@ not an A100.
 
 **FINDING: in the toy the budget moves only latency, and 512-token chunks
 bound no step.** Sweeping 128 to 28,800 tokens, throughput stays between 878
-and 886 tok/s while P99 ITL rises from 10.8 ms to 262.2 ms. The toy's cost is
-linear in tokens, so the fixed per-step cost that a bigger batch amortizes is
-missing, and only the budget's latency side shows. Nor does the reference's
+and 886 tok/s while P99 ITL climbs from 10.8 ms to a peak of 262.2 ms (at
+8192). The toy's step cost is linear in tokens plus a 0.2 ms `BATCH_OVERHEAD`,
+so a bigger batch amortizes only that overhead: with it set to 0 every budget
+gives 909 tok/s. Only the budget's latency side shows. Nor does the reference's
 "chunked prefill" cap a step. Every prefilling request gets its own 512-token
 chunk in the same iteration, so the largest step is 2694 tokens with chunking
 and 18,563 without it. Only a budget caps a step.
@@ -67,10 +68,10 @@ def schedule(ref, running, now, left, chunk):  # spend the budget in running ord
     return prefill, decoded
 
 
-def step(ref, running, now, budget, chunk, peak):  # -> (new time, largest step so far)
+def step(ref, running, now, budget, chunk, peak, overhead):  # -> (new time, largest step)
     prefill, decoded = schedule(ref, running, now, budget or float("inf"), chunk)
-    now += (prefill * ref.PREFILL_LATENCY_PER_TOKEN
-            + len(decoded) * ref.FORWARD_LATENCY_PER_TOKEN + ref.BATCH_OVERHEAD)
+    now += (prefill * ref.PREFILL_LATENCY_PER_TOKEN + len(decoded) * ref.FORWARD_LATENCY_PER_TOKEN
+            + (ref.BATCH_OVERHEAD if overhead is None else overhead))
     for r in decoded:
         r.itl_samples.append(now - (r.last_token_at or r.ttft or now))
         r.generated, r.last_token_at = r.generated + 1, now
@@ -85,14 +86,14 @@ def admit(ref, waiting, running, used, now):  # the reference's rule: whole rese
     return used
 
 
-def simulate(ref, reqs, max_num_batched_tokens=None, chunk=None):  # -> (end, largest step)
+def simulate(ref, reqs, max_num_batched_tokens=None, chunk=None, overhead=None):  # (end, peak)
     waiting, running, used, now, peak = collections.deque(reqs), [], 0, 0.0, 0
     while waiting or running:
         used = admit(ref, waiting, running, used, now)
         if not running:
             now = waiting[0].arrived_at
             continue
-        now, peak = step(ref, running, now, max_num_batched_tokens, chunk, peak)
+        now, peak = step(ref, running, now, max_num_batched_tokens, chunk, peak, overhead)
         used -= sum(r.blocks_needed() for r in running if r.done)
         running[:] = [r for r in running if not r.done]
     return now, peak
@@ -123,6 +124,8 @@ def kv_budget(kv_bytes, block):
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     return {"parity": [parity_with_reference(ref, c) for c in (False, True)],
+            "no_overhead_tps": [measure(ref, max_num_batched_tokens=b, overhead=0.0)["tps"]
+                                for b in BUDGETS],
             "sweep": {b: measure(ref, max_num_batched_tokens=b) for b in BUDGETS},
             "peak": {c: measure(ref, chunk=c)["peak"] for c in (None, ref.CHUNK_SIZE)},
             "bf16": kv_budget(2, ref.KV_BLOCK_SIZE), "fp8": kv_budget(1, ref.KV_BLOCK_SIZE)}
@@ -144,8 +147,10 @@ def verify(result):
         practice.Check(
             "FINDING: in the toy the budget moves only latency, and 512-token chunks bound no step",
             all([min(tps) == 878, max(tps) == 886, p99[0] == 10.8, max(p99) == 262.2,
+                 set(result["no_overhead_tps"]) == {909},
                  result["peak"] == {None: 18_563, 512: 2694}]),
-            f"budgets {BUDGETS}: {tps} tok/s, P99 ITL {p99} ms; the reference's largest step "
+            f"budgets {BUDGETS}: {tps} tok/s, P99 ITL {p99} ms; {set(result['no_overhead_tps'])} "
+            f"tok/s at every budget with no per-step overhead; the reference's largest step "
             f"is {result['peak'][512]} tokens chunked, {result['peak'][None]} unchunked",
         ),
         practice.Check(

@@ -32,8 +32,8 @@ nodes in a maintenance window instead.
 disruption docs list `WhenEmpty`, `Balanced` and `WhenEmptyOrUnderutilized`,
 and the defaults are `WhenEmptyOrUnderutilized` with `consolidateAfter: 0s`,
 so leaving the block out gets the trap. The lesson's code models no NodePool at
-all; the nearest knob, NODE_PROVISION_SEC = 0 (every node already warm, which
-a 1h hold approximates), takes QUEUE_DEPTH drops 64 -> 44.
+all; the nearest knob, NODE_PROVISION_SEC = 0 (every node already provisioned,
+which a 1h hold approximates; the model still loads), takes QUEUE_DEPTH drops 64 -> 44.
 
 Structure: `NODEPOOL` is the manifest as data, `render()` prints it as YAML,
 and `kv_tokens()` does the sizing.
@@ -103,6 +103,7 @@ def solve():
     finally:
         ref.NODE_PROVISION_SEC = saved
     names = " ".join(dir(ref)).lower()
+    doc = parity.doc_text(PHASE, LESSON, "en")
     return {
         "yaml": render(NODEPOOL),
         "spec": NODEPOOL["spec"],
@@ -111,6 +112,9 @@ def solve():
         "reload_s": ref.NODE_PROVISION_SEC + ref.MODEL_LOAD_SEC,
         "cold": ref.simulate("QUEUE_DEPTH", ref.make_workload())["dropped"],
         "models_nodepool": "nodepool" in names or "karpenter" in names,
+        # (says "never evict", mentions expireAfter, policies it names)
+        "doc": ("never evict a running job" in doc, "expireAfter" in doc,
+                tuple(p for p in POLICIES if p in doc)),
     }
 
 
@@ -123,27 +127,28 @@ def verify(result):
         practice.Check(
             "ANSWER: on-demand p5.48xlarge, WhenEmpty, consolidateAfter 1h, taint "
             "nvidia.com/gpu=true:NoSchedule, expireAfter Never",
-            design == ("on-demand", "WhenEmpty", "1h", "NoSchedule")
-            and cap in CAPACITY_TYPES
-            and design[1] in POLICIES
-            and (round(kv[1] / 1e3), round(kv[2] / 1e3)) == (20, 256)
-            and 'consolidationPolicy: "WhenEmpty"' in result["yaml"],
+            (design, cap in CAPACITY_TYPES, design[1] in POLICIES,
+             round(kv[1] / 1e3), round(kv[2] / 1e3), 'consolidationPolicy: "WhenEmpty"' in result["yaml"])
+            == (("on-demand", "WhenEmpty", "1h", "NoSchedule"), True, True, 20, 256, True),
             f"KV tokens after weights: TP=1 {kv[1]:,.0f}, TP=2 {kv[2]:,.0f} -> TP=2, "
             f"4 replicas per 8-GPU node; a reclaim costs {result['reload_s']}s of reload",
         ),
         practice.Check(
             "FINDING: WhenEmpty with 1h still evicts every GPU node at 30 days",
-            (tmpl["expireAfter"], round(drains, 1), round(12 * drains)) == ("Never", 12.2, 146),
+            (tmpl["expireAfter"], round(drains, 1), round(12 * drains), *result["doc"][:2])
+            == ("Never", 12.2, 146, True, False),
             f"default expireAfter {DEFAULT_EXPIRE_H}h is forceful: {drains:.1f} drains per "
-            f"node-year, {12 * drains:.0f} on 12 nodes; the design sets expireAfter Never",
+            f"node-year, {12 * drains:.0f} on 12 nodes; the design sets expireAfter Never; "
+            f"the lesson says 'never evict a running job' and never mentions expireAfter",
         ),
         practice.Check(
             "FINDING: the lesson names two policies and Karpenter now has three",
-            (len(POLICIES), DEFAULTS["consolidationPolicy"], result["models_nodepool"])
-            == (3, POLICIES[2], False)
-            and (result["cold"], result["warm"]) == (64, 44),
-            f"policies {POLICIES}, defaults {DEFAULTS}; the lesson code has no NodePool; "
-            f"warm nodes take QUEUE_DEPTH drops {result['cold']} -> {result['warm']}",
+            (len(POLICIES), DEFAULTS["consolidationPolicy"], result["models_nodepool"],
+             result["doc"][2], result["cold"], result["warm"])
+            == (3, POLICIES[2], False, ("WhenEmpty", "WhenEmptyOrUnderutilized"), 64, 44),
+            f"policies {POLICIES}, the lesson names {result['doc'][2]}; defaults "
+            f"{DEFAULTS}; the lesson code has no NodePool; "
+            f"instant nodes take QUEUE_DEPTH drops {result['cold']} -> {result['warm']}",
         ),
     ]
 

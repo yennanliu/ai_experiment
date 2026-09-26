@@ -18,7 +18,8 @@ multiply from 4 to 24.
 
 **FINDING: most of that drop is the budget, not the tree failing to match.**
 With the budget removed, fixed order reaches 96.0% and the scrambled workload
-79.5%. Ordering alone costs 16.6 points. At 160 blocks the loss is 60.6 points:
+79.5%. Ordering alone costs 16.6 points. At 160 blocks the loss is 60.6 points, so
+44.0 of them appear only under the budget:
 24 branches compete for a cache that cannot hold one full request (180 blocks),
 and SYSTEM is only reused when it happens to come first. The fix is still to
 fix the order, and doing that also shrinks the working set the budget must
@@ -84,8 +85,9 @@ def solve():
 
 def verify(result):
     fixed, scr, ctl = result["fixed"], result["scrambled"], result["controlled"]
-    ordering_cost = round(fixed[1] - scr[1], 4)
-    budget_cost = round(fixed[0] - scr[0], 4)
+    ordering_cost = round(fixed[1] - scr[1], 4)   # drop with the budget removed
+    total_drop = round(fixed[0] - scr[0], 4)       # drop at the shipped 160 blocks
+    budget_share = round(total_drop - ordering_cost, 4)
     computed = result["computed"]
     return [
         practice.Check(
@@ -98,9 +100,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: most of the drop is the budget, not the tree failing to match",
-            fixed[1] == 0.9602 and scr[1] == 0.7946 and budget_cost > 3 * ordering_cost,
+            fixed[1] == 0.9602 and scr[1] == 0.7946 and budget_share > ordering_cost,
             f"unbounded: {fixed[1]:.1%} vs {scr[1]:.1%} ({ordering_cost * 100:.1f} points); "
-            f"at 160 blocks: {budget_cost * 100:.1f} points",
+            f"at 160 blocks: {total_drop * 100:.1f} points, so {budget_share * 100:.1f} of "
+            "them come only with the budget",
         ),
         practice.Check(
             "FINDING: the toy shows no 6.4x",

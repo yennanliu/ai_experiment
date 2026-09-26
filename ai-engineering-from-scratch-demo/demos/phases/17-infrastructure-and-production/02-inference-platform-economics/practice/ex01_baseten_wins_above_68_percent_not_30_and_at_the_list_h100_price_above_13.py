@@ -93,6 +93,8 @@ def solve():
         "fields": [f.name for f in dataclasses.fields(ref.Vendor)],
         "modal_util": round(modal_tokens / (md.tokens_per_minute * DAY), 4),
         "cheapest_b": min(scen_b, key=scen_b.get),
+        "scen_b": {n: round(c, 2) for n, c in sorted(scen_b.items(), key=lambda kv: kv[1])[:2]},
+        "modal_tokens": round(modal_tokens),
         "doc_30": "above ~30% sustained utilization" in parity.doc_text(PHASE, LESSON),
     }
 
@@ -123,9 +125,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the code's Modal beats Fireworks from 2.8% utilization",
-            result["modal_util"] == 0.0278 and result["cheapest_b"] == "Modal",
-            f"Modal passes Fireworks at {result['modal_util']:.1%} of its day and is the "
-            f"cheapest vendor in Scenario B ({result['cheapest_b']})",
+            result["modal_util"] == 0.0278 and result["modal_tokens"] == 32_000_000
+            and result["scen_b"] == {"Modal": 60.0, "Together": 88.0},
+            f"Modal passes Fireworks at {result['modal_tokens']:,} tokens/day, "
+            f"{result['modal_util']:.1%} of its day; Scenario B's two cheapest {result['scen_b']}",
         ),
     ]
 

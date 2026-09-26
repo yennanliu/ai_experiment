@@ -104,6 +104,7 @@ def solve():
     before, after = month(bedrock, False), month(bedrock, True)
     total = [sum(r["cost"] for r in m.values()) for m in (before, after)]
     created = 20  # profiles created on this day of the month, after the spike
+    source = (parity.lesson_dir(PHASE, LESSON) / "code" / "main.py").read_text()
     return {
         "ratio": total[1] / total[0],
         "requests": [sum(r["requests"] for r in m.values()) for m in (before, after)],
@@ -117,6 +118,8 @@ def solve():
         ),
         "covered": (DAYS - created + 1) / DAYS,
         "attribution": bedrock.attribution,
+        # every read of the field in the reference module
+        "reads": [ln.strip() for ln in source.splitlines() if ".attribution" in ln],
         "claim": "CloudWatch breaks out cost per profile"
         in parity.doc_text(PHASE, LESSON),
     }
@@ -145,8 +148,9 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the reference has no attribution to run",
-            isinstance(result["attribution"], str) and result["claim"],
-            f"Bedrock's attribution is the string {result['attribution']!r}; AWS routes "
+            result["claim"] and [r[:6] for r in result["reads"]] == ["print("],
+            f"Bedrock's attribution is the string {result['attribution']!r}, read once, by "
+            f"a print(); AWS routes "
             "profile costs through cost allocation tags, not CloudWatch",
         ),
     ]

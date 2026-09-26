@@ -29,9 +29,10 @@ the low-alpha slice (exercise 2). K=0 takes P99 back to +0%.
 concurrency points.** `simulate_tail` charges a second full target pass
 (`reroll_ms`) on every step that rejects a draft. A zero-acceptance step
 therefore costs 2.05 plain steps per token at 32 concurrent. Over alpha 0.3..0.9 at
-concurrency 1, 32 and 256, its P99 is +35%..+116% over plain, and every one
-of the 15 rows `main()` prints is tagged TAIL. At 32 concurrent, alpha 0.7
-already gives mean -33% with P99 +89%.
+concurrency 1, 32 and 256, its P99 is +35%..+116% over plain. At `main()`'s
+own points (alpha 0.30..0.80 at concurrency 32, 128 and 256) every one of the
+15 rows it prints is tagged TAIL. At 32 concurrent, alpha 0.7 already gives
+mean -33% with P99 +89%.
 
 **FINDING: in that simulator the tail shrinks with concurrency and flips by
 1024.** Plain decode's cost grows by conc/512 and a spec step's by
@@ -140,7 +141,7 @@ def verify(result):
         practice.Check(
             "FINDING: the lesson's simulator cannot show this symptom at its own concurrency points",
             result["shipped"] == (0.35, 1.16, 2.05)
-            and result["at_32"][0] < -0.25
+            and tuple(round(v, 2) for v in result["at_32"]) == (-0.33, 0.89)
             and result["tags"] == (15, 0),
             f"reroll_ms makes a zero-acceptance step {zero} plain steps per token; P99 change "
             f"over alpha {ALPHAS} x concurrency {CONCS} is {low:+.0%}..{high:+.0%}; at 32/0.7 "
@@ -149,7 +150,9 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: in that simulator the tail shrinks with concurrency and flips by 1024",
-            0.1 < result["by_conc"][3] < 0.15 and max(result["at_1024"]) < 0,
+            result["by_conc"] == [0.985, 0.888, 0.418, 0.133, -0.152]
+            and result["by_conc"] == sorted(result["by_conc"], reverse=True)
+            and max(result["at_1024"]) < 0,
             f"alpha 0.7 P99 change at concurrency {CONCS + (512, 1024)}: {result['by_conc']}; "
             f"at 1024 every alpha beats plain P99",
         ),

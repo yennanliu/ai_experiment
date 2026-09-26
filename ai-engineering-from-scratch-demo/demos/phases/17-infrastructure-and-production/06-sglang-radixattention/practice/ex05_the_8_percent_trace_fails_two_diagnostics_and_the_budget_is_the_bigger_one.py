@@ -21,7 +21,7 @@ separates its own cause.** Scrambled ordering gives 8.4%: 6 orderings of one
 segment set. The timestamp prefix gives 0.0%: 80 first segments in 80
 requests, and a replay ceiling of 0.0% as well, so no budget would help. The 156-block budget gives 0.0%: a replay ceiling of 96.0% and 96.0%
 of tokens lost to eviction. On the healthy trace the three read 1 ordering, 1
-first segment and 26.8 points of eviction loss. Each fix recovers the rate:
+first segment and 27.0% of tokens lost to eviction. Each fix recovers the rate:
 fixed order 69.1%, the timestamp moved to just before the question 66.7%,
 157 blocks 69.1%.
 

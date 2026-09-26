@@ -124,8 +124,7 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: Claude on Bedrock, GPT-4o on Azure, one gateway, same-model failover first",
-            a["design"]["claude"][0] >= 0.999999
-            and a["design"]["gpt-4o"][1] >= 0.999999
+            min(a["design"]["claude"][0], a["design"]["gpt-4o"][1]) >= 0.999999
             and result["blend"] == (6.0, 4.375),
             f"design: Claude served by Claude {a['design']['claude'][0]}, GPT-4o requests "
             f"answered {a['design']['gpt-4o'][1]}; failover to GPT-4o costs "
@@ -134,16 +133,18 @@ def verify(result):
         practice.Check(
             "FINDING: the lesson's pair gives each model one host, so its failover swaps the model",
             result["claim"]
-            and a["lesson pair"]["claude"][0] == a["pinned pair"]["claude"][0] == UP
-            and a["lesson pair"]["claude"][1] > UP
-            and down["design"] < 0.1,
+            and a["lesson pair"]["claude"] == (UP, round(1 - (1 - UP) ** 2, 9))
+            and a["pinned pair"] == {"claude": (UP, UP), "gpt-4o": (UP, UP)}
+            and a["lesson pair"]["gpt-4o"][1] >= 0.999999
+            and (down["lesson pair"], down["design"]) == (43.2, 0.04),
             f"Claude-by-Claude availability {a['lesson pair']['claude'][0]} with or without "
             f"the lesson's failover ({down['lesson pair']} min/month down); a second Claude "
-            f"host takes it to {down['design']} min",
+            f"host takes it to {down['design']} min; GPT-4o requests answered "
+            f"{a['pinned pair']['gpt-4o'][1]} pinned, {a['lesson pair']['gpt-4o'][1]} with it",
         ),
         practice.Check(
             "FINDING: lock_in_cost() charges 10% for headroom that on-demand does not bill",
-            result["uplift"] == (195.0, 0.13, 45.0),
+            (result["uplift"], result["headroom_covers"]) == ((195.0, 0.13, 45.0), 0.1),
             f"${result['uplift'][0]:.0f}/month, {result['uplift'][1]:.0%} of spend; on-demand "
             f"idles free, leaving the gateway's ${result['uplift'][2]:.0f}; 10% reserved "
             f"headroom absorbs {result['headroom_covers']:.0%} of an equal failed-over load",

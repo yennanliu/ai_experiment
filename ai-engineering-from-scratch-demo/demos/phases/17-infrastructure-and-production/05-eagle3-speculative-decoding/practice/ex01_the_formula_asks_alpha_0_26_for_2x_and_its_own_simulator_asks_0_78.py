@@ -29,7 +29,8 @@ plain mean over spec mean. That is exactly computable; `simulate_tail` at
 0.3 the printed speedup is 2.14x and the simulator runs at 0.70x. It needs
 alpha 0.511 to break even, 0.781 for 2x and 0.889 for 3x. At 256 concurrent
 it needs 0.348, 0.687 and 0.819. Its break-even falls with concurrency,
-because plain decode's cost grows by conc/512 and a spec verify's does not.
+because plain decode's cost grows by conc/512 and a spec verify's only by
+0.15 * conc/256, while the reroll pass stays a flat 8 ms.
 
 **FINDING: the printed break-even alpha is 0.034 / 0.045 / 0.060, not the
 KEY FINDING's "~0.4" at 256.** The code's own `breakeven_alpha` at

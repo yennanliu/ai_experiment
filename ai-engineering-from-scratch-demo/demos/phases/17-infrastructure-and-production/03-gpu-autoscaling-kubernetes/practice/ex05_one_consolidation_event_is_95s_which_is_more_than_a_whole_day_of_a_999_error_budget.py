@@ -52,9 +52,9 @@ def per_event(outage_s, deadline_s=TTFT_SLO_S, utilization=1.0):
     return outage_s, outage_s / 3600 * NODE_PRICE_H, drops
 
 
-def events_within(slo):
+def events_within(slo, outage_s):
     budget = (1 - slo) * DAY_S
-    return budget, int(budget // per_event(95)[0])
+    return budget, int(budget // outage_s)
 
 
 def solve():
@@ -74,7 +74,7 @@ def solve():
         "year_usd": 365 * EVENTS_PER_DAY * dollars,
         "at95": per_event(outage, utilization=0.95)[2],
         "absorbed": per_event(outage, utilization=(NODES - 1) / NODES)[2],
-        "slo": {slo: events_within(slo) for slo in (0.999, 0.99)},
+        "slo": {slo: events_within(slo, outage) for slo in (0.999, 0.99)},
         "sim_drops": per_event(outage, deadline_s=30)[2],
         "sim_rule": "now - r.arrived_at > 30" in source,
         "sim_evicts": "evict" in source.lower() or "consolidat" in source.lower(),
@@ -97,13 +97,15 @@ def verify(result):
                     round(result["year_usd"]) == 31_809,
                     result["drops"] == 340,
                     day["drops"] == 20_400,
+                    round(365 * day["drops"] / 1e6, 1) == 7.4,
                     round(result["at95"]) == 136,
                     round(result["absorbed"], 9) == 0,
                 ]
             ),
             f"{result['outage']}s x {EVENTS_PER_DAY}/day = {day['s']}s; ${result['dollars']:.2f}"
             f"/event, ${day['usd']:.2f}/day, ${result['year_usd']:,.0f}/yr; drops/event "
-            f"{result['drops']:.0f} at 100% load, {result['at95']:.0f} at 95%, 0 at 11/12",
+            f"{result['drops']:.0f} at 100% load ({day['drops']:,.0f}/day, "
+            f"{365 * day['drops'] / 1e6:.1f}M/yr), {result['at95']:.0f} at 95%, 0 at 11/12",
         ),
         practice.Check(
             "FINDING: one event is more than a whole day of a 99.9% error budget",

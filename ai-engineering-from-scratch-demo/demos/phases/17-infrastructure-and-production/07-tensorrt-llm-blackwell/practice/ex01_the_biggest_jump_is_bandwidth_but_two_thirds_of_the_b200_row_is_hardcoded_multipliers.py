@@ -34,13 +34,19 @@ KV" decision is invisible to the number it prints.
 5.1B active (4.4%), with MXFP4 MoE weights. At 5.1B active every row is 7.06x
 faster than the 36B the module labels "GPT-OSS-120B MoE (30% active)".
 
-Structure: `row()` is the reference function on a stack variant; `solve()`
-builds the variants.
+Structure: `row()` is the reference function on a stack variant;
+`printed_factors()` reads the KEY FINDING's factors from `main()`'s output;
+`solve()` builds the variants.
 """
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
+import inspect
+import io
+import math
+import re
 
 from harness import parity, practice
 
@@ -52,8 +58,17 @@ def row(ref, stack, active=ACTIVE, **change):
     return ref.decode_throughput(active, dataclasses.replace(stack, **change))
 
 
+def printed_factors(ref):
+    """The four "~N.Nx" factors the KEY FINDING prints, read from `main()` itself."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        ref.main()
+    return [float(m) for m in re.findall(r"~(\d+(?:\.\d+)?)x$", out.getvalue(), re.M)]
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
+    printed = printed_factors(ref)
     h16, h8, b = (
         ref.STACKS[0],
         ref.STACKS[1],
@@ -79,7 +94,10 @@ def solve():
             2,
         ),
         "price_ratio": round(b.price_per_gpu_hour / h8.price_per_gpu_hour, 2),
-        "printed_product": round(2.4 * 2.0 * 1.8 * 2.0, 2),
+        "printed": printed,
+        "printed_product": round(math.prod(printed), 2),
+        "with_row_disagg": round(math.prod(printed[:3]) * b.disagg_factor, 1),
+        "inputs": list(inspect.signature(ref.decode_throughput).parameters),
         "oss_speedup": round(row(ref, b, OSS_ACTIVE) / tps["b"], 2),
     }
 
@@ -104,16 +122,19 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: KV precision and context length never reach the throughput",
-            result["kv"] == [t["b"]],
-            f"KV at 16, 8 and 4 bits all give {result['kv']} tok/s on the B200 row",
+            result["kv"] == [t["b"]] and result["inputs"] == ["active_b", "stack"],
+            f"KV at 16, 8 and 4 bits all give {result['kv']} tok/s on the B200 row; "
+            f"decode_throughput takes only {result['inputs']}, no seq_len",
         ),
         practice.Check(
             "FINDING: 'closer to 7x after overhead' is the GPU price, and the product is not 14x",
             abs(jump / result["price_ratio"] - result["cost_gap"]) < 0.01
-            and result["cost_gap"] == 7.16
-            and result["printed_product"] == 17.28,
+            and (result["cost_gap"], result["printed"], result["printed_product"])
+            == (7.16, [2.4, 2.0, 1.8, 2.0], 17.28)
+            and round(result["with_row_disagg"]) == 14,
             f"{jump}x tok/s / {result['price_ratio']}x price = {result['cost_gap']}x $/M; "
-            f"the printed factors multiply to {result['printed_product']}",
+            f"the printed factors {result['printed']} multiply to {result['printed_product']}, "
+            f"and {result['with_row_disagg']} with the row's {f['disagg']} disagg",
         ),
         practice.Check(
             "FINDING: GPT-OSS-120B is 5.1B active, not 30%",

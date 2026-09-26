@@ -14,7 +14,7 @@ the module's own knobs one at a time.
 duty-cycle drops queue-depth drops too.** Queue-depth HPA drops 63 requests
 that duty-cycle HPA serves, and 0 the other way. The script prints "DUTY_CYCLE
 drops requests because DCGM_FI_DEV_GPU_UTIL is a duty-cycle metric" under a
-table that shows the reverse. The cost goes the other way as well: 266.2
+table that shows the reverse. The cost goes the other way as well: 266.25
 idle GPU-minutes for duty-cycle against 49.5.
 
 **FINDING: the difference is the spike onset and the scale-down rule.** The
@@ -93,8 +93,9 @@ def solve():
         "qd": qd_row,
         "qd_only": len(dropped(qd) - dropped(dc)),
         "dc_only": len(dropped(dc) - dropped(qd)),
-        "onset": sum(1 for i in dropped(qd) if 600 <= qd[i].arrived_at < 705),
+        "onset": sum(1 for i in dropped(qd) if 600 <= qd[i].arrived_at <= 703),
         "ready_600": {s: trace(ref, s)[600.0] for s in ("DUTY_CYCLE", "QUEUE_DEPTH")},
+        "dc_spike": sorted({v for t, v in trace(ref, "DUTY_CYCLE").items() if 840 <= t < 1800}),
         "warm6": run(ref, "QUEUE_DEPTH", MIN_WARM_REPLICAS=6)[1]["dropped"],
         "instant": run(ref, "QUEUE_DEPTH", NODE_PROVISION_SEC=0)[1]["dropped"],
         "busy_frac": (ref.REQUEST_PREFILL_SEC + ref.REQUEST_DECODE_SEC) / ref.HPA_TICK_SEC,
@@ -125,12 +126,14 @@ def verify(result):
             all(
                 [
                     ready == {"DUTY_CYCLE": 6, "QUEUE_DEPTH": 1},
+                    result["dc_spike"] == [14, 15, 16],
                     result["onset"] == 33,
                     result["warm6"] == 2,
                     result["instant"] == 44,
                 ]
             ),
-            f"ready replicas at t=600 {ready}; {result['onset']} of {qd['dropped']} "
+            f"ready replicas at t=600 {ready}; duty-cycle holds {result['dc_spike'][0]}-"
+            f"{result['dc_spike'][-1]} from t=840 to 1800; {result['onset']} of {qd['dropped']} "
             f"queue-depth drops arrive in 600-703s; MIN_WARM_REPLICAS=6 -> "
             f"{result['warm6']}, NODE_PROVISION_SEC=0 -> {result['instant']}",
         ),

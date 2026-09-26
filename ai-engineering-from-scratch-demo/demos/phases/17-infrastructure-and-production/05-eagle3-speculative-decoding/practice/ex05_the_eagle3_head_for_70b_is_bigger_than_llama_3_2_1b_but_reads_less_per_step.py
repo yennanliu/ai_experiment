@@ -37,7 +37,8 @@ per token, the 1B 32 KiB, and the 70B target 320 KiB. At 256 sequences of
 against 10%.
 
 **FINDING: the lesson's analyzer has no memory term at all.** `SpecPoint`
-has four fields: alpha, k, verify_overhead and concurrency. Weights, KV and
+has four fields: alpha, k, verify_overhead and concurrency, and `code/main.py`
+never mentions memory, KV cache, bytes or weights. Weights, KV and
 draft forwards are not modelled separately; they hide inside
 verify_overhead.
 
@@ -48,11 +49,14 @@ table is the measured checkpoint.
 from __future__ import annotations
 
 import dataclasses
+import pathlib
+import re
 
 from harness import parity, practice
 
 PHASE, LESSON = "17-infrastructure-and-production", "05-eagle3-speculative-decoding"
 VOCAB, GB, KIB, GIB = 128256, 1e9, 1024, 1024**3
+MEMORY_WORDS = r"(?i)\b(memory|kv|cache|bytes|gib|gb|params?|weights?)\b"
 # tensor bytes in the head's pytorch_model.bin, read from its zip central directory, in
 # order: d2t, t2d, q, k, v, o, gate, up, down, 4 norms, fc, embed_tokens, lm_head
 CHECKPOINT_BYTES = [
@@ -109,6 +113,7 @@ def solve():
         "kv_kib": {k: v / KIB for k, v in kv.items()},
         "kv_gib": {k: v * ctx / GIB for k, v in kv.items()},
         "fields": [f.name for f in dataclasses.fields(ref.SpecPoint)],
+        "memory_words": sorted(set(re.findall(MEMORY_WORDS, pathlib.Path(ref.__file__).read_text()))),
     }
 
 
@@ -147,8 +152,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson's analyzer has no memory term at all",
-            result["fields"] == ["alpha", "k", "verify_overhead", "concurrency"],
-            f"SpecPoint fields {result['fields']}",
+            result["fields"] == ["alpha", "k", "verify_overhead", "concurrency"]
+            and not result["memory_words"],
+            f"SpecPoint fields {result['fields']}; memory/KV/weight words in code/main.py: "
+            f"{result['memory_words']}",
         ),
     ]
 

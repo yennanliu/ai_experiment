@@ -47,13 +47,17 @@ dominate"; in the toy it loses 4.6x.
 | STATIC | 2.32 | 1.31 | 0.53 | 0.48 | 0.7 ms |
 | CONTINUOUS | 10.63 | 5.65 | 4.71 | 0.27 | 219.3 ms |
 
-The 8.31 s gap is 4.34 s of prefill and 4.18 s of decode. Tail latency adds
-nothing to it. The cause is that the two modes use different cost models:
+The 8.31 s gap is 4.34 s of prefill and 4.18 s of decode, less the 0.21 s
+more that static spends on overhead and idle. Tail latency adds nothing to it. The cause is that the two modes use different cost models:
 
 - **Static** charges a window's prefill at its *longest* prompt, and decode
   at `FORWARD_LATENCY_PER_TOKEN * len(window) / 16`.
 - **Continuous** charges every token in full, so batching earns it nothing.
   It lands at 886 tok/s, against 768 for NAIVE.
+
+Pricing one kind of token at 1 s and everything else at 0 reads this off the
+runs: static bills 32,768 prefill and 1,056 decode token-units, continuous all
+141,184 prompt and 9,419 output tokens.
 
 Put both modes on one cost model and continuous wins. With prefill free in
 both and decode at 1/16 per token in both, continuous does 6767 tok/s against
@@ -83,8 +87,10 @@ In the toy the budget moves only latency:
 | 128 | 878 tok/s | 10.8 ms |
 | 8192 | 886 tok/s | 262.2 ms |
 
-Throughput stays between those two values across the sweep, because the toy's
-cost is linear in tokens.
+Throughput stays between those two values across the sweep (P99 ITL peaks at
+8192), because the toy's cost is linear in tokens plus a 0.2 ms per-step
+`BATCH_OVERHEAD`. That overhead is the only thing a bigger batch amortizes:
+with it set to 0, every budget gives 909 tok/s.
 
 The reference's 512-token "chunked prefill" does not bound a step either.
 Every prefilling request gets its own chunk, so one iteration schedules 2694
@@ -104,8 +110,8 @@ compatibility matrix that v0.18.0 ships ("mutually exclusive features") lists
 |---|---|
 | speculative decoding | LoRA, pooling, encoder-decoder, async output, multi-step, best-of, beam search, prompt embeds |
 | chunked prefill | encoder-decoder, multi-step |
-| encoder-decoder | also prefix caching, LoRA, async output, prompt embeds |
-| pooling | also logprobs, prompt logprobs, async output, best-of, beam search, prompt embeds |
+| encoder-decoder | also prefix caching, LoRA, async output, multi-step, prompt embeds |
+| pooling | also logprobs, prompt logprobs, async output, multi-step, best-of, beam search, prompt embeds |
 | multi-step | also LoRA, best-of, beam search |
 | prompt embeds | also prompt logprobs, multimodal |
 

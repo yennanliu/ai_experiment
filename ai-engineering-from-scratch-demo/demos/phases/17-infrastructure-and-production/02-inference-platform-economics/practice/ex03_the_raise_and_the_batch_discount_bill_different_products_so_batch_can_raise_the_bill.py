@@ -93,9 +93,10 @@ def verify(result):
         practice.Check(
             "ANSWER: on one dedicated H100 the raise is +14.3%, and moving 40% to batch makes it +25%",
             all([(base, raised, shifted) == (168.0, 192.0, 210.0), (s0, s1) == (90.0, 72.0),
+                 round(raised / base - 1, 3) == 0.143, round(shifted / base - 1, 3) == 0.25,
                  result["per_m_saturated"] == 0.148, result["util_break"] == 0.329,
                  result["one_price"] == -0.184]),
-            f"dedicated ${base} -> ${raised} -> ${shifted} with 40% batch "
+            f"dedicated ${base} -> ${raised} ({raised / base - 1:+.1%}) -> ${shifted} with 40% batch "
             f"({shifted / base - 1:+.1%}); saturated H100 ${result['per_m_saturated']}/M vs "
             f"batch ${result['batch_rate']}/M, batch wins only below {result['util_break']:.1%}; "
             f"serverless ${s0} -> ${s1}; one-price reading {result['one_price']:+.1%} "
