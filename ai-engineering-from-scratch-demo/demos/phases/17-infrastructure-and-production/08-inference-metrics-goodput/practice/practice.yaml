@@ -1,0 +1,84 @@
+lesson: 08-inference-metrics-goodput
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/08-inference-metrics-goodput/docs/en.md
+exercises:
+  - index: 1
+    slug: a_one_percent_token_spike_never_reaches_a_15ms_tpot_slo_so_goodput_does_not_move
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Generate a distribution with 1% tail spike. How does goodput change when you tighten P99 TPOT from 30 ms to 15 ms?
+    zh: |
+      跑 `code/main.py`。產生一份帶 1% 尾端尖峰的分布。當你把 P99 TPOT 從 30 毫秒收緊到 15 毫秒時，goodput 怎麼變？
+    verifies: >-
+      with tail_spike_rate 0.01 goodput is 80.10% at TPOT 30 ms and at 15 ms (TTFT 500, E2E 2000): the
+      worst request TPOT is 9.18 ms, P99 8.30, while per-token P99 is 18.17; TPOT-only goodput at 15
+      ms is 100% at 5% spikes and 92.35% at 20%. The shipped run fails 22.75% on E2E, 2.30% on TTFT
+      and 0% on TPOT; goodput falls 84.45% -> 80.10% from rate 0 to 1%. Spiking 1% of whole requests
+      (26, TPOT 21.9-55.5 ms) costs 99.20% -> 98.70% TPOT-only and 83.30% -> 83.20% jointly, E2E
+      already failing 24 of 26. The printed KEY FINDING's 'P99 TPOT ~25-40 ms' is 8.99 ms and its
+      loose profile is 100.00%
+  - index: 2
+    slug: one_fp8_h100_reaches_15000_tok_s_only_if_every_sequence_holds_160_tokens_or_less
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A vendor quotes "15,000 tok/s on Llama 3.3 70B H100". Name three questions to ask before trusting it.
+    zh: |
+      某家廠商報價「Llama 3.3 70B 在 H100 上每秒 15,000 個詞元」。在相信它之前，說出三個要問的問題。
+    verifies: >-
+      Llama 3.3 70B in BF16 does not fit one 80 GB H100; in FP8 it leaves 57,373 KV tokens at 160 KiB
+      each and a 23.88 ms memory-bound step, so 15,000 tok/s needs 358 sequences of 160 tokens or
+      less; at the lesson workload's 2,394-token mean context one GPU gives 963 tok/s and an 8-GPU
+      node 60,761. Counting input tokens multiplies throughput 13.6x (2,218 prompt vs 176 output); the
+      same 2000 traces score goodput 100%, 75.95% and 42.15% under the three SLO profiles. main.py has
+      no throughput function and RequestTrace carries no timestamps
+  - index: 3
+    slug: chunked_prefill_moves_the_stall_rather_than_removing_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Why does chunked prefill protect P99 TPOT but not mean TPOT?
+    zh: |
+      為什麼分塊預填保護的是 P99 TPOT，而不是平均 TPOT？
+    verifies: >-
+      a 7 ms decode step with an 800 ms 32k prefill every 50 steps: mean ITL 23.0 ms chunked (2048
+      tokens) or not, P99 807 -> 57 ms, P90 7 -> 57 ms. Every 200 steps the mean is 11.0 both ways and
+      chunking raises P99 7 -> 57 ms. The lesson's per-request TPOT has P99 25.29 ms both ways. The
+      doc's 500x7 ms + 20x60 ms example has mean 9.04 and P99 60, not 65; the code's 0.05 ms/token
+      prefills 32k tokens in 1638 ms, not 800
+  - index: 4
+    slug: for_voice_tpot_and_e2e_drop_out_and_time_to_first_phrase_is_the_slo
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Construct a consumer SLO for a voice assistant (first token is heard, not read). Which metric is most user-visible?
+    zh: |
+      替一個語音助理（第一個詞元是被聽到的，不是被讀到的）建構一份消費者 SLO。哪個指標對使用者最可見？
+    verifies: >-
+      on the lesson's 2000 traces, time until 8 tokens (first phrase) has P50/P90/P99 139/493/583 ms,
+      TTFT 91% of it at P99; goodput against first phrase <= 500 ms is 91.35% vs 75.95% for the text
+      target profile. At 300 ms per spoken token no request underruns (slowest token 86.3 ms, TPOT P99
+      8.99 ms, 33x headroom) and the mean answer takes 52.8 s to speak. Prompts up to 2048 tokens pass
+      >= 99.7%, 8192-token prompts 57.3% with first-phrase P99 641 ms
+  - index: 5
+    slug: the_tools_also_disagree_on_per_request_throughput_token_count_and_the_percentile_itself
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the LLMPerf README and the GenAI-Perf docs. Identify three other metrics where the tools disagree.
+    zh: |
+      讀 LLMPerf 的 README 與 GenAI-Perf 的文件。找出另外三個這兩套工具意見不合的指標。
+    verifies: >-
+      on the lesson's 2000 traces mean per-request throughput is 117.3 tok/s by LLMPerf (tokens / e2e)
+      and 130.4 by GenAI-Perf per-user ((tokens-1) / generation time), up to 2.50x on one request;
+      LLMPerf's Llama-2 tokenizer counts 3.94/3.17 = 1.243x a Llama 3 model's tokens; on 50 requests
+      P99 TTFT is 564.7 ms by the lesson's index rule (the maximum) and 558.3 by pandas-style linear
+      interpolation. LLMPerf's ITL x throughput is 1.243 because ITL divides by chunks and throughput
+      by tokenizer tokens; the lesson's trace has N gaps for N tokens, overstating GenAI-Perf TPOT by
+      0.055 ms
