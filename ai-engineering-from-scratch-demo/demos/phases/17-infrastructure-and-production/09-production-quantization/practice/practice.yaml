@@ -1,0 +1,85 @@
+lesson: 09-production-quantization
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/09-production-quantization/docs/en.md
+exercises:
+  - index: 1
+    slug: only_nvfp4_fits_one_h100_and_the_code_calls_it_blackwell_only
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. For a 70B model at 128 concurrent with 2k context, compute the total HBM for each format. Which format lets you fit on one H100 80GB?
+    zh: |
+      跑 `code/main.py`。對一個 70B 模型、128 併發、2k 脈絡，算出每種格式的總 HBM。哪一種格式能讓你裝進一張 H100 80GB？
+    verifies: >-
+      for 70B at 128 x 2k the reference totals are BF16 212.22, GGUF Q5_K_M 115.97, GGUF Q4_K_M / GPTQ
+      / AWQ 107.22 (68.72 GB of it KV), FP8 107.86 and NVFP4 + FP8 KV 72.86 GB; gpu_check puts only
+      NVFP4 + FP8 KV on one H100, a format main() itself calls Blackwell-only, while AWQ with
+      kv_bits=8, a row FORMATS lacks, is the identical 72.86. The lesson's ~20 GB KV / ~60 GB total on
+      an H100 is 3.4x below the code's 68.72 GB KV, which puts AWQ on an H200; an 80-layer Llama-3-70B
+      is 85.9 GB. 72.86 exceeds vLLM's default 0.9 x 80 = 72 GB, and AWQ with BF16 KV fits 77
+      concurrent 2k sequences, not 128
+  - index: 2
+    slug: fp8_is_smaller_than_awq_for_a_busy_7b_coder_and_the_code_has_no_quality_axis
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You have a 7B coding model. Pick a format and justify. If you were wrong about quality tolerance, what is the recovery path?
+    zh: |
+      你有一個 7B 的寫程式模型。挑一種格式並論證。若你對品質容忍度判斷錯了，救援路徑是什麼？
+    verifies: >-
+      for a 7B at 128 x 2k FP8 totals 18.22 GB against AWQ's 25.58 (21.73 GB of it BF16 KV) and BF16's
+      36.08, all on one H100, so the recovery path FP8 -> BF16 is a weight swap on the same GPU with a
+      14 GB checkpoint on disk; the lesson lists code-gen as quality-non-negotiable yet says FP8
+      memory savings are half of INT4. AWQ's total exceeds FP8's from 42 concurrent 2k sequences on
+      (4.02 vs 7.43 at 1). Format's five fields hold no accuracy, while the lesson's benchmark source
+      measures HumanEval drops of 4.3 (Marlin-AWQ) and 10.4 (Marlin-GPTQ) points
+  - index: 3
+    slug: about_128_in_domain_samples_is_enough_and_padding_with_generic_text_undoes_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the calibration-dataset size needed to calibrate AWQ for a medical domain model. Why is more data not always better?
+    zh: |
+      算出替一個醫療領域模型校準 AWQ 所需的校準資料集大小。為什麼資料愈多不一定愈好？
+    verifies: >-
+      on a seeded one-layer AWQ toy (16 x 256, INT4 group 128, 21-point alpha grid, 3 salient channels
+      firing on 5% of tokens, 8 tokens per sample, 5 draws), error relative to round-to-nearest falls
+      monotonically 0.9289 at 1 sample to 0.6591 at 512, and 128 is the smallest size within 2% of the
+      plateau (0.6693, spread 0.038 vs 0.336 at 1), about 51 spikes per salient channel; padding 128
+      medical samples with 128 / 512 / 1152 generic gives 0.7428 / 0.9325 / 0.9817, generic-only 1.181
+      is worse than no calibration, and 512 in-domain improves on 128 by under 2%. code/ has no
+      calibration
+  - index: 4
+    slug: the_741_and_712_are_both_marlin_on_a_32b_and_the_code_gives_them_the_same_4x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Marlin-AWQ kernel paper or release notes. Explain in three sentences why AWQ hits 741 tok/s on 7B while raw GPTQ hits ~712.
+    zh: |
+      讀 Marlin-AWQ 的核心論文或發行說明。用三句話解釋為何 AWQ 在 7B 上打到 741 tok/s，而純 GPTQ 只有約 712。
+    verifies: >-
+      against the lesson's benchmark source (Qwen2.5-32B-Instruct, one H200, 200 prompts, concurrency
+      10): 712.45 is Marlin-GPTQ, raw GPTQ is 276.60 and raw AWQ 67.73, Marlin gains 10.9x and 2.6x,
+      and Marlin-AWQ leads by 4.0% with Pass@1 0.5183 vs 0.4573. relative_throughput gives AWQ, GPTQ
+      and GGUF Q4_K_M 4.0x each against measured 1.607, 1.545 and 0.202 of FP16. The lesson says tok/s
+      on 7B three times; best INT4 Pass@1 is a four-way tie at 0.5183
+  - index: 5
+    slug: fp8_kv_pays_once_the_kv_cache_outweighs_the_weights_and_the_throughput_model_cannot_see_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      When does it make sense to combine AWQ weights with FP8 KV cache vs keeping KV at BF16?
+    zh: |
+      什麼時候「AWQ 權重配 FP8 KV 快取」比「KV 維持在 BF16」更說得通？
+    verifies: >-
+      KV bytes equal AWQ weight bytes at 133514 tokens in flight for 70B (65 sequences at 2k) and
+      42220 for 7B (21); at 70B 128 x 2k FP8 KV takes bytes per decode step 103.72 -> 69.36 (1.5x),
+      totals 107.22 (H200) -> 72.86 (H100) and the H100 concurrency ceiling 77 -> 154; a single 7B 2k
+      sequence has KV at 4.6% of bytes and FP8 KV saves 2.3%. relative_throughput is 4.0x for AWQ, AWQ
+      + FP8 KV and NVFP4 + FP8 KV alike, while at 70B 256 x 8k KV is 94% of bytes and FP8 KV reads
+      1.89x fewer; that case stays MULTI-GPU at 313.38 GB
