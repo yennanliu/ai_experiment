@@ -107,7 +107,7 @@ def audit(attrs):
 
 
 def ts_attributes():
-    source = (parity.lesson_dir(PHASE, LESSON) / "code" / "main.ts").read_text()
+    source = (parity.lesson_dir(PHASE, LESSON) / "code" / "main.ts").read_text(encoding="utf-8")
     block = source.split("type GenAIAttributes = {", 1)[1].split("};", 1)[0]
     return set(re.findall(r'"(gen_ai\.[a-z_.]+)"', block)), source
 

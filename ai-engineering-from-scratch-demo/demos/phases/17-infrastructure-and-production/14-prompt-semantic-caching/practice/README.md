@@ -182,7 +182,7 @@ free. In that case:
 That gives 10 reads at $0.045 against $0.1905 cold, 4.2x cheaper, with no
 added latency.
 
-**The reference's serialize-first fix costs no latency.** The simulator has no
-clock, so it can't model the wait. Anthropic's docs say "a cache entry only
+**The reference's serialize-first fix costs no latency only because the
+simulator has no clock.** It cannot model the 300 ms wait. Anthropic's docs say "a cache entry only
 becomes available after the first response begins", so the wait is time to
 first token, and the planner's reply already takes longer than that.

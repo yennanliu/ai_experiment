@@ -34,9 +34,10 @@ simultaneous misses each pay the 1.25x write: $0.2061 against $0.1686.
 sub-queries are templated client-side there is no free predecessor. Move the
 question context after the breakpoint and keep the 4000-token system prompt
 warm with traffic or a keepalive under 5 minutes: 10 reads at $0.0450,
-4.2x cheaper than naive's $0.1905, with no added latency.
+4.2x cheaper than the cold fan-out's $0.1905, with no added latency.
 
-**FINDING: the reference's "serialize first" costs no latency.**
+**FINDING: the reference's "serialize first" costs no latency only because
+it has no clock.**
 `parallel_penalty=False` just treats wave requests like single ones; the
 simulator has no clock for the 300 ms. Anthropic's docs (fetched 2026-09-26):
 "a cache entry only becomes available after the first response begins" --
@@ -129,7 +130,7 @@ def verify(r):
             "excluded as a shared standing cost",
         ),
         practice.Check(
-            "FINDING: the reference's 'serialize first' costs no latency",
+            "FINDING: the reference's 'serialize first' costs no latency only because it has no clock",
             not r["sim_has_clock"],
             "simulate() never reads arrived_at, so parallel_penalty=False fixes the "
             "penalty at zero latency; the docs make the wait time-to-first-token",

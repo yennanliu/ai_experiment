@@ -100,6 +100,7 @@ def solve():
         "loose": ref.goodput(shipped, 800, 25, 3000),
         "shipped_p99": ref.percentiles(tpots(shipped), [0.99])[0],
         "spiked": sorted(x for x in tpots(spiked) if x > 15),
+        "spiked_p99": ref.percentiles(tpots(spiked), [0.99])[0],
         "alone": tighten(ref, spiked, INF, INF),
         "joint": tighten(ref, spiked),
         "caught": sum(t.e2e_ms > E2E for t in spiked if t.tpot_genaiperf() > 15),
@@ -129,7 +130,8 @@ def verify(r):
             "FINDING: with whole-request spikes, tightening costs 0.5 points alone and 0.1 jointly",
             all([len(spk) == 26, round(r["alone"][30] - r["alone"][15], 4) == 0.005,
                  round(r["joint"][30] - r["joint"][15], 4) == 0.001, r["caught"] == 24]),
-            f"{len(spk)} spiked requests at TPOT {spk[0]:.1f}-{spk[-1]:.1f} ms; TPOT-only "
+            f"{len(spk)} spiked requests at TPOT {spk[0]:.1f}-{spk[-1]:.1f} ms (P99 "
+            f"{r['spiked_p99']:.2f}); TPOT-only "
             f"{r['alone'][30]:.2%} -> {r['alone'][15]:.2%}, joint {r['joint'][30]:.2%} -> "
             f"{r['joint'][15]:.2%}; E2E already fails {r['caught']} of them",
         ),

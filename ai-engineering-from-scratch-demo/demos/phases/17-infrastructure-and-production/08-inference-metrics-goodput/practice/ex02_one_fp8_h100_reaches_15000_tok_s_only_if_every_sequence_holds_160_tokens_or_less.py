@@ -96,7 +96,8 @@ def verify(r):
             f"{r['step_ms']:.2f} ms step, so {CLAIM} tok/s needs {r['sequences']:.0f} "
             f"sequences at {r['max_context']:.0f} tokens or less each; at {r['context']} tokens "
             f"one GPU gives {r['one_gpu']:.0f} tok/s, a node {r['node']:.0f}; counting input "
-            f"tokens multiplies by {r['inflation']:.1f}x; the same traces score goodput "
+            f"tokens ({r['prompt']:.0f} prompt vs {r['output']:.0f} output) multiplies by "
+            f"{r['inflation']:.1f}x; the same traces score goodput "
             f"{r['goodputs']}",
         ),
         practice.Check(

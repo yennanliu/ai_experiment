@@ -83,7 +83,7 @@ def verify(result):
         practice.Check(
             "FINDING: the reference's weights row is a constant that implies 1.87 GB/s",
             all([result["implied_gbps"] == 1.87, result["streamer_gbps"] == 4.0,
-                 not any("byte" in f or "bw" in f for f in result["fields"]),
+                 not any(k in f for f in result["fields"] for k in ("byte", "bw", "band", "gb")),
                  at7["bf16"][0] < result["streamer_s"]]),
             f"Phase fields {result['fields']}; 140 GB in 75 s is "
             f"{result['implied_gbps']} GB/s, the streamer's {result['streamer_s']}s is "
