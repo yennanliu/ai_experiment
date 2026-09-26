@@ -23,6 +23,23 @@ from pathlib import Path
 client = anthropic.Anthropic()
 
 
+def _json_format(schema: dict) -> dict:
+    """Structured-outputs config: the response text is guaranteed to match `schema`."""
+    return {"format": {"type": "json_schema", "schema": schema}}
+
+
+def _obj(properties: dict, required: list[str] | None = None) -> dict:
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required if required is not None else list(properties),
+        "additionalProperties": False,
+    }
+
+
+_STR_LIST = {"type": "array", "items": {"type": "string"}}
+
+
 # =============================================================================
 # Strategy 1: Sliding Window Manager
 # =============================================================================
@@ -303,7 +320,7 @@ class HierarchicalMemoryManager:
         )
 
         prompt = f"""Analyze this conversation and extract user profile information.
-Return JSON with any new information found:
+Report any new information found:
 - name: User's name if mentioned
 - role: User's job/role if mentioned
 - preferences: List of stated preferences
@@ -316,21 +333,26 @@ Current profile: {json.dumps(self.user_profile.to_dict())}
 Conversation:
 {messages_text}
 
-Return only new/updated information as JSON (empty object if nothing new):"""
+Return only new/updated information; omit fields with nothing new."""
 
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=500,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_json_format(_obj({
+                "name": {"type": "string"},
+                "role": {"type": "string"},
+                "preferences": _STR_LIST,
+                "expertise": _STR_LIST,
+                "ongoing_projects": _STR_LIST,
+                "facts": _STR_LIST,
+            }, required=[])),
         )
 
         try:
-            # Parse response and merge with existing profile
-            text = response.content[0].text
-            # Try to extract JSON from the response
-            if "{" in text:
-                json_str = text[text.find("{"):text.rfind("}") + 1]
-                updates = json.loads(json_str)
+            # Merge the structured response into the existing profile
+            if response.stop_reason == "end_turn":
+                updates = json.loads(response.content[0].text)
 
                 if updates.get("name"):
                     self.user_profile.name = updates["name"]
@@ -510,7 +532,7 @@ class SemanticCompressor:
         )
 
         prompt = f"""Analyze this conversation and extract semantic units.
-Return a JSON array where each unit has:
+Each unit has:
 - content: The key information (concise)
 - type: One of "fact", "decision", "question", "preference", "context"
 - importance: One of "critical", "high", "medium", "low"
@@ -520,22 +542,24 @@ Focus on information that would be needed to continue the conversation.
 Skip greetings, acknowledgments, and redundant information.
 
 Conversation:
-{messages_text}
-
-Return only the JSON array:"""
+{messages_text}"""
 
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_json_format(_obj({"units": {"type": "array", "items": _obj({
+                "content": {"type": "string"},
+                "type": {"type": "string", "enum": ["fact", "decision", "question", "preference", "context"]},
+                "importance": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+                "entities": _STR_LIST,
+            })}})),
         )
 
         units = []
         try:
-            text = response.content[0].text
-            if "[" in text:
-                json_str = text[text.find("["):text.rfind("]") + 1]
-                data = json.loads(json_str)
+            if response.stop_reason == "end_turn":
+                data = json.loads(response.content[0].text)["units"]
                 for item in data:
                     units.append(SemanticUnit.from_dict(item, self.turn_count))
         except (json.JSONDecodeError, KeyError):
@@ -675,24 +699,25 @@ class HybridCompressionManager:
 
 Message: "{message}"
 
-Return JSON with:
-- type: One of "fact", "question", "instruction", "chitchat", "feedback"
-- importance: Float 0-1 (1 = critical for future context)
-- reason: Brief explanation
-
-JSON response:"""
+Fields:
+- type: the kind of message
+- importance: 0-1 (1 = critical for future context)
+- reason: Brief explanation"""
 
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=200,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_json_format(_obj({
+                "type": {"type": "string", "enum": [t.value for t in MessageType]},
+                "importance": {"type": "number"},
+                "reason": {"type": "string"},
+            })),
         )
 
         try:
-            text = response.content[0].text
-            if "{" in text:
-                json_str = text[text.find("{"):text.rfind("}") + 1]
-                data = json.loads(json_str)
+            if response.stop_reason == "end_turn":
+                data = json.loads(response.content[0].text)
                 msg_type = MessageType(data.get("type", "chitchat"))
                 importance = float(data.get("importance", 0.5))
                 return msg_type, importance
@@ -732,25 +757,25 @@ Generate updated summary (keep it concise, ~200 words):"""
             for m in messages
         )
 
-        prompt = f"""Extract key semantic units from this conversation.
-Return JSON array with: content, type (fact|decision|preference|task), importance (0-1)
+        prompt = f"""Extract key semantic units from this conversation, each with content, type, and importance (0-1).
 
 Conversation:
-{messages_text}
-
-JSON array:"""
+{messages_text}"""
 
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=500,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_json_format(_obj({"units": {"type": "array", "items": _obj({
+                "content": {"type": "string"},
+                "type": {"type": "string", "enum": ["fact", "decision", "preference", "task"]},
+                "importance": {"type": "number"},
+            })}})),
         )
 
         try:
-            text = response.content[0].text
-            if "[" in text:
-                json_str = text[text.find("["):text.rfind("]") + 1]
-                return json.loads(json_str)
+            if response.stop_reason == "end_turn":
+                return json.loads(response.content[0].text)["units"]
         except (json.JSONDecodeError, KeyError):
             pass
         return []

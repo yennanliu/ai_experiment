@@ -96,7 +96,7 @@ state = orchestrator.review_from_all_angles(code)
 from agent_team.orchestrator import Orchestrator, OrchestratorConfig
 
 config = OrchestratorConfig(
-    model="claude-sonnet-4-20250514",  # or claude-3-haiku, etc.
+    model="claude-sonnet-5",  # or claude-haiku-4-5, etc.
     token_budget=100_000,
     max_retries=2,
     auto_select_pattern=True,

@@ -30,7 +30,7 @@ Save to `workspace/frontend-spec.md` with the following structure:
 # Frontend Specification
 
 ## Tech Stack
-- Framework: React 18+ with TypeScript
+- Framework: [choice — default React + TypeScript]
 - State Management: [choice]
 - Styling: [choice]
 - HTTP Client: [choice]
@@ -60,7 +60,7 @@ Save to `workspace/frontend-spec.md` with the following structure:
 ## Implementation Notes
 ```
 
-## Example
+## Example (illustrative, for a trivial todo app — scale choices to the actual requirements; don't reuse its stack by default)
 
 **Input:** Requirements + API contract for todo list app
 

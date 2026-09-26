@@ -45,8 +45,8 @@ Examples:
     )
     parser.add_argument(
         "--model",
-        default="claude-sonnet-4-20250514",
-        help="Model to use (default: claude-sonnet-4-20250514)",
+        default="claude-sonnet-5",
+        help="Model to use (default: claude-sonnet-5)",
     )
     parser.add_argument(
         "--budget",

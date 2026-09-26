@@ -77,7 +77,7 @@ class AgentResponse:
 class Agent:
     """A specialized agent with a specific role."""
     role: AgentRole
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-5"
     max_tokens: int = 4096
     _client: anthropic.Anthropic = field(default_factory=anthropic.Anthropic, repr=False)
 
@@ -108,7 +108,8 @@ class Agent:
                 messages=messages,
             )
 
-            content = response.content[0].text
+            # With adaptive thinking on by default, content may start with a thinking block
+            content = next((b.text for b in response.content if b.type == "text"), "")
             tokens = response.usage.input_tokens + response.usage.output_tokens
 
             return AgentResponse(

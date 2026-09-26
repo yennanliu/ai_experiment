@@ -30,8 +30,11 @@ Each file in `demos/` is a self-contained demo exposing a single `run()` functio
 | 4 | `reranking.py` | `LLMRerank` — two-stage retrieval with reranking |
 | 5 | `persistence.py` | `StorageContext` — save/load index to `./storage/` |
 | 6 | `router.py` | `RouterQueryEngine` — auto-routes to vector vs summary index |
+| 7 | `ocr_parse.py` | Parse scanned PDFs and images via GPT-4o vision; text PDFs, DOCX, and TXT are extracted directly |
+| 8 | `agent_workflow.py` | Multi-agent Researcher → Analyst → Writer workflow |
+| 9 | `doc_workflow.py` | Extractor → Summarizer → Q&A on any file |
 
-All demos read from `data/sample.txt`, which uses a pipe-delimited format: `doc_id | title | content`.
+Demos 1–6 read from `data/sample.txt` (demo 8 loads all of `data/`; demo 7 requires a file path; demo 9 asks for an optional path and defaults to `data/sample.txt`), which uses a pipe-delimited format: `doc_id | title | content`.
 
 ## Data Format
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 import anthropic
+from pydantic import BaseModel
 
 from agent_team.agents import AgentRole
 
@@ -13,6 +14,13 @@ class TaskComplexity(Enum):
     SIMPLE = "simple"      # Single agent can handle
     MEDIUM = "medium"      # 2-3 agents, sequential
     COMPLEX = "complex"    # Multiple agents, parallel possible
+
+
+class _Classification(BaseModel):
+    primary: AgentRole
+    complexity: TaskComplexity
+    agents: list[AgentRole]  # in execution order
+    reasoning: str
 
 
 @dataclass
@@ -36,7 +44,7 @@ KEYWORD_PATTERNS = {
 class Router:
     """Routes tasks to appropriate agents based on classification."""
 
-    def __init__(self, model: str = "claude-sonnet-4-20250514"):
+    def __init__(self, model: str = "claude-sonnet-5"):
         self.model = model
         self._client = anthropic.Anthropic()
 
@@ -67,44 +75,32 @@ class Router:
 
     def _llm_classify(self, task: str) -> RouteResult:
         """Use LLM for nuanced task classification."""
-        response = self._client.messages.create(
-            model=self.model,
-            max_tokens=500,
-            system="""Classify the task and recommend agents. Available roles:
+        try:
+            response = self._client.messages.parse(
+                model=self.model,
+                max_tokens=500,
+                system="""Classify the task and recommend agents, listing them in execution order. Available roles:
 - analyst: requirements, analysis, problem decomposition
 - developer: coding, implementation, bug fixes
 - reviewer: code review, quality checks, security
 - doc_writer: documentation, explanations
-
-Respond in format:
-PRIMARY: <role>
-COMPLEXITY: simple|medium|complex
-AGENTS: <comma-separated roles in execution order>
-REASONING: <brief explanation>""",
-            messages=[{"role": "user", "content": f"Task: {task}"}],
-        )
-
-        return self._parse_classification(response.content[0].text)
-
-    def _parse_classification(self, response: str) -> RouteResult:
-        """Parse LLM classification response."""
-        lines = response.strip().split("\n")
-        result = {}
-
-        for line in lines:
-            if ":" in line:
-                key, value = line.split(":", 1)
-                result[key.strip().upper()] = value.strip()
-
-        primary = AgentRole(result.get("PRIMARY", "developer").lower())
-        complexity = TaskComplexity(result.get("COMPLEXITY", "simple").lower())
-
-        agents_str = result.get("AGENTS", primary.value)
-        agents = [AgentRole(a.strip().lower()) for a in agents_str.split(",")]
-
+The orchestrator role is reserved for the coordinator; don't recommend it.""",
+                messages=[{"role": "user", "content": f"Task: {task}"}],
+                output_format=_Classification,
+            )
+            parsed = response.parsed_output
+        except ValueError:  # truncated or schema-invalid output (JSON/ValidationError)
+            parsed = None
+        if parsed is None:
+            return RouteResult(
+                primary_agent=AgentRole.DEVELOPER,
+                complexity=TaskComplexity.SIMPLE,
+                suggested_agents=[AgentRole.DEVELOPER],
+                reasoning="LLM classification unavailable; defaulted to developer",
+            )
         return RouteResult(
-            primary_agent=primary,
-            complexity=complexity,
-            suggested_agents=agents,
-            reasoning=result.get("REASONING", "LLM classification"),
+            primary_agent=parsed.primary,
+            complexity=parsed.complexity,
+            suggested_agents=parsed.agents or [parsed.primary],
+            reasoning=parsed.reasoning,
         )

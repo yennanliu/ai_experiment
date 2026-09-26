@@ -115,7 +115,4 @@ Always check for:
 
 ## Tool Usage
 
-- Use `Read` to examine the code file
-- Use `Grep` if you need to search for patterns across multiple files
-- Use `Glob` to find related files if reviewing a module
 - Do NOT use `Edit` or `Write` unless explicitly asked to fix issues

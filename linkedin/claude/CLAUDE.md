@@ -204,7 +204,7 @@ When automation is running:
 
 1. **Modal has required questions**
    - If `skipIfQuestionsRequired: true`, close modal and skip
-   - Otherwise, try to fill default values
+   - Otherwise, fill answers from the user's real profile; stop and ask when a question has no known truthful answer
 
 2. **Easy Apply button not found**
    - Job requires external application
@@ -416,18 +416,19 @@ cdp.mjs click <target> "button[aria-label='Dismiss']"
 7. **Success** - "Your application was sent!" → Click "Done" or dismiss
 
 **Handling Additional Questions:**
-Some jobs require extra questions (e.g., "Are you legally authorized to work in China?")
+Some jobs ask screening questions (e.g., "Are you legally authorized to work in China?", "Years of experience with X"). These answers are statements to the employer: answer each one from the user's real profile. If the profile does not give a truthful answer, stop and ask the user before continuing — never pick "Yes" or a placeholder number to get past the step.
 ```javascript
-// Select "Yes" for work authorization question
+// Click the radio label that matches the user's actual answer
 cdp.mjs eval <target> '(() => {
+  const answer = "<the user's answer, e.g. No>";
   const modal = document.querySelector(".jobs-easy-apply-modal");
-  const labels = modal.querySelectorAll("label");
-  for (const label of labels) {
-    if (label.textContent.trim() === "Yes") {
+  for (const label of modal.querySelectorAll("label")) {
+    if (label.textContent.trim() === answer) {
       label.click();
-      return { clicked: "Yes" };
+      return { clicked: answer };
     }
   }
+  return { clicked: false };
 })()'
 ```
 
@@ -462,39 +463,20 @@ cdp.mjs eval <target> '(() => {
 5. **Additional questions blocking progress**
    - Some jobs require answering questions (work auth, visa, etc.)
    - Must answer before Review button becomes clickable
-   - Use `eval` to find and click radio buttons/checkboxes
+   - Use `eval` to find and click the radio buttons/checkboxes that match the user's real answers; pause for the user when unsure
 
 ---
 
-## 🧪 Testing Results (2026-03-29)
-
-### Successful Batch Test
-✅ Applied to **20+ SWE jobs in UK** with full automation:
-- Remote Software Engineer (UK)
-- Senior Software Engineer in Test (Full-Stack/Python)
-- Senior Spacecraft Software Engineer
-- Senior Software Engineer – AI Platform (Python/Go)
-- Software Engineer - Enterprise Connectors
-- Python Software Engineer – Up to £150K + Bonus
-- And 14+ more positions
-
-All applications completed successfully with:
-- Auto contact info detection
-- Resume selection
-- Question field filling (numeric fields default to "5")
-- Yes radio button auto-selection
-- Modal submission
-
-### Key Functions Added (2026-03-29)
+### Key Functions
 
 | Function | Purpose |
 |----------|---------|
 | `findEasyApplyButton()` | Multi-method button detection (class, aria-label, text) |
-| `fillFormFields()` | Auto-fill numeric (5), text (N/A), and Yes radio buttons |
+| `fillFormFields()` | Fills empty fields with placeholders (numeric 5, text N/A, "Yes" radios) — do not use it for screening questions; answer those from the user's profile |
 | `applyToJob(index)` | Complete single job flow with form handling |
 | `batchApply(start, count)` | Batch processing with status tracking |
 
-### Key Findings from Real Testing
+### Modal Structure and Detection
 
 **Modal Structure:**
 - Step 0% (Contact Info): Email + Phone pre-filled ✅
@@ -503,9 +485,9 @@ All applications completed successfully with:
 - Step 100% (Review): Final submission
 
 **Required Form Handling:**
-- Numeric textboxes need values (e.g., years of experience) → Auto-filled with "5"
+- Numeric textboxes need values (e.g., years of experience) → use the user's real value
 - Text fields auto-filled from profile
-- Radio buttons for Yes/No questions → Auto-click "Yes"
+- Radio buttons for Yes/No questions → answer from the user's profile; pause for the user if unknown
 - Dropdowns sometimes required (country code, education level)
 - Hidden required fields must be filled before "Submit" button enables
 
@@ -514,7 +496,7 @@ All applications completed successfully with:
 - "Application sent" message appears
 - Job shows "Applied" status on search results
 
-**Easy Apply Button Detection (Fixed 2026-03-29):**
+**Easy Apply Button Detection:**
 ```javascript
 // Method 1: Class selector
 document.querySelector('button.jobs-apply-button')
@@ -537,12 +519,6 @@ The automation **only processes jobs with "Easy Apply" button** to avoid wasted 
 - ❌ External application required → Skip
 - ❌ Already applied → Skip
 - ❌ Not accepting applications → Skip
-
-**Benefits:**
-- 100% success rate on attempted jobs
-- No failures or errors
-- Faster processing
-- Efficient use of time and API calls
 
 ---
 
@@ -569,8 +545,7 @@ window.clickEasyApply();              // Click apply button
 window.getModalState();               // Check modal state
 window.clickModalNext();               // Click next/submit
 
-# 6. Fill any required fields manually:
-document.querySelector('input[type="number"]').value = "5";
+# 6. Answer any screening questions yourself with your real details
 ```
 
 #### Method 2: Automated Batch (Production)
@@ -588,12 +563,12 @@ async function autoApplyBatch(startIndex = 0, count = 10) {
 
     await sleep(1000);
 
-    // Auto-fill and submit (max 10 steps)
+    // Step through the modal (max 10 steps)
     for (let step = 0; step < 10; step++) {
-      // Fill numeric fields with "5"
-      document.querySelectorAll('input[type="number"]').forEach(inp => {
-        if (!inp.value || inp.value === '0') inp.value = '5';
-      });
+      // Unanswered screening question: stop so the user answers it truthfully
+      const empty = [...document.querySelectorAll('.jobs-easy-apply-modal :is(input, select, textarea)')]
+        .filter(el => el.matches(':invalid') || (el.getAttribute('aria-required') === 'true' && !el.value.trim())); // :invalid covers unchecked required radios/checkboxes
+      if (empty.length) { console.log('Paused: screening question needs your answer'); return; }
 
       const next = window.clickModalNext();
       if (!next.ok) break;
@@ -615,27 +590,7 @@ function sleep(ms) {
 
 ### Configuration Parameters
 
-**Edit `linkedin_automation_controller.js` CONFIG object:**
-
-```javascript
-const CONFIG = {
-  // === SEARCH PARAMETERS ===
-  jobTitle: 'Software Engineer',                          // Job to search for
-  locations: ['United Kingdom', 'Remote'],                // Preferred locations
-  datePosted: 'Past week',                                // 'Any time' | 'Past month' | 'Past week' | 'Past 24 hours'
-
-  // === FILTERS ===
-  easyApplyOnly: true,                                    // Only apply to Easy Apply jobs
-  remoteOptions: ['Remote', 'Hybrid'],                    // Work location preference
-  experienceLevel: [],                                    // Empty = all levels, or ['Entry level', 'Mid-Senior level', etc]
-
-  // === AUTOMATION SETTINGS ===
-  maxApplications: 50,                                    // Stop after N applications
-  delayBetweenApps: { min: 3000, max: 6000 },           // Random delay (ms) between jobs
-  skipIfQuestionsRequired: false,                         // Skip complex forms if true
-  maxPages: 10                                            // Max pages to process
-};
-```
+See the `CONFIG` object under **Configuration** above (it mirrors `linkedin_automation_controller.js`).
 
 ### Required Fields to Handle
 
@@ -651,10 +606,11 @@ Resume (Always):
   ✅ Resume selection   (auto-select first/default)
 
 Questions (Variable):
-  ⚠️  "Years of experience with X" (fill with "5" or your value)
+  ⚠️  "Years of experience with X" (the user's real value)
   ⚠️  "Do you have...?" (boolean/yes-no questions)
   ⚠️  "Bachelor's Degree?" (yes/no selection)
   ⚠️  "Work authorization in [country]?" (numeric or yes/no)
+  Answer all of these from the user's profile; pause and ask when unknown.
 
 Review (Final):
   ✅ Follow company checkbox (auto-checked)
@@ -679,10 +635,12 @@ const CONFIG = {
   delayBetweenApps: { min: 2000, max: 4000 },
 };
 
-// Inject automation helpers first
-eval(`
-${INJECT_SCRIPT_FROM_CONTROLLER}
-`);
+// Inject helpers first. INJECT_AUTOMATION_HELPERS is a string constant in
+// run_linkedin_automation.js (Node), so it does not exist in the page. Either run
+// STEP 4 of MCP_COMMANDS in that file (mcp__chrome-devtools__evaluate_script with the
+// helper body), or paste the body of INJECT_AUTOMATION_HELPERS into this console.
+// It defines window.getJobs, clickJob, clickEasyApply, clickNext, checkSuccess, closeModal.
+if (typeof window.getJobs !== 'function') throw new Error('Inject the automation helpers first');
 
 // Then run batch
 async function runBatch() {
@@ -717,12 +675,15 @@ async function runBatch() {
 
       await sleep(1000);
 
-      // Auto-complete form
+      // Step through the modal
       for (let step = 0; step < 10; step++) {
-        // Fill numeric fields
-        document.querySelectorAll('input[type="number"]').forEach(inp => {
-          if (!inp.value || inp.value === '0') inp.value = '5';
-        });
+        // Unanswered screening question: stop so the user answers it truthfully
+        const empty = [...document.querySelectorAll('.jobs-easy-apply-modal :is(input, select, textarea)')]
+          .filter(el => el.matches(':invalid') || (el.getAttribute('aria-required') === 'true' && !el.value.trim())); // :invalid covers unchecked required radios/checkboxes
+        if (empty.length) {
+          console.log(`⏸️  Paused on ${job.title}: screening question needs your answer`);
+          return;
+        }
 
         const next = window.clickNext();
         if (!next.ok) break;
@@ -764,39 +725,7 @@ runBatch();
 ## ⚠️ Important Notes
 
 1. **Don't set `delayBetweenApps` too low** - LinkedIn may rate-limit or block
-2. **Fill numeric fields carefully** - Some questions expect realistic values:
-   - "Years of experience" → use 3-8
-   - "Experience rating" → use 3-5
+2. **Answer screening questions truthfully** - Use the user's real values (years of experience, work authorization, degrees); when the profile doesn't cover a question, pause and ask the user
 3. **Monitor first few applications** - Watch for any unforeseen form variations
 4. **Handle 2FA** - If LinkedIn requires verification, pause and authenticate manually
 5. **Be respectful** - This automation should only apply to roles you're genuinely interested in
-
----
-
-## 📊 Summary Table: Implementation Status
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Helper Injection | ✅ Works | Via `evaluate_script` in browser |
-| Job Card Detection | ✅ Works | Multiple selector fallbacks |
-| Easy Apply Button | ✅ Works | 3-method detection (class, aria-label, text) |
-| Modal Navigation | ✅ Works | 4-5 step forms handled |
-| Contact Info Auto-fill | ✅ Works | Pre-selected from profile |
-| Resume Selection | ✅ Works | Auto-select first resume |
-| Question Filling | ✅ Works | `fillFormFields()` handles numeric (5), text (N/A), Yes radio |
-| Success Detection | ✅ Works | URL change + success message |
-| Batch Apply | ✅ Works | `batchApply(start, count)` for multiple jobs |
-| Error Recovery | ✅ Works | Closes modal, handles discard dialog |
-| Rate Limiting | ⚠️ Basic | 2-5 second random delay between jobs |
-
-## Status: Tested & Production-Ready ✅ (Updated 2026-03-29)
-
-The automation system has been **validated with 20+ real LinkedIn job applications** in UK.
-
-**Latest fixes:**
-- Improved Easy Apply button detection (3 fallback methods)
-- Added `fillFormFields()` for auto-filling numeric/text inputs
-- Added `applyToJob()` and `batchApply()` for complete automation
-- Fixed modal detection and form submission flow
-
-Ready for batch deployment with proper configuration.
