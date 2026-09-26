@@ -1,0 +1,80 @@
+lesson: 02-inference-platform-economics
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/02-inference-platform-economics/docs/en.md
+exercises:
+  - index: 1
+    slug: baseten_wins_above_68_percent_not_30_and_at_the_list_h100_price_above_13
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what sustained utilization does Baseten (per-minute) beat Fireworks (per-token) for a 70B model on one H100? Derive the crossover yourself and compare to the rule of thumb.
+    zh: |
+      跑 `code/main.py`。對一張 H100 上的 70B 模型，在什麼持續使用率下 Baseten（按分鐘）會勝過 Fireworks（按詞元）？自己推導那個交叉點，並跟拇指法則比較。
+    verifies: >-
+      u* = p_min / (tpm x p_tok) = 0.55 / (0.9 x 0.90) = 0.679, where both cost $792/day; at the
+      lesson's 30% Fireworks is $349.92 against Baseten $792. At Baseten's listed H100 $0.10833/min
+      (5.1x below the code's $0.55) the crossover is 0.1337, and 30% would need 2,037,037 tok/min.
+      Vendor has no GPU or precision field and a 16-bit 70B is 140 GB against 80 GB. The code's Modal
+      passes Fireworks at 2.8% utilization and is the cheapest vendor in Scenario B
+  - index: 2
+    slug: route_by_modality_behind_one_gateway_because_chat_on_the_multimodal_vendor_costs_34x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your product serves image generation plus chat plus speech-to-text. Pick platforms for each modality and name the gateway pattern that unifies them.
+    zh: |
+      你的產品同時提供影像生成、聊天與語音轉文字。替每種模態挑平台，並點名把它們統一起來的閘道模式。
+    verifies: >-
+      the gateway routes chat to Together ($1.76/day for 2M tokens, Fireworks $1.80), images to
+      Replicate ($6.00 for 1,000) and speech-to-text to Replicate Whisper ($2.70 for 1,000 at
+      $0.0027/run); the gateway definition is quoted from Lesson 19. The same chats on Replicate cost
+      $60.00, 34x. All 6 VENDORS are Llama 70B variants, Vendor has no modality field, and Replicate
+      charges $0.006 for a 10-token and a 1M-token call alike
+  - index: 3
+    slug: the_raise_and_the_batch_discount_bill_different_products_so_batch_can_raise_the_bill
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Fireworks raises prices by $1/hr on your primary model. Model the blended cost impact if 40% of your traffic moves to batch tier (50% off).
+    zh: |
+      Fireworks 把你主要模型的價格每小時調漲 1 美元。若有 40% 的流量移到批次層級（打五折），把混合後的成本影響模型化。
+    verifies: >-
+      at 100M tokens/day one dedicated Fireworks H100 goes $168 -> $192 (+14.3%) at $7 -> $8/hr, and
+      moving 40% to batch ($0.45/M) makes it $210 (+25%); a saturated H100 costs $0.148/M, so batch
+      wins only below 32.9% utilization. All-serverless goes $90 -> $72 and the raise does not apply;
+      the one-price reading is -18.4% (+$0.0185/M). The lesson dates the raise May 1, 2026; the
+      published change is effective 2026-09-01. batch appears only in Fireworks' notes and Fireworks
+      has no per_minute
+  - index: 4
+    slug: baseten_fireworks_and_together_qualify_and_together_wins_while_the_code_picks_modal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A regulated customer requires SOC 2 Type II + HIPAA + dedicated GPUs. Which three platforms are viable and which one wins on FinOps?
+    zh: |
+      一位受監管的客戶要求 SOC 2 Type II + HIPAA + 專屬 GPU。哪三個平台可行，而哪一個在 FinOps 上勝出？
+    verifies: >-
+      on vendor pages fetched 2026-09-26, Baseten, Fireworks and Together claim SOC 2 Type II + HIPAA
+      with dedicated GPUs; a reserved H100-day at list is Together $95.76, Baseten $156.00, Fireworks
+      $192.00. Anyscale claims no HIPAA and Modal offers it only on Enterprise. In the code, the
+      dedicated vendors are Baseten, Modal and Anyscale, only Baseten is compliant, and the reserved
+      day is Modal $691.20 < Baseten $792 < Anyscale $864, a pick the shipped skill refuses. The
+      code's $/hr is 5.1x (Baseten) and 7.3x (Modal) the list H100
+  - index: 5
+    slug: together_is_cheapest_at_both_volumes_and_only_baseten_changes_by_1000x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare cost per 1,000 predictions for Llama 3.1 70B on Fireworks serverless, Together on-demand, Baseten dedicated, and Replicate API. Which is cheapest at 10 predictions/day? At 10,000?
+    zh: |
+      比較 Llama 3.1 70B 在 Fireworks 無伺服器、Together 隨需、Baseten 專屬與 Replicate API 上，每 1,000 次預測的成本。在每天 10 次預測時哪個最便宜？每天 10,000 次呢？
+    verifies: >-
+      at 200 tokens per prediction the cost per 1,000 is Together $0.176, Fireworks $0.18 and
+      Replicate $6.00 at both 10 and 10,000/day; Baseten is $79,200 and $79.20, and it passes Together
+      at 4,500,000/day (886,336 at the listed H100). Replicate ties Together at 6,818 tokens, so the
+      lesson's 50-70% holds only for 2,045-3,409 tokens (97.1% at 200). No vendor model is Llama 3.1
