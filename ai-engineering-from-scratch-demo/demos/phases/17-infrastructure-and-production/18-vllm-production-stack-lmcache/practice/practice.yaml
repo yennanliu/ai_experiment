@@ -1,0 +1,82 @@
+lesson: 18-vllm-production-stack-lmcache
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/18-vllm-production-stack-lmcache/docs/en.md
+exercises:
+  - index: 1
+    slug: lmcache_pays_at_no_hbm_utilization_because_a_load_costs_7_5x_the_prefill_it_replaces
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what HBM utilization does LMCache start paying?
+    zh: |
+      跑 `code/main.py`。在什麼 HBM 使用率之下 LMCache 開始划算？
+    verifies: >-
+      run() reproduces simulate() exactly for CPU_OFFLOAD and LMCACHE; a load costs 7.5x the 0.4
+      ms/block prefill, so over utilization 100%..600% (6..1 prefix slots on every config) LMCache vs
+      native is 0.9676..0.7579 at 3.0 ms/block, exactly 1.0 at 0.4, 1.0026..1.0252 at 0.2 and
+      1.0052..1.0517 at 0, with 18..164 hits. hbm_capacity_blocks_per_engine is assigned and never
+      read and CPU_OFFLOAD (369402 ms) never evicts. NATIVE_ONLY differs across PYTHONHASHSEED 0..9
+      (373983..376133 ms, 111..128 avoided), so the printed LMCache speedup is 0.98 or 0.99. Decode is
+      97.6% of the 374883 ms FIFO baseline, capping a free cache at 1.024x
+  - index: 2
+    slug: the_tenant_loses_time_to_lmcache_at_the_lessons_rates_and_saves_only_below_0_4_ms_per_block
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A tenant shares a 6K-token system prompt across 200 queries/hour. Compute expected LMCache savings per tenant.
+    zh: |
+      某位租戶在每小時 200 次查詢間共享一段 6K 詞元的系統提示詞。算出每位租戶預期的 LMCache 節省。
+    verifies: >-
+      a 6K prefill is 150 ms and its LMCache load 1125 ms; with the tenant's 200 queries interleaved
+      with m = 0..16 template requests on 4 engines x 4 slots, it makes 3..145 LMCache hits and saves
+      -2.9..-141.4 s/hour at 3.0 ms/block, 0 at every m at 0.4 and 0.2..10.9 s at 0.2. The no-cache
+      ceiling is 29.85 s/hour and native caching leaves 0.6 s (m = 0) to 21.9 s (m = 16) for LMCache
+      to save. Load/prefill is 7.5x at 6K and 8K, 7.56x at 1K and 7.68x at 500
+  - index: 3
+    slug: fallback_to_native_makes_an_outage_cheap_and_at_the_lessons_rates_an_outage_makes_the_cluster_faster
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The LMCache server is a single point of failure. Design the HA strategy (replicas, fallback to native).
+    zh: |
+      LMCache 伺服器是一個單點失效。設計那套高可用策略（副本、退回原生）。
+    verifies: >-
+      outage for requests 50-149 on 4 engines x 4 slots: at 0.2 ms/block the unprotected server fails
+      37 of 200, fallback-to-native serves all for +2475 ms (373208, under native 374883), a cold
+      standby +225 ms and a write-through replica +0. At 3.0 ms/block fallback (396658) and cold
+      standby (425908) both beat no outage (428833). With unlimited engine caches the last LMCache hit
+      is request 89, an outage from 90 equals no outage, and one from 88 fails 5 requests
+  - index: 4
+    slug: one_spinning_disk_reads_the_kv_42x_slower_than_the_lessons_re_prefill_and_no_10gbe_ceph_cluster_can_catch_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      LMCache stores to Ceph on spinning disk. For a 4K-token KV at 70B FP8 (500 MB), what's the read time vs re-prefill?
+    zh: |
+      LMCache 存到跑在傳統硬碟上的 Ceph。對一份 70B FP8 上 4K 詞元的 KV（500 MB），讀取時間與重新預填相比如何？
+    verifies: >-
+      500 MB is 120 4-MiB objects and reads from one 150 MB/s spindle in 4.32 s against a 102.4 ms
+      re-prefill at 40 tok/ms (42x); the lesson's DRAM price is 768 ms. 12 OSDs read in 0.40/0.36/0.36
+      s on 10/25/100GbE; matching the prefill needs 100GbE and 60 OSDs. The lesson's rate is 2.83
+      H100s at dense FP8 peak; one H100 at 50% MFU prefills in 0.58 s, beaten by 8 OSDs on 10GbE.
+      Llama-3-70B FP8 KV is 163840 B/token, 671 MB at 4096 tokens, and 500 MB holds 3052
+  - index: 5
+    slug: the_async_path_is_free_only_on_an_idle_copy_queue_at_85_percent_store_load_a_hits_load_takes_10x_longer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether the vLLM 0.11.0 asynchronous path is "free" — where does the overhead hide?
+    zh: |
+      論證 vLLM 0.11.0 那條非同步路徑是不是「免費的」—— 那些開銷躲在哪裡？
+    verifies: >-
+      a 500 MB transfer at 83.4 GB/s takes 6.0 ms; hit loads at 10% utilisation through a queue shared
+      with stores at 0/30/60/85% take 6.35/8.01/13.14/62.35 ms mean (p99 to 280 ms), and 6.35 ms at
+      every store load on their own queue, where stores still wait 23.29 ms mean at 85%. CPU_OFFLOAD
+      stores 6125 blocks from 24 misses, 918.75 ms on the request path, reading none back. The
+      lesson's '0.11.0 (January 2026) adds an asynchronous offload path' and '0.9.0 introduced a
+      Connector API' are present in its text
