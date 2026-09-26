@@ -1,0 +1,75 @@
+lesson: 19-ai-gateways
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/19-ai-gateways/docs/en.md
+exercises:
+  - index: 1
+    slug: at_five_percent_the_chain_serves_99_9875_percent_and_the_gateway_changes_nothing_but_a_constant
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Configure fallback from OpenAI→Anthropic→self-hosted. What's the expected hit rate at 5% provider error rate?
+    zh: |
+      跑 `code/main.py`。把退路設定成 OpenAI→Anthropic→自架。在供應商錯誤率 5% 時，預期命中率是多少？
+    verifies: >-
+      the shipped PROVIDERS are already OpenAI -> Anthropic -> Self-hosted; at a 5% error rate the
+      chain serves exactly 0.999875 and makes 0.0525 fallback calls per request, and the simulator at
+      200,000 requests serves 0.9999 with 10,434 fallbacks, while at its own n = 1000 it prints 100.0%
+      with 60. On the shipped run all four gateways report (1.0, 34, 34) and mean latency 183.048 ms
+      plus their overhead. retries - fallbacks = 10,454 - 10,434 = 20 = the requests that failed all
+      three, so every retry is a fallback. A failed 180 ms call costs 54.0 ms, not half, and 'Six core
+      features' numbers 7 items
+  - index: 2
+    slug: no_gateway_fits_because_the_baseline_alone_is_100_ms_over_and_the_tail_is_the_fallback
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your SLA is TTFT P99 < 200 ms on a 300 ms baseline. Which gateways stay within budget?
+    zh: |
+      你的 SLA 是在 300 毫秒基線上做到 TTFT P99 < 200 毫秒。哪些閘道還在預算內？
+    verifies: >-
+      with P99 overheads LiteLLM 15, Portkey 40, Kong 8, Cloudflare 3 ms, a 300 ms baseline under a
+      200 ms SLA leaves a -100 ms budget and no gateway, while 200 ms of headroom (500 total) admits
+      all four. On the lesson's chain 3% of requests fall back, so the P99 is 274 ms with no gateway
+      and 284 / 304 / 279 / 276 ms with LiteLLM / Portkey / Kong / Cloudflare. The lesson's 'P99 < 100
+      ms: Kong or Cloudflare' holds only for baselines 85..91 ms, below the simulator's fastest 100 ms
+      provider
+  - index: 3
+    slug: portkey_but_neither_open_source_build_ships_pii_redaction
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      A healthcare customer requires self-hosted + PII redaction + audit. Pick Portkey OSS or Kong.
+    zh: |
+      一位醫療客戶要求自架 + PII 遮蔽 + 稽核。在 Portkey 開源版與 Kong 之間挑一個。
+    cites: >-
+      Portkey — control plane positioning
+  - index: 4
+    slug: plan_the_move_at_500_rps_because_2000_is_where_it_breaks_not_where_to_start
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Compare LiteLLM vs Kong: at what RPS ceiling should a team migrate?
+    zh: |
+      比較 LiteLLM 與 Kong：團隊該在什麼 RPS 天花板上遷移？
+    cites: >-
+      LiteLLM — MIT OSS, Python
+  - index: 5
+    slug: sliding_window_because_a_token_bucket_cannot_grant_the_burst_and_the_full_rate_under_one_cap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a rate-limit policy for a multi-tenant SaaS: free tier, trial tier, paid tier. Token-bucket or sliding-window?
+    zh: |
+      替一套多租戶 SaaS 設計速率限制政策：免費層、試用層、付費層。要用權杖桶還是滑動窗口？
+    verifies: >-
+      a tenant idle 30 s then flooding at 4x its quota for 90 s, tiers 20 / 100 / 1000 per minute: the
+      sliding-window log admits at most 20 / 100 / 1000 in any 60 s, the natural token bucket 39 / 199
+      / 1999 (2L - 1), the fixed window 40 / 200 / 2000 and the sliding-window counter 30 / 150 /
+      1500. A half-size bucket stays under the quota (19 / 99 / 999) but serves 24 / 124 / 1249 over
+      the flood against the log's 40 / 200 / 2000. code/main.py defines no name matching limit,
+      bucket, window or throttle
