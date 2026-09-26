@@ -1,0 +1,81 @@
+lesson: 22-load-testing-llm-apis
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/22-load-testing-llm-apis/docs/en.md
+exercises:
+  - index: 1
+    slug: the_gap_is_only_in_the_tail_and_prompt_length_and_concurrency_never_reach_the_latency
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare uniform vs realistic distribution — where is the gap?
+    zh: |
+      跑 `code/main.py`。比較一致分布與真實分布 —— 差距在哪裡？
+    verifies: >-
+      on 500 requests TTFT P50 is 80 ms for both workloads; P99 80 vs 800 ms, mean 81.44 vs 193.76 ms,
+      cache hits 499 vs 421, the realistic run meeting 79 of its 80 prefixes. Rows are identical at
+      concurrency 10, 50 and 200 and unique_prefixes is never read; with cache inserts visible only
+      after each batch, mean uniform/realistic TTFT is 94.4/199.52, 152/235.52 and 368/389.6 ms.
+      prompt_tokens is never read (2000-token realistic prompts give the same row; realistic mean
+      503.9, stddev 180 against the lesson's 150), and TPOT_MS and BATCH_EFFICIENCY_SHARED_PREFIX are
+      never read although the lesson says the code measures effective TPOT
+  - index: 2
+    slug: the_gate_fails_realistic_traffic_on_cache_misses_and_40_iterations_pass_an_at_sla_server_40_percent_of_the_time
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write the k6 script for a CI gate: TTFT P95 < 800 ms at 100 concurrent, runtime 5 minutes.
+    zh: |
+      替一道 CI 閘門寫出 k6 腳本：100 併發下 TTFT P95 < 800 毫秒，執行 5 分鐘。
+    verifies: >-
+      the shipped xk6-sse k6 script runs constant-vus 100 for 5m with thresholds ttft p(95)<800 and
+      server_errors rate<0.05. Under k6's interpolated percentile on the lesson's simulate at
+      concurrency 100, uniform prompts pass at P95 80 ms and realistic fail at 800 ms with 79/500
+      misses. 40 iterations tolerate 1 slow sample, so a server 3/5/10% slow passes 0.662/0.399/0.080
+      of runs; the exercise's run is ~7400 iterations against the lesson's 30-50. The lesson's k6
+      v2026.1.0 is not among k6's 0.47-0.57, 1.0-1.8, 2.0-2.3 releases
+  - index: 3
+    slug: all_three_leaks_draw_the_same_50_mb_line_and_the_lessons_own_workload_hides_the_cache_leak
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your soak test shows memory growing 50 MB/hour. Name three causes and the instrumentation to pick between them.
+    zh: |
+      你的浸泡測試顯示記憶體每小時成長 50 MB。說出三個原因，以及用來在它們之間分辨的檢測手段。
+    verifies: >-
+      an unbounded cache, a 1-in-100 connection-pool leak and a request_id metric label each
+      calibrated to 50.0 MB/h at 10 RPS; doubling RPS gives 100.0 MB/h for all three, while replaying
+      the realistic workload, enabling keep-alive and dropping the label each zero exactly one cause
+      and leave the others at 50.0. The lesson's realistic generator has met all 80 prefixes by
+      request 833 (83 s at 10 RPS), so its hour-two cache slope is 0.0 MB/h; uniform has 1 prefix
+  - index: 4
+    slug: recovery_takes_about_three_minutes_so_a_two_minute_spike_ends_before_the_fleet_catches_up
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Spike test from 10 RPS to 100 RPS. What's the expected recovery time if Karpenter + vLLM production-stack are in place (Phase 17 · 03 + 18)?
+    zh: |
+      從 10 RPS 尖峰拉到 100 RPS。若已經有 Karpenter + vLLM production-stack（階段 17 · 03 + 18），預期的恢復時間是多少？
+    verifies: >-
+      on lesson 03's simulator with rates scaled by 1/150, the 15 + 50 + 45 = 110 s chain precedes the
+      first new replica; a sustained 600 s 10x spike under queue-depth HPA drops 55 of 400 and
+      recovers at +193.5 s, KAI drops 48, Cluster Autoscaler 69. The lesson's 120 s spike drops 55 of
+      80 and recovers at +135 s, after it ends. 10 warm replicas drop 0, 4 drop 29, zero model load
+      28, zero provisioning 2; lesson 18's module has no router or autoscaler
+  - index: 5
+    slug: the_five_ms_gap_is_ttft_spread_over_the_output_so_it_needs_a_506_ms_ttft_at_100_tokens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      GenAI-Perf reports TPOT=6ms; LLMPerf reports TPOT=11ms on the same server. Explain.
+    zh: |
+      同一台伺服器上 GenAI-Perf 回報 TPOT=6 毫秒；LLMPerf 回報 TPOT=11 毫秒。解釋一下。
+    verifies: >-
+      LLMPerf minus GenAI-Perf TPOT is (TTFT - TPOT)/N, so 6 vs 11 ms needs TTFT 506 ms at 100 tokens
+      and 1006 ms at 200; lesson 08's RequestTrace at 506 ms reports 6.0 and 11.0. On lesson 08's
+      1000-request workload (mean TTFT 154 ms) the tools give 7.70 and 8.73 ms, delta 1.03, matching
+      the identity to 1e-9; its GenAI-Perf divides N decode steps by N - 1, 0.71% above the mean step
