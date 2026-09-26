@@ -61,7 +61,7 @@ from harness import parity, practice
 PHASE, LESSON = "17-infrastructure-and-production", "27-finops-llms"
 SEEDS, DAYS, SPIKE_DAY = range(1000), 10, 8
 THRESHOLDS, SPIKES = (2.0, 3.0, 4.0, 5.0, 6.0, 8.0), (2.0, 3.0)
-FIRED = r"KILL SWITCH\] (\w+): z=([\d.]+) on spend \$([\d.]+)"
+FIRED = r"KILL SWITCH\] (\w+): z=([\d.]+) on spend \$([\d.]+) \(baseline \$([\d.]+) ± \$([\d.]+)"
 
 
 def run(ref, seed, kill=4.0, spike=1.0):
@@ -121,7 +121,7 @@ def solve():
     steady, source = histories(ref), inspect.getsource(ref.simulate_day)
     floor = [n for n, h in steady if first_fire(h, 4.0, policy[n]) is not None]
     return {
-        "fired": [(n, float(z), float(usd)) for n, z, usd in re.findall(FIRED, log)],
+        "fired": [(n, *map(float, nums)) for n, *nums in re.findall(FIRED, log)],
         "policy": policy, "cap_lines": log.count("cap breach"),
         "maxz": {n: round(max(zscores(h).values()), 2) for n, h in history.items()},
         "table": calibrate(steady, [histories(ref, mult) for mult in SPIKES]),
@@ -137,15 +137,16 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: it fires once, at z = 4.80, on tenant_A_normal",
-            fired == [("tenant_A_normal", 4.8, 0.97)] and maxz["tenant_A_normal"] == 4.8
+            fired == [("tenant_A_normal", 4.8, 0.97, 0.6, 0.08)] and maxz["tenant_A_normal"] == 4.8
             and maxz["tenant_C_abusive"] < 2 and result["cap_lines"] == 0,
             f"kill switch {fired}, against a ${policy[fired[0][0]]:.0f} contract; highest z "
             f"per tenant {maxz}; cap breaches printed: {result['cap_lines']}",
         ),
         practice.Check(
             "FINDING: the 'abusive' tenant is its own baseline, and inside its contract",
-            result["c_mean"] < policy["tenant_C_abusive"],
-            f"tenant C averages ${result['c_mean']} a day against a ${policy['tenant_C_abusive']:.0f} contract",
+            all([result["c_mean"] < policy["tenant_C_abusive"], maxz["tenant_C_abusive"] < 2]),
+            f"tenant C peaks at z = {maxz['tenant_C_abusive']} and averages ${result['c_mean']} "
+            f"a day against a ${policy['tenant_C_abusive']:.0f} contract",
         ),
         practice.Check(
             "FINDING: pick the threshold from a false-pause budget, and it cannot be 4 alone",

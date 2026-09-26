@@ -109,6 +109,7 @@ def solve():
         "masks": re.findall(r"\[[A-Z]+_\d{3}\]", scrubbed),
         "hashes": hashes,
         "fields": list(sec.AuditEntry.__dataclass_fields__),
+        "also_left": [x for x in ("2026-03-02", "02118", "type 2 diabetes") if x in scrubbed],
         "breach_rows": [c for c, text in cites.items() if "breach" in text],
         "cites_rule": any(
             re.search(r"164\.4(0[2-9]|1[0-4])", t) for t in cites.values()
@@ -129,14 +130,21 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: Lesson 25's scrubber in front would not have prevented it",
-            (result["left"], result["masks"][0], len(result["masks"]))
-            == (["name", "dates", "address", "health plan id"], "[PHONE_001]", 4),
+            (result["left"], result["masks"][0], len(result["masks"]), len(result["also_left"]))
+            == (["name", "dates", "address", "health plan id"], "[PHONE_001]", 4, 3),
             f"masks {result['masks']} (the MRN as PHONE); left in the prompt: "
-            f"{result['left']}: {result['scrubbed']}",
+            f"{result['left']}, plus visit date, ZIP and diagnosis {result['also_left']}: "
+            f"{result['scrubbed']}",
         ),
         practice.Check(
             "FINDING: the audit log cannot answer factor (i), whose PHI and how much",
-            len(set(result["hashes"])) == 1 and len(result["fields"]) == 10,
+            len(set(result["hashes"])) == 1
+            and len(result["fields"]) == 10
+            and not any(
+                w in f
+                for f in result["fields"]
+                for w in ("patient", "subject", "individual", "mrn", "person")
+            ),
             f"two patients' refill requests log prompt_hash {result['hashes']}; no field of "
             f"{result['fields']} names a patient",
         ),

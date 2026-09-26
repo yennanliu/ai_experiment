@@ -15,8 +15,9 @@ each with a guard, and the guard is the justification.**
   load u on N pods puts u*N/(N-1) on each of the rest, so the bound is
   u <= (N-1)/N. At N=4 that is 0.75; at 80% load the survivors run at 106.7%,
   and the restart turns one bad pod into a pool overload. At N=2 the bound is
-  0.5, and at N=1 a restart is an outage. One pod at a time, not the same pod
-  twice in 30 minutes.
+  0.5, at N=8 0.875, and at N=1 a restart is an outage. One pod at a time,
+  not the same pod twice in 30 minutes: a repeat restart is denied even at
+  50% load.
 - *Revert the last deploy* only when it landed inside the 60 minutes before
   onset and carries no migration: an image revert is undone by redeploying,
   and a schema change is not.
@@ -85,7 +86,8 @@ def kv_budget(frac, gpu_gb=80, weights_gb=16):
 def scenarios():
     """Each guard on one state it allows and states it denies."""
     return {
-        "restart": [gate("restart pod", {"util": u, "pods": 4}) for u in (0.7, 0.8)],
+        "restart": [gate("restart pod", {"util": u, "pods": 4, "restarted_recently": r})
+                    for u, r in ((0.7, False), (0.8, False), (0.5, True))],
         "revert": [gate("revert deploy", {"migration": m, "deploy_age_min": a})
                    for m, a in ((False, 20), (False, 3 * 1440), (True, 20))],
         "scale": [gate("scale pool", {"pods": frm, "target": to})
@@ -98,7 +100,7 @@ def solve():
     proposed = ref.supervisor([ref.metric_agent(""), ref.runbook_agent("")])["proposed_action"]
     parts = ["restart pod" if p.startswith("restart") else p for p in proposed.split(" + ")]
     return {
-        "bounds": {n: round((n - 1) / n, 2) for n in (1, 2, 4, 8)},
+        "bounds": {n: round((n - 1) / n, 3) for n in (1, 2, 4, 8)},
         "at_80": round(survivor_load(0.8, 4), 3), **scenarios(),
         "proposed": proposed, "parts": {p: gate(p, {"util": 0.5, "pods": 4})[0] for p in parts},
         "kv": (kv_budget(0.90), kv_budget(0.85)),
@@ -113,11 +115,11 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: restart one pod, revert the last deploy, scale within [2, 8], each guarded",
-            all([result["bounds"] == {1: 0.0, 2: 0.5, 4: 0.75, 8: 0.88},
-                 result["at_80"] == 1.067, oks["restart"] == [True, False],
+            all([result["bounds"] == {1: 0.0, 2: 0.5, 4: 0.75, 8: 0.875},
+                 result["at_80"] == 1.067, oks["restart"] == [True, False, False],
                  oks["revert"] == oks["scale"] == [True, False, False]]),
             f"restart bound (N-1)/N {result['bounds']}; 80% on 4 pods puts survivors at "
-            f"{result['at_80']:.1%}; revert {result['revert']}; scale {result['scale']}",
+            f"{result['at_80']:.1%}; restart {result['restart']}; revert {result['revert']}; scale {result['scale']}",
         ),
         practice.Check(
             "FINDING: the reference's second action is on the lesson's not-safe list",

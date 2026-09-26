@@ -46,8 +46,8 @@ is the whole explanation.
 
 - On Hopper, a single user doing agentic work gets SGLang, so workload overrides
   scale.
-- On AMD a single user gets vLLM, and on Blackwell TRT-LLM. Neither branch reads
-  scale, although the lesson sends one user to Ollama.
+- On AMD a single user gets vLLM, and on Blackwell TRT-LLM. Neither branch lets
+  scale change the engine, although the lesson sends one user to Ollama.
 - Blackwell returns TRT-LLM on all 20 of its cells, agentic included, even though
   the lesson says RadixAttention "dominates" agentic work.
 
@@ -172,7 +172,7 @@ eviction is hash-seeded, so the native row was run under PYTHONHASHSEED 0–4.
 | config | total ms (shipped mix) | total ms (all 8K) |
 |---|---:|---:|
 | CPU offload | 369,402 | 372,633 |
-| native | 375,033–376,133 | 382,433–383,833 |
+| native | 375,033–376,133 | 381,833–383,833 |
 | LMCache | **380,833** | **394,233** |
 
 LMCache avoids the most re-prefills, 194, and still spends the most prefill

@@ -88,10 +88,10 @@ Art. 43 conformity assessment.
   applies" also leaves out Art. 99(6): for SMEs the *lower* applies. A
   screener vendor with €40M turnover and under 250 staff faces up to **€1.2M**,
   not €15M.
-- **Both dates the lesson drills have moved.** Per Gibson Dunn (27 May 2026)
-  and Usercentrics, the Digital Omnibus on AI entered into force on 27 July
-  2026. It defers Annex III high-risk obligations to **2 December 2027** and
-  Annex I products to 2 August 2028. I did not verify this against the
+- **Both dates the lesson drills have moved.** Gibson Dunn (27 May 2026)
+  reports the agreed Digital Omnibus on AI deferring Annex III high-risk
+  obligations to **2 December 2027** and Annex I products to 2 August 2028;
+  Usercentrics reports that it entered into force on 27 July 2026. I did not verify this against the
   Official Journal. Colorado SB 26-189, signed 14 May 2026 (McDermott), moves
   that law to 1 January 2027 and removes the impact assessment that CONTROL_MAP
   cites SB24-205 for.

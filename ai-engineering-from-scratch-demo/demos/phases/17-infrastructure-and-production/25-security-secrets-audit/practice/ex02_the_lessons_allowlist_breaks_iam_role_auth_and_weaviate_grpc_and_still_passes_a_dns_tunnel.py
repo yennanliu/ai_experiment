@@ -137,7 +137,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: it still passes 2 of the 6 unwanted flows",
-            [why.split(" ")[0] for _, why in lp] == ["DNS", "exfil"],
+            lp == [("app", "DNS tunnel through the resolver"),
+                   ("app", "exfil to a provider account holding the attacker's key")],
             f"passed {lp}",
         ),
         practice.Check(

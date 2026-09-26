@@ -14,8 +14,9 @@ dropped or waits more than one tick. The spike is the lesson's own pattern --
 
 **ANSWER: about 3 minutes -- 193.5 s for a sustained 10x.** Queue-depth HPA
 drops 55 requests and waits settle at +193.5 s. The chain is detection (15 s
-tick) + Karpenter (50 s) + model load (45 s) = 110 s before the first new
-replica serves, then the backlog drains. Lesson 03's own "2-5 minutes" for a
+tick) + Karpenter (50 s) + model load (45 s) = 110 s; the scale-up fires on the
++15 s tick and the replica is ready at +110 s, so on the 15 s tick grid the
+first new replica serves at +120 s. Then the backlog drains. Lesson 03's own "2-5 minutes" for a
 from-zero request brackets it. KAI's more aggressive rule drops 48;
 Cluster Autoscaler's 110 s provisioning drops 69.
 
@@ -30,16 +31,19 @@ replicas drop 0. Four drop 29. A zero-second model load (weights already on
 the node) drops 28, and zero provisioning as well drops 2.
 
 **FINDING: production-stack contributes no term.** Lesson 18's module has no
-router, autoscaler or replica count -- `make_workload`, `simulate` and KV-block
-constants only -- and its docs describe KV offload and cache-aware routing,
+router, autoscaler or replica count -- `make_workload`, `simulate`, and
+throughput and KV-block constants only -- and its docs describe KV offload and cache-aware routing,
 which change per-replica work, not how fast capacity arrives.
 
 Structure: `spike()` builds evenly spaced arrivals; `run()` patches lesson 03's
 constants for one run and restores them; `recovery()` reads the request
-outcomes the reference simulator records.
+outcomes the reference simulator records; `first_serve()` finds the first tick
+at which two requests start at once, i.e. a second replica is serving.
 """
 
 from __future__ import annotations
+
+from collections import Counter
 
 from harness import parity, practice
 
@@ -69,6 +73,11 @@ def recovery(reqs, tick):
     return max(late) if late else 0.0
 
 
+def first_serve(reqs):
+    starts = Counter(r.started_at for r in reqs if r.started_at is not None and r.started_at >= START)
+    return min(t for t, c in starts.items() if c >= 2) - START
+
+
 def run(ref, seconds=120, strategy="QUEUE_DEPTH", **overrides):
     saved = {k: getattr(ref, k) for k in overrides}
     try:
@@ -79,9 +88,10 @@ def run(ref, seconds=120, strategy="QUEUE_DEPTH", **overrides):
     finally:
         for k, v in saved.items():
             setattr(ref, k, v)
-    arrivals = sum(START <= r.arrived_at < START + seconds for r in reqs)
-    return {"dropped": out["dropped"], "recovery": recovery(reqs, ref.HPA_TICK_SEC),
-            "arrivals": arrivals}
+    window = [r for r in reqs if START <= r.arrived_at < START + seconds]
+    arrivals, dropped = len(window), sum(r.dropped for r in window)
+    return {"dropped": dropped, "outside": out["dropped"] - dropped, "recovery": recovery(reqs, ref.HPA_TICK_SEC),
+            "arrivals": arrivals, "first_serve": first_serve(reqs)}
 
 
 def solve():
@@ -102,23 +112,26 @@ def verify(result):
     return [
         practice.Check(
             "ANSWER: about 3 minutes -- 193.5 s for a sustained 10x",
-            all([result["chain"] == 110, sus == {"dropped": 55, "recovery": 193.5, "arrivals": 400},
+            all([result["chain"] == 110, sus == {"dropped": 55, "outside": 0, "recovery": 193.5, "arrivals": 400,
+                                                 "first_serve": 120.0},
                  result["kai"]["dropped"] == 48, v["cluster autoscaler"]["dropped"] == 69,
                  result["doc_range"]]),
-            f"first new replica after {result['chain']} s; sustained spike {sus}; KAI drops "
+            f"{result['chain']} s chain, first new replica serves at +{sus['first_serve']} s; "
+            f"sustained spike {sus}; KAI drops "
             f"{result['kai']['dropped']}, Cluster Autoscaler {v['cluster autoscaler']['dropped']}",
         ),
         practice.Check(
             "FINDING: the lesson's 2-minute spike ends before the fleet recovers",
-            result["doc_spike"] and short == {"dropped": 55, "recovery": 135.0, "arrivals": 80},
+            result["doc_spike"] and short == {"dropped": 55, "outside": 0, "recovery": 135.0, "arrivals": 80,
+                                              "first_serve": 120.0},
             f"120 s spike: {short['dropped']} of {short['arrivals']} spike arrivals dropped, "
             f"waits settle at +{short['recovery']} s; the 600 s spike drops {sus['dropped']}",
         ),
         practice.Check(
             "FINDING: only headroom or a shorter chain moves the number",
             [v[k]["dropped"] for k in ("warm 10", "warm 4", "no model load", "no provisioning")]
-            == [0, 29, 28, 2],
-            f"dropped per variant {({k: r['dropped'] for k, r in v.items()})}",
+            == [0, 29, 28, 2] and all(r["outside"] == 0 for r in v.values()),
+            f"dropped per variant {({k: r['dropped'] for k, r in v.items()})}, all spike arrivals",
         ),
         practice.Check(
             "FINDING: production-stack contributes no term",

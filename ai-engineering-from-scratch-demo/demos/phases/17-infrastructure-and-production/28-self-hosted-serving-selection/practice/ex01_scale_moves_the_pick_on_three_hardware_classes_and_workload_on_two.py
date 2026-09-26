@@ -21,8 +21,8 @@ whole explanation.
 
 **FINDING: the tree does not run hardware, then scale, then workload.** On
 Hopper a single user doing agentic work gets SGLang: workload overrides scale.
-On AMD a single user gets vLLM, on Blackwell TRT-LLM -- scale is never read,
-though the lesson sends 1 user to Ollama. Blackwell returns TRT-LLM on all 20
+On AMD a single user gets vLLM, on Blackwell TRT-LLM -- neither branch lets
+scale change the engine, though the lesson sends 1 user to Ollama. Blackwell returns TRT-LLM on all 20
 cells, agentic included, while the lesson says RadixAttention "dominates"
 agentic.
 

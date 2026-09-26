@@ -94,7 +94,8 @@ def verify(result):
         practice.Check(
             "ANSWER: the weight file, the memory model and the metrics source all change",
             all([round(mem["weights"]["Q4_K_M"], 2) == 4.87,
-                 round(mem["weights"]["FP16"], 2) == 16.06, mem["kv_token"] == 131072,
+                 round(mem["weights"]["FP16"], 2) == 16.06,
+                 round(mem["weights"]["FP8"], 2) == 8.03, mem["kv_token"] == 131072,
                  round(mem["ctx_gb"], 2) == 1.07, round(mem["pool_tokens"]["FP16"], -3) == 427000,
                  mem["seqs"] == {"FP16": 52, "FP8": 59}]),
             f"weights {({q: round(g, 2) for q, g in mem['weights'].items()})} GB; one 8K "

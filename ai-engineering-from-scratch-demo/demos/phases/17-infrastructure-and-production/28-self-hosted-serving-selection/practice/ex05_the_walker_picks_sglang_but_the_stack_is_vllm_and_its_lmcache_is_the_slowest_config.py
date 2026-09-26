@@ -26,8 +26,8 @@ So the stack decides the engine: vLLM.
 its shipped workload it takes 380,833 ms against native's 375,033-376,133 and
 CPU offload's 369,402. It avoids the most re-prefills, 194, and spends the most
 prefill time doing it, 14,800 ms. On the all-8K workload it is 394,233 ms,
-with prefill 28,200. A hit costs 500 blocks x 3 ms = 1500 ms, and
-re-prefilling 8000 tokens costs 200 ms. LMCache would break even at 0.4
+with prefill 28,200, against native's 381,833-383,833 and CPU offload's
+372,633. A hit costs 500 blocks x 3 ms = 1500 ms, and re-prefilling 8000 tokens costs 200 ms. LMCache would break even at 0.4
 ms/block, 7.5x cheaper than coded. `hbm_capacity_blocks_per_engine` is set and
 never read, so the "KV exceeds HBM" case that lesson 18 says LMCache is for
 cannot occur. Decode is 366,033 ms of every run, 97.3-97.6% of native's
@@ -35,8 +35,8 @@ total, so no prefill cache can move the total by more than 2.7%.
 
 **FINDING: cache-aware routing lifts the hit rate but not the P99.** GLOBAL
 routing takes hits from 0.30-0.31 (REGIONAL) to 0.86-0.89 across hash seeds,
-and moves 565-603 of 1000 requests across regions. Tenant data-residency rules
-forbid that. Misses remain over 1% under every strategy, so P99 TTFT is the
+and moves 565-603 of 1000 requests across regions, which tenant
+data-residency rules often forbid. Misses remain over 1% under every strategy, so P99 TTFT is the
 miss itself: 800 ms, or 3200 ms at 8K.
 
 Structure: `seeded()` runs the two hash-dependent simulators in subprocesses;
@@ -105,7 +105,7 @@ def routing(runs):
             "p99": set(col("REGIONAL800", 1) + col("GLOBAL800", 1)),
             "p99_8k": set(col("REGIONAL3200", 1) + col("GLOBAL3200", 1)),
             "native": [round(r["native_mixed"]) for r in runs],
-            "native_8k": max(r["native_8k"] for r in runs)}
+            "native_8k": [round(r["native_8k"]) for r in runs]}
 
 
 def solve():
@@ -135,13 +135,16 @@ def verify(result):
         practice.Check(
             "FINDING: in lesson 18's own simulator LMCache is the slowest config",
             all([lmc["total_ms"] > max(native) > cpu["total_ms"], lmc["re_prefills_avoided"] == 194,
-                 lm["8k"]["LMCACHE"] > sd["native_8k"], lm["hbm_reads"] == 1,
+                 lm["8k"]["LMCACHE"] > max(sd["native_8k"]) > lm["8k"]["CPU_OFFLOAD"],
+                 (min(sd["native_8k"]), max(sd["native_8k"])) == (381833, 383833),
+                 (lmc["prefill_ms"], round(lm["8k"]["LMCACHE"])) == (14800, 394233), lm["hbm_reads"] == 1,
                  (lm["hit_ms"], lm["prefill_ms"], lm["break_even"]) == (1500, 200, 0.4),
                  round(lm["decode"] / min(native), 3) == 0.976]),
             f"totals LMCACHE {lmc['total_ms']:.0f} vs native {min(native)}-{max(native)} vs CPU "
             f"offload {cpu['total_ms']:.0f} ms; an 8K hit costs {lm['hit_ms']:.0f} ms vs "
             f"{lm['prefill_ms']:.0f} ms re-prefill; HBM capacity is written once and never "
-            f"read; decode is {lm['decode']:.0f} ms",
+            f"read; decode is {lm['decode']:.0f} ms; all-8K LMCACHE {lm['8k']['LMCACHE']:.0f} vs native "
+            f"{min(sd['native_8k'])}-{max(sd['native_8k'])} vs CPU offload {lm['8k']['CPU_OFFLOAD']:.0f} ms",
         ),
         practice.Check(
             "FINDING: cache-aware routing lifts the hit rate but not the P99",

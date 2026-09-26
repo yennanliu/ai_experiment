@@ -80,10 +80,12 @@ def verify(result):
             "ANSWER: no, not as a certificate; necessary only where a buyer's "
             "questionnaire names it",
             (req, result["profiles"], result["mid_market"])
-            == ([("US", "B2B SaaS"), ("Global", "enterprise")], 7, []),
+            == ([("US", "B2B SaaS"), ("Global", "enterprise")], 7, [])
+            and (len(ai_act), [p for p in ai_act if p in req])
+            == (3, [("Global", "enterprise")]),
             f"ISO 42001 is required by {len(req)} of {result['profiles']} profiles {req}; "
             f"of the {len(ai_act)} profiles with the EU AI Act, "
-            f"{sum(p in req for p in ai_act)} require it; no mid-market profile exists",
+            f"only {[p for p in ai_act if p in req]} requires it; no mid-market profile exists",
         ),
         practice.Check(
             "FINDING: the map gives ISO 42001 zero reuse",

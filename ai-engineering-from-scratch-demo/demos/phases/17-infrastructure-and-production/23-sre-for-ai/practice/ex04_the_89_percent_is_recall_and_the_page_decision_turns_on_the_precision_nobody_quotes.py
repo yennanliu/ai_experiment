@@ -30,7 +30,7 @@ precision, which the lesson never states.** At one prediction a minute there
 are 43,200 chances a month to fire wrongly. At a false-alarm rate of 1e-3 per
 minute that is 43.2 false pages against 3.56 true ones, precision 7.6%. At
 1e-4 it is 4.32, precision 45.2%. Only at 1e-5 does precision reach 89.2%. A
-3-person rotation cannot absorb 1.5 false pages a night, so the pager is
+3-person rotation cannot absorb 1.4 false pages a night (43.2 / 30), so the pager is
 added only after the false-alarm rate has been measured at or below 1e-4.
 
 **FINDING: a 12-minute lead does not cover the lesson's own 30-minute

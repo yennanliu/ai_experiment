@@ -128,7 +128,7 @@ def verify(result):
         practice.Check(
             "ANSWER: a tokenizer stall, KV preemptions whose cost scales with context, "
             "and a failover that silently truncates the context",
-            all([bpe["poison"] // bpe["prose"] == 253, net_max < 1.05 * bpe["prose"],
+            all([round(bpe["poison"] / bpe["prose"]) == 254, net_max < 1.05 * bpe["prose"],
                  kv["base"] == kv["drop 10%"] == (0, 0), kv["long"] == (5, 40704),
                  result["loss"] == 0.8, result["fits_16k"] == 0,
                  result["gate"] == ("COMPLETED", 0.0)]),

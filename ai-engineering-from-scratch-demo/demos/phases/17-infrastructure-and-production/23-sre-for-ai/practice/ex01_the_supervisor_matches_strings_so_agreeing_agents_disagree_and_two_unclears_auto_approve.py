@@ -10,11 +10,13 @@ sets and reading back which group wins and which safety gate it gets.
 
 **ANSWER: it does not resolve a split, it picks the bigger number and hands it
 to a human.** Groups are ranked by the sum of their confidences. With log and
-metric split and the runbook agent siding with neither, the highest single
-confidence wins: log 0.78 vs metric 0.82 goes to MetricAgent alone, and one
-supporter means `adversarial_agreement` is False and the gate is "human
-approval required". An exact tie (0.8 vs 0.8) goes to whichever agent was
-listed first. Evidence is never read.
+metric split and no third hypothesis, the higher confidence wins: log 0.78 vs
+metric 0.82 goes to MetricAgent alone, and one supporter means
+`adversarial_agreement` is False and the gate is "human approval required".
+(Add the runbook agent on a third key and its 0.88 wins instead -- the shipped
+run below.) An exact tie (0.8 vs 0.8) goes to whichever agent was listed
+first. Evidence is never read: stripping every evidence list leaves the
+shipped decision unchanged.
 
 **FINDING: the shipped run is already a "disagreement" between agents that
 agree.** All three hypotheses describe the same KV-cache OOM, but the key is
@@ -32,8 +34,11 @@ root cause is "unclear", confidence 0.445, and the gate reads "safe action
 auto-approved". A pair at 0.45 each beats a single 0.88 the same way.
 
 **FINDING: agreement is a 30-character prefix, and the action is a constant.**
+The key is the text before " on " / " hit ", cut to 30 characters, so
 "GPU memory utilization hit 98%" and "GPU memory utilization hit 40% only" --
-opposite claims -- count as agreement and auto-approve. Every run proposes
+opposite claims -- share the key 'GPU memory utilization' and auto-approve,
+and so do "Matches runbook RB-017: KV cache OOM ..." and "Matches runbook
+RB-017: KV cache is healthy ..." through the 30-character cut. Every run proposes
 "restart pod + lower --gpu-memory-utilization" whatever the root cause, and
 the metric and runbook agents ignore the incident text: a DNS incident still
 gets RB-017 at 0.88.
@@ -60,6 +65,12 @@ def agents(ref, incident):
     return [f(incident) for f in (ref.log_agent, ref.metric_agent, ref.runbook_agent)]
 
 
+def metric_agent_same(ref):
+    """The metric agent's answer is the same for a checkout and a DNS incident."""
+    a, b = ref.metric_agent(CHECKOUT), ref.metric_agent(DNS)
+    return (a.root_cause, a.confidence, a.evidence) == (b.root_cause, b.confidence, b.evidence)
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     log, metric, book = agents(ref, CHECKOUT)
@@ -74,6 +85,10 @@ def solve():
         "weak_pair": run(ref, ("a", "X", 0.45), ("b", "X", 0.45), ("c", "Y", 0.88)),
         "opposite": run(ref, ("a", "GPU memory utilization hit 98%", 0.5),
                         ("b", "GPU memory utilization hit 40% only", 0.5)),
+        "prefix": run(ref, ("a", book.root_cause, 0.5),
+                      ("b", "Matches runbook RB-017: KV cache is healthy, not the cause", 0.5)),
+        "no_evidence": run(ref, triple(log), triple(metric), triple(book)),
+        "metric_same": metric_agent_same(ref),
         "dns": [(h.root_cause, h.confidence) for h in dns],
         "actions": {ref.supervisor(agents(ref, i))["proposed_action"] for i in (CHECKOUT, DNS)},
     }
@@ -86,10 +101,12 @@ def verify(result):
             "ANSWER: it picks the bigger number and hands it to a human",
             all([split["supporting_agents"] == ["MetricAgent"], not split["adversarial_agreement"],
                  split["safety_gate"] == "human approval required",
-                 result["tie"]["supporting_agents"] == ["LogAgent"]]),
+                 result["tie"]["supporting_agents"] == ["LogAgent"],
+                 result["no_evidence"] == s]),
             f"log 0.78 vs metric 0.82 -> {split['supporting_agents']}, gate "
             f"'{split['safety_gate']}'; an 0.8/0.8 tie goes to "
-            f"{result['tie']['supporting_agents']}, the first listed",
+            f"{result['tie']['supporting_agents']}, the first listed; evidence stripped, "
+            f"shipped decision unchanged = {result['no_evidence'] == s}",
         ),
         practice.Check(
             "FINDING: the shipped run is already a disagreement between agents that agree",
@@ -104,7 +121,9 @@ def verify(result):
             "FINDING: two agents agreeing on nothing auto-approve the action",
             all([unclear["top_root_cause"] == "unclear",
                  unclear["safety_gate"] == "safe action auto-approved",
-                 result["weak_pair"]["adversarial_agreement"]]),
+                 round(unclear["aggregated_confidence"], 3) == 0.445,
+                 result["weak_pair"]["adversarial_agreement"],
+                 result["weak_pair"]["top_root_cause"] == "X"]),
             f"'unclear' 0.35 + 0.54 beats RB-017 0.88: confidence "
             f"{unclear['aggregated_confidence']:.3f}, gate '{unclear['safety_gate']}'; a "
             f"0.45 + 0.45 pair also wins at {result['weak_pair']['aggregated_confidence']}",
@@ -112,11 +131,16 @@ def verify(result):
         practice.Check(
             "FINDING: agreement is a 30-character prefix, and the action is a constant",
             all([result["opposite"]["adversarial_agreement"],
+                 result["opposite"]["top_root_cause"] == "GPU memory utilization",
+                 result["prefix"]["adversarial_agreement"],
                  result["actions"] == {"restart pod + lower --gpu-memory-utilization"},
+                 result["metric_same"],
                  result["dns"][2][1] == 0.88, "RB-017" in result["dns"][2][0]]),
             f"'hit 98%' and 'hit 40% only' agree as {result['opposite']['top_root_cause']!r}; "
-            f"actions over both incidents {result['actions']}; a DNS incident gets "
-            f"{result['dns'][2]}",
+            f"'KV cache OOM' and 'KV cache is healthy' agree as "
+            f"{result['prefix']['top_root_cause']!r}; actions over both incidents "
+            f"{result['actions']}; metric agent identical on both = {result['metric_same']}; "
+            f"a DNS incident gets {result['dns'][2]}",
         ),
     ]
 

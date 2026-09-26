@@ -22,8 +22,11 @@ per-request label zeroes the series slope. The other two stay at 50 MB/h
 each time.
 
 **FINDING: the memory graph cannot tell them apart, and neither can load.**
-All three give 50.0 MB/h at baseline, and doubling RPS doubles all three to
-100.0 MB/h. The one knob a soak test turns moves every candidate together.
+All three give 50.0 MB/h at baseline -- by calibration -- and because each
+driver is per request, doubling RPS doubles all three to 100.0 MB/h. The one
+knob a soak test turns moves every candidate together; only the three gauges
+and the per-cause A/B runs separate them. These slopes are this model's, not
+a measurement of a real process.
 
 **FINDING: the lesson's realistic workload hides an unbounded cache.**
 `make_realistic_workload` draws from 80 prefixes and has met all 80 by

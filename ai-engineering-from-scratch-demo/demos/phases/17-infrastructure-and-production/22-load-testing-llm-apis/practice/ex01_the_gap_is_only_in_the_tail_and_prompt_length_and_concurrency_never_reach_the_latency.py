@@ -24,8 +24,8 @@ rises: mean 94.4 vs 199.52 ms at 10, 152 vs 235.52 at 50, 368 vs 389.6 at 200.
 
 **FINDING: prompt length never reaches the latency.** `prompt_tokens` is
 never read by `simulate`: the uniform prompts are 2000 tokens against a
-realistic mean of 503.9, 4x the prefill, and still report faster; setting
-every realistic prompt to 2000 tokens changes no number. The generator also
+realistic mean of 503.9, about 4x the tokens to prefill, and still report
+faster; setting every realistic prompt to 2000 tokens changes no number. The generator also
 uses stddev 180 where the lesson's LLMPerf example uses 150.
 
 **FINDING: nothing measures TPOT.** "Use It" says the code "measures

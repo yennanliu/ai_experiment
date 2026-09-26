@@ -27,7 +27,7 @@ naive one fails 5 of 5, each on the SLI its experiment targets.
 naive runs' error rates, `run_experiment` aborts only the replica kill (200x
 burn, 25% blast). The partition fails every request in its blast radius --
 2000x burn -- and completes, on 5% blast. The vector-DB run answers with no
-context and a grounding rate of 0, and the KV run triples p95; both show the
+context and a grounding rate of 0, and the KV run's p95 is 3.5x baseline; both show the
 baseline error rate, so both read 1.0x and complete. A RAG service's worst
 chaos outcome, a confident answer with no sources, is a 200.
 
@@ -64,6 +64,8 @@ EXPERIMENTS = [
      (0.0005, 1.4, 0.97), (0.10, 1.4, 0.97)),  # naive: 30 of 300 s before endpoint drop
 ]
 SLIS = ("error", "p95", "grounded")
+# the SLI each experiment targets -- what the naive service must fail on
+TARGETS = [["p95"], ["error", "grounded"], ["grounded"], ["p95"], ["error"]]
 
 
 def judge(criteria, observed):
@@ -91,7 +93,8 @@ def solve():
             "gate_naive": gate(ref, name, blast, minutes, naive),
             "gate_hardened": gate(ref, name, blast, minutes, hardened)[0],
         })
-    return {"rows": rows, "fields": [f.name for f in dataclasses.fields(ref.Experiment)]}
+    burns = {r["name"]: r["gate_naive"][1] for r in rows}
+    return {"rows": rows, "naive_burn": burns, "fields": [f.name for f in dataclasses.fields(ref.Experiment)]}
 
 
 def verify(result):
@@ -99,21 +102,24 @@ def verify(result):
     blasts = [r["blast"] for r in rows]
     blind = {r["name"]: r["gate_naive"] for r in rows if r["gate_naive"][0] == "COMPLETED"}
     aborted = [r["name"] for r in rows if r["name"] not in blind]
+    burns = result["naive_burn"]
     return [
         practice.Check(
             "ANSWER: five experiments, smallest blast first, and each criterion fails "
             "exactly when its mechanism is missing",
             all([not any(r["hardened"] + r["baseline"] for r in rows),
-                 all(r["naive"] for r in rows), blasts == sorted(blasts)]),
+                 [r["naive"] for r in rows] == TARGETS, blasts == sorted(blasts)]),
             "naive fails " + "; ".join(f"{r['name']}: {r['naive']}" for r in rows)
             + "; hardened and baseline fail none",
         ),
         practice.Check(
             "FINDING: the lesson's gate stops one of the five broken runs",
             all([aborted == ["kill 1 of 4 decode replicas"], len(blind) == 4,
+                 round(burns["kill 1 of 4 decode replicas"]) == 200,
+                 round(burns["long-context burst, top_k 5->40"], 2) == 1.0,
                  blind["gateway-to-vLLM partition"][1] == 2000.0,
                  blind["vector DB +2s, 500ms timeout"][1] == 1.0]),
-            f"aborted {aborted}; completed with burn {blind}; hardened runs "
+            f"aborted {aborted} at {burns['kill 1 of 4 decode replicas']:.0f}x; completed with burn {blind}; hardened runs "
             f"{[r['gate_hardened'] for r in rows]}",
         ),
         practice.Check(

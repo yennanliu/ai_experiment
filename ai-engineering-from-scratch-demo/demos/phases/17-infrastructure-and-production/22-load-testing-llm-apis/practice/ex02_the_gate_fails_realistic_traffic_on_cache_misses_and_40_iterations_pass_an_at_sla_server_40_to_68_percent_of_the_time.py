@@ -1,4 +1,4 @@
-"""Exercise 2 — the gate fails realistic traffic on cache misses, and 40 iterations pass an at-SLA server 40% of the time.
+"""Exercise 2 — the gate fails realistic traffic on cache misses, and 40 iterations pass an at-SLA server 40 to 68% of the time.
 
     Write the k6 script for a CI gate: TTFT P95 < 800 ms at 100 concurrent,
     runtime 5 minutes.
@@ -29,21 +29,27 @@ server.** TTFT is 80 or 800 ms, and 800 is exactly the threshold, so
 P95 80 ms; realistic prompts fail at P95 800 ms with 79 misses of 500 (15.8%).
 
 **FINDING: 30-50 iterations cannot resolve a P95 gate.** The lesson's CI gate
-is "30-50 iterations"; with k6's interpolation, 40 samples keep P95 under the
-threshold only if at most 1 sample exceeds it. A server whose true P95 sits
-exactly at 800 ms (5% slow) then passes 39.9% of runs, one at 3% slow 66.2%,
-and one at 10% slow still 8.0%. The exercise's 100 VUs for 5 minutes, at the
+is "30-50 iterations". With k6's interpolation, P95 of 40 samples is the 38th
+sorted value plus 5% of the step to the 39th, so how many slow samples the gate
+tolerates depends on how slow they are: 1 when they sit far over the limit
+(the 5% step alone crosses it), 2 when they sit just over it (80 ms fast
+samples tolerate a second slow one below 14,480 ms). A server whose true P95
+is exactly 800 ms (5% slow) passes 39.9% of runs in the first case and 67.7%
+in the second; one at 3% slow passes 66.2-88.2%, and one at 10% slow still
+8.0-22.3%. The exercise's 100 VUs for 5 minutes, at the
 lesson's 15 ms TPOT and the script's 256 max tokens, is about 7,400
 iterations -- not 30-50.
 
 **FINDING: "k6 v2026.1.0" is not a k6 version.** k6 moved to semantic
-versioning at 1.0 (May 2025) and its release-notes index lists 0.47-0.57,
-1.0-1.8 and 2.0-2.3; no calendar version (checked 2026-09-26). The lesson's
+versioning at v1.0.0 (2025-05-06); its GitHub releases run v0.x up to
+v0.59.0, v1.0.0-v1.8.1 and v2.0.0-v2.3.0, with no calendar-versioned tag
+(checked 2026-09-27). The lesson's
 "k6 ... added streaming-aware metrics" has no built-in metric behind it; the
 streaming here comes from the xk6-sse extension.
 
 Structure: `K6_SCRIPT` is the deliverable; `thresholds()` parses it back so the
-checks grade the shipped text; `pass_odds()` is an exact binomial.
+checks grade the shipped text; `pass_odds()` finds the tolerated count by running `gate()` on 40 samples, then
+takes an exact binomial.
 """
 
 from __future__ import annotations
@@ -55,7 +61,8 @@ from harness import parity, practice
 
 PHASE, LESSON = "17-infrastructure-and-production", "22-load-testing-llm-apis"
 MAX_TOKENS, VUS, SECONDS = 256, 100, 300
-K6_RELEASE_LINES = ("0.47-0.57", "1.0-1.8", "2.0-2.3")  # grafana.com/docs/k6/latest/release-notes
+K6_RELEASE_LINES = ("0.x-0.59", "1.0-1.8", "2.0-2.3")  # github.com/grafana/k6/releases, 2026-09-27
+TAILS = {"far": (0, 10**6), "near": (80, 801)}  # (fast, slow) sample values in ms
 
 K6_SCRIPT = """\
 import sse from 'k6/x/sse';
@@ -106,32 +113,33 @@ def ttft_samples(ref, reqs):
     return [hit] * out["cache_hits"] + [miss] * (out["n"] - out["cache_hits"])
 
 
-def pass_odds(n, slow, expr="p(95)<800"):
-    """P(gate passes) for n samples when a fraction `slow` exceed the limit."""
-    allowed = max(k for k in range(n + 1) if gate(expr, [0] * (n - k) + [10**6] * k)[0])
+def pass_odds(n, slow, tail, expr="p(95)<800"):
+    """P(gate passes) for n samples when a fraction `slow` exceed the limit by `tail`."""
+    fast, slow_ms = TAILS[tail]
+    allowed = max(k for k in range(n + 1) if gate(expr, [fast] * (n - k) + [slow_ms] * k)[0])
     odds = sum(math.comb(n, k) * slow**k * (1 - slow) ** (n - k) for k in range(allowed + 1))
     return allowed, round(odds, 3)
 
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
-    doc = parity.doc_text(PHASE, LESSON)
-    rule = thresholds(K6_SCRIPT)
+    doc, rule = parity.doc_text(PHASE, LESSON), thresholds(K6_SCRIPT)
     real = ttft_samples(ref, ref.make_realistic_workload(500))
     e2e_s = (sum(real) / len(real) + ref.TPOT_MS * MAX_TOKENS) / 1000
     return {
         "rule": rule, "shape": all(s in K6_SCRIPT for s in ("vus: 100", "duration: '5m'")),
         "uniform": gate(rule["ttft"], ttft_samples(ref, ref.make_uniform_workload(500))),
         "real": gate(rule["ttft"], real), "misses": real.count(ref.PREFIX_CACHE_MISS_TTFT_MS),
-        "odds": {s: pass_odds(40, s) for s in (0.03, 0.05, 0.10)},
+        "odds": {t: {s: pass_odds(40, s, t) for s in (0.03, 0.05, 0.10)} for t in TAILS},
         "iterations": round(VUS * SECONDS / e2e_s, -2),
         "doc": ["30-50 iterations" in doc, "k6 v2026.1.0" in doc],
     }
 
 
 def verify(result):
-    odds = {s: o for s, (_, o) in result["odds"].items()}
-    allowed = {a for a, _ in result["odds"].values()}
+    odds = {t: {s: o for s, (_, o) in by.items()} for t, by in result["odds"].items()}
+    allowed = {t: {a for a, _ in by.values()} for t, by in result["odds"].items()}
+    far, near = {0.03: 0.662, 0.05: 0.399, 0.1: 0.08}, {0.03: 0.882, 0.05: 0.677, 0.1: 0.223}
     return [
         practice.Check(
             "ANSWER: constant-vus 100 for 5m, a first-SSE-event TTFT Trend, p(95)<800",
@@ -141,22 +149,20 @@ def verify(result):
         practice.Check(
             "FINDING: against the lesson's simulator the gate grades the cache, not the server",
             [result["uniform"], result["real"], result["misses"]] == [(True, 80), (False, 800), 79],
-            f"uniform P95 {result['uniform'][1]} ms passes; realistic P95 "
-            f"{result['real'][1]} ms fails with {result['misses']}/500 misses at "
-            "exactly the 800 ms threshold",
+            f"uniform P95 {result['uniform'][1]} ms passes; realistic P95 {result['real'][1]} ms "
+            f"fails with {result['misses']}/500 misses at exactly the 800 ms threshold",
         ),
         practice.Check(
             "FINDING: 30-50 iterations cannot resolve a P95 gate",
-            all([result["doc"][0], allowed == {1}, result["iterations"] == 7400,
-                 odds == {0.03: 0.662, 0.05: 0.399, 0.1: 0.08}]),
-            f"40 samples tolerate {min(allowed)} slow one; pass probability by true slow "
+            all([result["doc"][0], allowed == {"far": {1}, "near": {2}}, result["iterations"] == 7400,
+                 odds == {"far": far, "near": near}]),
+            f"40 samples tolerate {allowed} slow ones by tail; pass probability by true slow "
             f"fraction {odds}; the exercise's run is ~{result['iterations']:.0f} iterations",
         ),
         practice.Check(
             "FINDING: 'k6 v2026.1.0' is not a k6 version",
             result["doc"][1] and not any(v.startswith("2026") for v in K6_RELEASE_LINES),
-            f"the lesson names k6 v2026.1.0; k6's release notes list {K6_RELEASE_LINES} "
-            "(checked 2026-09-26)",
+            f"the lesson names k6 v2026.1.0; k6's GitHub releases span {K6_RELEASE_LINES}",
         ),
     ]
 

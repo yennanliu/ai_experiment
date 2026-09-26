@@ -8,7 +8,7 @@ users' error budget, so it is made in the lesson's own units -- its 99.9% SLO,
 its 0.05% expected error rate, its three experiments -- over a 30-day budget.
 Two costs matter: what the experiment is planned to spend, and what it spends
 if it goes wrong (everything in the blast radius fails until the kill switch
-fires). "When" then becomes a rule, applied to four team profiles.
+fires). "When" then becomes a rule, applied to five team profiles.
 
 **ANSWER: production, once the five prerequisites hold -- the planned cost is
 negligible.** At the lesson's rates the three experiments together spend
@@ -49,6 +49,7 @@ PROFILES = {  # prerequisites held, staging green, incidents/week, budget left, 
     "no rollback": (PREREQS[:2] + PREREQS[3:], True, 1, 0.50, 5),
     "firefighting": (PREREQS, True, 3, 0.50, 5),
     "manual abort": (PREREQS, True, 1, 0.50, 15),
+    "never green in staging": (PREREQS, False, 1, 0.50, 5),
 }
 
 
@@ -103,6 +104,9 @@ def verify(result):
             all([[round(v) for v in worst.values()] == [432, 72],
                  [round(v, 3) for v in abort.values()] == [0.012, 0.069],
                  result["where"]["mature"] == ("production", "production"),
+                 result["where"]["no rollback"] == ("staging", "staging"),
+                 result["where"]["never green in staging"] == ("staging", "staging"),
+                 result["where"]["firefighting"] == ("stabilise first", "stabilise first"),
                  result["where"]["manual abort"] == ("staging", "production")]),
             f"a failed blast radius spends what is left in {worst} minutes; a 5-minute "
             f"abort risks {abort}; (30% blast, 5% blast) by profile {result['where']}",

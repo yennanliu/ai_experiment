@@ -34,10 +34,10 @@ practices; high-risk breaches are Art. 99(4), €15M or 3%. The lesson's
 whichever is *lower* for SMEs, so a screener vendor with €40M turnover and
 under 250 staff faces up to €1.2M, not €15M.
 
-**FINDING: both dates the lesson drills have moved.** Two secondary sources
-(Gibson Dunn, 27 May 2026; Usercentrics) report that the Digital Omnibus on AI
-entered into force on 27 July 2026 and defers Annex III high-risk obligations
-from 2 August 2026 to 2 December 2027, and Annex I products to 2 August 2028.
+**FINDING: both dates the lesson drills have moved.** Gibson Dunn (27 May
+2026) reports the agreed Digital Omnibus on AI deferring Annex III high-risk
+obligations from 2 August 2026 to 2 December 2027, and Annex I products to
+2 August 2028; Usercentrics reports that it entered into force on 27 July 2026.
 I did not check this against the Official Journal. Colorado SB 26-189, signed
 14 May 2026, moves that law to 1 January 2027 and drops the impact assessment
 that CONTROL_MAP cites SB24-205 for (McDermott). The screener is still
@@ -66,7 +66,7 @@ PRODUCTS = {
 }
 SECTION_2 = set(range(9, 16))
 LIMITED = {50}
-HIGH = SECTION_2 | {26, 27, 43, 49, 72}  # Ch. III obligations incl. deployers
+HIGH = SECTION_2 | {26, 27, 43, 49, 72}  # Ch. III (deployers, conformity, registration) + Art. 72 post-market
 
 
 def tier(product):

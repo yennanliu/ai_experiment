@@ -122,15 +122,18 @@ def verify(result):
             "ANSWER: at steady state 21,900 GB -- hot 300, warm 3,350, cold 18,250 -- "
             "for $66.84 a month",
             all([gb == {"hot": 300, "warm": 3350, "cold": 18250}, total == 66.84,
+                 round(gb["cold"] / sum(gb.values()), 2) == 0.83,
                  round(cost["warm"] / total, 2) == 0.63, round(cost["cold"] / total, 2) == 0.27,
                  result["gir_total"] == 38.37]),
-            f"GB {gb}, $/month {cost} = {total}; warm on Glacier IR -> {result['gir_total']}",
+            f"GB {gb}, $/month {cost} = {total}; cold {gb['cold'] / sum(gb.values()):.0%} of "
+            f"bytes, {cost['cold'] / total:.0%} of cost, warm {cost['warm'] / total:.0%}; "
+            f"warm on Glacier IR -> {result['gir_total']}",
         ),
         practice.Check(
             "FINDING: one ~280-byte line per call, archived one object per entry, "
             "costs the cold tier 800x",
             round(result["size"]) == 280 and round(result["per_day"] / 1e6, 1) == 35.7
-            and 790 < result["object_x"] < 805 and round(STANDARD / 0.00099) == 23,
+            and round(result["object_x"]) == 797 and round(STANDARD / 0.00099) == 23,
             f"{result['size']:.1f} B/entry, {result['per_day'] / 1e6:.1f}M entries/day; "
             f"per-object overhead multiplies cold cost {result['object_x']:.0f}x",
         ),

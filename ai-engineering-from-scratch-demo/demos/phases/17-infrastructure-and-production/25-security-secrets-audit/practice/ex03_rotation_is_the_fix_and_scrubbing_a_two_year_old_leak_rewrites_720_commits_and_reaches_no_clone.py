@@ -35,7 +35,8 @@ when?". That answer has to come from the provider's usage logs.
 
 Structure: `history()` builds content-addressed commits the way git chains
 parent ids; `scan()` is a two-pattern regex scanner; `respond()` scores one
-response.
+response, calling a key live when some copy still holds a key string the
+provider still accepts.
 """
 
 from __future__ import annotations
@@ -74,11 +75,19 @@ def scan(commits):
     return [i for i, (_, tree) in enumerate(commits) if any(p.search(tree) for p in PATTERNS)]
 
 
-def respond(rotate, scrub, env):
+def found(commits):
+    """Every key string a scanner (or an attacker) can pull out of these commits."""
+    return {m.group(0) for _, tree in commits for p in PATTERNS for m in p.finditer(tree)}
+
+
+def respond(rotate, scrub, env, issued):
     commits = history("" if scrub else env)
     original = history(env)  # every clone, fork and CI cache is a copy of this
+    accepted = set() if rotate else set(issued)  # provider side: rotation revokes the old keys
     return {
-        "live": not rotate, "in_history": bool(scan(commits)), "in_clones": bool(scan(original)),
+        # live: some copy still holds a key string the provider still accepts
+        "live": bool((found(commits) | found(original)) & accepted),
+        "in_history": bool(scan(commits)), "in_clones": bool(scan(original)),
         "rewritten": sum(a[0] != b[0] for a, b in zip(commits, original)),
     }
 
@@ -90,7 +99,7 @@ def solve():
     masked = ref.Scrubber().scrub(env)
     return {
         "responses": {
-            (r, s): respond(r, s, env) for r in (False, True) for s in (False, True)
+            (r, s): respond(r, s, env, (aws, oai)) for r in (False, True) for s in (False, True)
         },
         "flagged": scan(history(env)),
         "masked": sum(k not in masked for k in (aws, oai)),

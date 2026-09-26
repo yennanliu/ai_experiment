@@ -20,7 +20,7 @@ exercises:
       503.9, stddev 180 against the lesson's 150), and TPOT_MS and BATCH_EFFICIENCY_SHARED_PREFIX are
       never read although the lesson says the code measures effective TPOT
   - index: 2
-    slug: the_gate_fails_realistic_traffic_on_cache_misses_and_40_iterations_pass_an_at_sla_server_40_percent_of_the_time
+    slug: the_gate_fails_realistic_traffic_on_cache_misses_and_40_iterations_pass_an_at_sla_server_40_to_68_percent_of_the_time
     kind: code
     tier: T0
     deps_group: none
@@ -32,9 +32,10 @@ exercises:
       the shipped xk6-sse k6 script runs constant-vus 100 for 5m with thresholds ttft p(95)<800 and
       server_errors rate<0.05. Under k6's interpolated percentile on the lesson's simulate at
       concurrency 100, uniform prompts pass at P95 80 ms and realistic fail at 800 ms with 79/500
-      misses. 40 iterations tolerate 1 slow sample, so a server 3/5/10% slow passes 0.662/0.399/0.080
-      of runs; the exercise's run is ~7400 iterations against the lesson's 30-50. The lesson's k6
-      v2026.1.0 is not among k6's 0.47-0.57, 1.0-1.8, 2.0-2.3 releases
+      misses. 40 iterations tolerate 1 slow sample far over the limit or 2 just over it, so a server
+      3/5/10% slow passes 0.662/0.399/0.080 or 0.882/0.677/0.223 of runs; the exercise's run is ~7400
+      iterations against the lesson's 30-50. The lesson's k6 v2026.1.0 is not among k6's GitHub
+      releases (v0.x-0.59, 1.0-1.8, 2.0-2.3)
   - index: 3
     slug: all_three_leaks_draw_the_same_50_mb_line_and_the_lessons_own_workload_hides_the_cache_leak
     kind: code
@@ -46,10 +47,11 @@ exercises:
       你的浸泡測試顯示記憶體每小時成長 50 MB。說出三個原因，以及用來在它們之間分辨的檢測手段。
     verifies: >-
       an unbounded cache, a 1-in-100 connection-pool leak and a request_id metric label each
-      calibrated to 50.0 MB/h at 10 RPS; doubling RPS gives 100.0 MB/h for all three, while replaying
-      the realistic workload, enabling keep-alive and dropping the label each zero exactly one cause
-      and leave the others at 50.0. The lesson's realistic generator has met all 80 prefixes by
-      request 833 (83 s at 10 RPS), so its hour-two cache slope is 0.0 MB/h; uniform has 1 prefix
+      calibrated to 50.0 MB/h at 10 RPS; being per-request, doubling RPS gives 100.0 MB/h for all
+      three, while replaying the realistic workload, enabling keep-alive and dropping the label each
+      zero exactly one cause and leave the others at 50.0. The lesson's realistic generator has met
+      all 80 prefixes by request 833 (83 s at 10 RPS), so its hour-two cache slope is 0.0 MB/h;
+      uniform has 1 prefix
   - index: 4
     slug: recovery_takes_about_three_minutes_so_a_two_minute_spike_ends_before_the_fleet_catches_up
     kind: code
@@ -60,11 +62,12 @@ exercises:
     zh: |
       從 10 RPS 尖峰拉到 100 RPS。若已經有 Karpenter + vLLM production-stack（階段 17 · 03 + 18），預期的恢復時間是多少？
     verifies: >-
-      on lesson 03's simulator with rates scaled by 1/150, the 15 + 50 + 45 = 110 s chain precedes the
-      first new replica; a sustained 600 s 10x spike under queue-depth HPA drops 55 of 400 and
-      recovers at +193.5 s, KAI drops 48, Cluster Autoscaler 69. The lesson's 120 s spike drops 55 of
-      80 and recovers at +135 s, after it ends. 10 warm replicas drop 0, 4 drop 29, zero model load
-      28, zero provisioning 2; lesson 18's module has no router or autoscaler
+      on lesson 03's simulator with rates scaled by 1/150, the 15 + 50 + 45 = 110 s chain puts the
+      first new replica to work at +120 s on the 15 s tick grid; a sustained 600 s 10x spike under
+      queue-depth HPA drops 55 of 400 and recovers at +193.5 s, KAI drops 48, Cluster Autoscaler 69.
+      The lesson's 120 s spike drops 55 of 80 and recovers at +135 s, after it ends; every drop is a
+      spike arrival. 10 warm replicas drop 0, 4 drop 29, zero model load 28, zero provisioning 2;
+      lesson 18's module has no router or autoscaler
   - index: 5
     slug: the_five_ms_gap_is_ttft_spread_over_the_output_so_it_needs_a_506_ms_ttft_at_100_tokens
     kind: code

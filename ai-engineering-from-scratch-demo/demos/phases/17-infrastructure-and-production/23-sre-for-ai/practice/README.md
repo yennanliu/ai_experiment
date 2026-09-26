@@ -32,10 +32,12 @@ closed-form model built from the lesson's prose, with its assumptions stated.
 
 **It does not resolve a split. It picks the bigger number and hands it to a
 human.** Groups are ranked by the sum of their confidences. Split log (0.78)
-and metric (0.82), with the runbook agent siding with neither, and MetricAgent
-wins alone. One supporter means `adversarial_agreement` is False, so the gate
-is "human approval required". An exact 0.8 / 0.8 tie goes to whichever agent
-was listed first. Evidence is never read.
+and metric (0.82) with no third hypothesis, and MetricAgent wins alone; add the
+runbook agent on its own key and its 0.88 wins instead, which is the shipped
+run. One supporter means `adversarial_agreement` is False, so the gate is
+"human approval required". An exact 0.8 / 0.8 tie goes to whichever agent was
+listed first. Evidence is never read: stripping it leaves the shipped decision
+unchanged.
 
 **The shipped run is already a "disagreement" between agents that agree.**
 All three hypotheses describe the same KV-cache OOM. The grouping key is
@@ -50,10 +52,14 @@ also says "unclear" at 0.54 outsums RB-017's 0.88, and the result is top root
 cause "unclear", confidence 0.445, "safe action auto-approved". Two
 hypotheses at 0.45 beat one at 0.88 the same way.
 
-**Agreement is a 30-character prefix, and the action is a constant.** "GPU
-memory utilization hit 98%" and "… hit 40% only" count as agreement. Every run
-proposes "restart pod + lower --gpu-memory-utilization". The metric and runbook
-agents ignore the incident text, so a DNS incident still gets RB-017 at 0.88.
+**Agreement is a 30-character prefix, and the action is a constant.** The key
+is the text before " on " / " hit ", cut to 30 characters. "GPU memory
+utilization hit 98%" and "… hit 40% only" share the key "GPU memory
+utilization", and "Matches runbook RB-017: KV cache OOM …" and "… KV cache is
+healthy …" share the 30-character cut; both pairs count as agreement. Every
+run proposes "restart pod + lower --gpu-memory-utilization". The metric and
+runbook agents ignore the incident text, so a DNS incident still gets RB-017
+at 0.88.
 
 ### 2 — restart is safe only below (N-1)/N load, and the reference auto-approves a limit change
 
@@ -62,12 +68,12 @@ guard, and the guard is its justification:
 
 | action | guard | why it is safe |
 |---|---|---|
-| restart one pod | survivor load u·N/(N-1) ≤ 1; one pod at a time, not the same pod twice in 30 min | recreated from the same image; blast radius one pod |
+| restart one pod | survivor load u·N/(N-1) ≤ 1; one pod at a time, not the same pod twice in 30 min (denied even at 50% load) | recreated from the same image; blast radius one pod |
 | revert last deploy | landed ≤ 60 min before onset, no migration | image revert is undone by redeploying |
 | scale pool | stays in [2, 8], at most ±2 per step | a wrong call costs at most 2 GPUs |
 
 The restart bound is the one people skip. (N-1)/N is 0.5 at N=2, 0.75 at N=4
-and 0.88 at N=8, and at N=1 a restart is an outage. At 80% load on 4 pods the
+and 0.875 at N=8, and at N=1 a restart is an outage. At 80% load on 4 pods the
 survivors run at 106.7%, so the restart turns one bad pod into a pool
 overload.
 
@@ -92,7 +98,8 @@ The template has five sections and 15 required fields:
 - **act**: action, guard, rollback
 
 A validator rejects a runbook with any field missing, or with a verify
-command whose metric unit does not match its `expect`. RB-017 rewritten in
+step whose declared `unit` is not the unit its command returns (a bare DCGM
+framebuffer metric is MiB; metric / metric is a ratio). RB-017 rewritten in
 the template validates and survives a markdown round trip. The reference's
 RB-017, which is the runbook agent's evidence, fills 3 of the 15 fields: id,
 last-applied date and action. It has no symptom query, verify step or
@@ -101,7 +108,8 @@ rollback.
 **The unit field is what catches the shipped query.** The metric agent's
 evidence is "DCGM_FI_DEV_FB_USED >= 97% for 240s". dcgm-exporter's metric list
 documents that field as "Framebuffer memory used (in MiB)" (checked
-2026-09-26). Read literally, the condition compares MiB to 97, so a GPU
+2026-09-26), so the validator rejects it declared as "%" and equally
+relabelled "ratio". Read literally, the condition compares MiB to 97, so a GPU
 holding only 16 GB of weights (16384 MiB) satisfies it from the moment the
 model loads. The command that means 97% is `FB_USED / (FB_USED + FB_FREE)
 >= 0.97`, which reads 0.2 on that GPU.
@@ -152,8 +160,8 @@ The case rests on three things.
 **Volume.** The lesson's claim is that the first 20 of a 30-minute
 investigation are automatable. The lesson's own skill file
 (`outputs/skill-ai-sre-plan.md`) refuses a full rollout below 10 incidents a
-month. At that floor, automation saves about 200 engineer-minutes a month,
-roughly an hour and a half per person. That is real, but small next to the
+month. At that floor, automation saves about 200 engineer-minutes a month
+(10 × 20), a little over an hour per person on a 3-person team. That is real, but small next to the
 cost of running a supervisor and three agents, and small next to the cost of
 the misfires exercise 1 shows.
 

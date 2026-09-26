@@ -12,14 +12,16 @@ exercises:
     zh: |
       跑 `code/main.py`。若日誌代理與指標代理意見不一致會怎樣？監督者怎麼裁決？
     verifies: >-
-      with log 0.78 and metric 0.82 split and no third supporter the supervisor picks MetricAgent
-      alone with gate human approval required, and a 0.8/0.8 tie goes to the first-listed LogAgent.
-      The shipped run keys its three KV-cache-OOM hypotheses into three groups and reports
-      RunbookAgent alone at 0.88; identical wording for log and metric wins at 0.80, below the lone
-      0.88, because agreement is averaged. Two unclear hypotheses at 0.35 + 0.54 outsum RB-017 0.88
-      and are auto-approved at 0.445, as is a 0.45 + 0.45 pair; hit 98% and hit 40% only share a
-      30-character key; the proposed action is the same constant for a checkout and a DNS incident,
-      and a DNS incident still gets RB-017 at 0.88
+      with log 0.78 and metric 0.82 split and no third hypothesis the supervisor picks MetricAgent
+      alone with gate human approval required, a 0.8/0.8 tie goes to the first-listed LogAgent, and
+      stripping all evidence leaves the shipped decision unchanged. The shipped run keys its three
+      KV-cache-OOM hypotheses into three groups and reports RunbookAgent alone at 0.88; identical
+      wording for log and metric wins at 0.80, below the lone 0.88, because agreement is averaged. Two
+      unclear hypotheses at 0.35 + 0.54 outsum RB-017 0.88 and are auto-approved at 0.445, as is a
+      0.45 + 0.45 pair; hit 98% and hit 40% only share the key GPU memory utilization, and KV cache
+      OOM vs KV cache is healthy share the 30-character cut; the proposed action is the same constant
+      for a checkout and a DNS incident, the metric agent answers both identically, and a DNS incident
+      still gets RB-017 at 0.88
   - index: 2
     slug: restart_is_safe_only_below_n_minus_one_over_n_load_and_the_reference_auto_approves_a_limit_change
     kind: code
@@ -30,12 +32,13 @@ exercises:
     zh: |
       替你的服務定義三項「安全」的自動修復動作。每一項都論證一次。
     verifies: >-
-      the restart bound (N-1)/N is 0, 0.5, 0.75, 0.88 for N = 1, 2, 4, 8; 80% load on 4 pods puts
-      survivors at 106.7%, so restart is allowed at 0.7 and denied at 0.8; revert is allowed for a
-      20-minute-old image deploy and denied at 3 days or with a migration; scale 4 -> 6 is allowed and
-      4 -> 12 and 8 -> 10 denied. The reference action splits into restart (allowed) and lower
-      --gpu-memory-utilization (denied, a resource-limit change), which RB-017 labels a safe action;
-      0.90 -> 0.85 on 80 GB with 16 GB of weights cuts the KV budget 56 -> 52 GB, 7.1%
+      the restart bound (N-1)/N is 0, 0.5, 0.75, 0.875 for N = 1, 2, 4, 8; 80% load on 4 pods puts
+      survivors at 106.7%, so restart is allowed at 0.7 and denied at 0.8 and for a repeat restart at
+      0.5; revert is allowed for a 20-minute-old image deploy and denied at 3 days or with a
+      migration; scale 4 -> 6 is allowed and 4 -> 12 and 8 -> 10 denied. The reference action splits
+      into restart (allowed) and lower --gpu-memory-utilization (denied, off the allowlist; the lesson
+      lists resource-limit changes as not safe), which RB-017 labels a safe action; 0.90 -> 0.85 on 80
+      GB with 16 GB of weights cuts the KV budget 56 -> 52 GB, 7.1%
   - index: 3
     slug: the_shipped_verify_query_compares_mib_to_a_percent_and_fires_on_an_idle_gpu
     kind: code
@@ -48,10 +51,10 @@ exercises:
     verifies: >-
       the template has 5 sections and 15 required fields; the rewritten RB-017 validates and
       round-trips through markdown, and the reference RB-017 fills 3 of 15. The metric evidence
-      DCGM_FI_DEV_FB_USED >= 97% is rejected by the unit check because the field is MiB; 16 GB of
-      weights reads 16384 MiB >= 97 while the used ratio is 0.2. runbook_agent returns RB-017 for a
-      checkout and a DNS incident alike, while symptom-field retrieval returns RB-017 for checkout and
-      nothing for DNS
+      DCGM_FI_DEV_FB_USED >= 97% is rejected by the unit check because the field is MiB, both declared
+      as % and relabelled ratio; 16 GB of weights reads 16384 MiB >= 97 while the used ratio is 0.2.
+      runbook_agent returns RB-017 for a checkout and a DNS incident alike, while symptom-field
+      retrieval returns RB-017 for checkout and nothing for DNS
   - index: 4
     slug: the_89_percent_is_recall_and_the_page_decision_turns_on_the_precision_nobody_quotes
     kind: code

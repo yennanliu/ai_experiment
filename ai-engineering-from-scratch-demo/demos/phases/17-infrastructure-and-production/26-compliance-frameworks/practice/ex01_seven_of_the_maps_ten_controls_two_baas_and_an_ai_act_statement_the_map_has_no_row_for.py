@@ -108,6 +108,8 @@ def solve():
         "functions": [n for n, o in vars(ref).items() if inspect.isfunction(o)],
         "articles": articles(cm),
         "window": "6-12 months of operated controls" in parity.doc_text(PHASE, LESSON),
+        "limited": "Most B2B LLM SaaS is limited-risk" in parity.doc_text(PHASE, LESSON),
+        "untouched": sorted(set(cm) - union),
     }
 
 
@@ -117,16 +119,12 @@ def verify(result):
         practice.Check(
             "ANSWER: Type I plus a running window, two BAAs, a limited-risk statement, "
             "7 of the map's 10 controls",
-            all(
-                [
-                    len(result["union"]) == 9,
-                    len(result["answer"]["controls"]) == 7,
-                    result["rows"] == 10,
-                    result["window"],
-                ]
-            ),
-            f"the three asks touch {len(result['union'])} of {result['rows']} rows; without "
-            f"the high-risk-only rows: {result['answer']['controls']}",
+            (len(result["union"]), result["rows"], len(result["answer"]["controls"]))
+            == (9, 10, 7)
+            and result["untouched"] == ["data subject rights"]
+            and result["window"] and result["limited"],
+            f"the three asks touch {len(result['union'])} of {result['rows']} rows (not "
+            f"{result['untouched']}); without the high-risk-only rows: {result['answer']['controls']}",
         ),
         practice.Check(
             'FINDING: by the map, 2 controls "cover" all three frameworks',

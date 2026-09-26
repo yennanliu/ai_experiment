@@ -43,6 +43,7 @@ Structure: `verdicts()` reruns the reference `run_experiment` on its own
 from __future__ import annotations
 
 import dataclasses
+import inspect
 
 from harness import parity, practice
 
@@ -96,6 +97,8 @@ def solve():
         "at_21": verdicts(ref, blast_radius_pct=0.21),
         "long": verdicts(ref, duration_min=500),
         "doc_20": "20%" in doc,
+        "budget_read": "ERROR_BUDGET_PER_DAY" in inspect.getsource(ref.run_experiment),
+        "pod_over_2": ref.EXPERIMENTS[0].induced_error_rate / ref.ERROR_BUDGET_PER_DAY > 2.0,
         "skill_cap": "< 30% of fleet" in skill,
     }
 
@@ -121,10 +124,11 @@ def verify(result):
         practice.Check(
             "FINDING: the burn rate is measured against the baseline, not the budget, "
             "and ignores duration",
-            all([result["vs_budget"] == [2.0, 15.0, 40.0],
-                 result["long"] == [False, True, False]]),
+            all([result["vs_budget"] == [2.0, 15.0, 40.0], not result["pod_over_2"],
+                 not result["budget_read"], result["long"] == [False, True, False]]),
             f"against the 0.1% budget burn is {result['vs_budget']}x (pod kill exactly 2.0, "
-            f"not over 2); a 500-minute run gets verdicts {result['long']}",
+            f"over 2: {result['pod_over_2']}); run_experiment reads ERROR_BUDGET_PER_DAY: "
+            f"{result['budget_read']}; a 500-minute run gets verdicts {result['long']}",
         ),
         practice.Check(
             "FINDING: read as a daily budget, nothing trips",

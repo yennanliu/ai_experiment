@@ -90,7 +90,7 @@ def integrity(sec, lines):
     return {
         "claims": "Appends to an immutable audit log" in " ".join(sec.__doc__.split()),
         "writes": bool(re.search(r"open\(|\.write\(", inspect.getsource(sec))),
-        "plain_detect": broken_at(chain(tamper(lines))),
+        "linked": any(sec.hash_short(a) in b for a, b in zip(lines, lines[1:])),
         "chained_detect": broken_at(tamper(chain(lines))),
     }
 
@@ -144,11 +144,11 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson's log is not appended, retained or tamper-evident",
-            [result[k] for k in ("claims", "writes", "plain_detect", "chained_detect")]
-            == [True, False, None, 1],
-            "docstring claims an immutable append, source opens no file; editing entry 1 "
-            f"before chaining is detected at {result['plain_detect']}, after chaining at "
-            f"entry {result['chained_detect']}",
+            [result[k] for k in ("claims", "writes", "linked", "chained_detect")]
+            == [True, False, False, 1],
+            "docstring claims an immutable append, source opens no file, and no entry carries "
+            "its predecessor's hash, so an edit to entry 1 goes undetected; with a prev "
+            f"chain it is caught at entry {result['chained_detect']}",
         ),
         practice.Check(
             'FINDING: "Model + version" is logged as a model name',

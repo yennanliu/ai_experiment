@@ -16,7 +16,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
 | 1 | Run `code/main.py`. Compare uniform vs realistic distribution — where is the gap? | code | T0 | `ex01_the_gap_is_only_in_the_tail_and_prompt_length_and_concurrency_never_reach_the_latency.py` |
-| 2 | Write the k6 script for a CI gate: TTFT P95 < 800 ms at 100 concurrent, runtime 5 minutes. | code | T0 | `ex02_the_gate_fails_realistic_traffic_on_cache_misses_and_40_iterations_pass_an_at_sla_server_40_percent_of_the_time.py` |
+| 2 | Write the k6 script for a CI gate: TTFT P95 < 800 ms at 100 concurrent, runtime 5 minutes. | code | T0 | `ex02_the_gate_fails_realistic_traffic_on_cache_misses_and_40_iterations_pass_an_at_sla_server_40_to_68_percent_of_the_time.py` |
 | 3 | Your soak test shows memory growing 50 MB/hour. Name three causes and the instrumentation to… | code | T0 | `ex03_all_three_leaks_draw_the_same_50_mb_line_and_the_lessons_own_workload_hides_the_cache_leak.py` |
 | 4 | Spike test from 10 RPS to 100 RPS. What's the expected recovery time if Karpenter + vLLM prod… | code | T0 | `ex04_recovery_takes_about_three_minutes_so_a_two_minute_spike_ends_before_the_fleet_catches_up.py` |
 | 5 | GenAI-Perf reports TPOT=6ms; LLMPerf reports TPOT=11ms on the same server. Explain. | code | T0 | `ex05_the_five_ms_gap_is_ttft_spread_over_the_output_so_it_needs_a_506_ms_ttft_at_100_tokens.py` |
@@ -27,9 +27,9 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 All five are code. Exercises 1-3 run the lesson's own `simulate` and workload
 generators. Exercise 4 drives lesson 03's autoscaling simulator and reads
 lesson 18's module, and exercise 5 runs lesson 08's `RequestTrace`. External
-sources were read on 2026-09-26: k6's metrics reference and release-notes
-index, the xk6-sse README, LLMPerf's source (`token_benchmark_ray.py` and the
-OpenAI chat client), and NVIDIA's NIM benchmarking metrics page. No k6 binary
+sources were read on 2026-09-26: k6's metrics reference, the xk6-sse README, LLMPerf's source (`token_benchmark_ray.py` and the
+OpenAI chat client), and NVIDIA's NIM benchmarking metrics page; k6's GitHub
+release list was read on 2026-09-27. No k6 binary
 was run; the script's threshold is evaluated in Python with k6's percentile
 rule.
 
@@ -62,14 +62,14 @@ in the first batch, and the gap closes as concurrency rises:
 
 **Prompt length never reaches the latency.** `simulate` never reads
 `prompt_tokens`. The uniform prompts are 2000 tokens against a realistic mean
-of 503.9, four times the prefill, and they still report faster. Setting every
+of 503.9, about four times the tokens to prefill, and they still report faster. Setting every
 realistic prompt to 2000 tokens changes no number. The generator also uses
 stddev 180 where the lesson's LLMPerf example uses 150.
 
 **Nothing measures TPOT.** "Use It" says the code "measures effective TPOT".
 `TPOT_MS` and `BATCH_EFFICIENCY_SHARED_PREFIX` are defined and never read.
 
-### 2 — the gate fails realistic traffic on cache misses, and 40 iterations pass an at-SLA server 40% of the time
+### 2 — the gate fails realistic traffic on cache misses, and 40 iterations pass an at-SLA server 40 to 68% of the time
 
 The script (`K6_SCRIPT` in the file) runs a `constant-vus` scenario, 100 VUs
 for `5m`. TTFT is a custom `Trend` recorded at the first SSE event through
@@ -89,21 +89,25 @@ while fewer than about 5% of requests miss. Uniform prompts pass at P95 80 ms.
 Realistic prompts fail at P95 800 ms, with 79 misses in 500.
 
 **30-50 iterations cannot resolve a P95 gate.** The lesson's CI gate is
-"30-50 iterations". With k6's interpolated percentile (`TrendSink.P` in k6's source), 40 samples stay under
-the threshold only if at most one of them exceeds it:
+"30-50 iterations". With k6's interpolated percentile (`TrendSink.P` in k6's
+source), P95 of 40 samples is the 38th sorted value plus 5% of the step to the
+39th. So the gate tolerates one slow sample when the slow samples sit far over
+the limit, and two when they sit just over it (with 80 ms fast samples, a
+second slow one passes while it is under 14,480 ms):
 
-| true fraction above 800 ms | chance the gate passes |
-|---:|---:|
-| 3% | 0.662 |
-| 5% (exactly at SLA) | 0.399 |
-| 10% | 0.080 |
+| true fraction above 800 ms | gate passes (slow far over) | gate passes (slow just over) |
+|---:|---:|---:|
+| 3% | 0.662 | 0.882 |
+| 5% (exactly at SLA) | 0.399 | 0.677 |
+| 10% | 0.080 | 0.223 |
 
 The exercise's own run, 100 VUs for 5 minutes at the lesson's 15 ms TPOT and
 256 max tokens, is about 7,400 iterations.
 
 **"k6 v2026.1.0" is not a k6 version.** k6 moved to semantic versioning at
-1.0 (May 2025), and its release-notes index lists 0.47-0.57, 1.0-1.8 and
-2.0-2.3. The streaming support in this script comes from the xk6-sse
+v1.0.0 (2025-05-06). Its GitHub releases run v0.x up to v0.59.0,
+v1.0.0-v1.8.1 and v2.0.0-v2.3.0, with no calendar-versioned tag (checked
+2026-09-27). The streaming support in this script comes from the xk6-sse
 extension, not from a built-in metric.
 
 ### 3 — all three leaks draw the same 50 MB line, and the lesson's own workload hides the cache leak
@@ -121,8 +125,10 @@ Each cause is calibrated so that, on its own, it produces the observed
 two at 50.0.
 
 **The memory graph cannot tell them apart, and neither can load.** All three
-give 50.0 MB/h at baseline. Doubling RPS takes all three to 100.0 MB/h. The
-one knob a soak test turns moves every candidate together.
+give 50.0 MB/h at baseline, by calibration. Each driver is per request, so
+doubling RPS takes all three to 100.0 MB/h. The one knob a soak test turns
+moves every candidate together; only the gauges and the A/B runs separate
+them. These slopes come from this model, not from a measured process.
 
 **The lesson's realistic workload hides an unbounded cache.**
 `make_realistic_workload` draws from 80 prefixes and has met all 80 by request
@@ -140,13 +146,16 @@ from the spike's start to the last request that was dropped or waited more
 than one tick.
 
 **About 3 minutes.** On a sustained 10-minute spike, queue-depth HPA drops 55
-requests and recovers at +193.5 s. The first new replica cannot serve before
-15 + 50 + 45 = 110 s; after that the backlog drains. Lesson 03's own "2-5
+requests and recovers at +193.5 s. The chain is 15 + 50 + 45 = 110 s: the
+scale-up fires on the +15 s tick and the replica is ready at +110 s, so on the
+15 s tick grid the first new replica serves at +120 s. After that the backlog
+drains. Lesson 03's own "2-5
 minutes" for a from-zero request brackets it. KAI's more aggressive rule
 drops 48, and Cluster Autoscaler's 110 s provisioning drops 69.
 
 **The lesson's 2-minute spike ends before the fleet recovers.** On a 120 s
-spike, 55 of the 80 spike arrivals are dropped (69%), and waits settle at
+spike, 55 of the 80 spike arrivals are dropped (69%, and no request outside
+the spike is dropped), and waits settle at
 +135 s, after the spike is over. The 10-minute spike drops the same 55, so the
 provisioning chain sets the loss, not the spike's length. A 2-minute spike
 test measures warm headroom, not autoscaling.
@@ -163,7 +172,7 @@ test measures warm headroom, not autoscaling.
 | zero model load and provisioning | 2 |
 
 **Production-stack contributes no term.** Lesson 18's module has
-`make_workload`, `simulate` and KV-block constants, and no router, autoscaler
+`make_workload`, `simulate`, and throughput and KV-block constants, and no router, autoscaler
 or replica count. KV offload and cache-aware routing change the work each
 replica does, not how fast capacity arrives.
 

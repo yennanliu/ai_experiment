@@ -19,8 +19,9 @@ symptom query, no verify step and no rollback.
 
 **FINDING: the shipped verification query would fire on an idle GPU.** The
 metric agent's evidence is "DCGM_FI_DEV_FB_USED >= 97% for 240s". dcgm-exporter
-documents that field as "Framebuffer memory used (in MiB)", so a unit-checked
-`expect` rejects the comparison. Read literally it compares MiB to 97: a GPU
+documents that field as "Framebuffer memory used (in MiB)", so the validator
+rejects the step declared as "%" -- and still rejects it relabelled "ratio",
+because only `metric / metric` is dimensionless. Read literally it compares MiB to 97: a GPU
 holding nothing but 16 GB of weights reads 16384, and the condition holds from
 the moment the model loads. The command that means 97% is `FB_USED /
 (FB_USED + FB_FREE) >= 0.97`, which is 0.2 on that GPU.
@@ -67,11 +68,16 @@ RB017 = {
 def validate(book):
     missing = [f"{s}.{f}" for s, fields in TEMPLATE.items() for f in fields
                if not book.get(s, {}).get(f)]
-    metric = book.get("verify", {}).get("command", "").split(" ")[0]
-    unit = book.get("verify", {}).get("unit")
-    if metric in UNITS and unit not in (UNITS[metric], "ratio"):
-        missing.append(f"verify.unit: {metric} is {UNITS[metric]}, not {unit}")
+    cmd, unit = book.get("verify", {}).get("command", ""), book.get("verify", {}).get("unit")
+    actual = "ratio" if " / " in cmd else UNITS.get(cmd.split(" ")[0])  # metric / metric
+    if cmd.split(" ")[0] in UNITS and unit != actual:
+        missing.append(f"verify.unit: {cmd} is {actual}, not {unit}")
     return missing
+
+
+def literal(evidence):  # the metric agent's 'METRIC >= N% for Ts' as a verify step
+    metric, op, value = evidence.split(" ")[:3]
+    return {"command": metric, "expect": f"{op} {value.rstrip('%')}", "unit": value[-1]}
 
 
 def render(book):
@@ -90,8 +96,7 @@ def parse(text):
     return book
 
 
-def shipped(ref):
-    """The reference RB-017, i.e. the runbook agent's evidence, placed in the template."""
+def shipped(ref):  # the reference RB-017, i.e. the runbook agent's evidence, in the template
     ev = dict(e.split(": ", 1) for e in ref.runbook_agent("").evidence)
     return {"meta": {"id": ev["runbook"], "last_verified": ev["last applied"]},
             "act": {"action": ev["safe action"]}}
@@ -109,10 +114,9 @@ def solve():
                  "dns": "DNS resolution failures in payments"}
     return {
         "fields": sum(map(len, TEMPLATE.values())), "ours": validate(RB017),
-        "round_trip": parse(render(RB017)) == RB017,
-        "shipped_missing": validate(shipped(ref)),
-        "fb_evidence": fb, "literal": validate({**RB017, "verify": {
-            "command": "DCGM_FI_DEV_FB_USED", "expect": ">= 97", "unit": "%"}}),
+        "round_trip": parse(render(RB017)) == RB017, "shipped_missing": validate(shipped(ref)),
+        "fb_evidence": fb, "literal": validate({**RB017, "verify": literal(fb)}),
+        "mislabelled": validate({**RB017, "verify": {**literal(fb), "unit": "ratio"}}),
         "idle": (16 * 1024 >= 97, round(16 * 1024 / (80 * 1024), 2)),
         "agent": {k: ref.runbook_agent(v).evidence[0] for k, v in incidents.items()},
         "retrieved": {k: retrieve(ref.log_agent(v).evidence, [RB017])
@@ -133,8 +137,11 @@ def verify(result):
         practice.Check(
             "FINDING: the shipped verification query would fire on an idle GPU",
             "DCGM_FI_DEV_FB_USED >= 97%" in result["fb_evidence"] and result["literal"]
-            == ["verify.unit: DCGM_FI_DEV_FB_USED is MiB, not %"] and result["idle"] == (True, 0.2),
-            f"'{result['fb_evidence']}' is rejected {result['literal']}; 16 GB of weights "
+            == ["verify.unit: DCGM_FI_DEV_FB_USED is MiB, not %"]
+            and result["mislabelled"] == ["verify.unit: DCGM_FI_DEV_FB_USED is MiB, not ratio"]
+            and result["idle"] == (True, 0.2),
+            f"'{result['fb_evidence']}' is rejected {result['literal']}, and relabelled "
+            f"'ratio' is still rejected {result['mislabelled']}; 16 GB of weights "
             f"reads 16384 MiB >= 97 = {result['idle'][0]}, ratio {result['idle'][1]}",
         ),
         practice.Check(
