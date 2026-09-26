@@ -1,0 +1,80 @@
+lesson: 26-compliance-frameworks
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/26-compliance-frameworks/docs/en.md
+exercises:
+  - index: 1
+    slug: seven_of_the_maps_ten_controls_two_baas_and_an_ai_act_statement_the_map_has_no_row_for
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your first enterprise customer requires SOC 2 Type II, HIPAA BAA, EU AI Act statement. What is the minimum viable compliance posture to win the deal?
+    zh: |
+      你的第一位企業客戶要求 SOC 2 Type II、HIPAA BAA、歐盟 AI 法聲明。要拿下這個案子，最小可行的法遵姿態是什麼？
+    verifies: >-
+      the three asks touch 9 of CONTROL_MAP's 10 rows and 7 once the high-risk-only conformity and
+      impact assessments are dropped; 10 pairs of rows each touch SOC 2, HIPAA and the EU AI Act. No
+      PROFILE_MAP row is exactly this customer, the smallest holding all three is ('EU', 'healthcare')
+      with 'HIPAA (global)', the module's only function is main, and all 7 profiles require SOC 2 Type
+      II. The map's EU AI Act citations are Art. 10, 27 and 43, all high-risk; Art. 50 has no row
+  - index: 2
+    slug: only_the_cv_screener_is_high_risk_and_the_map_holds_neither_its_logging_nor_its_documentation_article
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Classify three hypothetical LLM products under EU AI Act risk tiers. What changes at high-risk?
+    zh: |
+      把三個假想的 LLM 產品依歐盟 AI 法的風險層級分類。進到高風險之後有什麼改變？
+    verifies: >-
+      the support chatbot classifies limited, the CV screener high and the code reviewer minimal;
+      CONTROL_MAP rows binding each tier are 0, 3 and 0. The map cites Art. 43 but neither Art. 11 nor
+      Art. 12, and of Art. 9-15 only Art. 10. main() closes with the high-risk date and the EUR 35M /
+      7% prohibited-practice ceiling; for an SME at EUR 40M turnover Art. 99(6) gives EUR 1.2M against
+      EUR 15M. The lesson teaches August 2, 2026 and June 30, 2026 and maps impact assessment to
+      SB24-205
+  - index: 3
+    slug: the_lesson_25_scrubber_passes_the_name_dates_and_address_and_the_log_cannot_say_whose_phi_left
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You accidentally sent PHI to a provider without BAA. Walk through the incident response.
+    zh: |
+      你不小心把 PHI 送給了一家沒有 BAA 的供應商。把事故應變流程走一遍。
+    verifies: >-
+      from discovery on 2026-03-02 the business-associate notice is due 2026-05-01, chained patient
+      notice 2026-06-30, and HHS 2027-03-01 under 500 affected or 2026-06-30 at 600. Lesson 25's
+      scrubber masks 4 values of a clinical note, the MRN as [PHONE_001], and leaves the name, dates,
+      address and health-plan ID; two patients' refill requests log the same prompt_hash, and no
+      AuditEntry field names a patient. The only CONTROL_MAP breach citation is under change
+      management and no row cites 164.402-414
+  - index: 4
+    slug: not_by_the_lessons_own_map_which_requires_it_for_2_of_7_profiles_and_credits_it_with_0_of_10_controls
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether ISO 42001 is "necessary in 2026" for a mid-market AI vendor.
+    zh: |
+      論證 ISO 42001 對一家中型市場的 AI 供應商而言，在 2026 年是不是「必要的」。
+    verifies: >-
+      PROFILE_MAP requires ISO 42001 for 2 of 7 profiles, ('US', 'B2B SaaS') and ('Global',
+      'enterprise'), and for 1 of the 3 profiles carrying the EU AI Act; no mid-market profile exists.
+      CONTROL_MAP cites ISO 42001 in 0 of 10 rows against 5 for ISO 27001, impact assessment cites
+      only Colorado and Art. 27, and all 5 ISO 27001 citations are Annex A controls, none a clause
+  - index: 5
+    slug: seven_fields_reach_five_frameworks_but_the_logging_clauses_sit_under_retention_and_nothing_is_written
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Map your LLM audit log fields (Phase 17 · 25) to at least three framework controls.
+    zh: |
+      把你的 LLM 稽核日誌欄位（階段 17 · 25）對映到至少三個框架的控制項。
+    verifies: >-
+      7 of the 10 AuditEntry fields map to 7 clauses across 5 frameworks, and tokens and cost map to
+      none, cost_usd being 0.0012 on entries of 11, 6 and 7 tokens. The mapping shares 0 clauses with
+      CONTROL_MAP's access-logging row and 3 with audit-log retention. Lesson 25 claims an immutable
+      append but opens no file; an edit to entry 1 goes undetected, and with a prev hash chain it is
+      caught at entry 1. Every entry logs the model as anthropic/claude-3.7-sonnet with no version

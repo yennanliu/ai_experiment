@@ -1,0 +1,80 @@
+lesson: 27-finops-llms
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/27-finops-llms/docs/en.md
+exercises:
+  - index: 1
+    slug: the_kill_switch_fires_at_z_4_8_on_the_normal_tenant_for_97_cents
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what z-score does the kill switch fire? How do you pick the threshold?
+    zh: |
+      跑 `code/main.py`。緊急停止開關在什麼 z 分數觸發？你要怎麼挑那個門檻？
+    verifies: >-
+      on the shipped seed-7 run the kill switch fires once, at z = 4.80 on tenant_A_normal, on $0.97
+      against a $100 contract; tenant_C_abusive peaks at z = 1.89, averages $15.38 against a $20
+      contract and no cap breach prints. Over 1000 seeds x 3 steady tenants z = 4 falsely pauses 5.2%
+      and catches 42.2% of 2x and 80.5% of 3x spike days, false pauses falling monotonically from
+      30.2% at z = 2 to 0.3% at z = 8; adding spend > contract cuts false pauses to 1.5%, all tenant
+      C. simulate_day reads neither rate_limit_per_min nor minute_count
+  - index: 2
+    slug: the_dashboard_needs_a_layer_view_in_dollars_because_response_is_5pct_of_tokens_and_30pct_of_cost
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a per-tenant, per-task cost dashboard. What are the 5 views you build first?
+    zh: |
+      設計一份逐租戶、逐任務的成本儀表板。你最先做的 5 個視圖是什麼？
+    verifies: >-
+      five views over a seeded 3000-trace log each sum to the same $19.35 bill; the lesson's sample
+      trace is 61.0/20.3/13.6/5.1% of tokens, outside its own prompt and response rows, and
+      45/15/10/30% of dollars at GPT-5 list price. TenantState has 4 fields, none a user, task, route
+      or layer, and the skill file's five views include no layer view
+  - index: 3
+    slug: caching_37pct_of_input_closes_a_30pct_loss_and_trimming_output_would_need_a_77pct_cut
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your largest tenant is unit-economics-negative. Propose three interventions ordered by customer impact.
+    zh: |
+      你最大的租戶在單位經濟上是負的。提出三項介入手段，依對客戶的衝擊排序。
+    verifies: >-
+      at cost = 1.3x revenue on the sample trace at GPT-5 prices, the break-even share of each lever
+      alone is cache 36.6% of input, route 28.8% of calls to gpt-5-mini, batch 46.2% of calls, trim
+      76.9% of response tokens, reprice 30%. The lesson's stack gives 7.4% of baseline with batch and
+      14.8% without. Reading contract as revenue, seed-7 margins are 99.3/96.7/23.1%, the kill switch
+      pauses A, C is over contract on days 3 and 9, and over 1000 seeds C is over contract on 17.0% of
+      days and over its 2x cap on 0
+  - index: 4
+    slug: the_cached_rate_prices_a_ticket_at_0375_but_a_10pct_response_share_alone_costs_300
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute cost per resolved ticket for a support product: 3M tokens/ticket, ~800 tickets/day, GPT-5 cached rate.
+    zh: |
+      替一個客服產品算出每張已解決工單的成本：每張工單 300 萬詞元、每天約 800 張、用 GPT-5 的快取費率。
+    verifies: >-
+      at GPT-5 list, 3M cached tokens is $0.375 a ticket, $300 a day and $9,000 a month; uncached
+      $3.75; with 90% cache hits and 10/20/30% response a ticket is $3.64/$6.57/$9.50, and per
+      resolved $3.64/$4.55/$6.07 at 100/80/60% resolution. The reference simulate_day prices one
+      3M-token request at $30.00, 80x; the lesson's sample trace cost_usd $0.0135 matches neither
+      GPT-5 ($0.0050 uncached, $0.00185 cached) nor flat $10/M ($0.0295); 3M tokens over a 400k
+      context is at least 8 calls
+  - index: 5
+    slug: retroactive_attribution_is_exact_per_key_and_12pct_wrong_once_one_tenant_runs_agents
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether retroactive tagging can ever work. When is it acceptable?
+    zh: |
+      論證回溯打標籤有沒有可能行得通。什麼時候它是可以接受的？
+    verifies: >-
+      over a seeded 29,457-call log in the reference's traffic model, attribution by API key
+      misattributes 0.0%, a shared key split by request counts 1.5% daily and 1.1% overall, and with
+      one tenant at 4x tokens per request 12.2% daily and 12.0% overall; every method conserves the
+      bill, against the skill file's '~10-30%' lost

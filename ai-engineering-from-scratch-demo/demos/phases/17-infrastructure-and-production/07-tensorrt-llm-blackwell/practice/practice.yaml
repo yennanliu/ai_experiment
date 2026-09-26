@@ -1,0 +1,78 @@
+lesson: 07-tensorrt-llm-blackwell
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/07-tensorrt-llm-blackwell/docs/en.md
+exercises:
+  - index: 1
+    slug: the_biggest_jump_is_bandwidth_but_two_thirds_of_the_b200_row_is_hardcoded_multipliers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. On a 120B MoE with 30% active parameters, compute the memory-bandwidth-limited decode throughput on H100 BF16, H100 FP8, and B200 NVFP4/FP8. Where does the biggest jump come from?
+    zh: |
+      跑 `code/main.py`。對一個 30% 參數活躍的 120B MoE，算出在 H100 BF16、H100 FP8 與 B200 NVFP4/FP8 上受記憶體頻寬限制的解碼吞吐量。最大的躍升來自哪裡？
+    verifies: >-
+      on the 120B / 36B-active row decode is 47 -> 93 -> 1280 tok/s on H100 BF16, H100 FP8 and B200;
+      the H100 FP8 -> B200 step is 13.76x = bandwidth 2.39 x NVFP4 2.0 x MTP 1.8 x disagg 1.6,
+      bandwidth the largest. Bandwidth over weight bytes alone gives 444.4 tok/s, so 836 tok/s of the
+      row are two constants. KV at 16, 8 or 4 bits leaves 1280 unchanged. The $/M gap is 7.16x =
+      13.76x / the 1.92x hourly price, and the printed factors multiply to 17.28, not ~14. At
+      GPT-OSS-120B's real 5.1B active the rate is 7.06x the 36B row
+  - index: 2
+    slug: the_savings_fund_40_b200s_the_load_needs_7_by_the_code_and_551_by_the_lesson
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A customer spends $2M/year on H100 + vLLM. What is the break-even number of Blackwell GPUs they need to buy to amortize a migration to TRT-LLM in 12 months, given the 7x economic gap?
+    zh: |
+      一位客戶每年在 H100 + vLLM 上花 200 萬美元。給定那 7 倍的經濟落差，他們要買幾張 Blackwell GPU，才能在 12 個月內攤平遷到 TRT-LLM 的成本？
+    verifies: >-
+      at 7x, 12 months of savings on $2M is $1,714,286, which at the module's $42,048 per B200-year
+      funds 40.8 GPUs; the $2M buys 2.68e11 tokens at the module's H100 FP8 $/M, which need 6.64 B200s
+      (7, repaid in 2.1 months). At the lesson's $0.09/M the same $2M is 704,662 tok/s and needs 551
+      B200s; the module's H100 and B200 $/M are 82.9x and 52.1x the lesson's. The lesson's own figures
+      give 7.5x for GB200 NVL72 and 4.5x for HGX B200, and the savings fund 31.6 GB200 GPU-years
+      against a 72-GPU rack
+  - index: 3
+    slug: fp8_weights_cost_2x_and_in_domain_calibration_cuts_nvfp4_error_65_percent_not_to_fp8
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You see accuracy drop 3 points on MATH after NVFP4 weight conversion. Name two recovery paths: one quality-first (keep FP8 weights), one cost-first (calibrate with in-domain data).
+    zh: |
+      你看到在 NVFP4 權重轉換後，MATH 的準確率掉了 3 分。說出兩條救援路徑：一條品質優先（維持 FP8 權重）、一條成本優先（用領域內資料做校準）。
+    verifies: >-
+      FP8 weights on the B200 row cost $2.08/M against $1.04 for NVFP4 and $7.29 on H200 FP8, and
+      still fit in 192 GB. On a seeded 32x256 layer scored on held-out in-domain activations, relative
+      output error is 0.0007 for FP8, 0.1964 for per-tensor FP4, 0.0126 for NVFP4 max-abs, 0.0115
+      calibrated on generic data (9% better) and 0.0044 calibrated in-domain (65% better, still 6.3x
+      FP8). Stack has no activation-precision or calibration field
+  - index: 4
+    slug: read_mlperf_v6_0
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the MLPerf v6.0 inference results. Which task has the smallest Blackwell-over-Hopper gap, and why?
+    zh: |
+      讀 MLPerf v6.0 的推論結果。哪一項任務上 Blackwell 相對 Hopper 的落差最小，為什麼？
+    cites: >-
+      The numbers you should memorize
+  - index: 5
+    slug: the_405b_needs_261_gb_under_2_percent_of_a_gb200_nvl72_and_the_code_calls_it_multi_gpu
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the HBM needed for a 405B model at NVFP4 weights + FP8 KV cache at 128k context. Does it fit on a single GB200 NVL72 node?
+    zh: |
+      算出一個 405B 模型在 NVFP4 權重 + FP8 KV 快取、128k 脈絡下所需的 HBM。它裝得進單一個 GB200 NVL72 節點嗎？
+    verifies: >-
+      at 131,072 tokens the module sizes 405B at 202.5 GB NVFP4 weights + 58.4 GB FP8 KV = 260.9 GB,
+      1.9% of NVIDIA's 13.4 TB rack, too big for one GPU but inside one 372 GB superchip, with room
+      for 224 more sequences. The module's 217.7 layers are 1.73x Llama 3.1 405B's 126; the real shape
+      gives 33.8 GB KV and 390 sequences per rack. The GB200 NVL72 stack's hbm_gb is 192, so the fit
+      test fails the rack row; KV is 22% of each decode step's bytes and decode_throughput takes only
+      (active_b, stack)

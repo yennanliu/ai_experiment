@@ -1,0 +1,78 @@
+lesson: 17-disaggregated-prefill-decode
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/17-disaggregated-prefill-decode/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_no_prompt_length_crossover_disaggregation_wins_every_row_because_the_decode_pool_is_given_faster_hardware
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what prompt length does disaggregation beat colocation?
+    zh: |
+      跑 `code/main.py`。提示詞要多長，分離才會勝過共置？
+    verifies: >-
+      disaggregation wins all 8 rows (256..32768) over RDMA and TCP, RDMA margins 444.12 -> 8847.93
+      ms; each output token saves 4.444 ms, so colocation wins only past prompt 3556 (RDMA) / 356
+      (TCP) per output token, and at 0 output. With the decode pool on the colocated GPU (0.10 tok/ms)
+      every margin is minus the RDMA transfer, -0.32 .. -40.96 ms. At (256, 100) the win is 444.12 ms
+      against a 0.32 / 3.2 ms tax, contradicting the lesson's 512/200 threshold. Prefill implies 5600
+      TFLOPS against the text's 2000, decode 100 tok/s against a 42.9 tok/s bound at 3 TB/s, and the
+      output has no cost
+  - index: 2
+    slug: three_prefill_gpus_to_two_decode_gpus_because_kv_memory_caps_the_decode_batch_and_the_codes_batch_of_one_says_one_to_eight
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design the prefill pool and decode pool for a RAG service with P99 prefix length 8K, output 300.
+    zh: |
+      替一個 P99 前綴長度 8K、輸出 300 的 RAG 服務，設計預填池與解碼池。
+    verifies: >-
+      at 10 req/s of 8192 + 300 tokens: 3 prefill GPUs at <= 70% utilization and 2 H200 decode GPUs,
+      KV-capped batch 66, TPOT 28.92 ms, 86.8 requests in flight, TTFT 204.8 + 10.24 ms. The code's
+      batch-1 decode gives 8.14 decode GPU-ms per prefill ms; batched, prefill needs 1.56x the decode
+      pool's time. The lesson's 125,000 B/token is 0.76 of Llama 3.3 70B's 163,840; at the real size
+      the batch is 51, the ratio 1.2, still 2 decode GPUs, and full-batch TPOT is over 5x the code's
+      5.56 ms
+  - index: 3
+    slug: dynamo_vs_llm_d
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Dynamo vs llm-d: pick one for a pure-Kubernetes shop with no Python runtime preference.
+    zh: |
+      Dynamo 對上 llm-d：替一家純 Kubernetes、對 Python 執行環境沒有偏好的公司挑一個。
+    cites: >-
+      Dynamo vs llm-d
+  - index: 4
+    slug: tcp_matters_only_for_ttft_where_it_adds_50_percent_and_streaming_kv_per_layer_hides_both_behind_prefill
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute KV transfer cost: 4K prefill on 70B FP8 = ~500 MB KV. At RDMA 100 GB/s, transfer = 5 ms. At TCP 10 GB/s = 50 ms. Which matters for your SLA?
+    zh: |
+      算 KV 轉移成本：70B FP8 上 4K 的預填約 500 MB KV。在 RDMA 100 GB/s 下轉移要 5 毫秒。在 TCP 10 GB/s 下要 50 毫秒。哪一個對你的 SLA 要緊？
+    verifies: >-
+      4096 x 125,000 B = 512 MB moves in 5.12 ms RDMA and 51.2 ms TCP; TTFT 102.4 -> 107.52 / 153.6
+      ms, TPOT unchanged, end to end 2885.3 -> 2931.4 ms (+1.6%). Streamed per layer over 80 layers
+      the exposed transfer is 0.064 / 0.64 ms, hidden above 5 GB/s; 10 GbE takes 409.6 ms and exposes
+      308.5 ms. The lesson says 20-80 ms; at Llama 3.3 70B's 163,840 B/token the KV is 671 MB, 6.71 /
+      67.1 ms
+  - index: 5
+    slug: routing_leaves_the_kv_transfer_alone_and_makes_decode_read_8x_more_weight_per_token_than_dense_at_batch_64
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      MoE expert routing changes KV access patterns. How does disaggregation behave with MoE that activates different experts per token?
+    zh: |
+      MoE 的專家路由會改變 KV 的存取樣式。當 MoE 對每個詞元啟動不同專家時，分離的行為會怎樣？
+    verifies: >-
+      DeepSeek-V3 MLA KV is 35,136 B/token (0.28 of the lesson's constant), a 4K prompt 143.9 MB in
+      1.44 ms RDMA through the reference; a seeded top-8-of-256 router touches all 256 experts per
+      layer in a 4096-token prefill and 8 / 57.1 / 223.7 / 256.0 per layer at decode batch 1 / 8 / 64
+      / 256, 37.0 -> 670.4 GB per step. Per token MoE reads 37.0 GB vs dense 70 at batch 1 but 9.19 vs
+      1.09 (8.4x) at batch 64, 2.3 tokens per expert; the reference has no expert, batch or MoE name

@@ -1,0 +1,81 @@
+lesson: 14-prompt-semantic-caching
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/14-prompt-semantic-caching/docs/en.md
+exercises:
+  - index: 1
+    slug: the_flag_moves_the_bill_17_percent_not_5x_and_the_whole_penalty_is_paid_in_the_first_106_requests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Toggle the parallelization flag. How much does the bill change?
+    zh: |
+      跑 `code/main.py`。切換那個平行化旗標。帳單變了多少？
+    verifies: >-
+      toggling parallel_penalty moves the bill $6.84 -> $5.85 (1.17x; input alone $2.93 -> $1.94,
+      1.51x) and writes 77 -> 12. All 65 penalised writes fall at request index <= 105 because the
+      cache never expires, so the ratio is 1.04x at 2000 iterations and 1.02x at 5000 with the same 77
+      writes. make_workload(500) emits 1304 requests, 1005 in 201 waves, and 0 waves share a prefix
+      (4.2 distinct each). N cold parallel misses on one prefix cost 3.79x at N=5, 5.13x at 8, 5.81x
+      at 10 and 10x only at 46
+  - index: 2
+    slug: a_request_id_in_the_prefix_takes_hit_rate_from_99_to_0_and_bills_more_than_no_cache
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your system prompt has a date. Move it out. Show before/after hit rate math.
+    zh: |
+      你的系統提示詞裡有日期。把它移出去。把前後的命中率數學算給我看。
+    verifies: >-
+      stamping the prefix hash, hit rate equals 1 - distinct prefixes / 1304 requests: request ID
+      0.0%, time to the second 16.3%, to the minute 91.7% (1 - 1/(r*60) predicts 92.0% at 0.209 req/s
+      per prefix), day or moved out 99.1%. With the request ID the bill is $26.06 against $21.63 with
+      caching off (1.20x); minute $7.23, second $22.58, moved out $5.85. The lesson dates
+      ProjectDiscovery's post 2025-11; the post is dated 2026-04-10 and reports under 8% -> 74% -> 84%
+  - index: 3
+    slug: one_hour_wins_above_one_request_per_110_minutes_and_the_simulator_never_expires_an_entry
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Calculate break-even for 1-hour TTL (2x write) vs 5-minute TTL (1.25x write) given your request arrival rate.
+    zh: |
+      依你的請求抵達速率，算出 1 小時 TTL（2 倍寫入）與 5 分鐘 TTL（1.25 倍寫入）的損益平衡。
+    verifies: >-
+      with refresh-on-use TTLs and Poisson reuse, 1-hour (2x write) beats 5-min (1.25x) above
+      ln(1.9/1.15)/55 = 0.00913 reuses/min, one every 109.5 min; a seeded simulation has 1-hour
+      cheaper at a 100-min mean gap and 5-min at 120; periodic reuse every 30 min is 12.3x cheaper on
+      1-hour and at 90 min 5-min wins. The lesson's workload never reuses a prefix more than 57 s
+      apart, so 1-hour only raises the bill $5.85 -> $5.96 with 12 writes in both; simulate() never
+      reads arrived_at
+  - index: 4
+    slug: keep_0_95_because_behind_a_prompt_cache_a_semantic_hit_saves_0_43_cents
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Semantic cache at 0.95 threshold hits 20%. At 0.85 it hits 50% but you see incorrect cached responses. Pick the right threshold and justify.
+    zh: |
+      語意快取在門檻 0.95 時命中 20%。在 0.85 時命中 50%，但你看到有錯誤的快取回應。挑出正確的門檻並論證。
+    verifies: >-
+      on the lesson's workload L1 at 20% / 50% bills $4.75 / $3.07, 389 extra hits each saving $0.0043
+      behind L2 ($0.0030 of it output), so 0.85 pays only if fewer than 1 in 232 extra hits are wrong
+      at $1 a wrong answer (1 in 2325 at $10). Without L2 a hit saves $0.0163, 3.8x more. simulate()
+      never reads l1_threshold: 0.85 and 0.95 at the same hit probability give identical results
+  - index: 5
+    slug: let_the_planner_call_write_the_cache_and_the_fan_out_reads_it_5_5x_cheaper_at_zero_added_latency
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You batch 10 parallel sub-queries per user question. Rewrite for cache-friendliness without adding end-to-end latency.
+    zh: |
+      你每個使用者問題會批次發出 10 個平行子查詢。在不增加端到端延遲的前提下，把它改寫成對快取友善的形式。
+    verifies: >-
+      for a planner plus 10 sub-queries on a 5000-token shared prefix with cache entries visible 300
+      ms after the writer starts, input costs $0.1686 uncached, $0.2061 naive parallel (10 writes,
+      1.22x uncached), $0.0509 sequential-first (1/9, 2.8 s end-to-end) and $0.0374 planner-primed (1
+      write, 10 reads, 2.5 s, same as naive): 5.5x under naive and 27% under sequential-first. With no
+      planner, keeping the 4000-token system prompt warm gives 10 reads at $0.045 against $0.1905
+      cold, 4.2x. The reference has no clock, so its serialize-first fix costs no latency

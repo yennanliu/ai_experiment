@@ -1,0 +1,83 @@
+lesson: 03-gpu-autoscaling-kubernetes
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/03-gpu-autoscaling-kubernetes/docs/en.md
+exercises:
+  - index: 1
+    slug: queue_depth_hpa_drops_63_more_than_duty_cycle_because_the_sims_duty_cycle_reads_one_request_as_full
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Under a bursty workload, how many requests does naive duty-cycle HPA drop that queue-depth HPA catches? Where does the difference come from?
+    zh: |
+      跑 `code/main.py`。在突發式工作負載下，天真的工作週期 HPA 丟掉了多少佇列深度 HPA 接得住的請求？那個差異從哪裡來？
+    verifies: >-
+      on the shipped 743-request workload DUTY_CYCLE drops 1 and QUEUE_DEPTH 64; 63 requests are
+      dropped by queue-depth only and 0 by duty-cycle only, at 266.25 vs 49.5 idle GPU-minutes. At
+      t=600 duty-cycle has 6 ready replicas and queue-depth 1; 33 of the 64 drops arrive in 600-703s;
+      MIN_WARM_REPLICAS=6 takes queue-depth to 2 drops and NODE_PROVISION_SEC=0 to 44. A replica is
+      busy 0.6+1.8 of each 15s tick, 16%, under the 20% scale-down line, and duty-cycle held at one
+      replica (MAX_REPLICAS=1) drops 511 of 743
+  - index: 2
+    slug: whenempty_with_1h_still_evicts_every_gpu_node_at_30_days_unless_expireafter_is_never
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a Karpenter NodePool for a cluster serving Llama 3.3 70B FP8 on H100 SXM5. Specify `capacity-type`, `disruption.consolidationPolicy`, `consolidateAfter`, and a taint that keeps non-GPU workloads off these nodes.
+    zh: |
+      替一個在 H100 SXM5 上服務 Llama 3.3 70B FP8 的叢集設計一份 Karpenter NodePool。指定 `capacity-type`、`disruption.consolidationPolicy`、`consolidateAfter`，以及一個能把非 GPU 工作負載擋在這些節點外的 taint。
+    verifies: >-
+      the NodePool is karpenter.sh/v1 with capacity-type on-demand (of spot/on-demand/reserved),
+      p5.48xlarge, consolidationPolicy WhenEmpty (of WhenEmpty/Balanced/WhenEmptyOrUnderutilized),
+      consolidateAfter 1h, taint nvidia.com/gpu=true:NoSchedule and expireAfter Never. After 70.6 GB
+      of FP8 weights at 0.9 utilization TP=1 leaves about 20k KV tokens and TP=2 about 256k. The 720h
+      default expireAfter is 12.2 forced drains per node-year, 146 on 12 nodes. The defaults are
+      WhenEmptyOrUnderutilized / 0s, the reference has no NodePool, and NODE_PROVISION_SEC=0 takes
+      QUEUE_DEPTH drops 64 -> 44
+  - index: 3
+    slug: gpus_available_is_a_cluster_sum_no_scheduler_uses_so_392_of_609_available_states_cannot_place_an_8_gpu_pod
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your team reports that deployments are stuck in Pending because "GPUs available but pod won't schedule." Diagnose — is this Karpenter, kube-scheduler, or KAI Scheduler? Which metrics confirm?
+    zh: |
+      你的團隊回報部署卡在 Pending，因為「GPU 明明有空、pod 就是排不上」。診斷 —— 這是 Karpenter、kube-scheduler，還是 KAI Scheduler 的問題？哪些指標可以確認？
+    verifies: >-
+      diagnose() maps five snapshots to Karpenter (NodePool limit, launch failures, provisioning in
+      flight), kube-scheduler (missing toleration) and KAI Scheduler (incomplete gang). Of 729
+      free-GPU states of 3 x 8-GPU nodes, 609 have >= 8 free; a 1x8 pod fits 217, 2x4 fits 473, 8x1
+      fits 609. Without gang scheduling 119 states strand part of an 8x1 job, 192 half of a 2x4 job,
+      and 0 for 1x8. KAI_GANG drops 61 at GPU_PER_REPLICA 1 and 8, and the name appears once in the
+      module
+  - index: 4
+    slug: prefill_scales_on_queued_tokens_not_queued_requests_and_decode_on_kv_utilization
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick a signal to autoscale disaggregated prefill pods and a different signal for decode pods. Justify both.
+    zh: |
+      替分離式的預填 pod 挑一個擴縮訊號，再替解碼 pod 挑另一個不同的訊號。兩個都要論證。
+    verifies: >-
+      at 1.5 req/s a RAG shape (8000/200) runs prefill 75% and KV 24%, a reasoning shape (500/4000)
+      prefill 5% and KV 146%. Over 4000 seeded prefill arrivals at 70% load the TTFT wait correlates
+      0.80 with requests ahead and 1.0 with tokens ahead, and with 2 ahead it spans 0.03-1.97s. For
+      the reasoning shape KV crosses 80% at 0.82 req/s and a decode queue first forms at 1.02; the
+      reference charges a fixed (0.6, 1.8)s per request and models no KV
+  - index: 5
+    slug: one_consolidation_event_is_95s_which_is_more_than_a_whole_day_of_a_999_error_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the cost of the `WhenEmptyOrUnderutilized` consolidation trap on a 24x7 production service that averages 60 request-dropping events/day at P99 TTFT > 10s.
+    zh: |
+      對一個全天候的生產服務（平均每天 60 次在 P99 TTFT > 10 秒時丟請求的事件），算出 `WhenEmptyOrUnderutilized` 整併陷阱的成本。
+    verifies: >-
+      NODE_PROVISION_SEC + MODEL_LOAD_SEC = 95s per event, 5700s a day; at $55.04/h that is $1.45 an
+      event, $87.15 a day, $31,809 a year of billed-idle GPU. At 4 req/s per node on 12 nodes an event
+      drops 340 requests at full load, 136 at 95% and 0 at 11/12; 20,400 a day. A 99.9% SLO allows
+      86.4s/day (0 events), 99% 864s (9 events), and 60 events leave 93.4%. The reference drops after
+      a hard-coded 30s wait, never evicts, and under that rule an event costs 260

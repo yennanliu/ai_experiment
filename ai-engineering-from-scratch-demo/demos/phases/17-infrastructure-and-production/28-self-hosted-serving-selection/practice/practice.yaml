@@ -1,0 +1,83 @@
+lesson: 28-self-hosted-serving-selection
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/28-self-hosted-serving-selection/docs/en.md
+exercises:
+  - index: 1
+    slug: scale_moves_the_pick_on_three_hardware_classes_and_workload_on_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py` with your hardware / scale / workload. Does the output match your intuition?
+    zh: |
+      用你自己的硬體／規模／工作負載跑 `code/main.py`。輸出符合你的直覺嗎？
+    verifies: >-
+      the lesson's 7 scenarios all return an engine; over the 100-cell grid (5 hardware x 4 scales x 5
+      workloads) scale changes the pick on CPU, Apple Silicon and Hopper and workload only on AMD and
+      Hopper, and only 'agentic multi-turn' and 'RAG with heavy prefix reuse' ever change it. 'NVIDIA
+      RTX 4090', 'H100', 'cpu' and 'MI300X' return engine None with the TGI line as the only reason.
+      Hopper single-user agentic -> SGLang, AMD single-user -> vLLM, Blackwell -> TRT-LLM on all 20
+      cells. The enterprise production-stack line lands on 19 of 25 enterprise cells whose engine is
+      not vLLM; the TGI line is on 100 of 100 outputs and TGI the engine on 0
+  - index: 2
+    slug: both_pools_get_vllm_and_the_walker_never_offers_trt_llm_on_hopper_either
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your infra is 12 H100s and 8 MI300X AMD. What engine? Why is TRT-LLM off the table?
+    zh: |
+      你的基礎設施是 12 張 H100 與 8 張 AMD MI300X。要用什麼引擎？TRT-LLM 為什麼出局？
+    verifies: >-
+      per pool at production scale, NVIDIA Hopper and AMD agree on all 5 workloads (vLLM for chat,
+      code and long context, SGLang for agentic and prefix-heavy); 'H100', 'MI300X' and '12 H100s and
+      8 MI300X' return None. TRT-LLM could serve 12 of 20 GPUs (60%) and 960 of 2496 GB HBM, the
+      MI300X pool holding 62%. TRT-LLM is returned on 20 of 100 grid cells, all Blackwell, 0 on
+      Hopper, though the doc lists it top-tier there; 'NVIDIA-only' appears only on the AMD branch.
+      The B200/GB200 fallback cites 'Blackwell SM120', which the lesson itself calls RTX Blackwell
+  - index: 3
+    slug: team_wants_tgi_2026
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      A team wants to use TGI in 2026 because "it's what we know." Argue the migration case.
+    zh: |
+      有個團隊想在 2026 年用 TGI，因為「那是我們熟的東西」。把遷移的理由論證出來。
+    cites: >-
+      The TGI maintenance trap
+  - index: 4
+    slug: the_walker_answers_the_move_with_one_engine_name_and_none_of_the_three_changes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Ollama dev to vLLM prod: what changes in quantization, configuration, and observability?
+    zh: |
+      從 Ollama 開發到 vLLM 生產：量化、組態與可觀測性上各有什麼改變？
+    verifies: >-
+      for Llama-3.1-8B, weights are 4.87 GB at Q4_K_M (4.85 bpw), 8.03 GB FP8, 16.06 GB FP16; KV is
+      131072 bytes/token, 1.07 GB per 8K context; an 80 GB H100 at 0.9 utilization leaves ~427K KV
+      tokens with FP16 weights = 52 concurrent 8K sequences, 59 with FP8. 0 of the walker's 100
+      outputs mention quantization, GGUF, safetensors, metrics or tracing; Ollama and vLLM are both
+      reachable by scale only on Hopper. The lesson text says staging 'mirrors production
+      quantization' and also that llama.cpp takes GGUF and the GPU engines safetensors
+  - index: 5
+    slug: the_walker_picks_sglang_but_the_stack_is_vllm_and_its_lmcache_is_the_slowest_config
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      RAG product with P99 prefix length 8K and high reuse across tenants. Pick an engine and stack it with Phase 17 · 11 + 18.
+    zh: |
+      一個 P99 前綴長度 8K、且跨租戶重用度高的 RAG 產品。挑一套引擎，並把它跟階段 17 · 11 + 18 疊起來。
+    verifies: >-
+      the walker picks SGLang on Hopper and AMD for the exercise's wording, vLLM when 'prefix' is
+      dropped, TRT-LLM on Blackwell either way; lesson 18 is vLLM's production-stack and Connector API
+      and lesson 11 puts RadixAttention inside one replica. In lesson 18's simulator LMCACHE totals
+      380833 ms against native 375033-376133 (PYTHONHASHSEED 0-4) and CPU offload 369402 while
+      avoiding the most re-prefills (194); on all-8K prompts 394233 ms; an 8K hit costs 1500 ms vs 200
+      ms re-prefill, break-even 0.4 ms/block; hbm_capacity_blocks_per_engine is never read; decode is
+      97.3-97.6% of time. In lesson 11 GLOBAL routing hits 0.863-0.892 against REGIONAL 0.301-0.312,
+      moves 565-603 of 1000 requests cross-region, and P99 TTFT stays the miss cost, 800 ms or 3200 ms
+      scaled to 8K

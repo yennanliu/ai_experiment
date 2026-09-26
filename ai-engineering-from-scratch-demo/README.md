@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**1489 / 2150 exercises** (69.3%) across 20 phases.
+**1629 / 2150 exercises** (75.8%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -66,7 +66,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `14-agent-engineering` | 272 | 272 | 54 |
 | ✅ `15-autonomous-systems` | 110 | 110 | 22 |
 | ✅ `16-multi-agent-and-swarms` | 123 | 123 | 25 |
-| ⬚ `17-infrastructure-and-production` | 140 | 0 | 0 |
+| ✅ `17-infrastructure-and-production` | 140 | 140 | 28 |
 | ⬚ `18-ethics-safety-alignment` | 150 | 0 | 0 |
 | ⬚ `19-capstone-projects` | 252 | 0 | 0 |
 

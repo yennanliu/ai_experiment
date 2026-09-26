@@ -1,0 +1,87 @@
+lesson: 20-shadow-canary-progressive
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/20-shadow-canary-progressive/docs/en.md
+exercises:
+  - index: 1
+    slug: a_25_percent_cost_regression_halts_at_1_percent_because_the_seed_not_the_traffic_decides
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Inject a 25% cost regression. At which stage does the canary halt?
+    zh: |
+      跑 `code/main.py`。注入 25% 的成本退化。金絲雀停在哪一階段？
+    verifies: >-
+      Regression(cost_mult=1.25) halts at the 1% stage on cost_per_req alone, $0.0252 against a
+      $0.0240 gate. measure_stage ignores its stage argument (1% and 100% return identical metrics for
+      one seed); over 10,000 seeded rollouts 1.25 halts at 1% 7526 times, at 10% 1868 times and
+      promotes 4. On the shipped seeds +12% halts at 75% and +10% promotes; every multiplier from
+      1.1197 halts, from 1.1887 at 1%, and the +-8% noise makes the 1.2 gate a band from 1.1111 to
+      1.3043. The lesson summary starts the progression at 10%, its body and STAGES at 1%
+  - index: 2
+    slug: the_gate_path_calls_18_percent_a_ship_and_the_simulator_rolls_it_back_95_percent_of_the_time
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your new model has 3% accuracy gain offline but cost/request is +18%. Is it a ship? Depends on the policy — write both paths.
+    zh: |
+      你的新模型離線準確率增加 3%，但每請求成本 +18%。這出得了貨嗎？看政策而定 —— 兩條路徑都寫一遍。
+    verifies: >-
+      +18% is inside the 1.2 cost gate yet the reference halts it at the 10% stage on the shipped
+      seeds; the value path's break-even is $0.12 per correct answer (0.18 x $0.02 / 0.03), and cost
+      per correct answer at 80% accuracy goes $0.025 -> $0.0284. Per stage 1.18 breaches 39.4% of the
+      time, survives six stages 4.95%, and promotes in 523 of 10,000 seeded rollouts. Regression has 5
+      fields and no accuracy; with the cost gate at 1.28 it promotes 10,000 of 10,000 and the gate
+      then only guarantees a catch from 1.391x
+  - index: 3
+    slug: a_47_second_rollback_needs_a_30_second_gate_which_sees_only_outages
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a rollback that takes under 60 seconds end-to-end. List the required infrastructure.
+    zh: |
+      設計一次端到端 60 秒以內的回滾。列出所需的基礎設施。
+    verifies: >-
+      the step budget detect 30 + decide 0 + flip 1 + propagate 5 + drain 10 + pin 1 = 47 s; replayed
+      at 1,000 req/min with 1% on the candidate at the reference's 1.8x latency (1.608 s) the last
+      candidate request ends at 31.6 s. The same pipeline on the lesson's 5-minute gate cadence takes
+      317 s. A 30 s window at 1% holds 5 requests, so a <=1% false-alarm error gate needs 2 of 5
+      errors and catches a 50% outage with p = 0.8125; 0.15 thumbs-down events are expected. The
+      reference's ROLLBACK is a print and it defines no flag, registry, digest or pin
+  - index: 4
+    slug: a_1_16x_gate_clears_7_percent_noise_but_rate_gates_need_3x_at_1_percent_traffic
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Non-determinism shows ±7% on your eval. Set canary gates so you don't false-alarm. What multipliers do you use?
+    zh: |
+      非決定性在你的評測上顯示 ±7%。把金絲雀閘門設到不會誤報。你要用什麼倍數？
+    verifies: >-
+      with +-7% on canary and measured baseline the clean ratio is bounded by 1.1505; over 10,000
+      seeded clean pairs through the reference check_gates uniform gates of 1.10 / 1.14 / 1.16 fire
+      2304 / 100 / 0 times and the lesson's gates 0. Binomial <=1% false-alarm multipliers at n =
+      50/500/1250/5000 are 3.333/1.667/1.387/1.193 for thumbs-down (3%) and 4.0/1.8/1.48/1.24 for
+      errors (2%); at n = 50 the lesson's 1.5x thumbs-down and 2x error gates false-alarm 0.189 and
+      0.078, and thumbs-down halts 21.5% of clean six-stage rollouts. Guaranteed catch is above 1.335
+      for a 1.16 gate and 1.381 for 1.2; a 25% cost regression is caught 74.9% per stage against a
+      measured baseline, 77.8% against a fixed one
+  - index: 5
+    slug: the_shadow_rule_must_pair_requests_because_unpaired_cost_false_alarms_23_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Shadow mode catches a 40% cost spike before canary. Write the alert rule that fires in shadow.
+    zh: |
+      影子模式在金絲雀之前抓到 40% 的成本暴衝。把那條在影子階段觸發的警報規則寫出來。
+    verifies: >-
+      the rule fires when paired candidate/production cost over >= 50 same requests exceeds 1.2;
+      through the reference's measure_stage a 40% spike reads 1.288..1.512 and fires on 10,000 of
+      10,000 windows, clean reads at most 1.08 and fires 0, and the canary halts the spike at 1%. With
+      lognormal per-request cost, paired fires 1.0 on spikes and 0.0 on clean at n = 50, unpaired
+      false-alarms 0.23 and catches 0.734 at n = 50 and 0.089 / 0.886 at n = 200 (0.008 over two
+      windows). Cost 1.15 + thumbs-down 1.45 fires 0.0 of paired shadow windows while the canary halts
+      it at 25%; the reference has no shadow mode

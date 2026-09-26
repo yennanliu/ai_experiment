@@ -1,0 +1,80 @@
+lesson: 13-llm-observability
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/13-llm-observability/docs/en.md
+exercises:
+  - index: 1
+    slug: langfuse_fits_the_team_word_for_word_and_the_lesson_misstates_its_license
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your team on LangChain wants OSS self-hosted observability. Pick Langfuse or Opik and justify.
+    zh: |
+      你在 LangChain 上的團隊想要開源、自架的可觀測性。在 Langfuse 與 Opik 之間挑一個並論證。
+    verifies: >-
+      filtering Langfuse, Opik and LangSmith on LangChain integration, OSS license and self-hosting
+      leaves ['Langfuse', 'Opik']; LangSmith self-hosts on Enterprise only, and the lesson's sweet
+      spots pick Langfuse, or Opik for a Comet shop. The lesson calls Langfuse 'Core Apache / MIT',
+      'MIT-licensed core' and 'MIT OSS'; the repo (read 2026-09-26) is MIT outside ee/, which holds 13
+      commercial features including SSO and dataRetention, and Opik is Apache-2.0. The 50K-event free
+      tier covers 72 minutes of the reference's 1M-trace day, 1/600 of the month
+  - index: 2
+    slug: arize_breaks_even_below_150k_but_against_a_sampled_datadog_it_must_be_12_8x_cheaper_not_100x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      At 5M traces/day with Datadog quotes $150K/month, compute break-even for Arize AX.
+    zh: |
+      在每天 500 萬條軌跡、Datadog 報價每月 15 萬美元的前提下，算出 Arize AX 的損益平衡。
+    verifies: >-
+      5M traces/day at 4,500 bytes is 675 GB/month, so the $150K quote is $222.22/GB or $1.00 per
+      1,000 traces; less $15.53 of S3 the Arize break-even contract is $149,984 (the 100x claim is
+      $1,500). The reference's '5% success + errors + $$$' keeps 391,366 of 5M traces, a $11,741
+      Datadog bill, so full-retention Arize must be under $11,725, 12.8x cheaper. 0.50/0.005 = 100 at
+      every volume; counting S3 ($15.53 vs $3.38) it is 17.9x. The code's $0.50/GB is 444x below the
+      quote: 100% retention at 1M/day is $2.25/day against the printed 'hundreds of $/day', $1,000/day
+      at the quote. AX Pro's 50K spans cover 14.4 minutes of a 5M-trace day
+  - index: 3
+    slug: the_lessons_attribute_set_leaves_two_of_its_five_alerts_blind_and_names_a_deprecated_key
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an OpenTelemetry GenAI attribute set your org's guideline should mandate on every LLM call.
+    zh: |
+      設計一組 OpenTelemetry 的 GenAI 屬性集，作為你組織的規範，要求每一次 LLM 呼叫都要帶上。
+    verifies: >-
+      a 16-attribute mandate (both spec-Required keys, model, usage incl. cache_read, finish reasons,
+      TTFT, conversation, error.type, four org.* keys, no Opt-In content) computes all six signals.
+      The skill file's nine attributes cannot compute P99 TTFT or prompt-cache hit rate, omit
+      gen_ai.operation.name and gen_ai.provider.name, and use the deprecated gen_ai.system; main.ts
+      adds no tenant field, the non-spec gen_ai.usage.cached_input_tokens and reads missing tokens as
+      0. The example span is 551 bytes, 12.2% of a trace: all metadata plus sampled traces is
+      $12.90/month, 19% of the $67.50 full retention and 2.4x the $5.28 sampled bill
+  - index: 4
+    slug: phoenix_alone_is_a_production_trace_store_but_not_a_gateway_or_an_archive
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether Phoenix alone is sufficient for production. When does it not suffice?
+    zh: |
+      論證只用 Phoenix 是否足以支撐生產環境。它在什麼時候不夠？
+    cites: >-
+      Phoenix (Arize) — telemetry-first, OpenTelemetry-native
+  - index: 5
+    slug: 20ms_is_fine_with_headroom_above_300ms_and_at_100ms_the_sla_is_already_lost_so_log_async
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Helicone is 20ms proxy overhead. At P99 TTFT 300 ms, is that acceptable? What if SLA is 100 ms?
+    zh: |
+      Helicone 有 20 毫秒的代理開銷。在 P99 TTFT 300 毫秒時可以接受嗎？若 SLA 是 100 毫秒呢？
+    verifies: >-
+      on lesson 08's synth_workload (2,000 requests, seed 7) scaled to P99 TTFT 300 ms, a constant 20
+      ms moves P99 to 320 ms (+6.7%); within 300 ms falls 99.05% -> 97.1% and within 100 ms 75.8% ->
+      69.6%, with the model left 80 ms of a 100 ms budget. The same shift loses 0.062 of requests at a
+      100 ms line and 0.005 at 320 ms, median 48.4 ms. Lesson 19 prescribes Kong or Cloudflare below
+      100 ms and lists Portkey at 20-40 ms; this lesson's code has no latency or TTFT name

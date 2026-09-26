@@ -1,0 +1,83 @@
+lesson: 11-multi-region-kv-locality
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/11-multi-region-kv-locality/docs/en.md
+exercises:
+  - index: 1
+    slug: cross_region_wins_above_214_tokens_per_request_and_the_code_has_no_prompt_length
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what prompt length does cross-region routing beat local-only routing, given 75 ms RTT?
+    zh: |
+      跑 `code/main.py`。在 75 毫秒來回的前提下，提示詞要多長，跨區域路由才會勝過只走本地？
+    verifies: >-
+      with TTFT linear in prompt length calibrated at 800/80 ms for 2K tokens and every RTT 75 ms, a
+      remote hit beats a local miss above 214 tokens (hit scaled) or 397 (hit fixed at 80 ms); on the
+      reference simulate() with FIFO caches GLOBAL sends 588 requests across at 214 and loses 63.1 to
+      59.4 ms, and first beats REGIONAL at 234 and 416 tokens, still winning at 512, 1K, 2K and 8K.
+      Request has no length field and the worst remote hit is 210 ms against an 800 ms miss. The doc's
+      APAC example saves 720 ms against its 440 ms; break-even is 626 tokens at 220 ms and 1252 at
+      440, and the skill file says 8K
+  - index: 2
+    slug: evictions_rise_under_every_cause_so_only_prefix_spread_and_hash_churn_tell_them_apart
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your cache hit rate drops from 70% to 12%. Diagnose three possible causes and the observables that would confirm each.
+    zh: |
+      你的快取命中率從 70% 掉到 12%。診斷三種可能原因，以及能確認每一種的可觀測量。
+    verifies: >-
+      baseline GLOBAL at 10 slots hits 70.7%; round-robin gives 23.8% with replicas per prefix 2.8 ->
+      10.4 and the hash mix unchanged; cutting slots 10 -> 2 gives 14.5% with prefix spread unchanged;
+      55% per-request prefixes give 12.4% with distinct hashes per request 0.04 -> 0.60 and 93% seen
+      once; evictions more than double under all three. Round-robin floors at 23.8% and needs 5 slots
+      to reach 13.1%. queue_depth is 0 for all 1000 requests and 3 of 12 replicas ever cache; with
+      set.pop() eviction six prefix relabellings give six GLOBAL hit rates 0.853-0.888. With prefix
+      affinity REGIONAL hits 88.0% at 166.4 ms with 0 cross-region, beating shipped GLOBAL's 233.6 ms,
+      and affinity GLOBAL saves 0.09 ms more with 648 cross-region calls
+  - index: 3
+    slug: the_awq_scales_ride_inside_the_shards_and_the_files_a_weights_backup_drops_let_the_replica_start_wrong
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a DR manifest for a 70B AWQ-quantized model served in vLLM with 5 LoRA adapters. List every file and config.
+    zh: |
+      替一個以 vLLM 服務、帶 5 個 LoRA 轉接器的 70B AWQ 量化模型，設計一份災難復原清單。把每個檔案與設定都列出來。
+    verifies: >-
+      the manifest for hugging-quants Llama-3.1-70B AWQ-INT4 plus 5 adapters has 47 entries (model 19,
+      adapter 11, engine 8, deploy 9); a *.safetensors + index backup restores 10 and misses 3 startup
+      files, 10 adapter files, 10 behaviour settings, 5 provenance files and 9 rebuild items. The
+      repo's 19 files include no quantize_config.json and 560 scales and 560 qzeros tensors sit in the
+      9 shards (39.77 GB). vLLM defaults serve temperature 1.0/top_p 1.0 instead of 0.6/0.9, 1 LoRA
+      slot, and load 3 of 5 adapters at max_lora_rank 16; the lesson's 'three-file minimum' is 47
+      entries
+  - index: 4
+    slug: bedrock_cri_picks_the_region_itself_and_says_peak_routing_costs_cache_writes
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether Bedrock cross-region inference is "enough" for a fintech with strict TTFT SLOs. Cite specific behaviors.
+    zh: |
+      論證對一家有嚴格 TTFT SLO 的金融科技公司來說，Bedrock 的跨區域推論夠不夠用。引用具體行為。
+    cites: >-
+      Commercial "cross-region inference" does not help here
+  - index: 5
+    slug: no_and_the_reference_global_router_sends_eu_requests_to_the_us_that_a_zone_filter_keeps_home
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A Paris-origin request matches a prefix in us-east-1. Do you route it? Write the policy.
+    zh: |
+      一個從巴黎發起的請求，在 us-east-1 有前綴相符。你要不要路由過去？把政策寫出來。
+    verifies: >-
+      the Paris request costs 155 ms remote against an 800 ms local miss; reference GLOBAL serves 175
+      of 312 EU-origin requests in the US and 191 US requests in the EU, and a zone filter ahead of
+      the same rule serves 0 out of zone, EU mean TTFT 264.2 -> 576.2 ms; with prefix affinity inside
+      eu-west-1 it hits 87.2% at 172.3 ms. Request has no tenant or zone field and all 40 prefixes are
+      requested from all three regions; the lesson's 'violated GDPR regardless' and 'EU customer PHI'
+      are checked present
