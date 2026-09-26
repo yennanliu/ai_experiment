@@ -1,0 +1,83 @@
+lesson: 06-sglang-radixattention
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/06-sglang-radixattention/docs/en.md
+exercises:
+  - index: 1
+    slug: cache_aware_serves_the_rag_queue_in_fcfs_order_so_there_is_no_delta
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare FCFS and cache-aware on the same workload. Where does the delta come from — prefill savings, decode savings, or queue delay?
+    zh: |
+      跑 `code/main.py`。在同一份工作負載上比較 FCFS 與知快取。那個差距從哪裡來 —— 預填省下的、解碼省下的，還是排隊延遲？
+    verifies: >-
+      FCFS and CACHE_AWARE both hit 0.6906 on the RAG workload and serve the identical order: every
+      request scores 80 x 2300 = 184000 and the stable sort keeps arrival order. On the scrambled
+      workload cache-aware goes 0.0844 -> 0.2653, 41400 more prompt tokens from cache; Request has
+      only rid and segments, so decode savings are zero; on a serial-server model mean completion
+      falls 104525 -> 70181 token-units while one request is pushed back 71 places. One RAG path is
+      125+19+32+4 = 180 blocks over the 160-block budget so only SYSTEM (2000 tokens) is ever reused;
+      FCFS equals cache-aware at budgets 160/180/250/400, and grouping by document gives 0.9602 at 180
+      where both give 0.8247
+  - index: 2
+    slug: permuting_the_prefix_drops_hit_rate_to_8_percent_and_most_of_the_drop_is_the_budget
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the workload so prompts randomly permute `[system, tools, context]`. Re-run. What happens to hit rate? Why?
+    zh: |
+      修改工作負載，讓提示詞隨機置換 `[system, tools, context]`。重跑。命中率怎麼了？為什麼？
+    verifies: >-
+      fixed order 0.6906 vs the shipped scrambled workload 0.0844, and a controlled permutation of
+      workload_rag 0.0546..0.1512 over seeds 0-4; SYSTEM is first in 25 of 80 requests and distinct
+      3-segment heads go 4 -> 24. With the budget removed fixed is 0.9602 and scrambled 0.7946 (16.6
+      points), against 60.6 points at 160 blocks. The hit rate falls 8.2x and prefill tokens computed
+      rise 70800 -> 209500 (2.96x), not the 6.4x Use It names
+  - index: 3
+    slug: the_system_prompt_costs_250_mib_once_and_16_copies_cost_3_9_gib
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the HBM cost of keeping a 2,000-token system prompt resident as one radix branch on Llama 3.1 8B. Compare to the cost of a 16-sequence batch without prefix reuse.
+    zh: |
+      算出在 Llama 3.1 8B 上，把一段 2,000 詞元的系統提示詞當成一條基數分支常駐所需的 HBM 成本。拿它跟一個沒有前綴重用的 16 序列批次的成本比較。
+    verifies: >-
+      Llama 3.1 8B (32 layers, 8 KV heads, head_dim 128, bf16) holds 128 KiB of KV per token, so the
+      2000-token prefix is exactly 250 MiB and 16 private copies 3.91 GiB (4.19 GB, 5.2% of 80 GB),
+      saving 3.66 GiB; with 32 KV heads it would be 1000 MiB and 15.6 GiB. The code's blocks for
+      SYSTEM and a 500-token doc are (125, 32) where the diagram says (124, 31); one block is 2 MiB,
+      so the 160-block budget is 320 MiB, 2560 tokens, under one 2860-token request
+  - index: 4
+    slug: block_lru_strands_a_branch_by_evicting_its_first_block_and_leaf_first_order_is_the_fix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the SGLang RadixAttention paper. Explain in three sentences why tree-shaped LRU eviction beats block-shaped LRU under prefix-heavy load.
+    zh: |
+      讀 SGLang 的 RadixAttention 論文。用三句話解釋為何在前綴吃重的負載下，樹狀 LRU 逐出勝過區塊狀 LRU。
+    verifies: >-
+      at 16-token-block granularity on the RAG workload, (hit rate, peak stranded blocks) is tree LRU
+      (0.8531, 0) vs block LRU with front-first ties (0.8211, 20) at 200 blocks and (0.9187, 0) vs
+      (0.8744, 34) at 250; at 160 block LRU hits 0.0 with all 160 blocks stranded while tree LRU keeps
+      0.7681. Block LRU with suffix-first ties equals tree LRU at 200/250/300 and gets 0.8046 at 160.
+      The reference RadixCache holds up to 4 unreachable blocks and hits 0.6906 at 160
+  - index: 5
+    slug: the_8_percent_trace_fails_two_diagnostics_and_the_budget_is_the_bigger_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A customer reports only 8% cache hit rate. Name three likely causes and the diagnostic you would run for each.
+    zh: |
+      一位客戶回報快取命中率只有 8%。說出三個可能的原因，以及你會替每一個跑什麼診斷。
+    verifies: >-
+      scrambled ordering hits 0.0844 with 6 orderings of one segment set; a per-request timestamp
+      prefix hits 0.0 with 80 first segments in 80 requests and a replay ceiling of 0.0; a 156-block
+      budget hits 0.0 with a ceiling of 0.9602 and 0.9602 of tokens missed after eviction; the healthy
+      trace reads 1 ordering, 1 first segment, 0.2697 evicted. Fixes give 0.6906 (fixed order), 0.6672
+      (timestamp moved before the question), 0.6906 (157 blocks). The scrambled trace's ceiling is
+      0.7946 and 0.7102 of its tokens are eviction misses
