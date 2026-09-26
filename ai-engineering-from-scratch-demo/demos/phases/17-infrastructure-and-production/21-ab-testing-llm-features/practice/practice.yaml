@@ -1,0 +1,81 @@
+lesson: 21-ab-testing-llm-features
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/21-ab-testing-llm-features/docs/en.md
+exercises:
+  - index: 1
+    slug: 207702_per_arm_and_at_that_n_the_sequential_rule_the_code_demos_has_20_percent_power
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. For an expected 5% lift with baseline 3% conversion, what sample size to 80% power?
+    zh: |
+      跑 `code/main.py`。在基線轉換率 3%、預期提升 5% 的情況下，要達到 80% 檢定力需要多少樣本數？
+    verifies: >-
+      fixed_sample_size(0.03, 0.05) is 207702 per arm (415404 total, 290782 with the x1.4 buffer);
+      exact quantiles give 207938 and 207702 has power 0.7995. power=0.9 and alpha=0.01 both return
+      207702 because the z-values are hardcoded. The lesson's 5%-lift simulate() gives arm A 150026
+      users, 72% of n, ends at fixed z 2.55 and never crosses the sequential boundary 4.31; at 2 x
+      207702 users the sequential rule stops in 8 of 40 seeds against a 4.35 boundary and expected z
+      2.80, and the 10%-lift demo stops at 159731 against a fixed 106300
+  - index: 2
+    slug: growthbook_self_hosted_and_on_prem_its_cuped_and_sequential_need_an_enterprise_license
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick Statsig or GrowthBook for a healthcare-regulated on-prem customer.
+    zh: |
+      替一位受醫療法規管制、要部署在自有機房的客戶，在 Statsig 與 GrowthBook 之間挑一個。
+    verifies: >-
+      filtering vendor facts (fetched 2026-09-26) on on-prem leaves only GrowthBook, since Statsig has
+      no self-hosted control plane; the lesson's two criteria with no warehouse preference and no
+      OpenAI objection pick Statsig. Self-hosted, the customer's four needs (CUPED, sequential, audit
+      logs, OIDC SSO) all require the Enterprise license, the MIT build keeps SRM and multiple-testing
+      corrections, and the reference module has no CUPED function
+  - index: 3
+    slug: counting_only_token_spend_gpt_3_5_wins_44x_and_loaded_with_escalations_gpt_4_wins_16_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design an A/B that tests GPT-4 vs GPT-3.5 on cost-per-resolved-ticket. What's the primary metric, guardrail metric, secondary?
+    zh: |
+      設計一次在「每張已解決工單成本」上測試 GPT-4 對 GPT-3.5 的 A/B。主要指標、護欄指標、次要指標各是什麼？
+    verifies: >-
+      on 10000 seeded tickets per arm at assumed 60%/50% resolution and $4 per escalation, loaded cost
+      is $1.67 for GPT-4 vs $1.98 for GPT-3.5 (z -11.0), resolution z 13.9, reopens per resolved
+      ticket z -0.17. LLM spend per bot-resolved ticket is $0.139 vs $0.0032, 44x for GPT-3.5, while
+      loaded GPT-4 is 16% cheaper. The break-even resolution gap is 2.06 points and
+      fixed_sample_size(0.5, 0.0412) is 9232 per arm; a per-ticket reopen guardrail has GPT-4 at
+      1.18x, z 1.96
+  - index: 4
+    slug: no_at_the_planned_n_minus_1_2_percent_is_z_minus_0_68_and_the_canary_never_measured_conversion
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your canary passes but A/B shows -1.2% conversion. Do you ship? Write the escalation criteria.
+    zh: |
+      你的金絲雀通過了，但 A/B 顯示轉換率 -1.2%。你出貨嗎？把升級判準寫出來。
+    verifies: >-
+      at 207702 per arm a relative -1.2% gives z -0.68, a 95% interval of -4.7% to +2.2% relative and
+      a 0.25 null tail, which decide() sends to hold-and-escalate; an absolute -1.2 points gives z
+      -25.3 and rollback. Lesson 20's five canary gates include no conversion and a clean rollout
+      passes every stage. fixed_sample_size(0.03, -0.012) is 3500264 per arm, 16.9x the plan, and the
+      sequential boundary at the planned n is 4.35
+  - index: 5
+    slug: 2_5x_if_the_pre_period_is_part_of_post_and_the_variance_ratio_alone_does_not_fix_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Apply CUPED to a pre-period with 60% of the variance of post. Compute the effective-sample-size boost.
+    zh: |
+      對一段變異數為實驗後期間 60% 的實驗前期間套用 CUPED。算出有效樣本數的提升。
+    verifies: >-
+      on 20000 seeded Gaussian users with post = pre + noise and var(pre) = 0.6 var(post), CUPED keeps
+      0.401 of the variance, a 2.49x boost within 0.02 of the exact 2.5x, taking 207702 per arm to
+      83081 and the buffered 290782 to 116313. At the same variance ratio rho 0.5 gives 1.33x and an
+      independent pre-period 1.00x, and scaling X by 10 leaves the boost unchanged; the lesson's
+      30-70% band is 1.43x-3.33x. 'CUPED' appears once in the reference module, in its docstring
