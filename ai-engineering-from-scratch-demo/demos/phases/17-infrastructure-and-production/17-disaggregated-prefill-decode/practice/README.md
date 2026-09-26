@@ -40,7 +40,7 @@ over TCP.
 
 | crossover | RDMA | TCP |
 |---|---:|---:|
-| colocation wins when prompt > | 3555 × output | 355 × output |
+| colocation wins when prompt > | 3555.6 × output | 355.6 × output |
 | first losing prompt at 1 output token | 3556 | 356 |
 
 With 0 output tokens colocation wins at any length.
@@ -54,8 +54,8 @@ transfer.
 
 **The lesson's 512/200 threshold is not in the code.** At (256, 100)
 disaggregation wins by 444.1 ms against a 0.32 ms RDMA and 3.2 ms TCP tax. The
-skill's "TCP raises the break-even to prompts >2K" is not there either: TCP
-wins all 8 rows, and the Winner column compares RDMA only.
+skill's "TCP raises the break-even to prompts >2K" is not there either:
+disaggregation over TCP wins all 8 rows too, and the Winner column compares RDMA only.
 
 **The constants exceed the lesson's own hardware numbers.**
 
@@ -80,7 +80,8 @@ Every request is sized at P99: 8192 prefix tokens, 300 output.
   memory-bound step at 4.8 TB/s takes 28.9 ms. At 10 req/s, 86.8 requests
   are in flight, which needs 2 GPUs.
 - **SLA:** TTFT is 204.8 ms of prefill plus 10.24 ms of RDMA transfer,
-  215 ms before queueing. TPOT is 28.9 ms.
+  215 ms before queueing. TPOT is at most 28.9 ms, the full-batch step;
+  the 2 GPUs carry about 43 requests each.
 
 **The code's batch-of-one decode sizes the pools the other way round.** At
 0.18 tok/ms a request needs 1666.7 decode GPU-ms against 204.8 prefill ms,

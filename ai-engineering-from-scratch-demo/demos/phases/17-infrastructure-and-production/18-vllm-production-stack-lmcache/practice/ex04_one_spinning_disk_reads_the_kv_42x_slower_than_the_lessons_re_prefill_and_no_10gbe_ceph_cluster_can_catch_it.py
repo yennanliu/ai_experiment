@@ -27,7 +27,7 @@ replication does not help: by default reads go to the primary OSD only.
 **FINDING: disk wins only against a much slower prefill than the lesson's.**
 40 tokens/ms on 70B is 5.6 PFLOP/s, 2.83 H100s at 100% of dense FP8 peak.
 One H100 at 50% MFU needs 0.58 s for the prefill, and 8 OSDs on 10GbE read
-the KV in 0.40 s, under it.
+the KV in 0.54 s (15 objects on the busiest spindle), under it.
 
 **FINDING: 500 MB is not 4K tokens of a 70B model.** With Llama-3-70B's
 geometry (80 layers, 8 KV heads, head dim 128) an FP8 KV cache is 160 KiB a
@@ -84,6 +84,7 @@ def solve():
                     for n in (1, 12, 60, 120)},
         "need_lesson": {k: osds_needed(lesson_prefill, bps) for k, bps in NETS.items()},
         "one_gpu": prefill_s(), "need_gpu": osds_needed(prefill_s(), NETS["10GbE"]),
+        "need_gpu_read": ceph_read(osds_needed(prefill_s(), NETS["10GbE"]), NETS["10GbE"]),
         "lesson_gpus": 2 * PARAMS * ref.PREFILL_TOK_PER_MS * 1000 / H100_FP8,
         "kv_token": kv_per_token, "kv_4k": kv_per_token * TOKENS,
         "tokens_in_500mb": KV_BYTES / kv_per_token,
@@ -114,10 +115,10 @@ def verify(result):
         practice.Check(
             "FINDING: disk wins only against a much slower prefill than the lesson's",
             round(result["lesson_gpus"], 2) == 2.83 and round(result["one_gpu"], 2) == 0.58
-            and result["need_gpu"] == 8,
+            and result["need_gpu"] == 8 and round(result["need_gpu_read"], 2) == 0.54,
             f"the lesson's rate is {result['lesson_gpus']:.2f} H100s at dense FP8 peak; one "
             f"H100 at 50% MFU prefills in {result['one_gpu']:.2f} s, which "
-            f"{result['need_gpu']} OSDs on 10GbE beat",
+            f"{result['need_gpu']} OSDs on 10GbE beat at {result['need_gpu_read']:.2f} s",
         ),
         practice.Check(
             "FINDING: 500 MB is not 4K tokens of a 70B model",

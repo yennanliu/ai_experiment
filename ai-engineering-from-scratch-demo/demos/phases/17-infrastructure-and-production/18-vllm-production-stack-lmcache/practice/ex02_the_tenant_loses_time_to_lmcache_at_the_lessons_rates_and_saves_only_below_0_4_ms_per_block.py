@@ -103,7 +103,8 @@ def verify(result):
         practice.Check(
             "FINDING: engine-local prefix caching already takes almost all of the ceiling",
             ceiling == 29850 and native[0] == 600 and (native[1], native[16]) == (3900, 21900),
-            f"ceiling {ceiling / 1000} s/hour; native prefill left for LMCache to save, by m: "
+            f"ceiling {ceiling / 1000} s/hour; native saves "
+            f"{(QUERIES * result['prefill'] - native[0]) / 1000} s at m = 0; native prefill left for LMCache to save, by m: "
             f"{ {m: v / 1000 for m, v in native.items()} } s",
         ),
         practice.Check(

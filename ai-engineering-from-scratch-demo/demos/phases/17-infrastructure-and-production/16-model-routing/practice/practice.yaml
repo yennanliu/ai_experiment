@@ -67,7 +67,7 @@ exercises:
       simple/medium/hard and catches 29; the minimum catches 14. An Anthropic-shaped body yields None,
       and main.py reads no logprob
   - index: 5
-    slug: each_cause_leaves_its_own_fingerprint_and_neither_of_the_lessons_escalation_alarms_fires_on_the_climb
+    slug: each_cause_leaves_its_own_fingerprint_and_the_lessons_monthly_alarm_fires_only_on_the_4k_context_cliff
     kind: code
     tier: T0
     deps_group: none
@@ -77,7 +77,8 @@ exercises:
       六個月下來，升級率從 8% 爬到 22%。診斷三個原因，以及各自的修法。
     verifies: >-
       month 0 (88/8/4 mix) escalates 8.0% at $1.76. Mix drift to 68/16/16 gives 21.7% ($5.37), fixed
-      to 8.1% ($5.06) by pre-routing hard queries. A cheap-model regression gives 22.1% ($2.52), back
-      to 8.0% by pinning the version. +3090 context tokens with a 4K cheap limit give 21.9% ($5.42),
-      0.4% ($5.09) with a length pre-route. diagnose() names all three from the log. A linear climb
-      moves 2.33 points a month, so neither the 10-point monthly alert nor the 30% alarm fires
+      to 8.1% ($5.06) by pre-routing hard queries. A cheap-model regression gives 22.1% ($2.52, +43%),
+      back to 8.0% by pinning the version. +3090 context tokens with a 4K cheap limit give 21.9%
+      ($5.42), 0.4% ($5.09) with a length pre-route. diagnose() names all three from the log. Driven
+      linearly over six months, the largest monthly step is 2.9 (mix), 3.4 (model) and 11.1 points
+      (context, month 6 only, at the 4K cliff); no path reaches the 30% alarm

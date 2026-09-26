@@ -13,8 +13,8 @@ varied one at a time.
 Disaggregation wins all 8 rows (256..32768 tokens) over RDMA *and* TCP. The
 code's winner flips on the prompt/output *ratio*: each output token saves
 1/0.10 - 1/0.18 = 4.444 ms, each prompt token costs 0.00125 ms of RDMA
-transfer (0.0125 ms TCP), so colocation wins only when prompt > 3555x output
-over RDMA or > 355x output over TCP -- first at prompt 3556 / 356 for a
+transfer (0.0125 ms TCP), so colocation wins only when prompt > 3555.6x output
+over RDMA or > 355.6x output over TCP -- first at prompt 3556 / 356 for a
 1-token output. With 0 output tokens colocation wins at any length.
 
 **FINDING: the whole win is the decode pool's constant, not the split.**
@@ -28,7 +28,8 @@ a separate pool of identical GPUs can only add the KV transfer.
 512 tokens and outputs < 200 tokens: transfer tax dominates gain", yet at
 (256, 100) disaggregation wins by 444.1 ms against a 0.32 ms RDMA / 3.2 ms TCP
 tax. The skill's "TCP raises the break-even to prompts >2K" is not there
-either: TCP wins all 8 rows, and the Winner column compares RDMA only.
+either: disaggregation over TCP wins all 8 rows too, and the Winner column
+compares RDMA only.
 
 **FINDING: the constants exceed the lesson's own hardware numbers, and it
 prints no cost.** 40 prefill tokens/ms at 2 x 70e9 FLOP/token is 5600 TFLOPS

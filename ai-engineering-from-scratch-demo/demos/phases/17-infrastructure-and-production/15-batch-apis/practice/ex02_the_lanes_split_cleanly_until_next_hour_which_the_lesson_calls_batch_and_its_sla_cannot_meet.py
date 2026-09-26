@@ -20,7 +20,8 @@ is read days later. Both rule sets agree on all three.
 **FINDING: the lesson's batch lane includes "next hour", which a 24-hour
 SLA cannot promise.** A feature that tolerates one hour, such as labelling
 newly opened issues, is batch by the Concept text and semi by the SLA rule.
-The two readings disagree on every tolerance from 1 hour up to 24 hours. The
+The two readings disagree on every tolerance from 1 hour up to, but not
+including, 24 hours. The
 lesson puts typical P50 at 2-6 hours, so more than half of such batches would
 miss that hour.
 

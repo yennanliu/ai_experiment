@@ -19,7 +19,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 2 | Your user base is 30% enterprise (complex queries), 70% free tier (simple). Design the routin… | code | T0 | `ex02_route_free_tier_through_a_cascade_because_tier_pre_routing_hides_complex_free_queries.py` |
 | 3 | A route drops quality by 2% but saves 40%. Is that a ship? Depends on product — argue both. | code | T0 | `ex03_ship_only_if_a_bad_answer_costs_under_17_5_cents_and_the_2_percent_is_4_percent_on_medium_queries.py` |
 | 4 | Implement a confidence check using logprobs from OpenAI / Anthropic APIs. What's the threshol… | code | T0 | `ex04_start_at_the_budget_quantile_of_mean_token_logprob_because_sum_escalates_by_length_and_anthropic_returns_none.py` |
-| 5 | Over six months, escalation rate climbs from 8% to 22%. Diagnose three causes and the fix for… | code | T0 | `ex05_each_cause_leaves_its_own_fingerprint_and_neither_of_the_lessons_escalation_alarms_fires_on_the_climb.py` |
+| 5 | Over six months, escalation rate climbs from 8% to 22%. Diagnose three causes and the fix for… | code | T0 | `ex05_each_cause_leaves_its_own_fingerprint_and_the_lessons_monthly_alarm_fires_only_on_the_4k_context_cliff.py` |
 <!-- generated:end -->
 ## Answers
 
@@ -131,7 +131,7 @@ The summed logprob escalates by length, not by doubt: a long answer has a
 low total however sure each token is. Normalise by length. The reference
 cascade's "confidence" uses no logprob at all.
 
-### 5 — each cause leaves its own fingerprint, and neither of the lesson's escalation alarms fires on the climb
+### 5 — each cause leaves its own fingerprint, and the lesson's monthly alarm fires only on the 4K context cliff
 
 Month 0 is an 88/8/4 simple/medium/hard mix under the reference cascade
 rule: 8.0% escalation, $1.76 per 1000 requests.
@@ -151,7 +151,17 @@ the new mix. If that explains the climb, the cause is mix. Otherwise the
 excess escalations sit on long prompts (length) or on short ones (model).
 `diagnose()` names all three correctly.
 
-**Neither alarm fires.** The lesson flags escalation above 30%, and the
-Ship It plan alerts on a climb of more than 10 points in a month. A steady
-8 → 22% climb peaks at 22% and moves 2.33 points a month. Anchor the alert
+**The lesson's alarms mostly stay silent.** The lesson flags escalation
+above 30%, and the Ship It plan alerts on a climb of more than 10 points in a
+month. Drive each cause linearly over six months:
+
+| cause | monthly escalation, months 0-6 | largest monthly step |
+|---|---|---:|
+| mix drift | 8.0, 9.5, 12.4, 14.5, 17.0, 19.7, 21.7% | 2.9 points |
+| model regression | 8.0, 10.2, 12.4, 14.3, 16.5, 19.9, 22.1% | 3.4 points |
+| context growth | 8.0, 8.0, 8.0, 9.2, 9.8, 10.8, 21.9% | 11.1 points |
+
+The 30% alarm never fires. The monthly alert fires once, in month 6 of the
+context case, when simple prompts cross the 4K limit together. The model
+regression raises the bill 43% without tripping either. Anchor the alert
 to a baseline instead: +14 points since month 0.

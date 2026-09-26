@@ -116,15 +116,15 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson's own 5%-lift run stops at 72% of that n",
-            round(demo[0] / n, 2) == 0.72 and demo[2] > 1.96 and demo[3] is None,
+            (round(demo[0] / n, 2), round(demo[2], 2), round(boundary(demo[1]), 2), demo[3])
+            == (0.72, 2.55, 4.31, None),
             f"A gets {demo[0]} of {n}; the fixed z at its end is {demo[2]:.2f}, the "
             f"sequential boundary {boundary(demo[1]):.2f}, and it never stops",
         ),
         practice.Check(
             "FINDING: at the 80%-power horizon the sequential rule stops in 8 of 40 seeds",
-            result["stops"] == 8
-            and round(boundary(2 * n), 2) == 4.35
-            and ten == (159731, 106300),
+            (result["stops"], round(boundary(2 * n), 2), round(result["drift"], 2), ten)
+            == (8, 4.35, 2.80, (159731, 106300)),
             f"{result['stops']}/{SEEDS} stops; boundary {boundary(2 * n):.2f} against an "
             f"expected z of {result['drift']:.2f}; the 10% demo stops at {ten[0]} vs a "
             f"fixed {ten[1]}",

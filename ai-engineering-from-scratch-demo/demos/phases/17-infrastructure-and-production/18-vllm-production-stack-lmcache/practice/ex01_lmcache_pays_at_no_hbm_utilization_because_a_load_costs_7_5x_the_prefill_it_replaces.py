@@ -14,7 +14,7 @@ so `run()` evicts the oldest prefix.
 **ANSWER: at none -- in this model the break-even is a per-block cost, not a
 utilization.** A re-prefill costs 16 / 40 = 0.4 ms per block and an LMCache
 load 3.0 ms, 7.5x the work it replaces. So every LMCache hit adds time: the
-shipped run is 0.99x, and LMCache loses at every utilization from 100% (0.9676x)
+shipped run is 0.98x or 0.99x, and LMCache loses at every utilization from 100% (0.9676x)
 to 600% (0.7579x). Drop the load cost below 0.4 ms/block and it wins at every
 utilization: 1.0026x to 1.0252x at 0.2 ms/block, 1.0052x to 1.0517x when
 free. At 0.4 it is exactly 1.0 at all six. Utilization only sets how many hits there are, 18 to 164.
@@ -138,7 +138,7 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the simulator has no HBM",
-            result["capacity_reads"] == 1 and round(native / cpu, 2) == 1.01,
+            result["parity"] and result["capacity_reads"] == 1 and round(native / cpu, 2) == 1.01,
             f"hbm_capacity_blocks_per_engine is only assigned; CPU_OFFLOAD ({cpu:.0f} ms) never evicts",
         ),
         practice.Check(

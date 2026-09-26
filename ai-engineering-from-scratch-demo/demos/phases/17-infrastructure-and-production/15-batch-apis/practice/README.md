@@ -68,7 +68,8 @@ semi and "next hour" or "by morning" is batch. The skill refuses batch under
 a 60 s P99, and batch promises only 24 hours. Both rule sets agree on these
 three features.
 
-**They disagree on every tolerance from 1 to 24 hours.** Labelling newly
+**They disagree on every tolerance from 1 hour up to, but not including, 24
+hours.** Labelling newly
 opened issues "within the hour" is batch by the Concept text and semi by the
 SLA. At the lesson's typical P50 of 2-6 hours, most such batches would miss
 the hour.

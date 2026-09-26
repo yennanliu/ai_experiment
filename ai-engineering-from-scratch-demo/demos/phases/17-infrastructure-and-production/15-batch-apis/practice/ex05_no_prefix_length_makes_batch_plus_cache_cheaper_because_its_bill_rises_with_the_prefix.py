@@ -24,7 +24,7 @@ cheaper only below 8,333 documents a night.
 
 **FINDING: the break-even exists only as a ceiling, and only for small
 jobs.** At 1,000 documents a night batch + cache stays cheaper up to a
-350,960-token prefix, which is longer than any context window. Past that
+350,960-token prefix, longer than most models' context windows. Past that
 prefix length the GPU wins. So the exercise's direction is backwards:
 "shorter than" is the only break-even the model allows.
 

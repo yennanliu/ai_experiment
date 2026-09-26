@@ -28,7 +28,9 @@ never calls the same provider twice and never waits, so the lesson's
 "exponential backoff, bounded attempts" has no counterpart. `retries` counts
 failed calls and `fallback_hits` counts calls after the first, so
 retries - fallbacks is exactly the number of requests that failed every
-provider: 10,454 - 10,434 = 20 = 200,000 x (1 - 0.9999).
+provider: 10,454 - 10,434 = 20 = 200,000 x (1 - 0.9999). And the simulated
+mean latency, 189.527 ms on Kong, matches the closed-form chain with no wait
+(189.556 ms), so no time is spent between attempts.
 
 **FINDING: a failed call costs 0.3 of the provider's latency, not "half".**
 `call_provider` returns 54.0 ms for a failed 180 ms OpenAI call; its comment
@@ -88,17 +90,19 @@ def solve():
         "small": small, "big": big,
         "shipped": {g: ref.simulate_fallback(g) for g in ref.GATEWAY_OVERHEAD},
         "overhead": dict(ref.GATEWAY_OVERHEAD),
+        "kong_ms": ref.GATEWAY_OVERHEAD["Kong"],
         "fail_ms": ref.call_provider(ref.PROVIDERS[0], AlwaysFail())[1],
         "six": features(parity.doc_text(PHASE, LESSON)),
     }
 
 
 def verify(result):
-    served, fallbacks, _ = result["expected"]
+    served, fallbacks, latency = result["expected"]
     big, small, shipped = result["big"], result["small"], result["shipped"]
     base = {g: round(r["mean_latency"] - result["overhead"][g], 6) for g, r in shipped.items()}
     same = {(r["success_rate"], r["retries"], r["fallback_hits"]) for r in shipped.values()}
     failed = round(BIG * (1 - big["success_rate"]))
+    no_wait = round(latency + result["kong_ms"], 3)
     return [
         practice.Check(
             "ANSWER: 99.9875% served, 5% hit a fallback, 0.25% reach self-hosted",
@@ -118,9 +122,11 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: every 'retry' is a fallback, and there is no backoff",
-            big["retries"] - big["fallback_hits"] == failed == 20,
+            big["retries"] - big["fallback_hits"] == failed == 20
+            and abs(big["mean_latency"] - no_wait) < 0.1,
             f"retries {big['retries']} - fallbacks {big['fallback_hits']} = {failed} "
-            f"requests that failed all three providers",
+            f"requests that failed all three providers; simulated mean "
+            f"{big['mean_latency']:.3f} ms against {no_wait} ms for the chain with no wait",
         ),
         practice.Check(
             "FINDING: a failed call costs 0.3 of the provider's latency, not half",

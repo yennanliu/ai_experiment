@@ -174,6 +174,6 @@ Requiring two independent windows would cut the unpaired false-alarm rate to
 **Shadow cannot see the lesson's quality-silent case.** Users never see
 shadow output, so thumbs-down, one of the five gates, does not exist there.
 The demo's "Quality silent + cost creep" (cost 1.15, thumbs-down 1.45) reads
-1.15 in shadow and fires on no paired window, while the canary halts it at
+about 1.15 in shadow and fires on none of 1,000 paired windows, while the canary halts it at
 25%. The reference has no shadow mode at all, and `measure_stage` reports a
 thumbs-down rate for any traffic.

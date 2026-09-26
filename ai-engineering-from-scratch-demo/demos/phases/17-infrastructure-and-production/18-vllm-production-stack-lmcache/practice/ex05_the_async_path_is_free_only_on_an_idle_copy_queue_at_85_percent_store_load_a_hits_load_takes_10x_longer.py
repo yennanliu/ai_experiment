@@ -82,6 +82,11 @@ def fifo(jobs):
     return out
 
 
+def mdl(rho):
+    """M/D/1 mean sojourn (ms) at total utilisation rho."""
+    return SERVICE_MS + rho * SERVICE_MS / (2 * (1 - rho))
+
+
 def summary(times):
     times = sorted(times)
     return round(sum(times) / len(times), 2), round(times[int(0.99 * len(times))], 2)
@@ -125,10 +130,11 @@ def verify(result):
             "ANSWER: no -- async takes the store off the request path and puts it in the copy queue",
             all([result["service"] == 6.0, load == [6.35, 8.01, 13.14, 62.35],
                  all(q[r]["load_own"] == q[0.0]["load_own"] for r in STORE_RHOS),
-                 q[0.85]["load_shared"][1] > 20 * q[0.0]["load_shared"][1]]),
+                 q[0.85]["load_shared"][1] > 20 * q[0.0]["load_shared"][1],
+                 round(mdl(0.95)) == 63]),
             f"hit load (mean, p99) ms by store load, shared queue "
             f"{ {r: q[r]['load_shared'] for r in STORE_RHOS} }; own queue "
-            f"{q[0.0]['load_own']} at every store load",
+            f"{q[0.0]['load_own']} at every store load; M/D/1 at 95% gives {mdl(0.95):.0f} ms",
         ),
         practice.Check(
             "FINDING: a separate queue moves the cost to HBM residency",

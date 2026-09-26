@@ -44,6 +44,7 @@ reference's cascade rule with its seed to price the wasted calls.
 
 from __future__ import annotations
 
+import inspect
 import random
 
 from harness import parity, practice
@@ -109,8 +110,9 @@ def solve():
         "same_routing": round(cas["cost"] - waste, 2),
         "claims": all(
             s in parity.doc_text(PHASE, LESSON)
-            for s in ("Best quality floor", "ensemble")
-        ),
+            for s in ("Best quality floor", "simulates pre-route, cascade, and ensemble")
+        )
+        and "guarantees quality floor" in inspect.getsource(ref),
     }
 
 

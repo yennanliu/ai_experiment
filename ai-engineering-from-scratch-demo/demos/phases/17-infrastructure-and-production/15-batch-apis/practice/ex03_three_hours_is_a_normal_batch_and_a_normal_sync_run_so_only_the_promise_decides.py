@@ -39,6 +39,7 @@ Structure: `verdict()` is the criterion; `solve()` enumerates it.
 from __future__ import annotations
 
 import itertools
+import re
 
 from harness import parity, practice
 
@@ -68,7 +69,14 @@ def solve():
         "cases": cases,
         "sync_hours": {n: n / SYNC_DOCS_PER_H for n in SIZES},
         "typical_in_doc": [t in ref_doc for t in TYPICAL],
-        "p50_range": (2, 6),
+        "p50_range": tuple(
+            int(x) for x in re.search(r"Typical P50 is (\d+)-(\d+) hours", ref_doc).groups()
+        ),
+        # a batch verdict must not move with the observed duration: only the promise decides
+        "batch_ignores_duration": all(
+            len({verdict("batch", e, n, h) for h in (0.5, OBSERVED_H, 20, 30)}) == 1
+            for e, n in itertools.product(EXPECTS_H, SIZES)
+        ),
     }
 
 
@@ -81,11 +89,17 @@ def verify(result):
         practice.Check(
             "ANSWER: it is a batch mis-triage exactly when it ran on batch and the user "
             "expected it in under 24 hours",
-            len(cases) == 12
-            and mis == sorted(k for k in cases if k[0] == "batch" and k[1] < SLA_H)
-            and "mis-triage" not in sync_cases.values(),
+            all(
+                [
+                    len(cases) == 12,
+                    mis == sorted(k for k in cases if k[0] == "batch" and k[1] < SLA_H),
+                    "mis-triage" not in sync_cases.values(),
+                    result["batch_ignores_duration"],
+                ]
+            ),
             f"{len(mis)} of {len(cases)} cases are mis-triage: {mis}; sync verdicts "
-            f"{sorted(set(sync_cases.values()))}",
+            f"{sorted(set(sync_cases.values()))}; batch verdicts unchanged at 0.5/3/20/30h "
+            f"observed: {result['batch_ignores_duration']}",
         ),
         practice.Check(
             "FINDING: 3 hours cannot tell the lanes apart",

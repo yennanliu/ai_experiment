@@ -132,7 +132,7 @@ primary OSD.
 
 **The disk wins only against a much slower prefill.** 40 tokens/ms on 70B is
 5.6 PFLOP/s, 2.83 H100s at 100% of dense FP8 peak (1979 TFLOPS). One H100 at
-50% MFU needs 0.58 s, and 8 OSDs on 10GbE read the KV in 0.40 s, under it.
+50% MFU needs 0.58 s, and 8 OSDs on 10GbE read the KV in 0.54 s, under it.
 
 **500 MB is not 4K tokens of a 70B model.** With Llama-3-70B's geometry (80
 layers, 8 KV heads, head dim 128) an FP8 KV cache is 160 KiB a token: 671 MB

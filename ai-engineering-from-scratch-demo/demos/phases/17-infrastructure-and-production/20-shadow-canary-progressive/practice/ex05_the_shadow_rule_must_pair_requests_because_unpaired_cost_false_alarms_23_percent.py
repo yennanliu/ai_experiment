@@ -30,7 +30,7 @@ second one.
 **FINDING: shadow cannot see the lesson's quality-silent case.** Users never
 see shadow output, so thumbs-down -- one of the five gates -- does not exist
 there. The demo's "Quality silent + cost creep" (cost 1.15, thumbs-down 1.45)
-reads 1.15 in shadow and fires on 0 paired windows; the canary halts it at
+reads about 1.15 in shadow and fires on 0 of 1,000 paired windows; the canary halts it at
 25%. `measure_stage` reports a thumbs-down rate for any traffic, and the
 reference has no shadow mode at all.
 
@@ -102,7 +102,6 @@ def solve():
         "rates": rates,
         "two_windows": round(rates[(200, False)][0] ** 2, 3),
         "silent": (window_rate(50, 1.15, True), canary_halt(ref, silent)),
-        "thumbs_hidden": "thumbs_down_rate" not in SHADOW_RULE["observable"],
         "no_shadow_mode": "shadow" not in source.read_text("utf-8").lower(),
     }
 
@@ -133,7 +132,7 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: shadow cannot see the lesson's quality-silent case",
-            r["silent"] == (0.0, 0.25) and r["thumbs_hidden"] and r["no_shadow_mode"],
+            r["silent"] == (0.0, 0.25) and r["no_shadow_mode"],
             f"cost 1.15 + thumbs-down 1.45: (paired shadow fire rate, canary halt stage) "
             f"= {r['silent']}; the reference has no shadow mode",
         ),

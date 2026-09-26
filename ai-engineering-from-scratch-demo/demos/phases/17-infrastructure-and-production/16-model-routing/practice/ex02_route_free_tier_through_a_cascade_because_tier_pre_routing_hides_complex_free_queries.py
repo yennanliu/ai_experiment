@@ -111,7 +111,7 @@ def solve():
         "cheap_ratio": round(
             sum(ref.cost_of("cheap", q) for q in free) / free_spend, 3
         ),
-        "claim": "~65%" in parity.doc_text(PHASE, LESSON),
+        "claim": all(s in parity.doc_text(PHASE, LESSON) for s in ("~65%", "at 3% of the cost")),
     }
 
 
@@ -131,8 +131,10 @@ def verify(result):
                     t2["free_cascade"][2] == 0.1373,
                 ]
             ),
-            f"premise exact: {t0['free_cascade']} vs tier {t0['tier']} (saves {save:.1%}); "
-            f"10% leak: tier {t1['tier'][:2]} with no signal, free_cascade {t1['free_cascade']}; "
+            f"premise exact: all_frontier {t0['all_frontier']}, {t0['free_cascade']} vs tier "
+            f"{t0['tier']} (saves {save:.1%}); 10% leak: all_frontier {t1['all_frontier']}, "
+            f"tier {t1['tier'][:2]} with no signal, free_cascade {t1['free_cascade']}, "
+            f"cascade_all {t1['cascade_all']}; "
             f"20% leak escalation {t2['free_cascade'][2]}",
         ),
         practice.Check(
@@ -145,8 +147,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: a cascade for everyone is cheaper and worse",
-            t0["cascade_all"] == (3.45, 0.9834, 0.191),
-            f"cascade_all {t0['cascade_all']} (cost, quality, escalation) against the "
+            t0["cascade_all"] == (3.45, 0.9834, 0.191)
+            and round(1 - t0["cascade_all"][0] / t0["all_frontier"][0], 3) == 0.478,
+            f"cascade_all {t0['cascade_all']} (cost, quality, escalation), "
+            f"{1 - t0['cascade_all'][0] / t0['all_frontier'][0]:.1%} saved, against the "
             "lesson's 30% over-routing alarm",
         ),
     ]

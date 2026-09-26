@@ -113,16 +113,21 @@ def verify(result):
         practice.Check(
             "ANSWER: primary loaded cost per resolved ticket, guardrail reopen rate, "
             "secondary resolution rate",
-            round(g4, 2) == 1.67
-            and round(g35, 2) == 1.98
-            and result["z_loaded"] < -1.96
-            and abs(result["z_reopen"]) < 1.96,
+            (
+                round(g4, 2),
+                round(g35, 2),
+                round(result["z_loaded"], 1),
+                round(result["z_resolve"], 1),
+                round(result["z_reopen"], 2),
+            )
+            == (1.67, 1.98, -11.0, 13.9, -0.17),
             f"loaded ${g4:.2f} vs ${g35:.2f} a ticket, z = {result['z_loaded']:.1f}; reopen "
             f"z = {result['z_reopen']:.2f}; resolution z = {result['z_resolve']:.1f}",
         ),
         practice.Check(
             "FINDING: the metric's definition decides the winner before the test runs",
-            round(b4 / b35) == 44 and round(1 - g4 / g35, 2) == 0.16,
+            (round(b4, 3), round(b35, 4), round(b4 / b35), round(1 - g4 / g35, 2))
+            == (0.139, 0.0032, 44, 0.16),
             f"LLM spend per bot-resolved ticket ${b4:.3f} vs ${b35:.4f} ({b4 / b35:.0f}x "
             f"for GPT-3.5); loaded, GPT-4 is {1 - g4 / g35:.0%} cheaper",
         ),
@@ -134,8 +139,8 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: a reopen guardrail counted per ticket penalizes the model that resolves more",
-            round(result["reopen_ratio"], 1) == 1.2
-            and result["z_reopen_ticket"] > 1.9
+            (round(result["reopen_ratio"], 2), round(result["z_reopen_ticket"], 2))
+            == (1.18, 1.96)
             and abs(result["z_reopen"]) < 1.96,
             f"both arms reopen {REOPEN:.0%} of what they resolve; per ticket GPT-4 reopens "
             f"{result['reopen_ratio']:.2f}x as often, z = {result['z_reopen_ticket']:.2f} at "

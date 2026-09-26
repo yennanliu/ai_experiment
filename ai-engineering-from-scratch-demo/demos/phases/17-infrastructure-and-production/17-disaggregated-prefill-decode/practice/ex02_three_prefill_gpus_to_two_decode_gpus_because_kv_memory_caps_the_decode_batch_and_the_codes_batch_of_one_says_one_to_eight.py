@@ -17,7 +17,8 @@ weights. The prefill pool is held to 70% utilization for P99 headroom.
 holds 66 requests' KV (8492 tokens x 125,000 B = 1.06 GB each), a full-batch
 step takes 28.9 ms, and 10 req/s needs 86.8 requests in flight: 2 GPUs.
 P99 TTFT is 204.8 ms prefill + 10.24 ms RDMA transfer = 215 ms before
-queueing; TPOT is 28.9 ms.
+queueing; TPOT is at most 28.9 ms, the full-batch step (the 2
+GPUs carry about 43 requests each).
 
 **FINDING: the code's batch-of-one decode sizes the pools 1 : 8 the other
 way.** `ms_disaggregated` decodes at 0.18 tok/ms, 1666.7 GPU-ms per request

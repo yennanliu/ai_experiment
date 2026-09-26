@@ -1,4 +1,4 @@
-"""Exercise 5 — each cause leaves its own fingerprint, and neither of the lesson's escalation alarms fires on the climb.
+"""Exercise 5 — each cause leaves its own fingerprint, and the lesson's monthly alarm fires only on the 4K context cliff.
 
     Over six months, escalation rate climbs from 8% to 22%. Diagnose three
     causes and the fix for each.
@@ -29,16 +29,21 @@ per-difficulty rates by the new mix. If that explains the climb, the cause is
 mix. If not, the excess escalations sit on long prompts (length) or on
 short ones (model). This rule names all three correctly.
 
-**FINDING: neither of the lesson's alarms fires on this climb.** The lesson
-flags a cascade "kicking up-route >30%", and the Ship It plan alerts when
-escalation "climbs >10 points in a month". A steady 8 -> 22% over six months
-peaks at 22% and climbs 2.33 points a month, so both stay silent while the
-regression case alone raises the bill 43%. The gate has to be anchored to a
-baseline (here +14 points since month 0), not to a monthly step.
+**FINDING: the lesson's alarms stay silent on two causes, and the monthly
+one fires on the third only at the 4K cliff.** The lesson flags a cascade
+"kicking up-route >30%", and the Ship It plan alerts when escalation
+"climbs >10 points in a month". Drive each cause linearly from month 0 to
+month 6 and read the monthly rates. Mix drift climbs 8.0 -> 21.7% with no
+month over 2.9 points; the model regression climbs 8.0 -> 22.1% with no
+month over 3.4 points. The context growth sits near 8-11% for five months,
+then jumps 11.1 points in month 6 when simple prompts cross 4K, so only that
+step trips the monthly alert. The 30% alarm never fires, and the regression
+case raises the bill 43% without either alarm. The gate has to be anchored
+to a baseline (here +14 points since month 0), not to a monthly step.
 
 Structure: `workload()` draws with fixed seeds; `cascade()` returns rate, cost
 and the (difficulty, long prompt, escalated) log; `diagnose()` reads only
-that log.
+that log; `monthly()` drives each cause linearly over six months.
 """
 
 from __future__ import annotations
@@ -78,9 +83,7 @@ def cascade(ref, reqs, esc=SHIPPED, max_len=None, pre_route=lambda q: False):
         if pre_route(q):
             cost += ref.cost_of("frontier", q)
             continue
-        up = u < esc[q.difficulty] or (
-            max_len is not None and q.prompt_tokens > max_len
-        )
+        up = u < esc[q.difficulty] or (max_len is not None and q.prompt_tokens > max_len)
         cost += ref.cost_of("cheap", q) + (ref.cost_of("frontier", q) if up else 0)
         log.append((q.difficulty, q.prompt_tokens > LONG, up))
     return round(rate([u for *_, u in log]), 3), round(cost, 2), log
@@ -101,6 +104,31 @@ def diagnose(month0_log, log):
     return "length" if excess[True] > excess[False] else "model"
 
 
+def monthly(ref, cause):
+    """Escalation rate at months 0..6 as the cause moves linearly to its month-6 value."""
+    def month(f):
+        if cause == "mix":
+            mix = [a + f * (b - a) for a, b in zip(MONTH0, DRIFTED)]
+            return cascade(ref, workload(ref, mix))
+        if cause == "model":
+            esc = {d: v + f * (REGRESSED[d] - v) for d, v in SHIPPED.items()}
+            return cascade(ref, workload(ref, MONTH0), esc)
+        return cascade(ref, workload(ref, MONTH0, round(f * CONTEXT)), max_len=LONG)
+
+    return [month(t / 6)[0] for t in range(7)]
+
+
+def alarms(paths):
+    """Largest monthly step per cause, the context path's >10-point months, the peak rate."""
+    deltas = {k: [y - x for x, y in zip(p, p[1:])] for k, p in paths.items()}
+    return {
+        "paths": paths,
+        "steps": {k: round(max(d), 3) for k, d in deltas.items()},
+        "alerts": [d > 0.10 for d in deltas["length"]],
+        "peak": max(max(p) for p in paths.values()),
+    }
+
+
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     base = cascade(ref, workload(ref, MONTH0))
@@ -113,9 +141,7 @@ def solve():
     fixes = {
         "mix": cascade(ref, drifted, pre_route=lambda q: q.difficulty == "hard"),
         "model": base,
-        "length": cascade(
-            ref, long_, max_len=LONG, pre_route=lambda q: q.prompt_tokens > LONG
-        ),
+        "length": cascade(ref, long_, max_len=LONG, pre_route=lambda q: q.prompt_tokens > LONG),
     }
     skill = parity.lesson_dir(PHASE, LESSON) / "outputs/skill-router-plan.md"
     return {
@@ -123,21 +149,23 @@ def solve():
         "runs": {k: r[:2] for k, r in runs.items()},
         "diagnosis": {k: diagnose(base[2], r[2]) for k, r in runs.items()},
         "fixes": {k: f[:2] for k, f in fixes.items()},
-        "max_step": round((0.22 - 0.08) / 6, 4),  # a steady climb over six months
+        **alarms({k: monthly(ref, k) for k in runs}),
+        "bill_rise": round(runs["model"][1] / base[1] - 1, 2),
         "gates": "up-route >30%" in parity.doc_text(PHASE, LESSON)
         and "climbs >10 points in a month" in skill.read_text(),
     }
 
 
 def verify(result):
-    runs, fixes = result["runs"], result["fixes"]
+    runs, fixes, paths, steps = result["runs"], result["fixes"], result["paths"], result["steps"]
     return [
         practice.Check(
             "ANSWER: the traffic got harder, the cheap model got worse, or the prompts got longer",
             result["base"] == fixes["model"] == (0.08, 1.76)
-            and all(0.215 <= r[0] <= 0.225 for r in runs.values())
+            and runs == {"mix": (0.217, 5.37), "model": (0.221, 2.52), "length": (0.219, 5.42)}
             and (fixes["mix"], fixes["length"]) == ((0.081, 5.06), (0.004, 5.09)),
-            f"month 0 {result['base']}; month 6 (rate, cost) {runs}; after each fix {fixes}",
+            f"month 0 {result['base']}; month 6 (rate, cost) {runs}; after each fix {fixes}; "
+            f"the mix fix saves ${runs['mix'][1] - fixes['mix'][1]:.2f} of doomed cheap calls",
         ),
         practice.Check(
             "FINDING: the log alone separates the three",
@@ -145,12 +173,16 @@ def verify(result):
             f"diagnose() names {result['diagnosis']}",
         ),
         practice.Check(
-            "FINDING: neither of the lesson's alarms fires on this climb",
+            "FINDING: the lesson's alarms stay silent on two causes, and the monthly one "
+            "fires on the third only at the 4K cliff",
             result["gates"]
-            and result["max_step"] < 0.10
-            and max(r[0] for r in runs.values()) < 0.30,
-            f"a steady 8 -> 22% climb moves {result['max_step'] * 100:.2f} points a month "
-            "against a 10-point monthly alert, and peaks under the 30% over-routing alarm",
+            and steps == {"mix": 0.029, "model": 0.034, "length": 0.111}
+            and result["peak"] < 0.30
+            and result["alerts"] == [False] * 5 + [True]
+            and result["bill_rise"] == 0.43,
+            f"monthly escalation paths {paths}; largest monthly step {steps} against the "
+            "10-point alert, every peak under the 30% alarm; the regression raises the bill "
+            f"{result['bill_rise']:.0%} on unchanged traffic",
         ),
     ]
 

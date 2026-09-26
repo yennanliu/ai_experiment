@@ -143,9 +143,11 @@ def verify(result):
             "FINDING: summing logprobs escalates by length, not by doubt",
             total["up"] == (0, 24, 76)
             and total["caught"] < mean["caught"]
-            and low["caught"] == 14,
-            f"sum escalates (simple, medium, hard) {total['up']}, catches {total['caught']} for "
-            f"${total['cost']}; min catches {low['caught']}",
+            and low["caught"] == 14
+            and (mean["up"], low["up"]) == ((52, 32, 16), (27, 39, 34)),
+            f"escalated (simple, medium, hard), caught, cost: mean {mean['up']}, "
+            f"{mean['caught']}, ${mean['cost']}; min {low['up']}, {low['caught']}, "
+            f"${low['cost']}; sum {total['up']}, {total['caught']}, ${total['cost']}",
         ),
         practice.Check(
             "FINDING: Anthropic's Messages API returns no logprobs, and the lesson's code reads none",

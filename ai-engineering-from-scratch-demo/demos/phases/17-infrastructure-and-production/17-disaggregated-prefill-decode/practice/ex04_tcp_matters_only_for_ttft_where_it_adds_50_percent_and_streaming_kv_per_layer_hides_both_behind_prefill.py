@@ -69,7 +69,9 @@ def solve():
         "hidden": (exposed(prefill, rdma), exposed(prefill, tcp)),
         "hide_gb_s": ref.KV_BYTES_PER_TOKEN_70B_FP8 * ref.PREFILL_TOK_PER_MS * 1000 / 1e9,
         "slow": (round(slow, 1), round(exposed(prefill, slow), 1)),
-        "doc_range": "20-80 ms for KV cache of a 4K-token prompt" in parity.doc_text(PHASE, LESSON),
+        "doc_range": all(s in parity.doc_text(PHASE, LESSON) for s in (
+            "20-80 ms for KV cache of a 4K-token prompt", "RDMA 100 GB/s, transfer = 5 ms")),
+        "spread": (round(20 / rdma), round(80 / rdma)),
         "llama": (round(llama_mb), round(llama_mb / 1e3 / ref.NIXL_RDMA_GB_S * 1e3, 2),
                   round(llama_mb / 1e3 / ref.NIXL_TCP_GB_S * 1e3, 1)),
     }
@@ -96,8 +98,10 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the lesson's own transfer figures disagree 4-16x",
-            result["doc_range"] and result["llama"] == (671, 6.71, 67.1),
-            f"'20-80 ms' against {result['rdma']} ms RDMA; at {LLAMA_KV} B/token the KV is "
+            result["doc_range"] and result["spread"] == (4, 16)
+            and result["llama"] == (671, 6.71, 67.1),
+            f"'20-80 ms' against {result['rdma']} ms RDMA ({result['spread'][0]}-"
+            f"{result['spread'][1]}x); at {LLAMA_KV} B/token the KV is "
             f"{result['llama'][0]} MB: {result['llama'][1]} ms RDMA, {result['llama'][2]} ms TCP",
         ),
     ]
