@@ -1,0 +1,81 @@
+lesson: 15-batch-apis
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/15-batch-apis/docs/en.md
+exercises:
+  - index: 1
+    slug: the_full_stack_saves_68_percent_and_500_output_tokens_keep_it_above_25_percent_of_sync
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. For a 100k-doc pipeline with 3K-token system prompt and 500-token output, compute the savings of full stack (batch + cache) vs sync baseline.
+    zh: |
+      跑 `code/main.py`。對一條 10 萬份文件、3K 詞元系統提示詞、500 詞元輸出的管線，算出整套堆疊（批次 + 快取）相對同步基線的節省。
+    verifies: >-
+      at 100k docs, 3000-token prefix, 2000 per-doc and 500 output tokens the reference's cost_sync is
+      $2250.00 and cost_batch_cache $720.01, ratio 0.32; over per-doc 0/300/2000/15000 the ratio is
+      0.2545/0.2672/0.32/0.4341. ~10% needs a prefix of 40x output (20,000 tokens gives 0.1); the
+      reference's three runs print 24.3/17.1/41.3% and the Problem pipeline is $1050.00 -> $255.01
+      (floor 0.14 at zero doc tokens). Pricing a cache miss as a fresh write, the ratio is
+      0.3246/0.435/0.481 at 98/50/30% hit rates, and below 21.74% cache_control costs more than plain
+      batch (0.5)
+  - index: 2
+    slug: the_lanes_split_cleanly_until_next_hour_which_the_lesson_calls_batch_and_its_sla_cannot_meet
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick three features in a real product you know. Triage each into interactive/semi/batch.
+    zh: |
+      從你熟悉的一項真實產品中挑三個功能。把每一個檢傷分類成互動式／半互動式／批次。
+    verifies: >-
+      Copilot inline completion (0.5 s), Copilot code review (15 min) and a weekly digest (7 days)
+      triage to interactive/semi/batch under both the Concept-text rules and the 60 s / 24 h SLA
+      rules; a 1-hour feature is batch by the Concept text and semi by the SLA, and the rules disagree
+      from 1h to 23h. sync+cache / batch+cache is exactly 2.0 on the three reference workloads,
+      batch+cache removes 75.7/82.9/58.7% of uncached sync, and main.py prices only cost_sync,
+      cost_sync_cache, cost_batch and cost_batch_cache
+  - index: 3
+    slug: three_hours_is_a_normal_batch_and_a_normal_sync_run_so_only_the_promise_decides
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A user complains their report took 3 hours. Was that a batch mis-triage or a legitimate interactive? Write the decision criterion.
+    zh: |
+      一位使用者抱怨他的報告花了 3 小時。那是一次批次的錯誤檢傷，還是一項正當的互動式需求？把判準寫出來。
+    verifies: >-
+      over 12 cases (batch/sync x expecting 1/8/48 h x 1 or 37,500 docs) exactly the 4 batch cases
+      expecting under 24h are mis-triage and no sync case is; 3h lies inside the lesson's 2-6h batch
+      P50 and equals its own sync pipeline (12,500 docs/h) on 37,500 documents; the lesson text
+      contains both '2-8 hours in practice' and 'Typical P50 is 2-6 hours'
+  - index: 4
+    slug: promise_24_hours_and_spill_to_sync_at_hour_20_which_costs_1_percent_more
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your batch API return SLA is 24h but P99 is 20 hours. How do you communicate this to the user — what is the downstream system behavior on the edge case?
+    zh: |
+      你的批次 API 回傳 SLA 是 24 小時，但 P99 是 20 小時。你要怎麼向使用者溝通這件事 —— 下游系統在那個邊界情況下的行為是什麼？
+    verifies: >-
+      with a lognormal of P50 4h and P99 20h on the Problem pipeline, a 24h promise that spills to
+      sync+cache at hour 20 spills 1% of nights at an expected $257.56 against $255.01 pure batch, and
+      0.48% of batches would pass 24h; an 8h promise spills 50% at $382.51 and misses 15.8% without
+      spillover. P95 is 10.19/12.48/14.06h at P50 2/4/6h, so the skill's P95 > 12h alert fires for
+      every P50 above 3.5h; code/main.py contains no hour, latency, sla, p99 or percentile
+  - index: 5
+    slug: no_prefix_length_makes_batch_plus_cache_cheaper_because_its_bill_rises_with_the_prefix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute break-even: at what shared-prefix length does batch + cache become cheaper than running overnight on your own reserved GPU?
+    zh: |
+      算出損益平衡：共享前綴要多長，批次 + 快取才會比在你自己的保留 GPU 上隔夜跑更便宜？
+    verifies: >-
+      at 100k docs, 2000 per-doc and 500 output tokens the batch+cache bill rises $675.00 -> $1125.05
+      over prefixes 0..30,000 at $0.015 per prefix token, 11.25 reserved H100-days ($60 at $2.50/h) at
+      prefix 0, so the break-even prefix is negative and at a 3000 prefix the API wins only below
+      8,333 docs; at 1,000 docs it wins up to a 350,960-token prefix. The ratio to sync falls 0.5 ->
+      0.1087 meanwhile; one H100 at 2,300 tok/s for 8h gives 66.24M tokens, 132,480 docs
