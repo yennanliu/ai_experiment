@@ -1,0 +1,82 @@
+lesson: 04-vllm-serving-internals
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/04-vllm-serving-internals/docs/en.md
+exercises:
+  - index: 1
+    slug: static_beats_continuous_4_6x_because_the_toy_bills_a_padded_batch_as_one_request
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare `STATIC` to `CONTINUOUS` on a workload with mixed short and long requests. Where does the throughput gap come from — prefill efficiency, decode efficiency, or tail latency?
+    zh: |
+      跑 `code/main.py`。在一份長短請求混合的工作負載上，比較 `STATIC` 與 `CONTINUOUS`。那個吞吐量落差從哪裡來 —— 預填效率、解碼效率，還是尾端延遲？
+    verifies: >-
+      on the reference 60-request workload STATIC does 4055 tok/s and CONTINUOUS 886: static ends at
+      2.32s (1.31 prefill, 0.53 decode, 0.48 overhead and idle) and continuous at 10.63s (5.65, 4.71,
+      0.27), so the gap is 4.34s of prefill and 4.18s of decode; P99 ITL is 0.7 vs 219.3 ms. Static
+      bills a window's prefill at its longest prompt and decode at 1/16 per token, continuous bills
+      every token, landing 886 against NAIVE's 768. With prefill free and decode at 1/16 in both,
+      continuous does 6767 tok/s (TTFT 0.1 ms) against static's 6382 (155.7 ms)
+  - index: 2
+    slug: the_budget_buys_the_toy_no_throughput_and_one_h100_has_kv_room_for_13k_tokens
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the toy scheduler to add `--max-num-batched-tokens`. What is the right value for an H100 running Llama 3.3 70B FP8? (Hint: it is a function of KV block size and number of free blocks, not raw HBM.)
+    zh: |
+      修改那個玩具排程器，加上 `--max-num-batched-tokens`。對一張跑 Llama 3.3 70B FP8 的 H100，正確的值是多少？（提示：它是 KV 區塊大小與空閒區塊數的函數，不是原始 HBM 的函數。）
+    verifies: >-
+      the budgeted loop with no budget reproduces simulate_continuous's TTFT and ITL samples chunked
+      and unchunked. Llama 3.3 70B KV is 327,680 B/token in BF16; 0.9 x 81,559 MiB less the 72.67 GB
+      FP8 checkpoint leaves 4.30 GB, 819 blocks of 16 (13,104 tokens), 1,639 with FP8 KV, above vLLM
+      v0.18.0's H100 API default of 8192, which ignores blocks. Budgets 128..28800 give 878..886 tok/s
+      while P99 ITL goes 10.8 -> 262.2 ms at most; the reference's 512-token chunking still schedules
+      2694 tokens in one step, 18,563 unchunked. An 8192-token sequence is 2.68 GB BF16, 1.34 GB FP8,
+      and 128 concurrent get 102 tokens each
+  - index: 3
+    slug: the_release_notes_list_no_exclusions_and_v0_18_marks_chunked_prefill_with_spec_decode_compatible
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Re-read the vLLM v0.18.0 release notes. Which combinations of flags are mutually exclusive? List them.
+    zh: |
+      重讀 vLLM v0.18.0 的發行說明。哪些旗標組合是互斥的？把它們列出來。
+    verifies: >-
+      the v0.18.0 release body states no exclusions; the v0.18.0 compatibility matrix has 27
+      incompatible pairs and 3 partial, speculative decoding excluding 8 features and chunked prefill
+      2 (enc-dec, multi-step), with CP x SD compatible. The lesson doc and its skill file both claim
+      the chunked-prefill + draft-model incompatibility; the toy's simulate_continuous takes only
+      (reqs, chunked); v0.18.0 registers --speculative-config and no --speculative-model, and the
+      NGram release line is about the async scheduler
+  - index: 4
+    slug: contiguous_wastes_81_6_percent_paged_0_5_and_the_toy_reserves_like_neither
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the KV cache fragmentation waste for a trace of 1,000 requests with mean 1,500 output tokens, std 600 tokens, under (a) contiguous per-request allocation at 8192 max, (b) PagedAttention with 16-token blocks.
+    zh: |
+      對一份 1,000 個請求、平均 1,500 個輸出詞元、標準差 600 詞元的軌跡，計算 KV 快取的碎片化浪費：(a) 以 8192 為上限的逐請求連續配置，(b) 16 詞元區塊的 PagedAttention。
+    verifies: >-
+      on 1,000 seeded N(1500, 600) output lengths clipped to [1, 8192] (mean 1511, 2 clipped),
+      contiguous 8192 reservation wastes 81.56% at completion (2.19 GB of BF16 KV per request) and
+      89.37% step-averaged; 16-token paging wastes 0.50% (7.6 tokens of tail) and 0.86%. The reference
+      reserves blocks_needed() at admission, 0.5% at completion but 50.19% step-averaged
+  - index: 5
+    slug: chunking_cannot_raise_throughput_on_an_additive_cost_and_on_a_roofline_it_lifts_it_17_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Explain in one paragraph why chunked prefill helps P99 ITL but not throughput in isolation. Where does the throughput win come from in practice?
+    zh: |
+      用一段話解釋為何分塊預填單獨看有助於 P99 ITL、卻無助於吞吐量。實務上那份吞吐量的斬獲從哪裡來？
+    verifies: >-
+      simulate_continuous gives 886 tok/s / 219.3 ms P99 ITL unchunked and 885 / 66.1 chunked; seven
+      policies on the additive toy cost land at 878..886 tok/s. On a roofline step cost (72.67 GB at
+      3.35 TB/s against 1979 FP8 TFLOPS, ridge 304 tokens) prefill-first steps give 248 tok/s / 241.2
+      ms, the whole-prompt mix 250, and a 320-token budget 291 / 23.0 ms; budgets 128/256/320/512/2048
+      give 246/286/291/273/254

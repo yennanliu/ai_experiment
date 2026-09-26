@@ -1,0 +1,76 @@
+lesson: 10-cold-start-mitigation
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/10-cold-start-mitigation/docs/en.md
+exercises:
+  - index: 1
+    slug: a_warm_replica_pays_above_2_7_requests_an_hour_and_the_reference_table_never_reads_the_price
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compute the break-even request rate above which a warm replica is cheaper than paying the cold-start tax via extra request drops at SLO.
+    zh: |
+      跑 `code/main.py`。算出那個請求速率的損益平衡點：超過它之後，一個暖副本會比「在 SLO 上多丟請求所付的冷啟動稅」更便宜。
+    verifies: >-
+      with Poisson arrivals, a 328s cold start, $4.50/GPU-hour and $1 per SLO miss, a warm replica is
+      cheaper above 2.72 req/hr, independent of the idle timeout (4.47/hr with a 3s snapshot cold
+      start, 7.75/hr at $0.10 per miss); a seeded 60-day simulation has it losing at 2.5 req/hr and
+      winning at 3 for idle timeouts of 60, 300 and 900s. The reference warm_pool_break_even prints
+      the same yes/no column for ($4.50, 328s), ($0.85, 30s) and ($50, 3s) -- yes only at 1 req/hr,
+      the opposite direction
+  - index: 2
+    slug: one_layer_suffices_and_the_snapshot_only_passes_because_it_restores_weights_in_zero_seconds
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You deploy a 13B model with P99 TTFT SLA of 3s. Pick the minimum mitigation stack (fewest layers) that achieves it.
+    zh: |
+      你部署一個 13B 模型、P99 TTFT SLA 為 3 秒。挑出達成它所需、層數最少的那套緩解堆疊。
+    verifies: >-
+      scaling the reference PHASES_70B size-dependent rows by 13/70, raw 13B is 117.91s, pre-seeded
+      84.49, streamer 110.49, both 77.06; a warm pool (0.56s) and a GPU snapshot (2.59s) each meet 3s
+      alone, so the minimum is one layer. The snapshot row restores weights in 0.0s at any size;
+      charged 26 GB at 7 GB/s the snapshot path is 6.3s. All 4 stacks containing gpu_snapshot give
+      2.59s, and none of the reference 70B totals (3, 108, 148, 288, 328s) is the lesson ~15s
+  - index: 3
+    slug: 93_seconds_at_7_gb_s_and_an_ebs_snapshot_cannot_read_at_7_gb_s
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Bottlerocket pre-seeding eliminates image pull but weights still load from snapshot to HBM. Compute wall-clock for a 70B model if the snapshot-backed NVMe reads at 7 GB/s.
+    zh: |
+      Bottlerocket 的預先播種消除了拉映像，但權重仍要從快照載進 HBM。若快照支撐的 NVMe 讀取速度是 7 GB/s，算出 70B 模型的牆鐘時間。
+    verifies: >-
+      the pre-seeded 70B path with 140 GB read at 7 GB/s is 20s of weights and 93s total (fp8 83s,
+      int4 78s) against the reference 148s; the reference 75s weights row implies 1.87 GB/s and its
+      35s streamer row 4.0 GB/s, and Phase has no bytes or bandwidth field. At the gp3 cap of 2000
+      MiB/s the read is 66.8s and the path 139.8s; at the 300 MiB/s EBS initialization rate 445.0s and
+      518.0s, above the raw 328s
+  - index: 4
+    slug: serverless_provider_offers_gpu
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Your serverless provider offers GPU snapshots (Modal) and your team refuses because "snapshots leak PII." Argue both sides — what is the realistic risk, and what is the mitigation (ephemeral snapshots, encryption, namespace isolation)?
+    zh: |
+      你的無伺服器供應商提供 GPU 快照（Modal），但你的團隊拒絕，因為「快照會洩漏 PII」。替兩邊各論證一次 —— 實際的風險是什麼，而緩解又是什麼（短暫快照、加密、命名空間隔離）？
+    cites: >-
+      Layer 3 — GPU memory snapshots (Modal)
+  - index: 5
+    slug: paid_needs_three_warm_replicas_trial_rides_on_them_and_batch_needs_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a tiered warm-pool policy: how many warm replicas for paid users, trial users, and batch workloads? Show the math.
+    zh: |
+      設計一套分層的暖池政策：付費使用者、試用使用者與批次工作負載各要幾個暖副本？把數學算出來。
+    verifies: >-
+      with 8 slots per replica and 6s requests, paid at 2 req/s (12 in flight) overflows 2 replicas
+      10.13% of the time and 3 replicas 0.07%, so 3; trial alone needs 1, pooled with paid the 13.8 in
+      flight overflow 24 slots 0.42%, under 1%, so 0 extra; batch 20,000 items take 15,000s, the 328s
+      cold start is 2.2% and a warm replica would cost $89.25/day for $0.41 of boot. 3 replicas cost
+      $9,720/month; per-tenant floors need 6 and $19,440. main.py has no tier, concurrency or replicas

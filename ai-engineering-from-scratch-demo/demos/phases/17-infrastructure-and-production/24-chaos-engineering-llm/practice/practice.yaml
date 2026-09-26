@@ -1,0 +1,86 @@
+lesson: 24-chaos-engineering-llm
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/24-chaos-engineering-llm/docs/en.md
+exercises:
+  - index: 1
+    slug: only_the_provider_429_trips_because_the_gate_is_blast_over_20_percent_and_the_80x_prompt_runs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Which experiment trips the burn-rate gate and why?
+    zh: |
+      跑 `code/main.py`。哪一項實驗觸發了燃燒率閘門，為什麼？
+    verifies: >-
+      only 'provider 429 fallback' is ABORTED; burn is 4x, 30x, 80x and blast 5%, 30%, 10%, so every
+      experiment clears 2x and none trips at 20% blast while all three trip at 21%. Service-wide the
+      malformed prompt burns 8.9x against the aborted run's 9.7x; the lesson's burn-over-2x rule
+      pauses all three, '20%' is absent from docs/en.md and the skill caps blast at < 30% of fleet.
+      Against the 0.1% budget burn is 2.0x, 15x, 40x; a 500-minute run gets the same verdicts; the
+      provider run spends 1.562% of a day's budget, 1.031x the expected daily burn
+  - index: 2
+    slug: criteria_on_error_latency_and_grounding_fail_all_five_broken_runs_and_the_lessons_gate_stops_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design the first five chaos experiments for a vLLM-based RAG service. Include success criteria.
+    zh: |
+      替一套以 vLLM 為基礎的 RAG 服務設計前五項混沌實驗。附上成功判準。
+    verifies: >-
+      five vLLM RAG experiments ordered by blast 5%..25%, each with criteria on error rate, p95 over
+      baseline and grounded-answer rate: baseline and hardened expectations fail none, naive
+      expectations fail each (p95; error+grounded; grounded; p95; error). The reference run_experiment
+      aborts only the naive replica kill; the naive partition completes at 2000x burn on 5% blast and
+      the naive vector-DB fallback at 1.0x with grounding 0. Experiment has exactly the fields name,
+      duration_min, induced_error_rate, blast_radius_pct
+  - index: 3
+    slug: compare_tagged_traffic_with_the_untagged_control_because_the_gate_aborts_a_natural_incident_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your burn-rate alert paused an experiment. How do you determine root cause — chaos or natural?
+    zh: |
+      你的燃燒率警報暫停了一項實驗。你要怎麼判定根因 —— 是混沌造成的還是自然發生的？
+    verifies: >-
+      over a seeded 60,000-request window of the provider 429 experiment, tagged-vs-control and
+      control-vs-baseline z-tests at 3 return chaos, natural and both for the three worlds (z 23.77 /
+      0.29 / 13.21 and 0.23 / 94.82 / 94.82). With no chaos the tagged error rate 0.0111 makes the
+      reference gate abort at 22x. Tagged share of errors is 0.9272, 0.3064, 0.5005. Attribution needs
+      48,394 requests for the pod kill (under 162 req/s it outlasts the 5-minute run), 984 for the
+      provider 429
+  - index: 4
+    slug: production_once_the_prerequisites_hold_because_the_lessons_experiments_cost_0_08_percent_of_a_month
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether chaos should run in production or only staging. When is production the right answer?
+    zh: |
+      論證混沌該在生產環境跑，還是只在預備環境跑。什麼時候生產環境才是對的答案？
+    verifies: >-
+      at the lesson's 99.9% SLO the baseline leaves 0.5 of the budget and the three experiments spend
+      0.00081 of a 30-day budget; the malformed prompt and provider 429 would need 5400 and 4800
+      minutes to spend the rest. A fully failed blast radius spends it in 432 minutes at 5% and 72 at
+      30%, a 5-minute abort risks 0.012 and 0.069 of it; the rule sends mature teams to production,
+      missing prerequisites to staging, >2 incidents/week to stabilise, and a 15-minute abort to
+      staging at 30% blast only. Experiment has no environment field
+  - index: 5
+    slug: tokenizer_cost_kv_pressure_and_a_truncating_failover_follow_the_payload_and_the_lesson_names_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Name three LLM-specific failure modes that generic network-chaos cannot reproduce.
+    zh: |
+      說出三個通用網路混沌重現不出來的 LLM 專屬失敗模式。
+    verifies: >-
+      a one-merge-per-scan toy BPE costs 2031 pair-steps on 1 KB of prose and 515775 on 1 KB with no
+      whitespace, and delay, 1% corruption and truncation stay under 1.05x prose. A 4096-block KV pool
+      preempts 0 times for 32 x 1024-token requests, delayed or 10% dropped, and 5 times re-prefilling
+      40704 tokens at 8000 tokens; duplicated requests preempt 21 times (26192 tokens) and a
+      32-running cap takes that to 0 but leaves the long run at 5. A 16K -> 4K failover drops 80% of
+      chunks and the reference gate reads 0x, COMPLETED. docs/en.md's network-failure and
+      provider-outage experiments are generic faults and memory overload and KV storm share one
+      mechanism

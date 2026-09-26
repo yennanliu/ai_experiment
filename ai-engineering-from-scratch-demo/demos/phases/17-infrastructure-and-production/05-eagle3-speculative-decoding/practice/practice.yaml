@@ -1,0 +1,81 @@
+lesson: 05-eagle3-speculative-decoding
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/05-eagle3-speculative-decoding/docs/en.md
+exercises:
+  - index: 1
+    slug: the_formula_asks_alpha_0_26_for_2x_and_its_own_simulator_asks_0_78
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At K=5, what alpha do you need for a 2x speedup? For a 3x speedup? How sensitive is that to verify_overhead?
+    zh: |
+      跑 `code/main.py`。在 K=5 時，你需要多少 alpha 才有 2 倍加速？3 倍呢？那對 verify_overhead 有多敏感？
+    verifies: >-
+      at K=5 and verify_overhead 0.15 expected_speedup needs alpha 0.26 for 2x and 0.49 for 3x, rising
+      exactly S/K per unit of overhead (0.20..0.40 and 0.40..0.70 over overhead 0..0.5; 0.32 and 0.58
+      at 256 concurrent). Counting tokens only up to the first rejection, as simulate_tail does, 2x/3x
+      need 0.582/0.771. The simulator's own throughput at alpha 0.3 and 32 concurrent is 0.700x
+      (simulate_tail at 200k tokens 0.6997) against a printed 2.14x; it needs 0.511/0.781/0.889 for
+      1x/2x/3x at 32 and 0.348/0.687/0.819 at 256. breakeven_alpha prints 0.034/0.045/0.060, and
+      reaches the KEY FINDING's 0.4 only at concurrency 3157
+  - index: 2
+    slug: blended_alpha_0_61_passes_the_gate_while_the_code_slice_runs_slower_than_plain
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Imagine production traffic splits 70% general chat, 30% code. General chat hits alpha 0.7 with EAGLE-3 trained on ShareGPT; code hits alpha 0.4. What is blended alpha and is spec decode net-positive?
+    zh: |
+      想像生產流量是 70% 一般聊天、30% 程式碼。一般聊天在 ShareGPT 訓練的 EAGLE-3 上打到 alpha 0.7；程式碼打到 0.4。混合後的 alpha 是多少，推測解碼是淨正面的嗎？
+    verifies: >-
+      blended alpha 0.7*0.7 + 0.3*0.4 = 0.61 clears the 0.55 gate and the formula rates it 3.47x at 32
+      concurrent, 3.12x at 256, code alone 2.57x. In the simulator's cost model at 32 concurrent chat
+      runs 1.56x and code 0.82x; the time-blended mix is 1.23x, one blended alpha says 1.24x, and
+      routing code to plain gives 1.34x; at 256 code is 1.09x and spec-on-everything wins 1.63x to
+      1.57x. Logged as accepted/proposed drafts, per-position 0.7 reads 0.388, 0.4 reads 0.132 and the
+      pooled mix 0.278, under the gate
+  - index: 3
+    slug: read_vllm_speculative_config
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      Read the vLLM `speculative_config` documentation. Name the three modes (draft model, EAGLE, N-gram) and which one is compatible with chunked prefill.
+    zh: |
+      讀 vLLM 的 `speculative_config` 文件。說出那三種模式（草稿模型、EAGLE、N-gram），以及哪一種與分塊預填相容。
+    cites: >-
+      Where EAGLE-3 is already deployed
+  - index: 4
+    slug: a_p99_up_15_percent_is_one_verify_overhead_on_steps_that_accept_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You see mean ITL drop 25% after enabling EAGLE-3 but P99 ITL went up 15%. Diagnose and propose a mitigation.
+    zh: |
+      你看到啟用 EAGLE-3 後平均 ITL 掉了 25%，但 P99 ITL 上升 15%。診斷並提出一項緩解。
+    verifies: >-
+      with a rejection sampler that always emits a token, mean ITL -25% at overhead 0.15 means 1.533
+      tokens per step, alpha 0.349, with 42% of tokens from zero-acceptance steps costing 1.15x, so
+      P99 is +15%; K=1 keeps P99 +15% at mean -14.8%, alpha 0.947 drops those steps under 1% (P99
+      -42.5%, mean -78.2%), K=0 restores 1.0x. simulate_tail charges reroll_ms, making a
+      zero-acceptance step 2.05 plain steps; over alpha 0.3..0.9 x concurrency 1/32/256 its P99 is
+      +35%..+116% and main() tags all 15 rows TAIL; alpha 0.7 P99 goes +98.5% at 1 to +13.3% at 512
+      and -15.2% at 1024, where every alpha beats plain
+  - index: 5
+    slug: the_eagle3_head_for_70b_is_bigger_than_llama_3_2_1b_but_reads_less_per_step
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute the memory cost of the EAGLE-3 draft head for Llama 3.3 70B. How does it compare to running Llama 3.2 1B as a classic draft?
+    zh: |
+      算出 Llama 3.3 70B 的 EAGLE-3 草稿頭的記憶體成本。它跟拿 Llama 3.2 1B 當經典草稿相比如何？
+    verifies: >-
+      from the published configs the EAGLE3-LLaMA3.3-Instruct-70B head is 1.576B parameters (fc 151M,
+      one layer 440M, 32000-row lm_head 197M, embedding 788M), and its fp16 bytes match the
+      checkpoint's tensor bytes exactly: 3.15 GB, 1.28x Llama 3.2 1B's 1.236B / 2.47 GB, 2.2% and
+      1.75% of the 141 GB bf16 target. Half the head is the embedding, so a draft step streams 788M
+      params, 0.64x the 1B. KV per token is 4 / 32 / 320 KiB (head / 1B / target), 8 / 64 / 640 GiB at
+      256 x 8192 tokens. SpecPoint has only alpha, k, verify_overhead and concurrency

@@ -1,0 +1,90 @@
+lesson: 01-managed-llm-platforms
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/01-managed-llm-platforms/docs/en.md
+exercises:
+  - index: 1
+    slug: the_50_percent_break_even_holds_only_because_every_token_is_billed_at_the_output_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what sustained utilization does Azure PTU beat on-demand for a 70B class model? Compute the break-even and compare to the advertised 40-60% band.
+    zh: |
+      跑 `code/main.py`。對一個 70B 等級的模型，在什麼持續使用率下 Azure PTU 會勝過隨需？算出損益平衡點，並跟廣告上的 40-60% 區間比較。
+    verifies: >-
+      one Azure PTU is $240/day for 48M tokens, so u* = 50% at the $10/M output rate; the reference
+      sweep ties at 50% and calls it on-demand, PTU wins 60-100%, and the best-case saving is 50%, not
+      ~70%. Blending in the $2.50 input rate at the 3:1 and 2:1 mixes simulate() uses gives u* =
+      114.3% and 100%; simulate() at 45M tokens/day (93.75% of a PTU) picks on-demand at $225 while
+      the sweep says PTU wins at 90%. PLATFORMS has no 70B-class entry and the sweep is titled GPT-4o
+      class; the 40-60% band needs $12.50-$8.33/M blended, and the Bedrock row breaks even at 116.7%
+  - index: 2
+    slug: the_lessons_pair_gives_each_model_one_host_so_its_failover_swaps_the_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your product needs Claude 3.7 Sonnet and GPT-4o. Design a two-provider deployment — which goes to which hyperscaler, what gateway sits in front, what is the failover policy?
+    zh: |
+      你的產品需要 Claude 3.7 Sonnet 與 GPT-4o。設計一份雙供應商部署 —— 哪個放哪家超大規模業者、前面擺什麼閘道、故障轉移政策是什麼？
+    verifies: >-
+      enumerating all 8 up/down states of Bedrock, Azure OpenAI and Vertex at an assumed 99.9% each,
+      the design (Claude: Bedrock -> Vertex -> GPT-4o on Azure; GPT-4o: Azure -> Claude on Bedrock)
+      serves Claude by Claude 0.999999 and answers GPT-4o requests 0.999999; the lesson's
+      Bedrock+Azure pair leaves Claude-by-Claude at 0.999 with or without its cross-model failover,
+      43.2 min/month down against 0.04. Failing Claude over to GPT-4o costs $4.375/M against $6.00/M
+      at 3:1. lock_in_cost() prices redundancy at $195/month, 13% of spend; without the 10%
+      idle-headroom charge on-demand does not incur it is the gateway's $45, and that headroom absorbs
+      10% of an equal failed-over load
+  - index: 3
+    slug: only_reserved_capacity_meets_100ms_and_the_comparator_prices_it_away
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A regulated healthcare customer requires BAAs, US-East data residency, and sub-100ms P99 TTFT. Pick a platform and justify with three specific features.
+    zh: |
+      一位受監管的醫療客戶要求 BAA、美東資料落地，以及 P99 TTFT 低於 100 毫秒。挑一個平台，並用三項具體功能來論證。
+    verifies: >-
+      on the reference's 30M-in/15M-out workload and a 100 ms P99 SLA, SLA-first selection gives Azure
+      1 PTU at $240/day and 57 ms, Bedrock 2 PT units at $1,008/day and 82.5 ms (4.2x), and Vertex
+      nothing; the best shared-capacity P99 is 140 ms. The reference simulate() picks on-demand on all
+      three and reports FAIL, taking Azure at $225 when the passing PTU costs 6.7% more. Platform has
+      no BAA, region or residency field, PTU P99 is P50 x 1.5, and random and statistics are imported
+      unused. The lesson quotes Azure OpenAI's ~50 ms on Llama 3.1 405B both 'shared on-demand' and
+      'with PTUs' while saying its catalog has no non-OpenAI models; the code has 50 ms shared and 38
+      ms PTU
+  - index: 4
+    slug: profiles_find_the_culprit_in_one_group_by_but_only_for_traffic_already_routed_through_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You discover your Bedrock bill is up 4x this month with no traffic change. Without Application Inference Profiles, how would you find the culprit? With profiles, how long does it take?
+    zh: |
+      你發現這個月的 Bedrock 帳單漲了 4 倍，但流量沒變。在沒有 Application Inference Profile 的情況下，你要怎麼找出元凶？有 profile 的話要多久？
+    verifies: >-
+      in a synthetic month of four features on one Claude model at the reference's $3/$15 Bedrock
+      rates, requests stay at 85,000/day while support/summarize's prompt goes 3,000 -> 89,250 tokens
+      and the bill rises exactly 4.0x. Grouping by model leaves 4 candidates, by IAM role 2 (the
+      shared app role), by application inference profile 1; the log route reads 2,550,000 rows against
+      120 daily profile rows. Profiles created on day 20 cover 36.7% of the month. The reference's
+      attribution is the string 'A (Application Inference Profiles)', and the lesson's 'CloudWatch
+      breaks out cost per profile' is checked against AWS's cost-allocation-tag route
+  - index: 5
+    slug: on_demand_wins_and_provisioned_throughput_cannot_break_even_even_at_full_load
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the Azure OpenAI and Bedrock pricing pages. For a 100M-token/month Claude workload, which is cheaper — direct Anthropic API, Bedrock on-demand, or Bedrock Provisioned Throughput?
+    zh: |
+      讀 Azure OpenAI 與 Bedrock 的定價頁。對一份每月 1 億詞元的 Claude 工作負載，哪一個比較便宜 —— 直接用 Anthropic API、Bedrock 隨需，還是 Bedrock Provisioned Throughput？
+    verifies: >-
+      100M tokens/month at 3:1 cost $600 on the direct API at Claude Sonnet 4.6's $3/$15 and on
+      Bedrock on-demand at the reference's identical rate, $660 on a regional endpoint (+10%), $400 on
+      Sonnet 5 at $2/$10; one Provisioned Throughput unit at the lesson's $21/hour is $15,330 a month,
+      25.6x, at 11.4% utilization. At full load a unit's 876M tokens are worth $5,256 on-demand at 3:1
+      and $13,140 all at the output rate, so it never breaks even. Page facts read 2026-09-26: Bedrock
+      withholds PT prices (contact your account team), Azure OpenAI lists no Claude, Claude 3.7 Sonnet
+      is off Anthropic's price list, legacy Claude 3.5 Sonnet on Bedrock is $6/$30

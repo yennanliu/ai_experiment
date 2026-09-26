@@ -1,0 +1,83 @@
+lesson: 16-model-routing
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/16-model-routing/docs/en.md
+exercises:
+  - index: 1
+    slug: the_shipped_classifier_is_perfect_and_cascade_wins_on_quality_only_below_71_percent_accuracy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. At what accuracy floor does cascade beat pre-route?
+    zh: |
+      跑 `code/main.py`。在什麼準確率地板之下，串接會勝過預先路由？
+    verifies: >-
+      on the reference 1000-request workload NO_ROUTE costs $7.52, PRE_ROUTE $5.38 at 0.9937 and
+      CASCADE $4.42 at 0.9824 with 229 escalations. A pre-route classifier right with probability a
+      meets cascade quality at a = 0.713 and cascade cost at a = 0.641, so cascade wins on both axes
+      only between them. The shipped PRE_ROUTE equals a = 1.0, and CASCADE scores below it because 142
+      of 276 medium queries stay cheap. $0.29 of the cascade bill is the cheap run on its 229
+      escalations, so the same routing as a pre-route costs $4.13. simulate("ENSEMBLE") returns (0, 0,
+      0) silently
+  - index: 2
+    slug: route_free_tier_through_a_cascade_because_tier_pre_routing_hides_complex_free_queries
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your user base is 30% enterprise (complex queries), 70% free tier (simple). Design the routing split. What online metric gates it?
+    zh: |
+      你的使用者群是 30% 企業（複雜查詢）、70% 免費層（簡單）。設計那個路由比例。要用什麼線上指標替它把關？
+    verifies: >-
+      with 30% enterprise (complex) and 70% free (simple) traffic, free -> cascade, enterprise ->
+      frontier costs $4.28 against $6.61 (35.2% saved) at 0.9931, identical to the pure tier split,
+      with 0 escalations. When 10% of free queries are complex the tier split drops to 0.9843 with no
+      signal while the cascade split holds 0.9916 and escalates 6.99% (13.73% at a 20% leak). Free
+      traffic is 38.0% of frontier spend and cheap costs 7.5% of frontier on it, so the saving is 35%,
+      not the lesson's ~65%. Cascade for everyone is $3.45 at 0.9834 with 19.1% escalation
+  - index: 3
+    slug: ship_only_if_a_bad_answer_costs_under_17_5_cents_and_the_2_percent_is_4_percent_on_medium_queries
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A route drops quality by 2% but saves 40%. Is that a ship? Depends on product — argue both.
+    zh: |
+      某條路由讓品質掉 2%，但省下 40%。這出得了貨嗎？看產品而定 —— 兩邊都論證一次。
+    verifies: >-
+      the lesson cascade saves 41.2% ($0.0031 per request) at 0.01765 quality loss, a break-even of
+      $0.175 per degraded answer; at $80k/month that is $32,940 saved against about 187,800 degraded
+      answers. By difficulty (count, kept cheap, quality): simple (629, 629, 0.99), medium (276, 142,
+      0.9588) and hard (95, 0, 1.0), so medium carries 64% of the loss, and the cheap model's 0.75 on
+      hard never enters the average
+  - index: 4
+    slug: start_at_the_budget_quantile_of_mean_token_logprob_because_sum_escalates_by_length_and_anthropic_returns_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a confidence check using logprobs from OpenAI / Anthropic APIs. What's the threshold you start with?
+    zh: |
+      用 OpenAI／Anthropic API 的 logprob 實作一項信心檢查。你會從什麼門檻開始？
+    verifies: >-
+      over OpenAI-shaped logprob bodies for the reference workload, with an assumed 3%/6% unsure-token
+      rate, the 10%-budget threshold on the mean token logprob is -0.0946 (p = 0.910). It escalates
+      100 requests and catches 37 of 49 wrong answers at $1.44, against the reference cascade at
+      $4.42, 0.9824 and 229 escalations. At the same budget the summed logprob escalates (0, 24, 76)
+      simple/medium/hard and catches 29; the minimum catches 14. An Anthropic-shaped body yields None,
+      and main.py reads no logprob
+  - index: 5
+    slug: each_cause_leaves_its_own_fingerprint_and_neither_of_the_lessons_escalation_alarms_fires_on_the_climb
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Over six months, escalation rate climbs from 8% to 22%. Diagnose three causes and the fix for each.
+    zh: |
+      六個月下來，升級率從 8% 爬到 22%。診斷三個原因，以及各自的修法。
+    verifies: >-
+      month 0 (88/8/4 mix) escalates 8.0% at $1.76. Mix drift to 68/16/16 gives 21.7% ($5.37), fixed
+      to 8.1% ($5.06) by pre-routing hard queries. A cheap-model regression gives 22.1% ($2.52), back
+      to 8.0% by pinning the version. +3090 context tokens with a 4K cheap limit give 21.9% ($5.42),
+      0.4% ($5.09) with a length pre-route. diagnose() names all three from the log. A linear climb
+      moves 2.33 points a month, so neither the 10-point monthly alert nor the 30% alarm fires

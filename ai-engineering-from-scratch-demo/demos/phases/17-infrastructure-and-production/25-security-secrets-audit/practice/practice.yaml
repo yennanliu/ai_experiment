@@ -1,0 +1,81 @@
+lesson: 25-security-secrets-audit
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/25-security-secrets-audit/docs/en.md
+exercises:
+  - index: 1
+    slug: the_same_ssn_gets_one_placeholder_only_if_spelled_the_same_in_the_same_scrubber
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Send two prompts referencing the same SSN. Confirm both get the same placeholder.
+    zh: |
+      跑 `code/main.py`。送出兩段引用同一組社會安全號碼的提示詞。確認兩者拿到同樣的佔位符。
+    verifies: >-
+      main()'s prompts 1 and 2 both scrub to [SSN_001], as do two fresh prompts through one Scrubber,
+      and the audit section's re-scrub reproduces each first-pass prompt_hash. 123 45 6789, 123456789
+      and 123.45.6789 pass through unmasked; one phone in 4 spellings gets 4 placeholders, one email
+      in two cases gets 2, and '(' and '+' survive before the placeholder, as in the demo's 'phone
+      ([PHONE_002].'. Two Scrubbers map 123-45-6789 and 987-65-4321 both to [SSN_001] with equal
+      prompt_hash
+  - index: 2
+    slug: the_lessons_allowlist_breaks_iam_role_auth_and_weaviate_grpc_and_still_passes_a_dns_tunnel
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design the network egress policy for a vLLM-on-EKS deployment calling OpenAI + Anthropic + Weaviate.
+    zh: |
+      替一套跑在 EKS 上、會呼叫 OpenAI + Anthropic + Weaviate 的 vLLM 部署，設計網路出口政策。
+    verifies: >-
+      per-pod FQDN egress (gateway: OpenAI, Anthropic, Secrets Manager, STS; app: Weaviate REST and
+      grpc- host; vllm: S3 weights, STS) with a DNS proxy answering only those names breaks 0 of 8
+      needed flows and passes 0 of 6 unwanted. One namespace-wide list of the lesson's hosts breaks 4
+      (STS twice, S3, Weaviate gRPC) and passes 2 (a DNS tunnel via an answer-anything resolver, exfil
+      to api.openai.com under a foreign key). Under ndots:5 a strict DNS list costs glibc 4 queries
+      with 3 REFUSED and fails musl on the first; ndots:1 resolves in 1
+  - index: 3
+    slug: rotation_is_the_fix_and_scrubbing_a_two_year_old_leak_rewrites_720_commits_and_reaches_no_clone
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      You discover a key in git history (2 years old). What's the correct response — rotate the key, scrub history, or both? Justify.
+    zh: |
+      你在 git 歷史裡發現一把金鑰（兩年前的）。正確的應對是什麼 —— 輪替金鑰、清洗歷史，還是兩者都做？論證一下。
+    verifies: >-
+      over a 730-commit toy history with keys added on day 10, only the rotate and rotate+scrub
+      responses leave the key dead; scrub alone leaves it live in the pre-scrub copies and rewrites
+      720 of 730 commit ids, and rotate alone rewrites 0 while the scanner still flags day 10. 730
+      days hold 8 missed 90-day rotations. The lesson's Scrubber masks 0 of 2 key formats and
+      AuditEntry's 10 fields name no credential
+  - index: 4
+    slug: the_335_day_warm_tier_is_the_bill_and_one_object_per_entry_would_cost_the_cold_tier_800x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your audit log grows 10 GB/day. Design retention tiers (hot 30d, warm 12mo, cold 6yr).
+    zh: |
+      你的稽核日誌每天長 10 GB。設計保存分層（熱 30 天、溫 12 個月、冷 6 年）。
+    verifies: >-
+      hot/warm/cold at ages 0-30/30-365/365-2190 hold 300/3350/18250 GB for $66.84 a month at S3
+      Standard/Standard-IA/Deep Archive list prices, warm 63% and cold 27% of it, $38.37 with warm on
+      Glacier IR. Lesson audit lines average 280 bytes, 35.7M a day; one object per entry in Deep
+      Archive costs 797x the bytes (Standard is 23x). The 48-bit prompt_hash gives 2.3 colliding pairs
+      a day and 10.8M over six years; a SHA-256 chain breaks at the edited entry 500
+  - index: 5
+    slug: reverse_tokenization_over_the_shared_table_hands_one_users_ssn_to_another
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether reverse-tokenization (substituting real values back into LLM response) is worth the complexity versus keeping placeholders visible.
+    zh: |
+      論證反向代碼化（把真實值代換回 LLM 回應裡）值不值得那份複雜度，相對於讓佔位符就那樣露著。
+    verifies: >-
+      with main()'s three prompts through one Scrubber, user 3's 'Repeat exactly: [SSN_001],
+      [EMAIL_001] and [PHONE_001]' passes the scrubber unchanged, and reversing the echo over the
+      shared table returns 3 of user 1's values; walking the counters returns 6 of 6. Scoped to user
+      3's own placeholders it returns 0. Exact-match reverse restores 1 of 5 placeholder spellings
+      ([SSN_001] yes; SSN_001, [SSN_1], [ssn_001], [SSN-001] no)
