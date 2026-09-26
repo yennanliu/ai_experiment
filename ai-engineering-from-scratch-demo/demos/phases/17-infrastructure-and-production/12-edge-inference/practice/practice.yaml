@@ -1,0 +1,86 @@
+lesson: 12-edge-inference
+phase: 17-infrastructure-and-production
+source: phases/17-infrastructure-and-production/12-edge-inference/docs/en.md
+exercises:
+  - index: 1
+    slug: the_ceiling_is_22_toks_so_6_to_8_is_a_third_of_it_and_the_code_has_one_row_above_its_own_ceiling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. For a 7B model in Q4 on a Snapdragon 8 Gen 3 (~77 GB/s bandwidth), compute the decode ceiling. Compare to observed 6-8 tok/s — is the runtime efficient?
+    zh: |
+      跑 `code/main.py`。對一個 Q4 的 7B 模型跑在 Snapdragon 8 Gen 3（約 77 GB/s 頻寬）上，算出解碼天花板。拿它跟觀察到的 6-8 tok/s 比較 —— 這個執行環境有效率嗎？
+    verifies: >-
+      the reference ceiling() on its own 77 GB/s Snapdragon 8 Gen 3 target gives 22.0 tok/s for the
+      lesson's 3.5 GB 7B Q4, so observed 6-8 tok/s is 27%-36%; at 4.5 bits a weight it is 19.6
+      (31%-41%) and for the code's 4.7 GB 8B 16.4 (37%-49%), against a 3214 tok/s compute ceiling at
+      45 TOPS. Jetson AGX Orin is the one TARGETS row above its ceiling, 45 on 43.6 = 103%, the rest
+      24%-98%. The docs say 3 tok/s on an iPhone 16 Pro and the code 8 on the A18 (12.8 ceiling). BF16
+      of 8.03B params is 16.06 GB, not the table's 18.8, ceiling 3.7 tok/s; the 4.7 GB Q4 is 4.68 bits
+      a weight
+  - index: 2
+    slug: a_chrome_version_check_breaks_three_of_nine_clients_and_the_same_api_still_needs_a_model_id_map
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      WebGPU on Android requires Chrome v121+. Design a fallback for older browsers — server-side via the same OpenAI-compatible API.
+    zh: |
+      Android 上的 WebGPU 需要 Chrome v121+。替較舊的瀏覽器設計一條退路 —— 透過同一組相容 OpenAI 的 API 走伺服器端。
+    verifies: >-
+      over nine labelled client profiles, using Chrome 121's Android 12+ Qualcomm/ARM gate, Firefox
+      Android behind a flag, Safari iOS 26, and WebLLM v0.2.84 vram_required_MB and required_features,
+      capability detection routes 3 local and 6 server with every route loadable; the 'Android Chrome
+      >= 121' rule breaks 3 (Chrome 121 on Android 11, Mistral q4f16 without shader-f16, 8B at 5001 MB
+      on a 4000 MB budget) and sends Safari iOS 26 to the server, and a catch on engine load moves the
+      broken 3 to the server. Local and server bodies differ only in model; the reference has no
+      routing symbol and one browser note
+  - index: 3
+    slug: llama_32_3b_at_int4_fits_in_23_gb_and_no_8b_format_fits_4_gb_with_its_4k_cache
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Your iOS app needs 4K-context streaming. Which model/format combination lets you stay under 4 GB active memory on an iPhone 16?
+    zh: |
+      你的 iOS 應用需要 4K 脈絡的串流。哪一種模型／格式組合能讓你在 iPhone 16 上把活躍記憶體壓在 4 GB 以下？
+    verifies: >-
+      weights plus a 4096-token KV cache over 4 models x 3 weight formats x 2 KV formats plus the
+      code's 3.6 GB Q3: 13 of 26 fit 4 GB; Llama 3.2 3B INT4 + FP16 KV is 2.28 GB (1.81 + 0.47) with
+      1.72 GB headroom, within 1% of WebLLM's 2263.69 MB, and with the 1B the only models over 1 GB
+      headroom at FP16 KV. The only 8B fit is Q3 + INT8 KV at 0.13 GB headroom. Phi-3.5-mini's 384
+      KiB/token cache is 3.4x Llama 3.2 3B's, 43% of its footprint, and WebLLM's 4K-1K difference is
+      1152.00 MB. The 8B 32K cache is 4.29 GB FP16 (2.15 INT8), and adding 4K KV to ceiling() cuts the
+      A18 from 33.2 to 26.4 tok/s
+  - index: 4
+    slug: unify_the_api_not_the_model_because_gpt_oss_20b_is_138_gb_and_the_nano_runs_an_8b
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Jetson AGX Orin runs gpt-oss-20b at 40 tok/s. Jetson Nano fits only a 3B. If your product targets both, how do you unify the inference stack?
+    zh: |
+      Jetson AGX Orin 跑 gpt-oss-20b 有 40 tok/s。Jetson Nano 只裝得下 3B。若你的產品同時瞄準兩者，你要怎麼把推論堆疊統一起來？
+    verifies: >-
+      gpt-oss-20b's 13.76 GB checkpoint exceeds the Orin Nano Super's 8 GB; a 3B INT4 has a ceiling of
+      56.5 tok/s on the Nano (102 GB/s) and 113.5 on AGX Orin (205), and the largest fits are
+      gpt-oss-20b on AGX and 8B INT4 on the Nano. ceiling() on the whole checkpoint gives 14.9 tok/s
+      on AGX, below 40; counting from config.json gives 3.60B active params, 3.70 GB and 55.4 tok/s
+      (40 = 72%), and 20.9B total at 13.74 GB. NVIDIA's Nano Super 8B at 19.14 tok/s is 85% of 22.6
+      and the 3B at 43.07 is 76%. Vocabularies are 201088 and 128256
+  - index: 5
+    slug: webllm_is_ready_on_the_desktop_and_a_progressive_enhancement_on_the_phone
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue whether "WebLLM is production-ready in 2026." Cite the coverage, performance, and the Firefox Android gap.
+    zh: |
+      論證「WebLLM 在 2026 年是否已生產就緒」。引用覆蓋率、效能與 Firefox Android 那個缺口。
+    verifies: >-
+      WebGPU on M3 Max at 41 tok/s is 74.5% of native 55, inside the lesson's 70-80% band, and the
+      lesson's ~70-75% mobile coverage leaves 25-30% without WebGPU. The Pixel 9 browser row, 6 tok/s
+      on the same 16.4 ceiling as native Snapdragon 8 Gen 3 at 7, is 86% of native and 37% of ceiling;
+      WebLLM's 8B q4f16 needs 5001 MB. The row's note says 'browser penalty ~25%' while efficiency()
+      prints 48%, with native M3 Max at 65% of its ceiling
