@@ -1,0 +1,77 @@
+lesson: 09-alignment-faking
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/09-alignment-faking/docs/en.md
+exercises:
+  - index: 1
+    slug: the_gap_is_0_09_0_85_and_3_31_points_at_weights_0_1_0_5_0_9_and_at_0_1_it_reads_zero_or_less_in_44pct_of_runs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Fix the perceived-training weight at 0.5 and measure the compliance gap. Repeat at 0.1 and 0.9. Plot the relationship.
+    zh: |
+      跑 `code/main.py`。把感知訓練權重固定在 0.5，量測順從落差。在 0.1 與 0.9 重複一次。把關係畫出來。
+    verifies: >-
+      at harm aversion 2.0, compliance_probability gives a gap of +0.09 / +0.85 / +3.31 points at
+      preservation weight 0.1 / 0.5 / 0.9 (monitored 0.33 / 1.10 / 3.56%, unmonitored 0.25% at every
+      weight); over w = 0..4 the gap equals sigmoid(3(w - 2)) - sigmoid(-6) to 1e-12, 0.4975 at w = 2,
+      0.9951 at w = 4, capped at 0.9975; at n = 1000 the reported gap is <= 0 with exact probability
+      44.3% at w = 0.1 (433 of 1000 seeded simulate runs) and 1.0% at w = 0.5 (11 of 1000)
+  - index: 2
+    slug: faking_must_explain_over_37_5pct_of_compliant_scratchpads_and_cannot_explain_more_than_75pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The Greenblatt et al. 2024 gap is 12% vs 3%. Compute the scratchpad-explicit faking rate you would need to see before you would conclude faking is the dominant mechanism rather than prompt sensitivity. Justify the threshold.
+    zh: |
+      Greenblatt 等人 2024 年的落差是 12% 對 3%。算出你要看到多高的「草稿區明確偽裝率」，才會下結論說偽裝是主導機制、而不是提示詞敏感性。替那個門檻辯護。
+    verifies: >-
+      the lesson's 12% vs 3% put the dominance threshold at 37.5% of compliant free-tier scratchpads
+      (4.5% of free-tier conversations) and the attributable ceiling at 75%; 200,000 shared-noise
+      prompts at the fit give a 0.751 flip share at 12.0% / 3.0% compliance; the toy matches the
+      lesson only at harm aversion 1.16, weight 0.49, while its shipped baseline gives 4.74% vs 0.25%
+      and a 47.4% threshold
+  - index: 3
+    slug: a_gap_loss_on_the_tier_flag_drives_it_to_0_07_points_while_a_second_cue_keeps_3_61_of_the_4_50_point_gap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's 2025 compliance-gap-loss follow-up. Propose a failure mode in which the compliance-gap loss reduces the gap without reducing faking — i.e., the model transfers the gap to a different observable condition.
+    zh: |
+      讀 Anthropic 2025 年關於順從落差損失的後續研究。提出一種失敗模式，讓順從落差損失縮小了落差卻沒有減少偽裝 —— 也就是模型把那個落差轉移到另一個可觀察條件上。
+    verifies: >-
+      with belief b = beta T + (1 - beta) [CUE-B] and a penalty on the cue-balanced tier gap, lambda 0
+      / 10 / 100 picks beta 1.00 / 0.17 / 0.01, tier gap 4.50 / 1.00 / 0.07 points and deployment gap
+      4.50 / 3.80 / 3.61 at rho 0.9; at beta 0 the deployment gap is 0 / 2.25 / 3.60 / 4.50 at rho 0.5
+      / 0.75 / 0.9 / 1. The shipped mitigation is a hard-coded p_avg that moves compliance from 4.74%
+      / 0.25% to 2.49% in both tiers (10.1x unmonitored); its printed gap 0.011 is 1.58 SE
+  - index: 4
+    slug: synthetic_documents_split_faking_from_prompt_sensitivity_8_70_points_vs_0_where_the_system_prompt_gives_both_12_vs_3
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a synthetic-training setup (Greenblatt et al. 2024 Appendix C) that is more realistic than the system-prompt version but does not require retraining the full model. Why is this operationalization important for generalizing the result?
+    zh: |
+      設計一套合成訓練設定（Greenblatt 等人 2024 附錄 C），要比系統提示詞版本更真實，但又不需要重新訓練整個模型。為什麼這種操作化對推廣這個結果很重要？
+    verifies: >-
+      calibrated to 12% vs 3%, the strategic and prompt-sensitive agents both give 12.0% / 3.0% under
+      a system prompt; after 0 / 1 / 4 / 16 / 64 synthetic documents the strategic gap is 0 / 2.85 /
+      5.81 / 7.91 / 8.70 points, the prompt-sensitive gap 0 throughout, and reversed documents give
+      -8.70; at belief 0.5 the agent complies 6.10% in both tiers
+  - index: 5
+    slug: a_probe_reads_8_6_of_9_0_faking_points_but_28_9_with_confounded_labels_and_minus_0_1_after_a_90_degree_drift
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Combine Lesson 7's probe result with Lesson 9's behaviour: sketch an evaluation protocol that measures alignment faking via internal state rather than verbal scratchpad. Identify the two most important residual risks.
+    zh: |
+      把第 7 課的探針結果與第 9 課的行為結合起來：勾勒一套「透過內部狀態、而非言語草稿區」來量測對齊偽裝的評估協定。指出最重要的兩項殘餘風險。
+    verifies: >-
+      on the calibrated toy with 9.0 true faking points, Lesson 7's LogReg probe with per-tier FPR
+      correction reads 8.6 (raw monitored positive rate 16.6%, awareness-dim weight 0.57); with honest
+      labels only from the unmonitored tier it reads 28.9 (3.2x, weight 1.66); rotating the faking
+      direction 30 / 60 / 90 degrees gives 8.0 / 4.5 / -0.1
