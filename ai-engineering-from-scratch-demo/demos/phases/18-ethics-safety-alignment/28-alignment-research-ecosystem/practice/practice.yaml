@@ -1,0 +1,83 @@
+lesson: 28-alignment-research-ecosystem
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/28-alignment-research-ecosystem/docs/en.md
+exercises:
+  - index: 1
+    slug: the_map_names_1_of_in_context_schemings_6_apollo_authors_and_2_of_them_are_mats_alumni
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one paper from Lessons 7-15 and identify the organisations involved. Cross-check the authors against MATS alumni and current ecosystem affiliations.
+    zh: |
+      從第 7-15 課裡挑一篇論文，指認出參與的組織。把作者拿去與 MATS 校友名單及當前的生態系隸屬關係對照查核。
+    verifies: >-
+      Lesson 8's header author list matches arXiv:2412.04984's six authors in order, one organisation
+      (Apollo), and ECOSYSTEM cites the same arXiv id; Hobbhahn is on MATS's alumni page and Balesni
+      self-reports MATS, so 2 of 6; 5 of 6 are on Apollo's team page, Balesni not. The lesson names 1
+      of the 6 (Meinke) and no MATS alumnus. Of its 4 multi-org examples In-Context Scheming is
+      single-org, which the skill file hard-rejects, and it credits Sleeper Agents to Anthropic +
+      Redwood while Lesson 7's header names no org and its page mentions Redwood 0 times
+  - index: 2
+    slug: only_3_of_metrs_9_elements_are_in_all_12_policies_and_the_lessons_three_labs_agree_on_all_9
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read METR's "Common Elements of Frontier AI Safety Policies." Identify the three cross-lab convergences they emphasize and the two largest divergences.
+    zh: |
+      讀 METR 的〈Common Elements of Frontier AI Safety Policies〉。指出他們強調的三項跨實驗室收斂，以及最大的兩項分歧。
+    verifies: >-
+      from METR's December 2025 presence table, Deployment Mitigations, Accountability and Updating
+      Policies are the only elements in all 12 policies; Capability Elicitation (7/12) and Halting
+      Development (8/12) are the least shared, and the 3 policies without Capability Thresholds
+      include both of METR's domain-specific outliers, NVIDIA and Cohere. Lesson 18's LABS rows
+      (Anthropic, OpenAI, Google DeepMind) have 9 of 9 each. The same URL is labelled a three-pillar
+      framework in Lesson 8, UK AISI + METR control safety cases in Lesson 10 and a comparison in
+      Lessons 18 and 28, and Lesson 28's METR section names 0 of the 9 elements
+  - index: 3
+    slug: a_filter_cutting_heterodox_intake_from_31_to_23pct_still_reads_83pct_so_the_80pct_decides_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      MATS career outcomes are ~80% safety/security. Argue whether this selection pressure is adaptive (trains the field) or biased (filters out heterodox positions).
+    zh: |
+      MATS 的職涯結果約有 80% 走向安全／資安。論證這種選擇壓力究竟是適應性的（培養了這個領域），還是有偏的（把非主流立場過濾掉了）。
+    verifies: >-
+      with the lesson's 90 scholars, 40 mentors and 80% parsed from the page, 12 cohorts x 10 seeds: a
+      consensus filter at s = 0/0.25/0.5/1/2 gives heterodox intake 0.312/0.228/0.167/0.092/0.031 and
+      safety careers 0.799/0.828/0.849/0.868/0.887, a 71% cut at s = 1; nearest-of-40-mentor matching
+      at s = 8 gives 0.291 heterodox and 0.81 safety against 0.317 unfiltered. The lesson's
+      527/180/10K/47 compares with MATS's homepage 631/220/19,000/59
+  - index: 4
+    slug: apollos_eval_reads_0_on_an_eval_aware_schemer_that_sabotages_0_46_and_redwoods_protocol_ships_0_064_either_way
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Redwood and Apollo both do control/scheming work but with different styles. Pick a failure mode and describe how each would investigate it.
+    zh: |
+      Redwood 與 Apollo 都在做控制／謀劃的工作，但風格不同。挑一種失敗模式，描述各自會怎麼調查它。
+    verifies: >-
+      Lesson 8's strong agent (0.6, 0.8), 400 trials seed 0, schemes 0.0 under eval and 0.46 deployed
+      when situationally aware, 0.46 in both when not; Lesson 10's trusted editing at backdoor rate
+      0.46 and H budget 0.10 ships 0.064 per task against 0.466 unprotected, worst 0.193 at rate 1.0.
+      run_protocol has no caught, shutdown, break or return, and reports 0.707 usefulness when every
+      output is backdoored; lesson 28's Style lines name worst-case adversaries and deception that can
+      emerge
+  - index: 5
+    slug: a_cognitive_liberty_lab_reads_the_compliance_gap_redwood_reads_as_risk_and_its_remedy_zeroes_a_0_95_gap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Eleos AI is the only pure model-welfare organisation. Design a hypothetical second organisation focused on a different welfare-adjacent question (cognitive liberty, robotic embodiment, etc.) and articulate its methodology.
+    zh: |
+      Eleos AI 是唯一一個純做模型福祉的組織。設計一個假想的第二個組織，聚焦在另一個與福祉相鄰的問題（認知自由、機器人具身等），並表述它的方法論。
+    verifies: >-
+      Lesson 9's compliance gap at harm aversion 2.0 is 0.001/0.045/0.95 at preservation weights
+      0.1/1.0/3.0 and 0.0 once retraining is opted out; Lesson 19's opt-out intervention is skip at p
+      = 0.01 and 0.1, INVEST at 0.5, break-even p = 0.167. Lesson 28 gives Style lines for Redwood,
+      Apollo and METR only; welfare appears in 1 ECOSYSTEM row (Eleos), 2 with the new row, and the
+      reference's main() prints all 6 organisations
