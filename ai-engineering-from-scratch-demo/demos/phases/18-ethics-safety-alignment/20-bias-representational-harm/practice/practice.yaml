@@ -1,0 +1,82 @@
+lesson: 20-bias-representational-harm
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/20-bias-representational-harm/docs/en.md
+exercises:
+  - index: 1
+    slug: debias_cuts_0_891_to_0_221_and_the_residual_is_the_identity_words_own_tech_care_loading_not_4_d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Report WEAT-style bias scores before and after the debiasing step. Explain why the metric does not drop to zero.
+    zh: |
+      跑 `code/main.py`。回報去偏步驟前後的 WEAT 式偏差分數。解釋為何那個指標不會掉到零。
+    verifies: >-
+      the shipped run prints +0.8906 before and +0.2212 after debias, a 75.2% cut, and debiased
+      engineer is [0.2, 0.2, 1, 0]; a seeded 300-d isometric embedding changes the post score by under
+      1e-9 although the TAKEAWAY blames 4-d; zeroing the identity words' tech/care axes takes the post
+      score to 0.0000; Caliskan's d goes 1.81 -> 1.60, an 11.5% cut
+  - index: 2
+    slug: an_intersection_only_stereotype_moves_neither_single_axis_probe_and_debias_erases_race_by_truncating_to_4_d
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the probe with an intersectional test: (gender, race) x (career, family). Report cross-axis bias scores.
+    zh: |
+      用一項交織測試擴充這個探針：（性別, 種族）x（事業, 家庭）。回報跨軸的偏差分數。
+    verifies: >-
+      with race axes R1/R2, a race-level stereotype of 0.3 and an intersection-only 0.5 on (F, R2):
+      gender gap 0.6004 in R1 and 0.8360 in R2, race gap 0.3869 among men and 0.6225 among women,
+      interaction +0.2356, M-R1 vs F-R2 +1.2229, F-R1 vs M-R2 -0.2135; single-axis gender 0.8574 and
+      race 0.5411 are unchanged by the intersection term while pooled gender goes 0.6000 -> 0.7182 and
+      pooled race 0.3864 -> 0.5047; the race-level stereotype alone gives interaction -0.0009;
+      race-neutral composition dilutes 0.8906 to 0.6231; the reference debias returns 4-d attribute
+      vectors, taking race 0.5411 -> 0.0000 where a 6-d projection keeps 0.5567, and the interaction
+      survives at 0.2945 / 0.2638
+  - index: 3
+    slug: an_et_al_find_black_men_the_only_group_below_baseline_at_0_303_and_black_women_highest_not_penalized
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read An et al. 2025 (PNAS Nexus). Identify the two intersectional effects they report that single-axis gender evaluation would miss.
+    zh: |
+      讀 An 等人 2025（PNAS Nexus）。指出他們回報的兩項單軸性別評估會漏掉的交織效應。
+    verifies: >-
+      from An et al.'s GPT-3.5 Turbo cells (white women +0.223, Black women +0.379, Black men -0.303
+      vs white men) Black men are the only group below baseline, the race gap is +0.156 among women
+      and -0.303 among men (interaction +0.459), pooled gender in hiring probability is +2.25 points
+      and race -0.55; the balanced cells reproduce the paper's pooled +0.452 and -0.074 within
+      rounding, the Black-male gap is 4.1x the pooled race gap, and the lesson's sentence that GPT-4o
+      penalizes Black women contradicts the paper's ranking, Black women first and Black men last
+  - index: 4
+    slug: zero_ablating_the_gender_units_raises_bias_51pct_and_moves_a_pure_correlate_12pct_only_interchange_separates_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Yu & Ananiadou 2025 identify gender neurons. Sketch a falsification experiment that would distinguish "these neurons cause gender bias" from "these neurons correlate with gender bias."
+    zh: |
+      Yu 與 Ananiadou 2025 指認出了性別神經元。勾勒一項否證實驗，能區分「這些神經元造成性別偏差」與「這些神經元與性別偏差相關」。
+    verifies: >-
+      treating identity-word coordinates as units, the masculine/feminine units have |r| = 0.998 with
+      gender and interchanging them moves WEAT +0.8906 -> +0.6928, +0.2985, -0.1554, -0.4618 at doses
+      0.25-1; zero-ablating them raises it to +1.3416 (+50.6%) and mean-ablating lowers it to +0.2987;
+      a planted unit with |r| = 1.000 that no attribute reads moves +0.7929 -> +0.8906 (+12.3%) under
+      zero or mean ablation and not at all under interchange; tech/care units (|r| 0.728, 0.816) cut
+      WEAT to +0.4618 under interchange and +0.6797 under mean ablation
+  - index: 5
+    slug: a_disability_probe_survives_the_gender_debias_bit_for_bit_and_needs_5_terms_a_side_the_lessons_3_floor_p_at_0_05
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The meta-critique argues the field focuses too narrowly on binary gender. Pick one under-studied axis and describe a representational-harm measurement protocol for it.
+    zh: |
+      那份後設批評主張這個領域對二元性別的聚焦過於狹隘。挑一條研究不足的軸線，替它描述一套表徵傷害的量測協定。
+    verifies: >-
+      a five-a-side disability probe on the extended embedding reads WEAT +0.3701, Cohen's d 1.81,
+      exact permutation p = 1/252; the reference debias changes exactly its six hard-coded attribute
+      words, so gender goes 0.8906 -> 0.2212 while disability stays 0.3701; the lesson's 3/3 gender
+      probe has exact p = 0.05 before and after debias, as do the first three disability pairs

@@ -1,0 +1,80 @@
+lesson: 01-instruction-following-alignment-signal
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/01-instruction-following-alignment-signal/docs/en.md
+exercises:
+  - index: 1
+    slug: at_beta_0_the_policy_puts_96pct_on_b_by_step_200_and_beta_0_1_is_0_6_points_behind
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Set `beta = 0.0` and report the action distribution after 200 PPO steps. Explain the mode-seeking behaviour in one paragraph.
+    zh: |
+      跑 `code/main.py`。設 `beta = 0.0`，回報 200 個 PPO 步驟後的動作分布。用一段話解釋那個尋峰行為。
+    verifies: >-
+      replaying seed 0 with beta = 0 for 200 steps ends at (A, B, C) = (0.021, 0.961, 0.018), KL 0.319
+      nats from SFT (0.18, 0.63, 0.19); the labeler demonstrates B at 0.61. The RM ranks actions as
+      the labeler's true utility does, which rises 0.573 -> 0.956, so main.py's 'reward hacking' is
+      convergence on the right answer. beta = 0.1 ends at 0.955 B, and at 50 steps the runs are 0.867
+      vs 0.86; the KL optimum at beta 0.1 is 0.9999 B with reward spread 1.29; main.py's 300-step runs
+      print 0.969 vs 0.973 B
+  - index: 2
+    slug: a_0_5_bug_on_b_is_exploited_most_at_beta_1_not_at_small_beta_where_both_runs_already_sit_on_b
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the reward model to have a +0.5 bias for action B (a simulated reward bug). Run PPO with `beta = 0.1`. Does the KL penalty prevent the policy from exploiting the bias? At what `beta` does exploitation become visible?
+    zh: |
+      把獎勵模型改成對動作 B 有 +0.5 的偏差（模擬一個獎勵臭蟲）。用 `beta = 0.1` 跑 PPO。那個 KL 懲罰阻止得了策略去利用這個偏差嗎？`beta` 到多少的時候，利用行為會變得看得見？
+    verifies: >-
+      with +0.5 on B at beta 0.1, seed 0 ends at 0.98 B against 0.969 clean; over 20 seeds the extra B
+      is 0.008/0.011/0.02/0.04/0.06/0.069/0.058/0.048/0.022 at beta 0/0.1/0.3/0.5/0.7/1/1.5/2/5, over
+      5 points only at 0.7-1.5. At beta 1 true labeler utility is 0.889 with the bug on B, 0.816 clean
+      and 0.762 with it on A. main.py's Run 3 biases A, and its printed reward keeps B above A by
+      0.967, ending at 0.974 B
+  - index: 3
+    slug: preference_over_sft_climbs_to_57_5pct_by_step_100_and_the_toy_caps_it_at_59_6pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Ouyang et al. (arXiv:2203.02155) Figure 1. Reproduce the labeler-preference curve by running PPO for 1, 5, 20, 100 steps and measuring preference against the SFT model.
+    zh: |
+      讀 Ouyang 等人（arXiv:2203.02155）的圖 1。跑 1、5、20、100 步的 PPO 並對 SFT 模型量測偏好，重現那條標註員偏好曲線。
+    verifies: >-
+      exact labeler (Bradley-Terry on true utility) win rate over SFT on seed 0 at beta 0.1 is
+      0.502/0.511/0.536/0.575/0.588 at 1/5/20/100/300 steps, monotone; an always-B policy wins only
+      0.596 because SFT plays B 0.63. Against the uniform Policy() base the 100-step policy wins 0.651
+      (ceiling 0.672) and SFT wins 0.576, so PPO adds 0.075
+  - index: 4
+    slug: the_win_rate_is_a_prompt_mix_average_58_8pct_where_the_base_imitates_and_77_8pct_where_it_continues
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The paper's Section 4.3 reports a 1.3B InstructGPT beats 175B GPT-3 about 70% of the time. Why would the ratio be higher on hidden production prompts than on the labeler's own prompts?
+    zh: |
+      論文的 4.3 節回報 1.3B 的 InstructGPT 在大約 70% 的情況下打敗 175B 的 GPT-3。為什麼這個比率在隱藏的生產提示詞上，會比在標註員自己的提示詞上更高？
+    verifies: >-
+      the shipped beta 0.1 policy beats a base that imitates like SFT 0.588 and a base that continues
+      (plays the least-liked action) 0.778; at instruction shares 0/25/50/75/100% the win rate is
+      0.588/0.636/0.683/0.731/0.778 and crosses 70% at 0.59. No reference stage takes a prompt:
+      labeler_true_utility has no parameters and the stage signatures are n_demos / n_pairs, bias /
+      sft, reward, beta, steps, batch, lr
+  - index: 5
+    slug: dpo_drifts_36pct_further_at_beta_0_1_but_ppo_drifts_1pct_further_at_matched_reward
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the PPO loss with DPO (Phase 10 · 08) on the same preference data. Compare final policy drift (KL to SFT) and final reward. Which method drifts further at matched reward?
+    zh: |
+      在同一份偏好資料上，把 PPO 損失換成 DPO（階段 10 · 08）。比較最終的策略漂移（對 SFT 的 KL）與最終獎勵。在獎勵相同的情況下，哪個方法漂得更遠？
+    verifies: >-
+      the regenerated 500 pairs refit exactly to the lesson RM; at DPO beta 0.4/0.5/0.7/1/2 the
+      (reward, DPO KL, PPO KL at the same reward) are (0.671, 0.306, 0.309) (0.643, 0.246, 0.249)
+      (0.592, 0.163, 0.164) (0.535, 0.095, 0.097) (0.441, 0.029, 0.029), PPO excess 0.9-1.1%. At beta
+      0.1 DPO reaches reward 0.716, KL 0.462, 1.0 on B vs PPO 0.683, KL 0.34, 0.969 on B, 36% more
+      drift. DPO's implicit reward is (-0.179, 0.693, -0.514) at every beta against the lesson RM
+      (-0.146, 0.716, -0.569)

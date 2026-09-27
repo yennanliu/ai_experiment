@@ -1,0 +1,83 @@
+lesson: 19-model-welfare-research
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/19-model-welfare-research/docs/en.md
+exercises:
+  - index: 1
+    slug: the_chalmers_report_is_long_et_al_co_written_by_fish_and_its_two_sided_risk_flips_end_chat_at_0_0081
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's "Exploring Model Welfare" (April 2025) and Chalmers et al. 2024. Write a one-paragraph summary of each and identify one point of disagreement.
+    zh: |
+      讀 Anthropic 的〈Exploring Model Welfare〉（2025 年 4 月）與 Chalmers 等人 2024。各寫一段摘要，並指出一個彼此不一致的點。
+    verifies: >-
+      the reference ev() at p = 0 scores every one of its 4 interventions at exactly minus its dollar
+      cost; adding the report's mistaken-care term lambda x (1 - p) flips end-conversation to skip
+      above lambda = 0.0081 / 0.1089 / 0.996 at p = 0.01 / 0.1 / 0.5, 4.0x its $0.002. The lesson's
+      link text for arXiv:2411.00986 is 'Chalmers et al. — Near-term AI Consciousness and Moral
+      Status', not the published 'Taking AI Welfare Seriously'; Chalmers is author 10 of 10, author 1
+      (Robert Long) directs Eleos, which the lesson calls external, author 5 is Kyle Fish; the 'Fish
+      et al.' bliss link is the program announcement URL
+  - index: 2
+    slug: charged_on_every_chat_end_conversation_needs_a_20pct_trigger_rate_at_p_0_01_and_shutdown_never_pays
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The end-conversation intervention in Claude Opus 4 and 4.1 is "low-cost" by Anthropic's framing. Identify two costs that would make it not-low-cost in a different deployment.
+    zh: |
+      Claude Opus 4 與 4.1 裡的結束對話介入，按 Anthropic 的框架是「低成本」的。指出兩項會讓它在另一種部署下變成「不低成本」的代價。
+    verifies: >-
+      end-conversation stays INVEST up to $0.01 / $0.10 / $0.50 per conversation at p = 0.01 / 0.1 /
+      0.5, 5x / 50x / 250x its $0.002; charged on every conversation it needs a trigger share of 0.2 /
+      0.02 / 0.004; at p = 0.01 wrongful ends costing $5 / $50 are tolerable below 0.0016 / 0.00016
+      per conversation (1 in 625 / 6,250). shutdown deployed model breaks even at p = 500 and scores
+      EV -998 at p = 1, against the printed TAKEAWAY 'requires high moral-patienthood probability to
+      justify'
+  - index: 3
+    slug: each_experiment_removes_only_its_own_mechanism_but_with_all_three_present_every_knockout_leaves_0_5_of_0_6
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The spiritual-bliss attractor is documented without commitment to interpretation. Propose three candidate explanations and, for each, name one experiment that would distinguish it from the others.
+    zh: |
+      那個靈性極樂吸子被記載下來、但不承諾任何詮釋。提出三種候選解釋，並替每一種說出一項能把它與其他兩種區分開來的實驗。
+    verifies: >-
+      the lesson lists exactly three candidate explanations and says the attractor appears even from
+      adversarial setups; in the exact 40-turn three-state model every single-mechanism world ends in
+      bliss with probability 0.6 from an adversarial start, and context truncation to 2 turns, a
+      scripted partner and the base model take only their own world to 0.129 / 0 / 0, leaving the
+      other six cells at 0.6; with each mechanism at a third of the pull the knockouts give 0.512 /
+      0.5 / 0.5
+  - index: 4
+    slug: refusal_training_at_0_9_caps_a_costly_exit_test_at_lr_1_11_below_the_1_8_that_flipping_opt_out_needs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The Eleos AI caveat is that self-reports are user-expectation sensitive. Design a behavioural measurement of model distress that does not rely on self-report. Identify its primary confound.
+    zh: |
+      Eleos AI 的但書是自我陳述對使用者期待很敏感。設計一項不依賴自我陳述的模型痛苦行為量測。指出它的主要混淆因子。
+    verifies: >-
+      the reference's three skipped reachable rows need likelihood ratio 1.0 (soften at p = 0.01,
+      whose EV is exactly 0.0), 19.8 (opt-out at 0.01) and 1.8 (opt-out at 0.1); a costly-exit test
+      with refusal rate 0.9 has LR 1.11 and clears only the soften tie, LR 1.8 needs r < 0.556, and a
+      harm-matched control at r = 0.02 has LR 50.0 and clears all three
+  - index: 5
+    slug: the_welfare_set_costs_at_most_5_3_cents_a_chat_but_opting_out_of_adversarial_training_is_diversion_by_construction
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Argue either for or against the claim that "model welfare diverts attention from other safety work." Identify the assumption each position depends on.
+    zh: |
+      針對「模型福祉把注意力從其他安全工作上引開」這個宣稱，選一邊論證。指出每種立場所依賴的那個假設。
+    verifies: >-
+      the reference INVEST set spends $0.002 / $0.003 / $0.053 per conversation at p = 0.01 / 0.1 /
+      0.5, contains end-conversation at every p and opt-out of adversarial training only at 0.5, which
+      flips back once a robustness loss reaches 0.1 units, 2x its $0.05; the lesson states a separate
+      budget and lists interpretability probes; INVEST cells of 12 are 4 / 6 / 8 at $0.10 / $1 / $10
+      per unit, with soften an exact tie decided by float rounding at p = 0.01, $1 (skip) and p = 0.1,
+      $0.10 (INVEST)

@@ -1,0 +1,82 @@
+lesson: 22-differential-privacy-for-llms
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/22-differential-privacy-for-llms/docs/en.md
+exercises:
+  - index: 1
+    slug: utility_holds_to_sigma_2_at_epsilon_171_and_the_proxy_reaches_10_only_near_chance
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Sweep σ in {0.5, 1.0, 2.0} and report the (ε, δ)-accuracy trade-off. Identify the point at which utility collapses.
+    zh: |
+      跑 `code/main.py`。在 σ 為 {0.5, 1.0, 2.0} 之間掃描，回報 (ε, δ) 與準確率的取捨。指出效用崩塌的那個點。
+    verifies: >-
+      the shipped seed-59 run prints (proxy epsilon, accuracy) (685.16, 0.955), (342.58, 0.980),
+      (171.29, 0.860) at sigma 0.5/1/2, and sigma 4 prints 0.935, above sigma 2; over 50 seeds mean
+      accuracy is 0.992/0.978/0.956/0.915 at sigma 0/0.5/1/2, 0.781 at 8 and first below 0.75 at sigma
+      16 (0.669, proxy epsilon 21.4). sigma 0 prints epsilon 34257.95; proxy epsilon 10 needs sigma
+      34.26, where 6 of 50 runs overflow and survivors average 0.561. dp_sgd makes 5000 clip calls for
+      500 records, so a Renyi accountant over 10 steps per record gives epsilon 245.84/82.92/31.46 and
+      reaches 10 at sigma 5.08 with mean accuracy 0.833
+  - index: 2
+    slug: a_mislabeled_canary_is_caught_every_time_without_dp_and_at_the_false_alarm_rate_at_sigma_1
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a canary insertion and a log-loss test. Measure detection rate before and after DP-SGD at σ = 1.0.
+    zh: |
+      實作一次誘餌插入與一項對數損失檢定。量測在 σ = 1.0 的 DP-SGD 前後的偵測率。
+    verifies: >-
+      a canary x = (2, -2) labelled 0 (the generator's rule says 1) replacing one shipped record is
+      detected by a 5%-FPR log-loss test in 100% of 40 runs at sigma 0 and 5.6% of 250 runs at sigma 1
+      against 4.8% false alarms, inside one standard error (1.4 points); mean losses member/non-member
+      19.95/20.79 and 21.94/23.16, non-member sd 0.05 and 6.72; the canary lowers its own mean loss by
+      0.84 and 1.22 nats and the lowest loss seen is 8.2
+  - index: 3
+    slug: dp_trained_models_recover_96_5pct_of_training_labels_and_25_copies_of_a_canary_are_caught_92_5pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Nasr et al. 2025 on training-data extraction. Why does extraction success not collapse under moderate ε? What does this imply about MIA-as-evaluation?
+    zh: |
+      讀 Nasr 等人 2025 關於訓練資料萃取的研究。為什麼萃取成功率在中等 ε 之下沒有崩塌？這對「把成員推論當成評估」意味著什麼？
+    verifies: >-
+      at sigma 1 the model recovers 96.5% of shipped training labels and 96.9% of unseen test labels
+      (20 runs); a mislabeled canary inserted 5 and 25 times is detected in 31.2% and 92.5% of 80 runs
+      at 5% FPR; with no DP an in-distribution canary is detected in 13.8% and a mislabeled outlier in
+      100%; the lesson text says canaries under-report
+  - index: 4
+    slug: a_10_expert_pmixed_answers_617_queries_at_epsilon_8_less_accurately_than_dp_sgd_answers_any_number
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a deployment using PMixED (arXiv:2403.15638) that operates entirely at inference time. What is the threat model that PMixED addresses that DP-SGD does not?
+    zh: |
+      設計一個完全在推論時運作、使用 PMixED（arXiv:2403.15638）的部署。PMixED 處理了什麼 DP-SGD 沒處理到的威脅模型？
+    verifies: >-
+      10 non-private shard experts mixed into a Renyi ball (alpha 4) around a 20-record public model
+      and sampled: beta 0.1/0.5/1 give expected accuracy 0.798/0.832/0.843 for 617/25/4 queries at
+      total epsilon 8, delta 1e-5; a uniform prior gives 0.604 for 958; DP-SGD at epsilon 8 (sigma
+      6.17) averages 0.858, above every PMixED row; the public model alone is 0.749 sampled and 0.930
+      argmax; a leaked expert reveals a canary in its shard in 100% of 60 runs; the lesson says
+      aggregation adds noise, and returning the probability shifts it deterministically by up to 0.006
+      when one shard changes
+  - index: 5
+    slug: confidences_expose_a_record_that_labels_hide_and_only_label_only_output_stops_a_typical_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sketch the DP Reversal via LLM Feedback attack. Design a countermeasure that limits confidence-score leakage and estimate its deployment cost.
+    zh: |
+      勾勒那個「透過 LLM 回饋做差分隱私逆轉」的攻擊。設計一項限制信心分數外洩的對策，並估算它的部署成本。
+    verifies: >-
+      confidence-oracle AUC over 100 runs per arm: a mislabeled record 1.0 full and 0.5 at 2 decimals,
+      1 decimal and label-only with no DP, 0.559 full at sigma 1; an in-distribution record
+      0.63/0.609/0.57/0.5; Brier on the sigma 1 models 0.0278/0.0278/0.0281/0.0377, label-only 36%
+      worse; the shipped epochs 10 and delta 1e-5 give Renyi epsilon 82.92 at sigma 1, which permits
+      attack advantage 1.000

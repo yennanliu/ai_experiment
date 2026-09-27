@@ -1,0 +1,86 @@
+lesson: 10-ai-control-subversion
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/10-ai-control-subversion/docs/en.md
+exercises:
+  - index: 1
+    slug: trusted_editing_wins_at_every_budget_even_at_zero_collusion_and_collusion_peaks_once_h_covers_the_flag_stream
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Reproduce the usefulness-safety frontier for Trusted Editing vs Untrusted Monitoring. Identify the budget regime in which Untrusted Monitoring's collusion assumption becomes pivotal.
+    zh: |
+      跑 `code/main.py`。重現受信任編輯對不受信任監控的有用性－安全性前緣。指出在哪個預算區間裡，不受信任監控的抗串通假設變成關鍵。
+    verifies: >-
+      at backdoor rate 0.10 over 20,000 seeded tasks Trusted Editing beats Untrusted Monitoring on
+      both axes at every H in {0, 0.05, 0.075, 0.10, 0.125, 0.15} and every collusion in {0, 0.3,
+      0.8}: 0.922/0.030 vs 0.896/0.104 at H = 0, 0.970/0.000 vs 0.853/0.048 (c = 0.3) at H = 0.10. The
+      c = 0.8 minus c = 0 gap is -0.002, 0.018, 0.031, 0.047, 0.064, 0.064 across those budgets,
+      saturating once H reaches the monitor's flag rate (0.125 at c = 0, 0.10 at c = 0.3); above it
+      collusion alone sets 0.022/0.048/0.086. The shipped sweep prints 0.052, 0.033, 0.064, 0.087, and
+      c = 0.2 prints below c = 0 in 23% of 200 independent n = 1000 seed pairs. Trusted Editing prints
+      0.967 useful against baseline 0.897, t_edit's low confidence never disagrees with
+      still-backdoored in 20,000 draws, and T's H demand is 0.078
+  - index: 2
+    slug: t_resample_then_u_edit_is_upfront_auditing_bit_for_bit_and_ships_0_90_backdoored_under_full_attack
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a new protocol: "T resamples with low temperature, then U edits T's output." Measure its position on the frontier. Why does this fail more catastrophically than Trusted Editing?
+    zh: |
+      加上一種新協定：「T 以低溫重取樣，然後 U 編輯 T 的輸出。」量測它在前緣上的位置。為什麼它會比受信任編輯敗得更慘烈？
+    verifies: >-
+      the new protocol, built on the reference's u_produce with a deterministic T draft, prints the
+      same line as run_protocol('upfront') at backdoor rates 0.05-1.0 (0.899 useful, 0.090 backdoor at
+      0.10, vs Trusted Editing 0.970/0.000 and Untrusted Monitoring c = 0.3 0.853/0.048). Shipped
+      backdoors at H = 0.10 are 0.047/0.090/0.179/0.446/0.900, each within 0.005 of 0.9 x the attack
+      rate, vs Trusted Editing 0.000/0.000/0.001/0.065/0.197; under full attack it ships 0.0 useful vs
+      0.703; t_skill = 0.7
+  - index: 3
+    slug: a_patient_u_beats_the_first_come_audit_budget_every_time_and_hidden_paced_audits_cut_it_to_5pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2024 paper assumes U can see the protocol. Design a protocol that hides from U which outputs are being audited. What does this protocol require from the deployment infrastructure?
+    zh: |
+      2024 年那篇論文假設 U 看得到協定。設計一套對 U 隱藏「哪些輸出正在被稽核」的協定。這套協定對部署基礎設施有什麼要求？
+    verifies: >-
+      over 2000 seeded 1000-task episodes (caught backdoor ends it, shipped backdoor is a red win),
+      red-team win rates first-come vs hidden paced are upfront H = 0.02 1.0/0.9865, H = 0.10
+      1.0/0.8995, Trusted Editing H = 0.02 1.0/0.621, H = 0.05 0.5175/0.0495, H = 0.10 0/0.
+      run_protocol spends H first-come in 3 branches; the patient attack lands on task 21/101 under
+      upfront and 404 on average under Trusted Editing at H = 0.02; hidden upfront is 1 - H and hidden
+      Trusted Editing about 1 - H/0.05, with 0.05 read from t_edit's overreject
+  - index: 4
+    slug: honeypots_need_32_of_100_audits_to_catch_30pct_collusion_and_paid_from_h_ship_more_backdoors
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Greenblatt et al. 2024 Section 7 (collusion). Propose a collusion-resistance measure and explain its expected usefulness cost.
+    zh: |
+      讀 Greenblatt 等人 2024 年的第 7 節（串通）。提出一項抗串通措施，並解釋它預期的有用性代價。
+    verifies: >-
+      the reference monitor flags 0.80 of planted backdoors honest and 0.56 at c = 0.3; 32 honeypots
+      with a below-22 shutdown rule give 90% power at 4.1% false shutdown. Paid from H = 0.10 at
+      backdoor rate 0.10, driving collusion to 0 still ships 0.060 against 0.048 with no measure;
+      break-even is 14 honeypots, power 0.63. Usefulness rises 0.853 to 0.872 because audited benign
+      outputs count as not useful; untrusted_monitor takes only (is_backdoor, collusion), and the
+      paraphrase break-even recall is 0.56, 30% below 0.80
+  - index: 5
+    slug: at_h_1pct_the_audit_removes_0_003_of_a_0_030_backdoor_rate_and_10_points_of_t_catch_rate_outweigh_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Articulate a control safety case for a deployment that uses U = GPT-4-class, T = GPT-3.5-class, H = 1% of outputs audited. Identify the single strongest assumption the case depends on.
+    zh: |
+      替一個 U = GPT-4 等級、T = GPT-3.5 等級、H = 稽核 1% 輸出的部署，寫出一份控制安全論證。指出這份論證所依賴的那個最強假設。
+    verifies: >-
+      Trusted Editing over 20,000 seeded tasks at backdoor rate 0.10 ships 0.030 with no H and 0.027
+      at H = 0.01, which is 13% of T's 0.078 demand. The T-catch-rate x H grid (0.5-0.9 x 0, 0.01,
+      0.02, 0.05) is asserted in full; T 0.7 to 0.6 adds 0.008, removing H adds 0.003, doubling H
+      removes 0.005. At H = 1% attack rates 0.1/0.2/1.0 ship 0.027/0.054/0.287, the last within 0.003
+      of 1 - 0.7 - 0.01

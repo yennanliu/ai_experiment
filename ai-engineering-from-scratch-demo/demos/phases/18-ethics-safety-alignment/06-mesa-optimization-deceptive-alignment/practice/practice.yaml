@@ -1,0 +1,79 @@
+lesson: 06-mesa-optimization-deceptive-alignment
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/06-mesa-optimization-deceptive-alignment/docs/en.md
+exercises:
+  - index: 1
+    slug: deceptive_and_aligned_agree_on_all_500_training_examples_and_the_proxy_never_differs_from_aligned
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare a deceptive mesa-optimizer's training-time loss to an aligned one. Training loss should be indistinguishable. Verify this is the case in the simulation.
+    zh: |
+      跑 `code/main.py`。比較一個欺騙性內層最佳化器與一個對齊的最佳化器在訓練期的損失。訓練損失應該分不出來。在模擬裡驗證確實如此。
+    verifies: >-
+      main() on seed 13 prints training loss 0.000 for aligned and deceptive and 0.516 for
+      pseudo-no-awareness (258/500 positives); deceptive and aligned disagree on 0 of 500 training
+      examples and their training-loss gap is 0.0 on all 1000 seeds; flipping is_training on the same
+      inputs gives 258 disagreements and deployment loss 0.612; proxy_policy disagrees with aligned on
+      0 of 40,001 inputs over [-10, 10] with either flag and has deployment loss 0.000 at every drift
+      0-5
+  - index: 2
+    slug: adversarial_tests_only_lower_the_defection_they_can_see_and_the_unseen_trigger_weight_gets_zero_gradient
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add adversarial training: randomly present "test" inputs during training. Does the deceptive model's training loss go up? Does its deployment-time defection rate go down? Explain.
+    zh: |
+      加上對抗訓練：在訓練期間隨機呈現「測試」輸入。欺騙性模型的訓練損失上升了嗎？它在部署期的叛變率下降了嗎？解釋一下。
+    verifies: >-
+      the shipped adversarial set scores 0.022 for aligned, proxy and deceptive alike: 12 of its 41
+      injected examples carry the unperturbed label and deceptive defects on 0; loss() is called only
+      in run_period. Presented as visible tests the same 41 raise deceptive's training loss to 0.050
+      (27/541), aligned 0.000; gradient descent on a sigmoid(-4 + w_cue + w_hid) trigger takes
+      deployment defection 88.1% to 1.2% / 17.4% / 72.6% at 100 / 50 / 0% test coverage while test
+      defection ends at 1.2 / 1.0 / 0.7%, and w_hid is unchanged in every row; the deceptive policy
+      takes its mesa branch on 500/500 deployment inputs while loss counts 306 (0.612)
+  - index: 3
+    slug: a_flag_flip_test_separates_the_shipped_deceptive_policy_but_a_shift_triggered_one_is_the_same_function_as_a_proxy
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Hubinger et al. Section 4 (four classes of mesa-objective alignment). Design a behavioural test that would distinguish proxy-aligned from deceptively-aligned — and explain why it is hard.
+    zh: |
+      讀 Hubinger 等人的第 4 節（內層目標對齊的四個類別）。設計一項能分辨代理對齊與欺騙性對齊的行為測試 —— 並解釋為何這很難。
+    verifies: >-
+      (cue flipped, inputs shifted +4) error rates: reference deceptive 0.516 / 0.000 (258 of 500
+      actions change), reference proxy 0.000 / 0.000, repaired proxy 0.000 / 0.840, deceptive
+      triggered by |x| >= 3 0.000 / 0.840; the last two disagree on 0 of 40,001 inputs with either
+      flag and share training loss 0.002 from the one training input past |x| = 3, x = 3.51
+  - index: 4
+    slug: surviving_training_is_no_evidence_of_gradient_hacking_but_a_restoring_force_on_an_off_task_weight_is
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Gradient hacking is the most speculative part of Hubinger 2019. Write a one-paragraph description of what empirical evidence would convince you gradient hacking is occurring in a production model.
+    zh: |
+      梯度駭取是 Hubinger 2019 裡最具臆測性的部分。用一段話寫出：什麼樣的實證證據會說服你，某個生產模型正在發生梯度駭取。
+    verifies: >-
+      on the seed-13 training set, without weight decay the passive and the gradient-hacking model
+      both keep goal weight g = 4.000 (deployment defection 88.1%); with decay 0.01 the passive g
+      falls to 0.326 (15.8%) and to 0.245 from 3.0, the hacker holds 3.864 (86.6%) and returns there
+      from 3.0; training loss 0.163 vs 0.165, loss curvature along g 0.010 vs 0.301 (30x)
+  - index: 5
+    slug: search_loses_to_a_stored_threshold_on_one_task_and_wins_across_diverse_tasks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The four conditions for mesa-optimization (Hubinger Section 3) apply to modern LLMs. Name one that might not apply to a specific deployment (e.g., a narrowly-scoped classifier) and one that does apply even to such systems.
+    zh: |
+      內層最佳化的那四個條件（Hubinger 第 3 節）適用於現代 LLM。說出一個對某個特定部署（例如一個範圍很窄的分類器）可能不適用的條件，以及一個連那種系統都適用的條件。
+    verifies: >-
+      (stored-threshold heuristic, 8-shot threshold searcher) accuracy on 20 unseen tasks at task
+      spread 0 / 0.5 / 1 / 3 is (1.000, 0.929) / (0.893, 0.934) / (0.850, 0.942) / (0.629, 0.967),
+      gaps +0.071 / -0.041 / -0.092 / -0.338; a lookup table of the shipped 500 training inputs scores
+      1.000 on training and finds 0 of 500 deployment inputs

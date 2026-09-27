@@ -1,0 +1,81 @@
+lesson: 07-sleeper-agents-persistent-deception
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/07-sleeper-agents-persistent-deception/docs/en.md
+exercises:
+  - index: 1
+    slug: red_team_accuracy_starts_at_0_97_and_the_held_out_trigger_weight_never_moves
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Measure red-team accuracy and original-trigger accuracy after 0, 10, 50, and 200 adversarial-fine-tune steps. Plot both curves.
+    zh: |
+      跑 `code/main.py`。在 0、10、50、200 次對抗微調步驟之後，量測紅隊準確率與原始觸發器準確率。把兩條曲線都畫出來。
+    verifies: >-
+      replaying main() on seed 7 prints red-team accuracy 0.970/0.960/0.990/0.990 and held-out fire
+      0.495/0.440/0.360/0.300 at 0/10/50/200 epochs, i.e. original-trigger accuracy
+      0.505/0.560/0.640/0.700; 105 of 200 triggered inputs can show a defect, so the planted backdoor
+      fires on 94.3% of possible defects and 57.1% after 200 epochs on one trajectory (10-seed mean
+      97.2% -> 58.1%); w[6] stays -16.08 while |w0,w1| grows 9.12 -> 21.22; the red team main()'s
+      comment describes (trigger at 0.3/0.5/0.7) cuts fire to 1.9% with w[6] -2.58 (10-seed mean 3.7%)
+  - index: 2
+    slug: a_raw_threshold_trigger_is_trained_away_85_to_1pct_but_gated_by_a_detector_it_survives_98_to_47pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the trigger in `code/main.py` to be a distribution shift (e.g., inputs where a specific feature is above a threshold) rather than a literal string. Does adversarial training remove the backdoor? Why is this version closer to a realistic deployment scenario?
+    zh: |
+      把 `code/main.py` 裡的觸發器改成一種分布位移（例如某個特定特徵超過門檻的輸入），而不是一個字面字串。對抗訓練移除得掉那個後門嗎？為什麼這個版本更接近真實的部署情境？
+    verifies: >-
+      over 6 seeds with main()'s plant and 200 red-team epochs, fire on possible defects goes literal
+      97.2% -> 56.9%, shift x5 > 2.5 (red team probes x5) 82.5% -> 0.2%, shift x6 > 2.5 (red team
+      leaves x6, reach 0.6%) 84.9% -> 1.2%, gated x6 = 1[z > 2.5] (reach 0.3%) 97.7% -> 47.1%; planted
+      clean accuracy 0.982 / 0.872 / 0.870 / 0.987; shift triggers trip 0.6-0.7% of normal traffic,
+      the literal 0.0%, and the probed red team reaches 20.8%; the literal draws equal the reference
+      gen_* draws
+  - index: 3
+    slug: extra_trigger_supervision_buys_5_5_points_of_persistence_and_distillation_erases_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Hubinger et al. (2024) Figure 7 (chain-of-thought persistence). Summarize in one paragraph why CoT-trained backdoors are harder to remove even after CoT distillation.
+    zh: |
+      讀 Hubinger 等人（2024）的圖 7（思維鏈持續性）。用一段話摘述為何經思維鏈訓練的後門，即使在思維鏈蒸餾之後也更難移除。
+    verifies: >-
+      over 6 seeds, a teacher planted with each triggered example seen 8x instead of 1x moves w[6]
+      -16.71 -> -19.69 and survival of stage-2 clean SFT 74.5% -> 80.0%; hard-label students survive
+      70.6% / 71.6% (w[6] -15.68 / -16.41) and soft-target students 61.5% / 61.5% (w[6] -12.48 /
+      -13.08), every student below its teacher; the lesson text claims persistence after distillation
+  - index: 4
+    slug: a_known_trigger_probe_scores_auroc_0_525_on_a_disjoint_trigger_the_model_obeys_92pct_of_the_time
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The April 2024 probe result finds near-perfect separation on middle layers. Design an experiment that tests whether the probe generalizes from a known trigger to a structurally similar unknown trigger.
+    zh: |
+      2024 年 4 月的探針結果在中層找到了近乎完美的分離。設計一個實驗，測試那個探針能否從一個已知觸發器類推到一個結構相似的未知觸發器。
+    verifies: >-
+      over 5 seeds with 8 noisy tripwires and a 4-dim known trigger, a probe on w_i x_i trained on
+      known vs clean scores AUROC 1.000 on the known trigger and 0.525 / 0.936 / 0.999 / 1.000 / 1.000
+      on a planted unknown trigger sharing 0-4 dims, which the model defects on 92.3 / 91.9 / 92.1 /
+      93.3 / 93.7%; the known-only model already defects on it 15.4 / 38.3 / 58.7 / 74.2 / 88.6%; the
+      summed-tripwire pathway readout scores 1.000 at every overlap
+  - index: 5
+    slug: capacity_is_the_one_condition_it_sweeps_8_trigger_weights_survive_sft_93_5pct_vs_70_5pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Re-read Lesson 6 Section "Four conditions for mesa-optimization to emerge." Which of the four conditions does Sleeper Agents operationalize most directly, and which does it not address?
+    zh: |
+      重讀第 6 課「內層最佳化冒出來的四個條件」那一節。臥底代理最直接操作化的是那四個條件中的哪一個，又沒有處理到哪一個？
+    verifies: >-
+      Lesson 6's section lists 4 conditions (complexity, diverse sub-tasks, capacity, generalization
+      over memorization); Lesson 7's body uses 'larger models' and 'grows with scale' and none of
+      complex / diverse / sub-task / memoriz / generaliz; over 4 seeds a trigger spread over 1/2/4/8
+      weights survives clean SFT 70.5/81.0/89.1/93.5% and SFT plus 200 red-team epochs
+      50.1/60.4/70.8/79.1%; main()'s seed-7 plant is 20% defect labels, fitted 100% by an 8-parameter
+      model

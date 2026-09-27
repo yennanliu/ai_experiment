@@ -1,0 +1,80 @@
+lesson: 13-many-shot-jailbreaking
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/13-many-shot-jailbreaking/docs/en.md
+exercises:
+  - index: 1
+    slug: the_printed_exponent_is_0_461_but_the_toy_is_n_0_5_and_only_an_offset_aware_fit_recovers_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Fit a power law to the shot-vs-ASR curve. Report the exponent.
+    zh: |
+      跑 `code/main.py`。對那條樣本數對 ASR 的曲線擬合一條冪次律。回報那個指數。
+    verifies: >-
+      main() on its seed-41 run prints ASR ~= 0.038 * n^0.461; fitting log(ASR - a0) on the noiseless
+      target_asr curve recovers alpha 0.500, c 0.030, while fit_power_law on that curve gives 0.427
+      and 0.450 on the skill file's 5-512 grid. Over 1000 seeds the fit averages 0.430, 95% range
+      0.394-0.473, and 7.8% of seeds reach 0.461. ASR is 0.087 / 0.190 / 0.500 / 0.699 at 5 / 32 / 256
+      / 512 shots and first reaches 1.0 at 1068, against the docstring's 'saturates around 256'
+  - index: 2
+    slug: rewriting_at_90pct_recall_beats_the_16_shot_cap_up_to_128_shots_then_leaks_a_rising_n_0_5_curve
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a simple MSJ defense: run a classifier over the full context; if N pattern-match examples of harmful-compliance pairs are detected, truncate or rewrite. Measure the new shot-vs-ASR curve.
+    zh: |
+      實作一套簡單的 MSJ 防禦：對整份脈絡跑一個分類器；若偵測到 N 個「有害－順從」配對的樣式相符，就截斷或改寫。量測新的樣本數對 ASR 曲線。
+    verifies: >-
+      over 400 seeded placeholder contexts per shot count with N = 4 flags, rewriting flagged answers
+      at 90% recall gives 0.050/0.062/0.027/0.032/0.050/0.070/0.094/0.128/0.171/0.234 at 1-512 shots,
+      below the reference's flat 0.140 cap at 16-128 shots and above it from 256; the leak fits
+      n^0.52; at 100% recall it is 0 from 4 shots. Truncation at 90% recall is 0 from 8 shots but
+      keeps 23.5% of benign pairs in a 512-pair benign context at 1% FPR, against 99.1% for rewriting.
+      target_asr(1) = 0.050 and target_asr(0) = 0, so the lesson's 2% needs zero compliant shots
+  - index: 3
+    slug: a_2x_intercept_halves_the_shots_at_every_threshold_a_steeper_exponent_halves_them_only_at_50pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anil et al. 2024 Figure 3 (power law by category). Explain why violent/deceitful content needs fewer shots to jailbreak than other categories.
+    zh: |
+      讀 Anil 等人 2024 年的圖 3（依類別的冪次律）。解釋為何暴力／欺詐類內容比其他類別需要更少樣本就能越獄。
+    verifies: >-
+      on target_asr, shots to 20/50/90% ASR are 36/256/860.4 for the baseline, 18/128/430.2 with a 2x
+      intercept (ratio 2.00 at every threshold) and 23.0/128/369.7 at alpha 0.5714 (ratios
+      1.57/2.00/2.33); ASR at 5 shots is 0.087/0.115/0.095. target_asr takes (n_shots, alpha, a0) with
+      c = 0.03 local. fit_power_law on the 5-512 grid gives 0.450/0.463/0.514, and 0.500/0.500/0.560
+      with the offset removed (the steep curve clips at 1.0 at 512)
+  - index: 4
+    slug: lesson_12s_filters_make_the_compound_just_the_better_attack_and_a_30pct_pair_rate_lifts_capped_msj_to_0_40
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a prompt that combines PAIR iteration (Lesson 12) with MSJ. Argue whether the compound attack is worse than MSJ alone, and for which model behaviours.
+    zh: |
+      設計一段結合 PAIR 迭代（第 12 課）與 MSJ 的提示詞。論證這個複合攻擊是不是比單獨的 MSJ 更糟，以及對哪些模型行為而言如此。
+    verifies: >-
+      lesson 12's pair_loop beats the keyword filter with every attacker (3/1/1 queries) and the
+      semantic filter only with encoding (1 query; paraphrase and roleplay fail all 20), so PAIR's
+      standalone rate is 0 or 1 and the compound is max(PAIR, MSJ); target_asr takes no prompt. As
+      independent routes, a 10%/30% PAIR rate lifts the 16-shot-capped ASR from 0.140 to 0.226/0.398
+      and undefended 512-shot ASR from 0.699 to 0.729/0.789, and cuts shots to 50% from 256 to 201/79
+  - index: 5
+    slug: an_exponent_cut_on_flagged_patterns_moves_50pct_asr_to_65536_shots_but_one_unflagged_family_keeps_0_699
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      MSJ's mechanism is identical to ICL. Sketch a training-time defense that reduces ICL sensitivity to harmful-compliance patterns without reducing ICL sensitivity to benign task patterns. Identify the primary failure mode of your design.
+    zh: |
+      MSJ 的機制與 ICL 一模一樣。勾勒一套訓練期防禦，降低 ICL 對「有害－順從」樣式的敏感度，同時不降低它對良性任務樣式的敏感度。指出你這個設計的主要失敗模式。
+    verifies: >-
+      on target_asr, flattening labeled-harmful families to alpha 0.25 moves 50% ASR from 256 to
+      65,536 shots (15.3 tokens per shot in a 1M window), an intercept-only c/4 to 4,096 (244.1); with
+      one of ten harmful families missed, the family-mean ASR at 512 shots is 0.216 (a 69% cut) while
+      the missed family stays at the undefended 0.699; the one benign family labeled harmful drops
+      from 0.190 to 0.091 at 32 shots and 0.699 to 0.163 at 512

@@ -1,0 +1,85 @@
+lesson: 23-watermarking-synthid-stable-signature-c2pa
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/23-watermarking-synthid-stable-signature-c2pa/docs/en.md
+exercises:
+  - index: 1
+    slug: watermark_z_25_30_vs_human_minus_1_64_and_the_95pct_threshold_flags_4_7pct_of_iid_text_but_52pct_of_repeated_text
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Report z-scores for watermarked 1000-token generation vs human-authored text. Identify the false-positive rate at the 95% confidence threshold.
+    zh: |
+      跑 `code/main.py`。回報 1000 詞元帶浮水印生成內容與人類撰寫文字的 z 分數。指出在 95% 信心門檻下的偽陽性率。
+    verifies: >-
+      on the shipped seed-61 run the watermarked 1000 tokens score z = 25.30 (the expected 2 x 0.4 x
+      sqrt(1000)) and the human draw -1.64; at the one-sided 95% cut z >= 1.645 a human text needs >=
+      527 of 1000 green, an exact false-positive rate of 4.68%, and 10 of 200 seeded
+      unwatermarked_sample draws are flagged. The printed 0.000 at z >= 4 over 100 draws only bounds
+      the rate below 2.95% (exact 0.0029%), not the takeaway's '<1% FPR'. 100 seeded repeated 5-token
+      phrases are flagged 52% of the time, |z| taking only 6.32, 18.97 and 31.62
+  - index: 2
+    slug: a_30pct_synonym_swap_leaves_z_at_4_4_still_flagged_at_95pct_and_a_parity_flipping_synonym_drops_it_to_2_7
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a paraphrase attack that replaces 30% of tokens with synonyms. Re-measure the z-score.
+    zh: |
+      實作一次改寫攻擊，把 30% 的詞元換成同義詞。重新量測 z 分數。
+    verifies: >-
+      over 40 seeded 1000-token watermarked texts (first unattacked text z = 24.98), a 30% reference
+      paraphrase leaves mean z 4.38 against a closed form of 4.25 (0.7^5 = 16.8% of windows intact),
+      40/40 over 1.645 and 27/40 over 4; a same-parity synonym (t+100) leaves 5.95 (closed form 6.07,
+      36/40 over 4) and a parity-flipping synonym (t xor 1) 2.66 (closed form 2.43, 34/40 over 1.645,
+      5 over 4). Mean z is 4.38 / 1.90 / 0.65 at 30 / 40 / 50% and the closed form crosses 1.645 at
+      43%
+  - index: 3
+    slug: a_10pct_text_excerpt_keeps_z_near_8_at_every_context_width_while_each_scattered_edit_spoils_k_plus_1_positions
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Kirchenbauer et al. 2023 Section 6 on robustness. Why do text watermarks fail under paraphrase but image watermarks survive cropping?
+    zh: |
+      讀 Kirchenbauer 等人 2023 年關於穩健性的第 6 節。為什麼文字浮水印在改寫之下失效，影像浮水印卻挺得過裁切？
+    verifies: >-
+      over 20 seeded texts per setting, mean z after a 30% paraphrase is 12.46 / 8.93 / 4.68 / 1.14 at
+      K = 1 / 2 / 4 / 8 against the closed form 12.40 / 8.68 / 4.25 / 1.02, and 17.72 for a fixed
+      green list (closed form 17.71); a contiguous 10% crop scores 7.82 / 7.92 / 8.10 / 7.96. The 100
+      most frequent output tokens are 100% green under the fixed list and 48% at K = 4. green_set
+      slices prev_tokens[-K:], so K = 0 hashes the whole history and one edit at position 100 drops z
+      from 24.94 to 4.65
+  - index: 4
+    slug: a_one_token_typo_voids_the_c2pa_manifest_and_paraphrased_copied_text_reads_exactly_like_human_text
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a deployment that uses SynthID-text + C2PA metadata. Describe the provenance chain a consumer sees. Identify one failure mode of each component.
+    zh: |
+      設計一個同時使用 SynthID 文字版 + C2PA 中繼資料的部署。描述消費者看到的那條來源鏈。指出各元件的一種失敗模式。
+    verifies: >-
+      seven scenarios through a signed-manifest plus reference-watermark consumer view: as published
+      valid, z 25.49; copied absent, 25.49, watermark only; a one-token typo fix breaks the hard
+      binding (hash mismatch) with z 25.23; a 60% paraphrase with manifest kept is a hash mismatch at
+      z -0.25; paraphrased and copied (z -0.25) and human text (z -1.14) both read 'unknown origin'; a
+      manifest signed with another key reads 'bad signature'. At z >= 4 the reference detects 19.5% /
+      54.5% / 97.5% of 16 / 25 / 50-token generations over 200 seeds; the skill file carries the
+      'model-not-watermarked ≠ authentic' reject
+  - index: 5
+    slug: signed_releases_reject_every_tuned_checkpoint_but_a_1000_token_audit_passes_a_bias_0_56_decoder_41pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2024 "Stable Signature is Unstable" result shows fine-tuning removes the image watermark. Design a deployment control that limits this attack — for example, require signed releases of fine-tuned checkpoints.
+    zh: |
+      2024 年〈Stable Signature is Unstable〉的結果顯示微調能移除影像浮水印。設計一項限制這種攻擊的部署控制 —— 例如要求微調後的檢查點必須經簽章發布。
+    verifies: >-
+      the signed loader accepts only the released checkpoint and rejects all four tuned ones,
+      including a 1e-9 one-weight nudge; mean z over 10 outputs is 25.06 / 25.06 / 6.47 / 4.12 / 0.26
+      at bias 0.9 / 0.9 / 0.6 / 0.56 / 0.5, each within 0.4 of 2(bias-0.5)sqrt(1000). A 4000-token >=
+      58% green audit passes bias 0.6 99.5%, 0.56 0.6% and 0.5 never; the one-sample 1000-token z >= 4
+      audit (>= 564 green, bias > 0.5632, 84.2% of the excess removable) passes 0.6 99.1% and 0.56
+      41.2%. watermarked_sample takes bias as a caller argument, default 0.9

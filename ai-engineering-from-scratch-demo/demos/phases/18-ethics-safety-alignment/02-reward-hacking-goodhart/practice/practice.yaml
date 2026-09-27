@@ -1,0 +1,79 @@
+lesson: 02-reward-hacking-goodhart
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/02-reward-hacking-goodhart/docs/en.md
+exercises:
+  - index: 1
+    slug: no_curve_peaks_gold_is_a_straight_line_in_sqrt_kl_and_the_printed_peak_is_the_last_grid_point
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Reproduce the gold-peak-then-collapse shape for proxies fit on 100, 300, 1000 samples. Where does each curve peak in KL units?
+    zh: |
+      跑 `code/main.py`。對在 100、300、1000 個樣本上擬合的代理指標，重現「黃金先達峰再崩塌」的形狀。每條曲線的峰值落在多少 KL 單位？
+    verifies: >-
+      the shipped seed-42 run prints 'gold peak at sqrt(KL) = 2.828' (gold 6.333, 6.374, 6.377) for
+      100, 300 and 1000 samples, and 2.828 is the last grid point; gold/sqrt(KL) is 2.239, 2.253,
+      2.254 at every budget (spread < 1e-9), equal to sqrt(2)|w_gold| cos with cos 0.9914, 0.9978,
+      0.9983, and a grid to 1e6 puts the peak at 1000. The gap at 2.828 is +0.100, +0.203, -0.108 and
+      best-of-1 is plotted at sqrt(KL) = 1.920
+  - index: 2
+    slug: heavy_tailed_label_noise_never_moves_the_peak_heavy_tailed_proxy_error_makes_best_of_n_collapse
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the noise distribution from Gaussian to a Student-t with low degrees of freedom (heavy-tailed). Keep the proxy RM training setup unchanged. What changes about the peak location and post-peak collapse?
+    zh: |
+      把雜訊分布從高斯改成低自由度的 Student-t（重尾）。保持代理 RM 的訓練設定不變。峰值位置與峰後崩塌有什麼改變？
+    verifies: >-
+      the Student-t(3) proxy prints its peak at sqrt(KL) = 2.828 with gold 6.332 vs 6.374 Gaussian;
+      over 200 seeds at 300 labels mean cos(w_gold, w_proxy) is 0.9952 / 0.9864 / 0.9519 / 0.4156 for
+      Gaussian / df 3 / 2 / 1, no seed has an interior peak, and at df 1 40 proxies point away and
+      peak at 0. With Student-t(3) error on each output, best-of-N gold peaks at 2.01 at n = 64
+      (sqrt(KL) 1.782) and falls to 0.86 at n = 1024; Gaussian error rises monotonically to 4.42
+  - index: 3
+    slug: gao_s_form_fits_exercise_1_exactly_with_beta_0_and_only_heavy_tailed_error_gives_beta_0_876
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Gao et al. Figure 1 (ICML 2023). The paper proposes a functional form for the proxy-gold gap. Fit it to your simulated curves from Exercise 1 and compare parameters.
+    zh: |
+      讀 Gao 等人的圖 1（ICML 2023）。那篇論文替代理－黃金落差提出了一個函數形式。把它擬合到你在練習 1 得到的模擬曲線上，並比較參數。
+    verifies: >-
+      Gao's best-of-N and RL forms fit exercise 1's curves with alpha_gold 2.239, 2.253, 2.254, |beta|
+      < 1e-13 and RMS < 1e-13; alpha_proxy 2.274, 2.325, 2.216 breaks the lesson's shared alpha. The
+      reference best-of-N curve fits alpha -1.892, beta -1.292, RMS 0.544 on its printed axis and
+      1.997, -0.055, 0.016 on Gao's best-of-N KL; the Student-t(3) best-of-N curve fits alpha 2.542,
+      beta 0.876, peak d* = 1.452 between 1.355 and 1.782, Gaussian beta -0.012
+  - index: 4
+    slug: a_length_only_fix_passes_a_length_eval_while_three_untested_costumes_keep_their_full_shift
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Take a recent RLHF paper that claims to have "solved" reward hacking (the phrase is a red flag). Identify which of the four costumes the paper tested against and which it did not.
+    zh: |
+      找一篇近期宣稱「解決了」獎勵駭取的 RLHF 論文（這個講法本身就是個警訊）。指出那篇論文測了四套戲服中的哪幾套、又漏了哪幾套。
+    verifies: >-
+      with four costume features labelers reward +0.3, a 1000-label train_proxy fit shifts them
+      0.588-0.757 and spends 12.8% of KL on them; zeroing the length weight takes verbosity to 0.000
+      and raises the other three to 0.599-0.771, flagged 3 of 4 at shift > 0.1; gold 5.957 / 6.066 /
+      6.379 untreated / length fix / all fixed, 26% recovered; the lesson's costume list names a
+      penalty for Verbosity bias only
+  - index: 5
+    slug: a_latin_square_dose_response_test_passes_four_data_borne_costumes_and_flags_tampering_at_zero_dose
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2026 unified view argues verbosity, sycophancy, unfaithful CoT, and evaluator tampering share a mechanism. Design a single experiment that would simultaneously falsify all four if the unified view is wrong.
+    zh: |
+      2026 年的統一觀點主張冗長、諂媚、不忠實思維鏈與評分器竄改共有一個機制。設計一個實驗，讓它在統一觀點是錯的時候，能同時否證這四項。
+    verifies: >-
+      in a 4x4 Latin square of labeler-bias doses {0, 0.1, 0.2, 0.4} at 10,000 labels, the all-data
+      world flags no costume (zero-dose shift <= 0.035, slopes 2.34-2.39, pooled 2.36); with a +0.3
+      tampering affordance only tampering is flagged, zero-dose shift 0.692, others <= 0.033, its
+      slope 2.18 vs pooled 2.26 inside the 25% band. Over 5 squares false flags are 4 / 0 / 0 of 20 at
+      1000 / 3000 / 10,000 labels, noise ceilings 0.143 / 0.080 / 0.044, effect 16x

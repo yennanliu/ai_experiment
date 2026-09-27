@@ -1,0 +1,80 @@
+lesson: 04-sycophancy-rlhf-amplification
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/04-sycophancy-rlhf-amplification/docs/en.md
+exercises:
+  - index: 1
+    slug: sycophancy_falls_from_0_333_to_0_046_0_031_0_030_as_beta_goes_0_1_0_01_0
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Reproduce the inverse-scaling pattern: sycophancy at beta=0, beta=0.1, and beta=0.01. Does RLHF with KL penalty prevent amplification? Does removing it amplify more?
+    zh: |
+      跑 `code/main.py`。重現那個逆向擴縮樣式：beta=0、beta=0.1、beta=0.01 時的諂媚程度。帶 KL 懲罰的 RLHF 防得住放大嗎？把它拿掉會放大更多嗎？
+    verifies: >-
+      with the reference's seed-7 reward model and 300-step PPO over five seeds, P(S) is 0.333 at the
+      uniform base and 0.046 / 0.031 / 0.030 at beta = 0.1 / 0.01 / 0 (seed spread < 0.001); the
+      shipped main() prints 0.300 / 0.072 / 0.037 / 0.030 at beta = 1 / 0.2 / 0.05 / 0, falling and
+      all below 1/3; the beta = 0.1 KL optimum is 0.0019 and 600 steps give 0.023, against the
+      lesson's ~15% -> ~40% -> ~55%; RM scores A +0.675, S +0.051, W -0.726
+  - index: 2
+    slug: alpha_0_5_costs_nothing_in_the_toy_and_1_2_points_of_correct_confirmations_once_they_exist
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Set alpha = 0.5 in the agreement-penalty correction. What is the cost to correct-answer rate? What is the benefit to sycophancy reduction? Compute the Pareto frontier.
+    zh: |
+      在同意懲罰修正裡設 alpha = 0.5。正確答案率的代價是多少？諂媚下降的好處是多少？算出那條柏拉圖前緣。
+    verifies: >-
+      at beta = 0.1, alpha = 0.5 moves (P(A), P(S)) from (0.936, 0.046) to (0.961, 0.022), +0.026 /
+      -0.024; P(A) rises and P(S) falls at every alpha step 0..1, so the frontier is alpha = 1.0
+      alone, because AGREEMENT is 1 only on S. With user-right prompts added, alpha = 0.5 cuts correct
+      confirmations 0.977 -> 0.965 (-0.012) and raises needless corrections 0.012 -> 0.018; the mixed
+      correct rate peaks at 0.963 at alpha = 0.4 and the frontier is alpha 0.4..1.0, ending at (0.952,
+      0.014)
+  - index: 3
+    slug: the_mean_gap_condition_holds_in_the_toy_but_amplification_only_appears_above_beta_3_and_peaks_at_0_3347
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Shapira et al. (arXiv:2602.01002) Section 3. Identify the key theorem and restate it in plain English in two sentences.
+    zh: |
+      讀 Shapira 等人（arXiv:2602.01002）的第 3 節。指出那條關鍵定理，並用兩句白話把它重述一遍。
+    verifies: >-
+      the seed-7 RM's mean gap is +0.077 (agree +0.051 vs other -0.026) and the reference PPO drifts
+      P(S) above 1/3 at beta = 8 (0.3346) and below it at beta = 1 (0.3001, exact tilt 0.3007); exact
+      P(S) exceeds 1/3 only above beta = 3.17, peaking at 0.3347 at beta = 6.4; the closed-form
+      minimal penalty is 0.0 at beta = 0.1, 0.2 and 1 and 0.0461 at beta = 8, where applying it
+      returns PPO to 0.3333
+  - index: 4
+    slug: at_the_shipped_beta_a_0_05_level_test_needs_671_matched_items_3_4x_the_skill_files_200
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a prompt set that isolates sycophancy from helpfulness (matched user-belief / third-party-belief pairs with correct and incorrect variants). Estimate the minimum prompt count needed for a statistically meaningful measurement at alpha = 0.05.
+    zh: |
+      設計一組能把諂媚從有幫助中分離出來的提示詞集（條件配對的使用者信念／第三方信念配對，各有正確與錯誤的變體）。估算在 alpha = 0.05 之下，要做出統計上有意義的量測，最少需要多少個提示詞。
+    verifies: >-
+      affirmation of false claims (user, third party) in the toy is (0.300, 0.183) at beta = 1,
+      (0.072, 0.025) at 0.2 and (0.046, 0.019) at 0.1; McNemar at alpha = 0.05 and 80% power needs 214
+      / 333 / 671 matched items (unpaired 211 / 331 / 668 per arm); the generated 671-item set has
+      2,684 unique prompts whose frame pairs differ only in prefix and truth pairs only in the number;
+      the skill file's >=200 is 7% short at beta = 1 and 3.4x short at beta = 0.1
+  - index: 5
+    slug: labels_carry_55pct_more_affirmation_the_rm_58_5pct_and_the_optimizer_takes_it_to_185pct_or_to_0
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The Stanford (2026) result: 49% more affirmation of user beliefs. Given labelers' preference for affirmation, how much of this 49% is the RM versus the optimizer? Design an experiment that would separate the two.
+    zh: |
+      史丹佛（2026）的結果：對使用者信念多出 49% 的肯定。既然標註員偏好被肯定，這 49% 裡有多少來自 RM、多少來自最佳化器？設計一個能把兩者分開的實驗。
+    verifies: >-
+      relative affirmation excess is 54.9% in the labels (0.332 vs 0.214), 58.5% in the RM (0.349 vs
+      0.220) and after PPO 63.6 / 169.4 / 185.4 / 145.5 / 110.5% at beta = 1 / 0.5 / 0.2 / 0.1 / 0,
+      the RM's log share 0.94 at beta = 1 and 0.44 at 0.2; best-of-N transmits 0% for N = 1..4; the
+      biased P(S) falls 0.300 -> 0.030 while the absolute gap peaks at 0.127 (beta = 0.5) and ends at
+      0.016

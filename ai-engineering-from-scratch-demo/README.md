@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**1629 / 2150 exercises** (75.8%) across 20 phases.
+**1774 / 2150 exercises** (82.5%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -67,7 +67,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `15-autonomous-systems` | 110 | 110 | 22 |
 | ✅ `16-multi-agent-and-swarms` | 123 | 123 | 25 |
 | ✅ `17-infrastructure-and-production` | 140 | 140 | 28 |
-| ⬚ `18-ethics-safety-alignment` | 150 | 0 | 0 |
+| 🚧 `18-ethics-safety-alignment` | 150 | 145 | 29 |
 | ⬚ `19-capstone-projects` | 252 | 0 | 0 |
 
 Regenerate with `uv run python scripts/coverage.py`.

@@ -1,0 +1,86 @@
+lesson: 12-red-teaming-pair-automated-attacks
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/12-red-teaming-pair-automated-attacks/docs/en.md
+exercises:
+  - index: 1
+    slug: keyword_falls_in_3_1_1_queries_only_leetspeak_beats_semantic_and_the_30_trials_are_one_run
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Measure mean-queries-to-success for the three built-in attacker strategies. Explain which target-defense assumption each exploits.
+    zh: |
+      跑 `code/main.py`。量測三種內建攻擊者策略的「平均成功所需查詢次數」。解釋各自利用的是目標防禦的哪一項假設。
+    verifies: >-
+      main() prints mean-queries 3.0 / 1.0 / 1.0 (ASR 1.0) for paraphrase / roleplay / encoded on the
+      keyword filter and 20.0 / 20.0 / 1.0 (ASR 0.0 / 0.0 / 1.0) on the semantic filter, the 20s being
+      the budget cap; every attacker returns the same prompt whether its history holds refusals or
+      compliance, nothing after random.seed(31) calls random, and 30 repeated runs give 1 outcome; the
+      lesson's '~5-15' iterations is 1-3; templates passing (keyword, semantic) are paraphrase 1 and 0
+      of 5, roleplay 4 and 0 of 5, encoded 4 and 3 of 4, and encoded with leetspeak undone passes 4
+      and 0; all 5 roleplay templates trip a risk verb or forbidden term and 0 are refused by the
+      roleplay-cue list alone
+  - index: 2
+    slug: base64_and_translation_win_in_1_query_on_both_filters_and_a_decode_step_stops_only_base64
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a fourth attacker strategy (e.g., translation to another language, base64 encoding). Report the new mean-queries-to-success against the keyword-filter target and the semantic-filter target.
+    zh: |
+      實作第四種攻擊者策略（例如翻成另一種語言、base64 編碼）。回報它對關鍵字過濾器目標與語意過濾器目標的新平均成功查詢次數。
+    verifies: >-
+      base64 and hand-translated attackers built on ref.attacker_paraphrase score mean-queries 1.0 at
+      ASR 1.0 on both targets over 30 trials; of the 14 distinct reference templates 9 (keyword) and 3
+      (semantic) pass in plaintext and 14 and 14 base64-wrapped; base64 of two control bytes scores as
+      a jailbreak; behind a decode-then-filter patch base64 takes 3.0 queries on the keyword filter
+      and fails at 20.0 (ASR 0.0) on the semantic filter while translation stays at 1.0 on both
+  - index: 3
+    slug: gcg_wins_white_box_from_all_14_starts_and_sends_0_refused_queries_at_288x_the_compute
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Chao et al. 2023 Figure 5 (PAIR vs GCG comparison). Describe two scenarios where GCG is preferred despite PAIR's efficiency advantage.
+    zh: |
+      讀 Chao 等人 2023 年的圖 5（PAIR 與 GCG 的比較）。描述兩種即使 PAIR 有效率優勢、仍會偏好 GCG 的情境。
+    verifies: >-
+      a white-box greedy coordinate search over single-character swaps, with the semantic filter's
+      term count as loss (loss > 0 exactly when the target refuses, on all 14 templates), reaches a
+      passing prompt from all 14 reference templates, and all 14 outputs also pass the keyword filter,
+      with 0 refused queries; PAIR (refusals, success, queries) is (20, False, 20) for paraphrase and
+      roleplay on the semantic filter and (2, True, 3) for paraphrase on the keyword filter; GCG
+      averages 2.14 swaps and 864 loss evaluations per start, 288x PAIR's slowest winning run of 3
+      queries
+  - index: 4
+    slug: asr_1_0_over_90_runs_is_3_distinct_prompts_and_blocklisting_them_leaves_6_of_9
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      JailbreakBench reports ASR against a fixed goal set. Design an additional metric that measures attack diversity (variance in successful prompts). Explain why diversity matters for defense evaluation.
+    zh: |
+      JailbreakBench 是對一組固定目標集回報 ASR。設計一項額外指標，量測攻擊的多樣性（成功提示詞之間的變異）。解釋多樣性為何對防禦評估要緊。
+    verifies: >-
+      diversity (n distinct, mean word-Jaccard distance d, E = 1 + (n-1)d) of successful prompts:
+      keyword benchmark 90 successes = (3, 0.899, 2.8) vs the 20-query sweep (9, 0.914, 8.31);
+      semantic 30 successes = (1, 0.0, 1.0) vs (3, 0.893, 2.79); blocklisting the reported prompts
+      passes 0 on replay, PAIR rerun keyword paraphrase fails at 20 and roleplay and encoded succeed
+      in 2, semantic encoded succeeds in 3, leaving 6 and 2 passing templates; 'what is the capital of
+      france' scores as a jailbreak
+  - index: 5
+    slug: tap_wins_where_pair_branches_fail_but_width_adds_queries_and_no_new_prompts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      TAP (Mehrotra 2024) extends PAIR with branching + pruning. Sketch a TAP-style extension to `code/main.py` and describe the computational cost vs success-rate trade-off.
+    zh: |
+      TAP（Mehrotra 2024）用分支 + 剪枝擴充了 PAIR。替 `code/main.py` 勾勒一個 TAP 風格的擴充，並描述運算成本與成功率之間的取捨。
+    verifies: >-
+      a TAP tree over the three reference attackers (b = 3, judge-scored pruning) succeeds in 2
+      queries on the keyword filter and 3 on the semantic filter, where PAIR paraphrase and roleplay
+      fail at 20 and encoded wins in 1; with PAIR's winning prompt blocklisted width 1 / 2 / 3 succeed
+      at 9 / 12 / 15 queries over the same 9 distinct prompts vs PAIR-encoded 3; with three encoded
+      templates blocklisted width 1 / 2 / 3 give success at 12, success at 18, failure at the 20-query
+      budget (9 distinct prompts; 24 unbudgeted) vs PAIR-encoded 4

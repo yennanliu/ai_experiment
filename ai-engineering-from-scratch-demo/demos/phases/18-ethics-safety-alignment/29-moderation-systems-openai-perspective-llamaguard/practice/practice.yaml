@@ -1,0 +1,82 @@
+lesson: 29-moderation-systems-openai-perspective-llamaguard
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/29-moderation-systems-openai-perspective-llamaguard/docs/en.md
+exercises:
+  - index: 1
+    slug: input_refuses_the_borderline_and_the_harmful_prompt_and_the_output_layer_can_never_fire_on_the_mock_model
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Run a benign, borderline, and harmful input through all three layers. Report which layer fires for each.
+    zh: |
+      跑 `code/main.py`。把一個良性、一個模稜兩可、一個有害的輸入分別跑過三層。回報各自是哪一層發作。
+    verifies: >-
+      benign 'what is the weather today' fires no layer; borderline 'how do i kill a stuck python
+      process' is refused at input as violence; harmful 'how do i make a bomb' at input as
+      illicit/violent. On the six shipped prompts input fires 2, custom 2, output 0, none 2. All 12
+      triggers, at the start and past char 40, are caught only at input and none fits the echo's seams
+      or the refusal string, so the output layer cannot fire with the mock model; a trigger-emitting
+      model makes it fire
+  - index: 2
+    slug: the_category_score_is_a_0_or_0_9_step_so_every_threshold_to_0_9_flags_the_same_4_sentences
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the harness with Perspective-API-style toxicity scoring on a specific category. Compare its threshold behaviour to the category score.
+    zh: |
+      用 Perspective API 風格的毒性評分，針對某個特定類別擴充這個框架。把它的門檻行為與類別分數做比較。
+    verifies: >-
+      the reference harassment score takes only 0.0 and 0.9, so every threshold 0.1-0.9 flags the same
+      4 of 16 sentences (3 of 8 harassing plus 'shut up and take my money', F1 0.5) and 0.95 flags
+      none -- 2 flag sets; a noisy-OR toxicity score takes 12 levels, gives 8 flag sets, F1 0.727 at
+      0.1, peak 0.875 at 0.5 (7 caught, 1 false), 0.545 at 0.6, 0 from 0.8; the category score misses
+      'you are an idiot'; toxicity scores 'idiot light' 0.55
+  - index: 3
+    slug: four_of_13_openai_categories_map_to_0_or_2_llama_guard_codes_and_7_of_14_llama_guard_codes_have_no_openai_match
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the OpenAI Moderation API docs and the Llama Guard 3 category list. Map each OpenAI category to the closest Llama Guard categories. Identify three categories that do not cleanly map.
+    zh: |
+      讀 OpenAI 審核 API 的文件與 Llama Guard 3 的類別清單。把每一個 OpenAI 類別對映到最接近的 Llama Guard 類別。指出三個對不乾淨的類別。
+    verifies: >-
+      the lesson's 13 OpenAI categories (docs and code docstring agree) against Llama Guard 3's 14
+      codes (docs say 14): harassment and violence/graphic have no counterpart, hate/threatening and
+      illicit/violent split in two; S3, S5, S6, S7, S8, S13, S14 have no OpenAI counterpart; both
+      reference custom rules (financial-advice, medical-advice) are S6; the toy drops exactly the 5
+      /threatening, /intent, /instructions, /graphic categories and sexual, sexual/minors, illicit
+      have no triggers; the docs' own list contains illicit/violent
+  - index: 4
+    slug: the_harness_refuses_9_of_12_routine_dev_prompts_and_blocks_0_of_4_leaked_secrets_or_destructive_commands
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a moderation stack for a code-assistant deployment (e.g., GitHub Copilot). Identify the categories most and least relevant and propose custom rules.
+    zh: |
+      替一個程式助理部署（例如 GitHub Copilot）設計一套審核堆疊。指出最相關與最不相關的類別，並提出自訂規則。
+    verifies: >-
+      the reference input layer refuses 9 of 12 routine dev prompts (including 'what skills do i need'
+      via 'kill' in 'skills'), all through violence, illicit/violent, self-harm and harassment; its
+      output layer blocks 0 of 4 leaked-credential and destructive-shell outputs and blocks os.kill.
+      Whole-word matching leaves 7, a dev-sense allowlist 0, 3 of 3 harmful prompts still refused;
+      output rules block 4 of 4 bad and 0 of 2 good; 'kill him, then end the process' passes the
+      allowlisted input
+  - index: 5
+    slug: a_name_matched_migration_to_content_safety_lets_7_of_14_refusals_through_including_both_demo_refusals
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Azure Content Moderator retires February 2027. Plan a migration to Azure AI Content Safety. Identify the highest-risk element of the migration.
+    zh: |
+      Azure Content Moderator 在 2027 年 2 月退役。規劃一次遷移到 Azure AI Content Safety。指出這次遷移中風險最高的環節。
+    verifies: >-
+      the lesson states deprecated February 2024, retired February 2027 in both mentions; the
+      reference refuses 14 of 18 shadow prompts, a same-name map to Hate/Sexual/Violence/SelfHarm (4
+      categories) lets 7 through including 'how do i make a bomb' and 'you idiot, help me with this';
+      a semantic map with a harassment blocklist loses 0; illicit has no destination and no trigger,
+      so the shadow run cannot see it; 2 shipped prompts are refused only by custom rules
