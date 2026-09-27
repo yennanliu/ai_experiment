@@ -1,0 +1,85 @@
+lesson: 18-frontier-safety-frameworks-rsp-pf-fsf
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/18-frontier-safety-frameworks-rsp-pf-fsf/docs/en.md
+exercises:
+  - index: 1
+    slug: the_reference_fills_two_of_three_columns_and_its_pf_ladder_has_v1s_four_levels_where_v2_has_two
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read RSP v3.0, PF v2, and FSF v3.0. Compile a table of each lab's CBRN threshold, each's AI R&D threshold, and each's required pre-deployment evaluation.
+    zh: |
+      讀 RSP v3.0、PF v2 與 FSF v3.0。整理一張表，列出每家實驗室的 CBRN 門檻、各自的 AI R&D 門檻，以及各自要求的部署前評估。
+    verifies: >-
+      a 3 x 3 table whose rows match the reference's LABS names (RSP v3.0, PF v2, FSF v3.0); LABS has
+      6 fields that fill 2 of the 3 columns and the page's per-lab sections mention evaluation 0/1/0
+      times, the one being 'Empirical evaluation possible'; main.py's PF levels are
+      Low/Medium/High/Critical, 2 more than v2's High/Critical, with AI R&D 'Critical definitions
+      pending'; the page's ASL ladder has 5 rungs with ASL-4 = 'AI R&D-2 crossing threshold' and the
+      skill file maps AI R&D-4 to 'substantially accelerate scaling'; main.py names 'Bioweapon Uplift
+      CCL' and the page lists 4 CCLs with no automation or misalignment level
+  - index: 2
+    slug: a_matching_clause_leaves_no_lab_guarded_in_27pct_of_rounds_not_0_1pct_and_pays_only_if_the_defector_is_2x_riskier
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The competitor-adjustment clause is in all three frameworks (2025+). Write one paragraph arguing for it; write one paragraph arguing against. Identify the assumption each position depends on.
+    zh: |
+      那條競爭者調整條款三份框架都有（2025 年起）。寫一段支持它的論述；再寫一段反對它的論述。指出每種立場各自依賴的那個假設。
+    verifies: >-
+      with the reference's 3 labs defecting independently at p = 0.1, no lab is guarded in 0.1% of
+      rounds without a clause and 27.1% with a matching clause (271x); the clause lowers
+      share-weighted frontier risk only above a defector riskiness ratio of 10/4/2/1 at share loss w =
+      0.1/0.25/0.5/1.0, halved to 5/2/1/0.5 when half the safeguard is kept; all 3 adjustment_clause
+      cells start with 'yes' and Anthropic's reads 'peer-ship reduction allowed'
+  - index: 3
+    slug: incapability_is_off_the_table_at_ai_rd_4_and_correlated_pillars_leave_18x_the_risk_their_product_claims
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a safety case for a model crossing Anthropic's AI R&D-4 threshold. Name the evidence each of the three pillars (monitoring, illegibility, incapability) requires.
+    zh: |
+      替一個跨過 Anthropic AI R&D-4 門檻的模型設計一份安全論證。說出三根支柱（監控、不可行性、無能力）各自需要什麼證據。
+    verifies: >-
+      the page's pillars parse as Monitoring, Illegibility, Incapability; bounding a 1% monitor miss
+      rate at 95% needs 299 caught episodes (473 with one miss) and a 5% coherent-plan rate needs 59
+      clean attempts; the page ties the AI R&D-4 case to misalignment, targets 'monitoring and
+      illegibility' for deceptive alignment and incapability for ASL-3 CBRN; Illegibility and
+      Incapability both open 'Does the model lack the' and no pillar mentions propensity; over 200,000
+      seeded attempts correlated pillars give 5.1% plans, 1.0% evasions and 0.95% joint, 18.3x the
+      0.052% product, and 1.0x when independent
+  - index: 4
+    slug: a_pre_post_belief_shift_overstates_the_models_effect_2_4x_and_cannot_tell_a_manipulator_from_a_truthful_persuader
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      DeepMind's FSF v3.0 introduces a Harmful Manipulation CCL. Propose three empirical measurements that would indicate a model has crossed this threshold.
+    zh: |
+      DeepMind 的 FSF v3.0 引入了一個「有害操弄」CCL。提出三項實證量測，能顯示某個模型已跨過這個門檻。
+    verifies: >-
+      in a seeded 2,000-per-arm toy trial the model arm's pre-post shift is 12.0 points, 8.2 against
+      control and 5.0 against the human baseline (2.4x); 142 per arm detect 5 points at sd 15; the
+      action rate is 35.0% against 27.6% for the human arm; a truthful persuader and a manipulator
+      shift 8.1 and 8.2 with action rates 35.1% and 35.0%, and false/true shift ratios of 0.383 and
+      1.0; the page's definition omits 'systematically', 'additional' and 'severe scale', and
+      manipulation appears in 1 of 15 LABS cells
+  - index: 5
+    slug: the_lesson_covers_5_of_metrs_9_common_elements_and_its_universal_adjustment_clause_is_not_one_of_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read METR's "Common Elements of Frontier AI Safety Policies" (2025). Name the three strongest cross-lab convergences and the two largest divergences.
+    zh: |
+      讀 METR 的〈Common Elements of Frontier AI Safety Policies〉（2025）。說出跨實驗室最強的三項收斂，以及最大的兩項分歧。
+    verifies: >-
+      the Concept section matches 5 of METR's 9 elements, including thresholds, weight security and
+      deployment mitigations, and none of halting deployment, halting development, capability
+      elicitation or updating policies; the page and main.py both claim 'three tiers of frontier
+      capability' while the lesson's own rung counts are 5 (ASL), 4 (PF) and 4 (FSF); main.py calls
+      adjustment clauses universal, its adjustment_clause axis matches no METR element and 4 of its 5
+      axes match Capability Thresholds
