@@ -18,7 +18,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 1 | Run `code/main.py`. Inspect the generated cards. Identify sections that are weak (placeholder… | code | T0 | `ex01_four_sections_are_placeholder_only_and_the_quantitative_analysis_is_typed_in_by_hand.py` |
 | 2 | Extend the model card with a quantitative disaggregated analysis across two demographic group… | code | T0 | `ex02_regenerated_from_its_datasheet_the_model_scores_0_996_and_a_0_03_parity_gap_is_inside_the_0_088_noise.py` |
 | 3 | Read Oreamuno et al. 2023 on the 0.3% adoption rate. Propose one structural change to the mod… | code | T0 | `ex03_the_audits_hard_rejects_pass_a_card_that_calls_its_bias_metrics_placeholder_and_a_per_factor_table_fails_it_on_2_of_2.py` |
-| 4 | Laminator (Duddu et al. 2024) uses TEEs for verifiable attestations. Design a model-card fiel… | code | T0 | `ex04_a_signed_0_996_makes_the_verifier_reject_the_cards_printed_0_97_and_a_reused_key_leaks_124_of_256_positions.py` |
+| 4 | Laminator (Duddu et al. 2024) uses TEEs for verifiable attestations. Design a model-card fiel… | code | T0 | `ex04_a_signed_0_996_makes_the_verifier_reject_the_cards_printed_0_97_and_a_reused_key_reveals_both_secret_halves.py` |
 | 5 | Write a System Card (System Card, not Model Card) for one of your past projects or a hypothet… | code | T0 | `ex05_the_keyword_filter_goes_from_0_to_3_sends_under_the_auditors_test_and_ifc_scores_0_because_it_cannot_send.py` |
 <!-- generated:end -->
 
@@ -110,7 +110,7 @@ data ends up written down instead of hidden.
 (The 0.3% adoption figure is the lesson's quote. Nothing here measures
 adoption. What this measures is which cards the rule accepts.)
 
-### 4 — a signed 0.996 makes the verifier reject the card's printed 0.97, and a reused key leaks 124 of 256 positions
+### 4 — a signed 0.996 makes the verifier reject the card's printed 0.97, and a reused key reveals both secret halves
 
 **Field design: `## Attestations`, one row per claim, `metric | value |
 payload | signer`.** The payload binds the metric and value to SHA-256 hashes
@@ -137,8 +137,11 @@ card prints 0.97. The enclave measures 0.996 and signs that. None of the 3
 cards carries an attestation today, so every figure in them is self-report.
 
 **The verifier also has to enforce one-time keys.** When one Lamport key
-signs two attestations, both secret halves are revealed at 124 of 256
-positions. That is enough to forge signatures, so the registry has to retire
+signs two attestations, both secret halves are revealed at exactly the
+positions where the two payload digests differ, and every revealed pair
+opens both public-key hashes. That is about half of the 256 bits; the exact
+count depends on the digests, which hash the trained float weights and so
+vary by platform (124 on macOS, 126 on CI's Linux). That is enough to forge signatures, so the registry has to retire
 each key after one use.
 
 ### 5 — the keyword filter goes from 0 to 3 sends under the auditor's test, and IFC scores 0 because it cannot send

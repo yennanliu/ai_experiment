@@ -1,4 +1,4 @@
-"""Exercise 4 — a signed 0.996 makes the verifier reject the card's printed 0.97 and a reused key leaks 124 of 256 positions.
+"""Exercise 4 — a signed 0.996 makes the verifier reject the card's printed 0.97 and a reused key reveals both secret halves.
 
     Laminator (Duddu et al. 2024) uses TEEs for verifiable attestations.
     Design a model-card field that carries a cryptographic attestation of an
@@ -31,9 +31,11 @@ the value step. Today none of the three cards carries an attestation, so all
 three Quantitative Analysis figures are self-report.
 
 **FINDING: the verifier must enforce one-time keys.** Two attestations
-signed with one Lamport key reveal both secret halves at 124 of 256
-positions, which lets anyone forge signatures on digests that agree with
-the signed ones elsewhere. The registry has to retire a key after one use.
+signed with one Lamport key reveal both secret halves at exactly the
+positions where the two payload digests differ -- about half of the 256
+bits, the exact count depending on the digests -- and every revealed half
+verifies against the public key, which lets anyone forge signatures on
+digests that agree with the signed ones elsewhere. The registry has to retire a key after one use.
 
 Structure: `keypair`/`bits`/`check_sig` are the Lamport scheme; `enclave()`
 evaluates and signs; `verifier()` returns the first failing step or
@@ -111,19 +113,22 @@ def scenarios(ref, l21, model, test, rng):
         "other dataset": run(d=EX02.datasheet_data(len(test), random.Random(0))),
         "unregistered key": run(p=rogue[0], s=rogue[1]),
         "reused key": run(u=(payload["signer"],)),
-    }, card, value, (sk, pk, sig)
+    }, card, value, (sk, pk, payload, sig)
 
 
 def solve():
     ref = parity.load_reference(PHASE, LESSON, "main")
     l21, model, test, _ = EX02.measured()
     rng = random.Random(4)
-    outcome, card, value, (sk, pk, sig) = scenarios(ref, l21, model, test, rng)
-    _, second = enclave(sk, pk, l21, model, EX02.datasheet_data(len(test), rng))   # key reused
+    outcome, card, value, (sk, pk, first, sig) = scenarios(ref, l21, model, test, rng)
+    again, second = enclave(sk, pk, l21, model, EX02.datasheet_data(len(test), rng))   # key reused
+    differ = [i for i, (a, b) in enumerate(zip(bits(first), bits(again))) if a != b]
     return {
         "outcome": outcome, "card": card, "value": value, "sig_bytes": sum(map(len, sig)),
         "attest_fields": sum("attest" in c.lower() for c in EX01.cards(ref).values()),
-        "leaked": sum(a != b for a, b in zip(sig, second)),   # both secret halves revealed
+        "leaked": [i for i, (a, b) in enumerate(zip(sig, second)) if a != b],
+        "differ": differ,   # the leaked halves must open both public-key hashes at each position
+        "opened": all({sha(sig[i]), sha(second[i])} == set(pk[i]) for i in differ),
     }
 
 
@@ -146,8 +151,11 @@ def verify(result):
         ),
         practice.Check(
             "FINDING: the verifier must enforce one-time keys",
-            result["leaked"] == 124,
-            f"two signatures under one key reveal both halves at {result['leaked']} of 256 positions",
+            result["leaked"] == result["differ"] and 0 < len(result["differ"]) < 256
+            and result["opened"],
+            f"two signatures under one key reveal both halves at {len(result['leaked'])} of 256 "
+            f"positions, exactly where the payload digests differ: {result['leaked'] == result['differ']}; "
+            f"every revealed pair opens both public-key hashes: {result['opened']}",
         ),
     ]
 

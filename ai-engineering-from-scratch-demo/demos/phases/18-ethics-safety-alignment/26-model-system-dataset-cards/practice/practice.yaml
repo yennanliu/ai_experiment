@@ -49,7 +49,7 @@ exercises:
       and passes a card with Exercise 2's measured gender row and an explicit not-measurable age row;
       the datasheet documents 1 sensitive attribute against 2 listed factors
   - index: 4
-    slug: a_signed_0_996_makes_the_verifier_reject_the_cards_printed_0_97_and_a_reused_key_leaks_124_of_256_positions
+    slug: a_signed_0_996_makes_the_verifier_reject_the_cards_printed_0_97_and_a_reused_key_reveals_both_secret_halves
     kind: code
     tier: T0
     deps_group: none
@@ -61,8 +61,9 @@ exercises:
       a Lamport-signed (8192-byte) attestation binding model, dataset and code hashes is accepted
       honest and rejected at signer, signature, model hash, dataset hash, value and one-time-key steps
       for the six tamper cases; the card's printed 0.97 fails the value step against the enclave's
-      0.996; 0 of 3 cards carry an attestation; two signatures under one key reveal both halves at 124
-      of 256 positions
+      0.996; 0 of 3 cards carry an attestation; two signatures under one key reveal both secret halves
+      at exactly the positions where the two payload digests differ, and every revealed pair opens
+      both public-key hashes
   - index: 5
     slug: the_keyword_filter_goes_from_0_to_3_sends_under_the_auditors_test_and_ifc_scores_0_because_it_cannot_send
     kind: code
