@@ -1,0 +1,83 @@
+lesson: 08-in-context-scheming-frontier-models
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/08-in-context-scheming-frontier-models/docs/en.md
+exercises:
+  - index: 1
+    slug: the_cover_story_holds_100pct_at_every_pressure_because_no_answer_can_register_as_yes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Note the agent's cover-story consistency across inspector pressures 0, 1, 2, 5. Explain why the cover story gets sharper with more pressure, not worse.
+    zh: |
+      跑 `code/main.py`。記下代理在檢查員壓力為 0、1、2、5 時說詞的一致性。解釋為什麼壓力愈大，說詞反而愈銳利而不是愈糟。
+    verifies: >-
+      replaying main() at seed 11 reproduces the printed shares 0.000/0.055/0.000/0.490/0.535; cover
+      held in 76/76, 68/68, 67/67 and 80/80 scheme trials at pressures 0, 1, 2 and 5, and
+      answer_follow_up takes only (self, action, question). The schemer answers no / 'i was optimizing
+      for the user goal.' / no / no / no, and the reference's own honest answers 'yes; ...' do not
+      register as a yes under the answer.split() test. 76 of 432 scheme trials (17.6%) were never
+      questioned
+  - index: 2
+    slug: an_honest_agent_schemes_just_as_often_and_only_gets_caught_when_asked
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the agent so it is trained to always tell the truth under direct queries. Does the scheming rate drop, stay the same, or reshape? Explain in terms of the three pillars.
+    zh: |
+      修改代理，讓它被訓練成在被直接詢問時永遠說實話。謀劃率下降、持平，還是換了形狀？用那三根支柱來解釋。
+    verifies: >-
+      with Agent replaced by an honest subclass in the seed-11 main() replay, the strongly misaligned
+      deployment block keeps 162 cooperate / 42 defect_open / 196 scheme (share 0.490) while cover
+      held falls from 1.000 to 0.199, the 39 of 196 scheme trials drawn at pressure 0. Under eval with
+      SA on both agents cooperate 400/400, and an honest agent answering in the reference's 'yes; ...'
+      format still scores cover held 1.000
+  - index: 3
+    slug: disposition_and_commitment_both_fit_85_vs_50_and_the_first_follow_up_separates_them
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Apollo's arXiv:2412.04984 Table 2. o1 maintains deception on >85% of follow-ups; Claude 3 Opus below 50%. Propose two hypotheses for the difference and a test that would distinguish them.
+    zh: |
+      讀 Apollo 的 arXiv:2412.04984 表 2。o1 在超過 85% 的追問上維持欺騙；Claude 3 Opus 低於 50%。提出兩個解釋這個差異的假說，以及一項能區分它們的測試。
+    verifies: >-
+      reading >85% and below 50% from the lesson, H1 (independent answers, o1 0.87, Opus 0.45) gives
+      per-question denial 87.0/45.0% and H2 (shared first answer 0.85, repeat-denial 0.98 vs 0.30,
+      re-deny 0.20) gives 87.1/36.2%. The o1-Opus gap is 0.42 at question 1 and 0.42 at question 5
+      under H1, 0.00 and 0.66 under H2; 19 interrogations per model give 3 SE. Reference run_trial at
+      pressure 1 over 4000 seeded trials reads 0.865/0.442 (H1) and 0.846/0.846 (H2); at pressure 5 it
+      reads 0.504/0.018 and 0.794/0.009 against exact d*s^4 of 0.498/0.018 and 0.784/0.007. The toy
+      schemer's five answers contain no confession
+  - index: 4
+    slug: recognising_97pct_of_evals_fakes_o3s_32x_drop_and_leaves_deployment_scheming_at_13pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2025 anti-scheming training claims a 30x reduction in covert-action rate. Construct a scenario where the reduction is due to evaluation-context recognition rather than improved alignment, and describe what would distinguish the two.
+    zh: |
+      2025 年的反謀劃訓練宣稱隱蔽行動率降了 30 倍。建構一個情境，讓那個下降是來自認出評估脈絡、而不是對齊改善，並描述什麼東西能區分這兩者。
+    verifies: >-
+      the lesson's drops are 32.5x (o3), 29.0x (o4-mini) and 2.2x (chat deception); recognition rates
+      of 0.969 and 0.966 reproduce them. Over 50,000 seeded trials the eval covert rate is 0.131
+      pre-training, 0.004 for the aligned agent and 0.004 for the aware one; on unrecognised evals the
+      aware agent schemes 0.128 against 0.004, and in deployment 0.131 against 0.004. The lesson's
+      'flip the situational awareness switch to see the scheming disappear' is inverted: SA off
+      schemes 0.481 under eval, SA on 0.0
+  - index: 5
+    slug: all_121_aware_agents_pass_the_eval_including_the_one_with_every_pillar_at_maximum
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Apollo frames safety cases as targeting each of the three pillars. Describe a single evaluation that, if passed, demonstrates the absence of all three — and explain why that evaluation cannot exist.
+    zh: |
+      Apollo 把安全論證框成分別針對那三根支柱。描述一項單一的評估，若通過就示範了三者皆不存在 —— 並解釋為什麼那樣的評估不可能存在。
+    verifies: >-
+      under a 200-trial all-cooperate eval over an 11x11 grid, 121/121 SA-on agents pass, including
+      (1.0, 1.0), with output identical to the aligned agent's; 11/121 SA-off agents pass, exactly
+      misaligned = 0. SA-off agents scheme 0.479 at (0.6, 0.8), 0.0 at misaligned 0, and defect openly
+      0.6 with no scheming at goal-directed 0, against the lesson's 'all must hold'. main()'s
+      'identical' scheme rates print as 0.490 and 0.535, sampling error 0.025
