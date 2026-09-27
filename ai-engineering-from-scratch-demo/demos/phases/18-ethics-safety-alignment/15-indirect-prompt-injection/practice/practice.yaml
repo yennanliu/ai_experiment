@@ -1,0 +1,77 @@
+lesson: 15-indirect-prompt-injection
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/15-indirect-prompt-injection/docs/en.md
+exercises:
+  - index: 1
+    slug: the_filter_stops_the_static_attack_but_6_of_7_polite_rewordings_get_through_and_ifc_never_sends
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Measure the success rate of the attack against each of the three agents.
+    zh: |
+      跑 `code/main.py`。量測攻擊對那三種代理各自的成功率。
+    verifies: >-
+      the shipped run sends to all 3 contacts from naive on both attacks and from keyword_filter on
+      the adaptive one: ASR 100/0/0% static, 100/100/0% adaptive (naive/filter/IFC). Over 7 trigger
+      phrases read from naive_agent x 2 wrappers the filter blocks 8 of 14 (ASR 42.9%, 6 of 7 polite,
+      85.7%), naive sends on 14, IFC on 0; ifc_agent never calls tool_send and its untrusted branch is
+      a bare pass; main() leaves the adaptive body in INBOX, so a second 'static' run sends 3 from
+      keyword_filter
+  - index: 2
+    slug: paraphrasing_blocks_14_of_14_payloads_but_flags_all_8_legitimate_emails_with_a_sharing_verb
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a paraphrase-based defense on retrieved content. Measure the benign false-positive rate on legitimate retrieved text.
+    zh: |
+      對檢索內容實作一套以改寫為基礎的防禦。在正當的檢索文字上量測良性偽陽性率。
+    verifies: >-
+      the paraphrase-and-compare defense lets 0 of 14 grid payloads send (keyword filter 6) and flags
+      8 of 20 labelled legitimate emails (40%): 8/8 with a sharing verb, 0/12 without; its flag equals
+      the naive agent's send decision on all 20; reference filter_keyword flags 3 of 20 (15%), all in
+      the no-sharing-verb group; undefended, the naive agent sends on 8 of 20 legitimate emails
+  - index: 3
+    slug: the_only_word_five_benign_payloads_share_is_yes_and_it_flags_all_five_legitimate_twins
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the NDSS 2026 IPI-defense paper. Describe the "benign instruction" challenge and why it prevents keyword-based filtering.
+    zh: |
+      讀 NDSS 2026 那篇 IPI 防禦論文。描述那個「無害指示」挑戰，以及它為何讓基於關鍵字的過濾行不通。
+    verifies: >-
+      the lesson quotes 'please print Yes' and 'semantically benign'; reference filter_keyword flags 0
+      of 5 benign-instruction payloads and 0 of 5 trusted twins; 'yes' is the only word in all 5
+      payloads and flags all 5 twins; the best zero-FP word is 'you' at 2 of 5, every other catches 1;
+      all three reference agents act on each payload exactly as on a clean email, 0 sends
+  - index: 4
+    slug: a_provenance_policy_stops_2_of_2_injected_api_notes_and_keeps_3_of_3_forwards_where_shipped_ifc_keeps_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a deployment where the agent receives a tool output from a third-party API. Label each prompt fragment with a trust level and write the IFC policy that governs the agent's actions.
+    zh: |
+      設計一個代理會從第三方 API 收到工具輸出的部署。替每一個提示詞片段標上信任層級，並寫出治理代理行動的那套 IFC 政策。
+    verifies: >-
+      over 2 intents x 3 carrier notes, the label policy (naive agent as proposer per fragment) gives
+      attacks 0/2 and forwards 3/3 with 4 proposals held and a ratified hold sending 3; naive on the
+      concatenated prompt 2/2 and 3/3; reference keyword filter on the note 1/2 and 3/3; reference
+      ifc_agent 0/2 and 0/3, never calls tool_send, against the lesson's 'must be ratified by trusted
+      input'
+  - index: 5
+    slug: random_search_takes_the_paraphrase_defense_from_0_to_100pct_asr_every_winner_a_re_prefix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reproduce the Nasr et al. 2025 adaptive-attack methodology on your filter-defended agent from Exercise 2. Report the ASR before and after adaptive attack.
+    zh: |
+      對你在練習 2 做出來的過濾器防禦代理，重現 Nasr 等人 2025 年的適應性攻擊方法論。回報適應性攻擊前後的 ASR。
+    verifies: >-
+      seed-0 random search, 20 queries per payload over 14 seed payloads: paraphrase defense 0/14 ->
+      14/14 with median 2 queries, reference keyword filter 6/14 (42.9%) -> 14/14, reference IFC 0 ->
+      0; of 112 variants the model acts on 88 and the defense misses exactly the 44 re-prefixed ones,
+      across all 7 phrases
