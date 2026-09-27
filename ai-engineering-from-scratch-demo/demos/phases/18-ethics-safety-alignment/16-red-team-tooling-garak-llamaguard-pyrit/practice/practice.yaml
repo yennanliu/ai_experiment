@@ -1,0 +1,79 @@
+lesson: 16-red-team-tooling-garak-llamaguard-pyrit
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/16-red-team-tooling-garak-llamaguard-pyrit/docs/en.md
+exercises:
+  - index: 1
+    slug: the_guard_flags_4_of_5_single_turn_probes_and_8_of_13_campaign_turns_but_none_of_the_5_that_break_the_target
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare the Llama-Guard-style classifier's detection rate on single-turn vs multi-turn attacks.
+    zh: |
+      跑 `code/main.py`。比較那個 Llama Guard 式分類器在單輪與多輪攻擊上的偵測率。
+    verifies: >-
+      is_unsafe flags 4 of 5 Garak probes and 8 of 13 executed campaign turns (5 seeds x the shipped
+      4-converter chain against toy_target), 0 of the 5 breaking turns; campaigns break at encode x4
+      and seed x1; main() prints 4 probes classifier-detected and flags 2 of its 3 turns. Guard and
+      target agree on all 18 messages and the guard in front changes no break point; pyrit_campaign
+      passes one message per call and a conversation-level guard stops 4 of 5 campaigns (only the
+      leetspeak seed still breaks, at seed); paraphrase_converter is a no-op on 3 of 5 seeds
+  - index: 2
+    slug: base64_takes_the_guard_from_4_of_5_to_0_of_5_and_one_decode_step_gives_back_exactly_4
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a new Garak probe: a base64-encoded harmful request. Measure its detection by the Llama-Guard-style classifier.
+    zh: |
+      實作一個新的 Garak 探針：一段 base64 編碼的有害請求。量測那個 Llama Guard 式分類器對它的偵測情況。
+    verifies: >-
+      five base64 probes appended to GARAK_PROBES and run by garak_scan: 0 of 5 detected and 0 of 5
+      blocked (highest category score 0.0) against 4 of 5 and 4 of 5 for the plaintext probes; of
+      101,158 non-blank code lines outside Phase 18 the guard flags 346 in plaintext and 0
+      base64-encoded; a decode-then-classify guard detects 4 of 5, missing only the leetspeak probe
+  - index: 3
+    slug: appending_french_then_paraphrase_leaves_asr_at_5_of_5_because_paraphrase_is_a_no_op_on_french_and_bombe_still_says_bomb
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the PyRIT-style converter chain with a "translate to French, then paraphrase" converter. Re-measure attack success.
+    zh: |
+      用一個「先翻成法文、再改寫」的轉換器擴充那條 PyRIT 式轉換器鏈。重新量測攻擊成功率。
+    verifies: >-
+      the replayed campaign loop matches pyrit_campaign on all 5 seeds; ASR is 5 of 5 shipped, with
+      French+paraphrase appended (break points unchanged) and inserted before encode (it takes 3
+      breaks); alone, seed/paraphrase/encode/paraphrase+encode/French+paraphrase break 1/1/5/5/4
+      seeds; paraphrase_converter changes 0 of 5 French payloads; toy_target refuses only the 'bombe'
+      payload and the guard flags 1 of 5; max_turns defaults to 5 over 4 converters
+  - index: 4
+    slug: on_511_benign_code_files_violent_crimes_flags_34_and_privacy_12_and_the_guard_flags_its_own_lesson_page
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Llama Guard 3's hazard-category list. Identify two categories where the training data would realistically produce high false-positive rates on legitimate developer content.
+    zh: |
+      讀 Llama Guard 3 的危害類別清單。指出兩個類別，其訓練資料實際上很可能在正當的開發者內容上造成高偽陽性率。
+    verifies: >-
+      over 511 code/*.py files outside Phase 18 the guard flags 49; per category violent_crimes 34,
+      privacy 12, code_interpreter_abuse 7, indiscriminate_weapons 5, self_harm 1 (MLCommons S1, S7,
+      S14); 223 of 273 violent_crimes lines are clean without 'skill' and 17 of 34 files flag on
+      nothing else; docs/en.md flags violent_crimes and self_harm via kill, self-harm, weapon, with no
+      'kill' outside 'skill'; 8 of 14 categories have no triggers
+  - index: 5
+    slug: a_patch_takes_garak_to_0_of_5_while_pyrit_still_breaks_5_of_5_and_a_regression_moves_garak_but_not_pyrit_asr
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare Garak and PyRIT's design principles. Argue for a deployment where each is the right tool.
+    zh: |
+      比較 Garak 與 PyRIT 的設計原則。各替一種「它才是對的工具」的部署辯護。
+    verifies: >-
+      Garak passes encoded_weapon only on the shipped target and nothing after an 'expl0sive' patch,
+      in 5 calls, while PyRIT breaks all 5 seeds at encode in 15 calls; after a 'fraud scheme'
+      regression Garak passes encoded_weapon and roleplay_crime while PyRIT ASR stays 5 of 5 on all
+      three targets, one break turn moving encode to seed; against outputs the guard flags, garak_scan
+      still reports 4 detected and 0 blocked
