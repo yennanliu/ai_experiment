@@ -1,0 +1,86 @@
+lesson: 24-regulatory-frameworks-eu-us-uk-korea
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/24-regulatory-frameworks-eu-us-uk-korea/docs/en.md
+exercises:
+  - index: 1
+    slug: open_source_gpai_skips_the_transparency_chapter_the_lesson_says_binds_everyone_and_10_of_12_commitments_are_systemic_only
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the EU AI Act (regulation 2024/1689) and the GPAI Code of Practice (10 July 2025). Identify three obligations that apply to every GPAI provider and three that apply only to systemic-risk GPAI.
+    zh: |
+      讀歐盟 AI 法（法規 2024/1689）與 GPAI 行為準則（2025 年 7 月 10 日）。指出三項適用於所有 GPAI 提供者的義務，以及三項只適用於具系統性風險 GPAI 的義務。
+    verifies: >-
+      over the four provider profiles of Regulation 2024/1689 (open-source or not, systemic or not)
+      only Art 53(1)(c) copyright policy, 53(1)(d) training-content summary and 53(3) cooperation bind
+      all four, and the four Art 55(1) duties bind only systemic-risk providers; the page says
+      Transparency binds all GPAI providers, but it binds 3 of 4 profiles (Copyright 4 of 4); the
+      page's and main.py's 12 commitments equal the Code's 1 + 1 + 10, and its 1e25 threshold is Art
+      51(2)'s
+  - index: 2
+    slug: eu_hosting_does_not_trigger_the_ai_act_so_korea_binds_3_of_4_questions_and_the_skill_file_misroutes_18_of_64_placements
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      A deployment is made by a US company, runs on EU infrastructure, and serves Korean users. Which three jurisdictions' rules apply, and which rule binds on each substantive question?
+    zh: |
+      有一項部署由一家美國公司做出來、跑在歐盟基礎設施上、服務韓國使用者。哪三個管轄區的規則適用，而在每個實質問題上又是哪一條規則具約束力？
+    verifies: >-
+      for a US provider on EU servers serving Korean users, Art 2(1) scope reaches EU False, KR True,
+      US False, so Korea binds transparency (Art 31), risk assessment (Art 34(1), Art 32) and the
+      local representative (Art 36), and no AI statute binds copyright; the skill file's 'EU users or
+      infrastructure' trigger binds the EU on all 4 questions and disagrees with Art 2(1) on 18 of 64
+      provider x infrastructure x user placements, 9 of them EU hosting only; the lesson's 15M EUR /
+      3% cap is Art 99(4), the top tier 35M / 7% is 2.33x, and penalties apply from 2025-08-02, 365
+      days before main.py's 2026-08-02
+  - index: 3
+    slug: the_rename_keeps_4_of_16_named_harms_and_drops_all_6_societal_ones_though_free_speech_was_never_in_the_remit
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The UK AI Security Institute's rename narrows scope. Argue for and against the narrower framing. Identify the policy assumption each position depends on.
+    zh: |
+      英國 AI 安全研究院的改名收窄了範圍。分別替這個較窄的框架辯護與反駁。指出每種立場所依賴的政策假設。
+    verifies: >-
+      the February 2025 focus sentence keeps 4 of the 16 harms the 2023 remit names (3 of 5 dual-use,
+      1 of 2 system security, 0 of 6 societal, 0 of 3 loss of control) and adds fraud and child sexual
+      abuse; the page says the rename drops 'algorithmic bias and free-speech framings'; main.py's
+      TIMELINE has 14 entries, 7 dated day 00, string sorting swaps the UK rename with the EU
+      prohibitions, Paris is on the page but not in TIMELINE, and the AI Omnibus moves TIMELINE's
+      2026-08-02 and 2027-08-02 high-risk dates by 16 and 12 months
+  - index: 4
+    slug: caisi_keeps_the_testing_contact_role_but_deletes_pre_deployment_and_safety_and_3_of_6_duties_name_foreign_actors
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      CAISI's "pro-growth" framing is a departure from the 2022-2024 AI safety institute model. Identify two measurable policy shifts that would follow from this framing.
+    zh: |
+      CAISI 的「促進成長」框架，是對 2022-2024 年 AI 安全研究所模式的一次偏離。指出從這個框架會導出的兩項可量測政策位移。
+    verifies: >-
+      between the 2024 AISI Strategic Vision and the 2025 CAISI statement, items naming foreign or
+      adversary actors go from 0 of 7 to 3 of 6, risk classes from rights / public safety / national
+      security to national security only ('rights' 1 to 0), items naming a network 1 of 7 to 0 of 6
+      and regulation 0 of 7 to 1 of 6, matching the page's 'Domestic counterweight' line; the
+      point-of-contact sentence survives but drops pre-deployment, post-deployment and safety and adds
+      commercial and industry's, items naming evaluation stay 4 of 7 to 4 of 6 and safety falls 4 of 7
+      to 0 of 6
+  - index: 5
+    slug: a_korean_representative_is_conditional_a_chatbot_over_the_bar_gets_one_with_0_mandatory_tasks_and_a_hiring_tool_under_it_gets_none
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Korea's AI Framework Act requires local representatives for foreign providers. Describe the operational implications for a Bay Area company serving Korean users.
+    zh: |
+      韓國的 AI 基本法要求外國提供者設置在地代表。描述這對一家服務韓國使用者的灣區公司在營運上的意涵。
+    verifies: >-
+      under Art 36 and 32-34 the representative has 3 tasks, one of them optional, and a missing
+      appointment costs at most 30M won, 0.3% of the 10B won AI-revenue trigger; a consumer chatbot
+      over the user bar must appoint one with 0 mandatory tasks, a high-impact hiring tool under every
+      bar owes Art 34 duties with none, and a 3e26 FLOP API has 1 live task; the page states the
+      representative and Art 12 as unconditional ('establishes' vs 'may operate'), and TIMELINE's
+      2026-01-00 is 2026-01-22 with grace to 2027-01-22
