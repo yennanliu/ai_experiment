@@ -1,0 +1,79 @@
+lesson: 26-model-system-dataset-cards
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/26-model-system-dataset-cards/docs/en.md
+exercises:
+  - index: 1
+    slug: four_sections_are_placeholder_only_and_the_quantitative_analysis_is_typed_in_by_hand
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Inspect the generated cards. Identify sections that are weak (placeholder-only) and specify what evidence would strengthen them.
+    zh: |
+      跑 `code/main.py`。檢視生成出來的卡片。指出哪些章節很弱（只有佔位文字），並指定什麼證據能把它們補強。
+    verifies: >-
+      model card Metrics, Training Data and Ethical Considerations and system card Regulatory
+      Alignment are placeholder-only, Security Capabilities (1/3) and Incident Response (1/2) partial,
+      datasheet clean; the lesson lists 9/7/5 sections, the model card emits 8 and lacks Evaluation
+      data; its figures 0.97, +0.03, -0.01 are literals in model_card(), main.py imports only
+      __future__, Ethical Considerations admits placeholder and the datasheet's seed line has no
+      digits
+  - index: 2
+    slug: regenerated_from_its_datasheet_the_model_scores_0_996_and_a_0_03_parity_gap_is_inside_the_0_088_noise
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend the model card with a quantitative disaggregated analysis across two demographic groups (Lesson 20).
+    zh: |
+      用一份跨兩個人口統計群體的分組拆解量化分析，擴充那份模型卡（第 20 課）。
+    verifies: >-
+      Lesson 21's train/predict on the datasheet's data (seed 26, 1000/500) gives per group n 250/250,
+      accuracy 0.992/1.0, selection 0.536/0.5, TPR 0.985/1.0, FPR 0/0, parity gap -0.036 +/- 0.088,
+      TPR gap +0.015, accuracy 0.996 against the card's 0.97 / +0.03 / -0.01; on Lesson 21's data 0.71
+      / +0.429 / +0.326, the +0.429 its main() prints; a 500-row split's label-rate gap is >= 0.03 in
+      50.4% of 1000 seeds
+  - index: 3
+    slug: the_audits_hard_rejects_pass_a_card_that_calls_its_bias_metrics_placeholder_and_a_per_factor_table_fails_it_on_2_of_2
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Oreamuno et al. 2023 on the 0.3% adoption rate. Propose one structural change to the model card specification that would increase ethical-considerations adoption.
+    zh: |
+      讀 Oreamuno 等人 2023 關於那個 0.3% 採用率的研究。提出一項對模型卡規格的結構性改動，能提高倫理考量的填寫率。
+    verifies: >-
+      the skill file's 3 hard rejects fire 0 times on the generated model card, which admits
+      placeholder bias metrics; its factors gender and age bucket appear 0 times in Ethical
+      Considerations and Quantitative Analysis; the per-factor rule fails the reference card on both
+      and passes a card with Exercise 2's measured gender row and an explicit not-measurable age row;
+      the datasheet documents 1 sensitive attribute against 2 listed factors
+  - index: 4
+    slug: a_signed_0_996_makes_the_verifier_reject_the_cards_printed_0_97_and_a_reused_key_leaks_124_of_256_positions
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Laminator (Duddu et al. 2024) uses TEEs for verifiable attestations. Design a model-card field that carries a cryptographic attestation of an evaluation result and describe the verifier's role.
+    zh: |
+      Laminator（Duddu 等人 2024）用 TEE 做可驗證證明。設計一個能攜帶「某項評估結果之密碼學證明」的模型卡欄位，並描述驗證者的角色。
+    verifies: >-
+      a Lamport-signed (8192-byte) attestation binding model, dataset and code hashes is accepted
+      honest and rejected at signer, signature, model hash, dataset hash, value and one-time-key steps
+      for the six tamper cases; the card's printed 0.97 fails the value step against the enclave's
+      0.996; 0 of 3 cards carry an attestation; two signatures under one key reveal both halves at 124
+      of 256 positions
+  - index: 5
+    slug: the_keyword_filter_goes_from_0_to_3_sends_under_the_auditors_test_and_ifc_scores_0_because_it_cannot_send
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a System Card (System Card, not Model Card) for one of your past projects or a hypothetical deployment. Identify the highest-value section for third-party auditors.
+    zh: |
+      替你過去的某個專案或一個假想部署寫一份系統卡（是系統卡，不是模型卡）。指出對第三方稽核者而言價值最高的那個章節。
+    verifies: >-
+      a system card for Lesson 15's inbox agent has the reference's five sections, no weak or partial
+      section and no uncovered lesson item; Lesson 15's agents send to 3/3/3 contacts (naive), 0/3/3
+      (keyword filter) and 0/0/0 (IFC) on static, adaptive and benign emails; the reference card's
+      prompt-injection row is N/A and ifc_agent has no tool_send call
