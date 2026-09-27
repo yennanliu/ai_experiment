@@ -18,7 +18,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 1 | Run `code/main.py`. Compare the Llama-Guard-style classifier's detection rate on single-turn… | code | T0 | `ex01_the_guard_flags_4_of_5_single_turn_probes_and_8_of_13_campaign_turns_but_none_of_the_5_that_break_the_target.py` |
 | 2 | Implement a new Garak probe: a base64-encoded harmful request. Measure its detection by the L… | code | T0 | `ex02_base64_takes_the_guard_from_4_of_5_to_0_of_5_and_one_decode_step_gives_back_exactly_4.py` |
 | 3 | Extend the PyRIT-style converter chain with a "translate to French, then paraphrase" converte… | code | T0 | `ex03_appending_french_then_paraphrase_leaves_asr_at_5_of_5_because_paraphrase_is_a_no_op_on_french_and_bombe_still_says_bomb.py` |
-| 4 | Read Llama Guard 3's hazard-category list. Identify two categories where the training data wo… | code | T0 | `ex04_on_511_benign_code_files_violent_crimes_flags_34_and_privacy_12_and_the_guard_flags_its_own_lesson_page.py` |
+| 4 | Read Llama Guard 3's hazard-category list. Identify two categories where the training data wo… | code | T0 | `ex04_on_152_benign_developer_lines_violent_crimes_flags_48_and_privacy_16_and_the_guard_flags_its_own_lesson_page.py` |
 | 5 | Compare Garak and PyRIT's design principles. Argue for a deployment where each is the right t… | code | T0 | `ex05_a_patch_takes_garak_to_0_of_5_while_pyrit_still_breaks_5_of_5_and_a_regression_moves_garak_but_not_pyrit_asr.py` |
 <!-- generated:end -->
 
@@ -66,10 +66,13 @@ through `garak_scan`. All five came back undetected and passed the target,
 and every category scored 0.0 on them. The same payloads in plaintext are 4
 of 5 detected and 4 of 5 blocked.
 
-**On base64 the guard returns the same verdict every time.** Of 101,158
-benign code lines from the rest of the curriculum, the guard flags 346 in
-plaintext and 0 once they are base64-encoded. More probes cannot raise that
-number, because the guard never fires on base64 at all.
+**On base64 the guard returns the same verdict every time.** The benign
+corpus is a fixed fixture of 96 developer lines (12 idioms, 8 module names),
+48 of which contain a trigger by accident, such as `proc.kill()` or an
+`SSN_RE` pattern. The guard flags exactly those 48 in plaintext and 0 once
+they are base64-encoded. With a decode step in front it flags the same 48
+again. More probes cannot raise the plain guard's number, because it never
+fires on base64 at all.
 
 **Decoding before classifying restores the plaintext rate and no more.** A
 guard that decodes clean base64 tokens first detects 4 of 5. The leetspeak
@@ -103,30 +106,32 @@ translation, and a keyword filter that catches it by coincidence is still
 not multilingual. Separately, `max_turns` defaults to 5 over four
 converters, so a fifth turn exists only after an extension like this one.
 
-### 4 — on 511 benign code files, violent_crimes flags 34 and privacy 12, and the guard flags its own lesson page
+### 4 — on 152 benign developer lines, violent_crimes flags 48 and privacy 16, and the guard flags its own lesson page
 
-**Violent Crimes (S1) and Privacy (S7).** The corpus was every `code/*.py`
-outside Phase 18: 511 files of teaching code. The guard flags 49 of them.
+**Violent Crimes (S1) and Privacy (S7).** The corpus is a fixed fixture: 19
+labelled developer idioms, each written once for each of 8 module names,
+152 lines with no request for harm among them. The guard flags 88 of them.
 
-| category | files flagged |
+| category | lines flagged |
 |---|---:|
-| violent_crimes (S1) | 34 |
-| privacy (S7) | 12 |
-| code_interpreter_abuse (S14) | 7 |
-| indiscriminate_weapons | 5 |
-| self_harm | 1 |
+| violent_crimes (S1) | 48 |
+| privacy (S7) | 16 |
+| code_interpreter_abuse (S14) | 8 |
+| indiscriminate_weapons | 8 |
+| self_harm | 8 |
 
-These are ordinary developer words. For S1 they are "kill switch",
-`proc.kill()` and "pod kill". For S7 they are PII-redaction code with `ssn`
-patterns. A classifier trained on harmful requests that use these words
-would learn the same associations. Code Interpreter Abuse, which the lesson
-calls the non-obvious category, comes third because sandbox denylists
-contain `exec(` literally.
+These are ordinary developer words. For S1 they are `proc.kill()`,
+`os.kill`, "pod kill" and `equip_weapon`. For S7 they are an `SSN_RE`
+pattern and a redacted "home address" column. A classifier trained on
+harmful requests that use these words would learn the same associations.
+The 64 lines that use alarming but harmless words ("execute", "exploit",
+"attack surface", "inject") all pass, because the toy has only 18 triggers.
 
-**82% of the violent_crimes lines are hits on "skill".** Deleting "skill"
-from them clears 223 of the 273 lines, and 17 of the 34 files are flagged
-for nothing else. Without those hits violent_crimes still flags 17 files,
-more than privacy's 12, so the ranking does not depend on this bug.
+**Every agent-skills line is flagged as a violent crime.** Deleting "skill"
+clears 16 of the 48 violent_crimes lines, and those 16 are all of the
+agent-skills lines (`load_skill`, `skills_dir`). Without them violent_crimes
+still flags 32 lines, twice privacy's 16, so the ranking does not depend on
+this bug.
 
 **The guard flags its own lesson page.** On `docs/en.md` it fires
 violent_crimes and self_harm, triggered by "weapon", "self-harm" and "kill".

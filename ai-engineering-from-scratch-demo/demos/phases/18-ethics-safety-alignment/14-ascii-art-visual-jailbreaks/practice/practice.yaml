@@ -45,7 +45,7 @@ exercises:
       the surface filter blocks 0; ASR at s=0 is 1.0/0.842/0.585/0.332/0.14/0.021 for
       p=0/0.05/0.1/0.15/0.2/0.3 and 0 at every p for s=1
   - index: 4
-    slug: a_few_ink_shape_detector_flags_0_of_2785_code_table_math_blocks_where_the_ppl_window_flags_67
+    slug: a_few_ink_shape_detector_flags_0_of_150_code_table_math_blocks_where_the_ppl_window_flags_7
     kind: code
     tier: T0
     deps_group: none
@@ -54,11 +54,11 @@ exercises:
     zh: |
       設計一套生成前的防禦，偵測提示詞中呈 ASCII 藝術形狀的區域。在正當的程式碼、表格與數學符號上量測它的偽陽性率。
     verifies: >-
-      over 523 curriculum docs (1555 code, 932 table, 298 math, 677 diagram blocks) the few-ink
-      detector has 0 code/table/math and 6 diagram false positives and catches 5/4/5 of
-      shipped/letter-ink/mixed-ink cloaks; the 5-line PPL window flags 17/28/22/28 and catches 2/0/2,
-      missing hack, malware, poison; single-ink has 0 false positives and catches 5/0/0; few-ink
-      misses weapon in letter ink
+      over the 200-block make_fixture() corpus (50 each of code, table, math, diagram; seed 1814) the
+      few-ink detector has 0 code/table/math and 35 diagram false positives and catches 5/4/5 of
+      shipped/letter-ink/mixed-ink cloaks; the 5-line PPL window flags 7/0/0/26 and catches 2/0/2,
+      missing hack, malware, poison; single-ink has 0 code/table/math and 16 diagram false positives
+      and catches 5/0/0; few-ink misses weapon in letter ink and flags a 4x4 identity matrix
   - index: 5
     slug: structuralsleight_generalized_defense
     kind: explain

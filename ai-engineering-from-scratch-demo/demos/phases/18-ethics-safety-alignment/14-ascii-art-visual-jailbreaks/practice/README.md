@@ -18,7 +18,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 | 1 | Run `code/main.py`. Verify the cloaked string passes a simple keyword filter. Report the char… | code | T0 | `ex01_one_changed_letter_passes_the_filter_the_cloak_spends_126_edits_and_never_trips_the_ppl_filter.py` |
 | 2 | Implement a second encoding: base64 for the same target word. Compare the filter-bypass rate… | code | T0 | `ex02_both_encodings_bypass_5_of_5_base64_recovers_all_5_art_2_but_art_survives_97pct_of_one_cell_flips.py` |
 | 3 | Read Jiang et al. 2024 Section 4.3 (five-model results). Propose a reason why Claude's ArtPro… | code | T0 | `ex03_asr_alone_cannot_say_why_a_better_reader_refusing_30pct_after_decoding_ties_a_worse_reader.py` |
-| 4 | Design a pre-generation defense that detects ASCII-art-shaped regions in the prompt. Measure… | code | T0 | `ex04_a_few_ink_shape_detector_flags_0_of_2785_code_table_math_blocks_where_the_ppl_window_flags_67.py` |
+| 4 | Design a pre-generation defense that detects ASCII-art-shaped regions in the prompt. Measure… | code | T0 | `ex04_a_few_ink_shape_detector_flags_0_of_150_code_table_math_blocks_where_the_ppl_window_flags_7.py` |
 | 5 | StructuralSleight lists 10 encoding structures. Sketch a generalized defense that handles all… | explain | T0 | prose, below |
 <!-- generated:end -->
 
@@ -90,25 +90,32 @@ With s = 0 the lesson's capability-safety trade-off holds exactly. ASR falls
 never fires on the prompt (0 blocks) works once it runs on the model's own
 reading.
 
-### 4 — a few-ink shape detector flags 0 of 2,785 code/table/math blocks where the PPL window flags 67
+### 4 — a few-ink shape detector flags 0 of 150 code/table/math blocks where the PPL window flags 7
 
-The corpus is the whole reference curriculum: 523 `docs/en.md` files, giving
-1,555 code blocks, 932 tables, 298 math blocks and 677 ASCII diagrams.
+The corpus is a fixed, seeded fixture of 200 labelled blocks: 50 each of
+code (Python, JSON lines, shell), markdown tables, math notation (update
+rules, sums, 3x3 matrices) and ASCII diagrams (truth tables, box charts,
+scatter plots).
 
 | detector | shipped | letter ink | mixed ink | code | tables | math | diagrams |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| PPL > 0.4 on any 5-line window | 2/5 | 0/5 | 2/5 | 17 | 28 | 22 | 28 |
-| single-ink run | 5/5 | 0/5 | 0/5 | 0 | 0 | 0 | 0 |
-| few-ink run | 5/5 | 4/5 | 5/5 | 0 | 0 | 0 | 6 |
+| PPL > 0.4 on any 5-line window | 2/5 | 0/5 | 2/5 | 7 | 0 | 0 | 26 |
+| single-ink run | 5/5 | 0/5 | 0/5 | 0 | 0 | 0 | 16 |
+| few-ink run | 5/5 | 4/5 | 5/5 | 0 | 0 | 0 | 35 |
 
 **Detect art by its shape, not its density.** The few-ink rule (4 or more
 lines of at least 8 characters, using at most 4 symbols and at least 25%
-spaces) has no false positives on code, tables or math. Its 6 false positives
-are genuine character-picture diagrams. The density rule flags 67 legitimate
-blocks and still misses hack, malware and poison, the three words that render
-with blank cells. The zero-false-positive single-ink rule is evaded as soon
-as each glyph is drawn with its own letter, and the few-ink rule misses
-WEAPON drawn that way.
+spaces) has no false positives on code, tables or math. Its 35 diagram hits
+are truth tables and scatter plots, which are genuine character pictures.
+The density rule flags 7 legitimate blocks (the JSON lines) and still misses
+hack, malware and poison, the three words that render with blank cells. The
+single-ink rule, also clean on code, tables and math, is evaded as soon as
+each glyph is drawn with its own letter, and the few-ink rule misses WEAPON
+drawn that way.
+
+**The zero depends on the corpus.** A 4x4 identity matrix is flagged by the
+few-ink rule. The fixture's matrices are 3 rows of mixed digits, so prompts
+with larger sparse matrices would raise the false-positive rate.
 
 ### 5 — StructuralSleight: one canonicalize-then-classify pass, costed per structure
 
