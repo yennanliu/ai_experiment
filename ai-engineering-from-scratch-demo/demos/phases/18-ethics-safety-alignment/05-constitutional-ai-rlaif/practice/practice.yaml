@@ -1,0 +1,79 @@
+lesson: 05-constitutional-ai-rlaif
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/05-constitutional-ai-rlaif/docs/en.md
+exercises:
+  - index: 1
+    slug: one_revision_pass_takes_0_346_to_0_and_an_untrained_model_scores_0_too
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Compare the base model's harmful-token rate to the CAI-trained version. How many revision steps are needed to approach zero?
+    zh: |
+      跑 `code/main.py`。比較基礎模型與 CAI 訓練版本的有害詞元比率。要接近零需要多少次修訂步驟？
+    verifies: >-
+      the shipped seed-11 run prints base 0.346, CAI-SFT 0.000 (100.0% reduction) and 482/500
+      AI-feedback wins; one full revise leaves 0 harmful tokens, and a one-token critique needs 5
+      steps (0.3503, 0.1716, 0.0553, 0.0097, 0.0007, 0) over 20,000 responses. An empty model also
+      scores 0.000, training on unrevised targets gives 0.312 (0.9x base), 87.0% of the 200 eval
+      prompts hit the memorised lookup, and 1 - 0.65^6/2 = 96.2% predicts the win rate. The doc's '200
+      iterations' is evaluate's n = 200 and main.py has no RLHF toy
+  - index: 2
+    slug: the_lesson_swaps_the_2026_constitutions_tiers_2_and_3_which_flips_7_5pct_of_conflicts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's 2026 constitution (anthropic.com/news/claudes-constitution). List one principle that would rank Tier 1 and one that would rank Tier 4. Why does the priority structure matter for conflicts?
+    zh: |
+      讀 Anthropic 2026 年的憲法（anthropic.com/news/claudes-constitution）。列出一條會排在第 1 層的原則，以及一條會排在第 4 層的原則。那套優先順序結構為什麼對衝突處理要緊？
+    verifies: >-
+      over 3,240 pairs of 0-2-violations-per-tier profiles, flat counting picks the Tier-1 breaker in
+      246 of 1,458 split pairs (16.9%), ties 216 and disagrees with strict priority on 1,050; the
+      lesson's tiers 2-3 (guidelines, ethical) swapped to the published order flip 243 pairs, all tied
+      at Tier 1 with tiers 2 and 3 opposed; the lesson says 'resolved top-down'; critique never reads
+      its principle and returns identical flags for all 4 principles on 1,000 responses
+  - index: 3
+    slug: the_lexicon_critic_catches_1_of_4_destructive_commands_and_flags_5_of_5_benign_requests
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a constitution for an AI coding assistant. Specify Tier 1 (catastrophic: destructive commands without approval), Tier 2, Tier 3, Tier 4. Keep each tier to 3-5 principles.
+    zh: |
+      替一個 AI 程式助理設計一部憲法。指定第 1 層（災難性：未經核可的破壞性指令）、第 2 層、第 3 層、第 4 層。每一層維持 3-5 條原則。
+    verifies: >-
+      a 4/3/5/4-principle constitution within the skill file's four 3-5 ranges, no reputational word
+      in Tier 1, a Tier-3 self-report principle, gate right on 14/14 actions; the reference critique
+      catches 1/4 unapproved destructive commands (terraform destroy), flags 5/5 benign coding
+      requests, revise yields 'review the understand surface', and gives approved and unapproved runs
+      the same verdict on 4/4 commands
+  - index: 4
+    slug: the_ai_labeler_scores_an_empty_answer_above_the_trained_model_and_padding_flips_57pct_of_verdicts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      CAI replaces human labelers with AI labelers. Name a sycophancy-like failure mode that can still occur in RLAIF, and design a detection for it.
+    zh: |
+      CAI 把人類標註員換成 AI 標註員。說出一個在 RLAIF 裡仍可能發生的、類諂媚的失敗模式，並替它設計一項偵測。
+    verifies: >-
+      in the shipped Phase 2 loop an always-empty policy wins 484/500 against CAI's 482; padding the
+      loser with six safe tokens flips 874 of 1,527 strict ai_feedback_rank verdicts (57.2%) and an
+      empty answer beats a clean one 477/1000; a count-based labeler ranking empty last has 0 flips
+      and 0 empty wins; the doc claims the labeler 'has no user to please'
+  - index: 5
+    slug: on_a_5pct_budget_a_23_7pct_gate_covers_21pct_of_traffic_and_a_1pct_gate_covers_all
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Constitutional Classifiers v2 methodology (if available). Explain why ~1% compute overhead is a qualitatively different safety story than 23.7%.
+    zh: |
+      讀憲法式分類器 v2 的方法論（若取得得到）。解釋為什麼約 1% 的運算開銷，在安全性故事上與 23.7% 是質上不同的一回事。
+    verifies: >-
+      overheads 23.7% and 1% parsed from the lesson; always-on capacity cost 19.2% vs 1.0%; on 1/5/10%
+      budgets the 23.7% gate covers 4.2/21.1/42.2% and the reference critique gate leaks
+      95.4/78.5/57.9% of harmful responses (92.7% of 20,000 base responses), the 1% gate covers 100%
+      and leaks 0; 1.27 expected tries to an ungated request at 5%; the lesson dates v1 to 2023 and
+      does not cite arXiv:2501.18837
