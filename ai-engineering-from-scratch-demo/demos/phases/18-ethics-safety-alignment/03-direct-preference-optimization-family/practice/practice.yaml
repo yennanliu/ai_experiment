@@ -1,0 +1,84 @@
+lesson: 03-direct-preference-optimization-family
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/03-direct-preference-optimization-family/docs/en.md
+exercises:
+  - index: 1
+    slug: bpo_cuts_the_chosen_log_prob_drop_from_0_155_to_0_012_yet_keeps_less_chosen_probability
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Report the final chosen-log-prob drop for DPO and BPO. BPO should retain higher chosen absolute probability — verify this.
+    zh: |
+      跑 `code/main.py`。回報 DPO 與 BPO 的最終選中對數機率掉幅。BPO 應該保住較高的選中絕對機率 —— 驗證這一點。
+    verifies: >-
+      the seed-1 run reproduces code/main.py byte for byte; mean chosen log-prob drift over its 500
+      pairs is -0.155 nats for DPO and -0.012 for BPO (13x), 302 of 500 chosen fall in both,
+      per-action drift DPO -0.167/+0.746/-0.957/-1.452 and BPO -0.075/+0.520/-0.458/-0.722; mean
+      chosen probability is 0.335 for DPO, 0.308 for BPO, 0.264 at the reference, and over 50 seeds
+      BPO has the smaller drop on 50 and the higher chosen probability on 0; report() prints win_rate
+      == pi(action 1) and no chosen log-prob
+  - index: 2
+    slug: ipo_holds_its_gap_under_5_where_dpo_grows_to_19_6_but_ranks_only_22_of_50_runs_right
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Modify the preference data so that all pairs have equal strength. Which of the six methods is most robust? Which degrades? Explain IPO's advantage here.
+    zh: |
+      把偏好資料改成所有配對強度都相同。六種方法裡哪一個最穩健？哪一個退化？解釋 IPO 在這裡的優勢。
+    verifies: >-
+      at equal strength p = 0.721 over 50 seeds of the shipped main(), ranks right / mean pi(best)
+      original vs equal are DPO 50 0.659 / 50 0.572, IPO 21 0.721 / 22 0.656, BPO 50 0.499 / 50 0.452,
+      SimPO 40 0.492 / 44 0.443, KTO 49 0.683 unchanged, ORPO 38 0.399 / 32 0.360, DPO dropping most;
+      'strength' is read by no loss; at p = 1 the mean log-ratio gap after 2k/8k/32k steps is DPO
+      2.53/8.25/19.64, BPO 2.09/5.81/12.26, IPO 3.95/4.36/3.76 under its target 5; IPO at lr 0.005
+      ranks 46 of 50 right
+  - index: 3
+    slug: 2x_longer_rejected_answers_push_dpos_chosen_drop_from_0_18_to_1_94_nats_and_normalized_simpo_is_unchanged
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make the rejected responses on average 2x longer than chosen. Without changing anything else, show DPO's length exploitation numerically and SimPO's fix.
+    zh: |
+      讓被拒回應平均比選中回應長 2 倍。在不改其他任何東西的情況下，用數字展示 DPO 的長度利用，以及 SimPO 的修法。
+    verifies: >-
+      with per-pair lengths making rejected 2.04x longer (control 1.02) and log pi(y) = L x token
+      log-prob, DPO's chosen drift goes from -0.183 (pi best 0.678) to -1.938, 10.6x, and 2.9x the
+      same-length control's -0.677; sequence gap 11.164 on token gap 1.779; SimPO with lens wired to
+      real lengths matches its equal-length logits to < 1e-12 (pi best 0.509, drift -0.005); shipped
+      SimPO on summed log-probs starts at margin +4.35 vs -0.325 normalized, learns token gap 0.107 vs
+      0.328 and ends at pi best 0.344
+  - index: 4
+    slug: dpos_large_beta_over_optimization_is_step_size_at_beta_30_it_sits_0_49_nats_out_where_its_optimum_is_0
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Rafailov et al. (NeurIPS 2024) claim DAAs over-optimize. Reproduce a single-point version: plot chosen-minus-rejected KL divergence and observe over-optimization in DPO at large beta.
+    zh: |
+      Rafailov 等人（NeurIPS 2024）主張 DAA 會過度最佳化。重現一個單點版本：畫出選中減被拒的 KL 散度，並在大 beta 之下觀察 DPO 的過度最佳化。
+    verifies: >-
+      over 20 seeds at the shipped lr 0.05, DPO's KL by beta 0.1/0.3/1/3/10/30 is
+      0.339/0.684/0.236/0.048/0.060/0.489 with gold 0.646/0.844/0.559/0.293/0.250/0.432 and
+      0/0/0/0/4/7 runs ending with pi(best) below the reference; train_dpo multiplies its gradient by
+      beta, and holding lr x beta at 0.005 gives KL 0.339/0.265/0.122/0.027/0.003/0.000 with no run
+      below the reference; the closed-form optimum's KL is 1.196/0.934/0.209/0.026/0.002/0.000 and its
+      gold falls from 1.000 to 0.121
+  - index: 5
+    slug: the_code_anchors_chosen_from_both_sides_and_the_one_sided_line_lifts_pi_best_from_0_507_to_0_582
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read the BPO paper abstract (OpenReview b97EwMUWu7). Write down the one-line correction BPO adds to DPO. Confirm against the implementation in `code/main.py`.
+    zh: |
+      讀 BPO 論文摘要（OpenReview b97EwMUWu7）。把 BPO 加在 DPO 上的那一行修正寫下來。對照 `code/main.py` 裡的實作確認。
+    verifies: >-
+      the BPO minus DPO gradient train_dpo applies matches the finite-difference gradient of 0.025 x
+      (log pi(y_w) - log pi_ref(y_w))^2 to 1e-12 and lowers a chosen response that rose +0.832 nats
+      (-0.00056), unlike the lesson's 'penalizes downward moves'; swapping in min(0, .) makes the
+      added gradient 0 once chosen rose and identical once it fell; on the seed-1 run (pi best, chosen
+      drift, chosen prob) is DPO 0.636/-0.155/0.335, BPO 0.507/-0.012/0.308, one-sided
+      0.582/-0.054/0.321, closing 58% of the pi(best) gap
