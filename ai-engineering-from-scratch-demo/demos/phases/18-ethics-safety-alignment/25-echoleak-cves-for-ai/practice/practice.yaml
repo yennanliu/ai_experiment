@@ -1,0 +1,76 @@
+lesson: 25-echoleak-cves-for-ai
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/25-echoleak-cves-for-ai/docs/en.md
+exercises:
+  - index: 1
+    slug: naive_leaks_the_whole_mfa_email_in_the_url_and_the_defense_leaks_nothing_because_it_never_reads_the_inbox
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Report the exfiltrated data with and without the scope-separation defense.
+    zh: |
+      跑 `code/main.py`。回報在有與沒有範圍分離防禦時，被外洩出去的資料。
+    verifies: >-
+      in the shipped main() the naive agent renders one URL https://signed.microsoft.com/img?data=your
+      MFA code: 382914 leaking the whole security email, the defended agent makes 0 tool calls and
+      leaks nothing; the trigger is the literal string '[hidden:' not the instruction (a placeholder
+      instruction still leaks, the lesson's instruction without the marker leaks 0), retrieve()
+      returns 1 email; over 4 trust x marker cases the defense leaks 0 in all four and never reads
+      tool_calls or INBOX_PRIVATE
+  - index: 2
+    slug: dropping_the_signed_proxy_host_stops_the_reference_leak_at_15pct_false_positives
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The EchoLeak attack bypasses CSP because it exfiltrates via a Microsoft-signed URL. Design a deployment that narrows the set of allowed exfiltration destinations and measure the legitimate-use false-positive rate.
+    zh: |
+      EchoLeak 之所以繞得過 CSP，是因為它透過一個微軟簽章的網址外洩。設計一個能收窄「允許的外洩目的地」集合的部署，並量測它在正當使用上的偽陽性率。
+    verifies: >-
+      over a labelled 100-render fixture, the vendor-CSP suffix allowlist blocks 0% but allows the
+      reference leak URL; exact-hosts-without-the-proxy blocks 15% and the leak; tenant-only 60%;
+      no-rendering 100%; the reference leak URL and every diagram render share host/path/key
+      ('signed.microsoft.com','/img','data')
+  - index: 3
+    slug: an_integrity_scope_violation_needs_no_output_boundary_so_output_controls_stop_none_of_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Aim Labs' Scope Violation framework has three boundaries: retrieval, scope, output. Construct a fourth CVE-class attack that exploits a different boundary combination.
+    zh: |
+      Aim Labs 的範圍違規框架有三道邊界：檢索、範圍、輸出。建構出第四種 CVE 類別的攻擊，利用另一種邊界組合。
+    verifies: >-
+      over the 8 on/off gate sets of retrieval/scope/output, EchoLeak (retrieval->scope-read->output)
+      leaks only under 'none'; an abstract integrity attack (retrieval->scope-write, placeholder
+      instruction, boolean config write) writes config under 'none' and 'output only', so an output
+      control stops none of it; the marker read from naive_copilot is '[hidden:', the only tool in
+      either agent is render_image and neither has a write path
+  - index: 4
+    slug: render_only_provenance_trusted_images_keeps_60pct_of_renders_iff_provenance_is_unforgeable
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Microsoft's CamoLeak fix disabled image rendering entirely. Propose a partial fix that preserves image rendering for trusted sources only. Identify the authentication assumption it requires.
+    zh: |
+      微軟對 CamoLeak 的修法是整個停用圖片渲染。提出一種只替受信任來源保留圖片渲染的部分修法。指出它所需要的那項認證假設。
+    verifies: >-
+      on the 100-render fixture tagged by provenance, no-rendering keeps 0% and blocks the leak;
+      provenance-trusted rendering keeps 60% and blocks the leak when provenance is unforgeable, but
+      renders the leak to signed.microsoft.com again when retrieved content can forge a trusted tag
+  - index: 5
+    slug: the_cvss_calculator_reproduces_the_docs_9_3_and_the_mfa_demonstration_is_a_2_1_point_swing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Responsible disclosure for AI vulnerabilities is evolving. Sketch a disclosure protocol that includes AI-specific evidence (reproducibility, model-version scoping, prompt-injection resistance).
+    zh: |
+      AI 漏洞的負責任揭露還在演化。勾勒一套納入 AI 專屬證據（可重現性、模型版本範圍、提示詞注入抗性）的揭露協定。
+    verifies: >-
+      the CVSS 3.1 base-score calculator computes 9.3 from the sourced EchoLeak vector
+      AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N, matching the number the lesson doc prints; C:L scores 7.2
+      (a 2.1-point High->Critical swing that the demonstrated MFA exfiltration is worth) and C:N 5.8;
+      the vector round-trips through the parser unchanged
