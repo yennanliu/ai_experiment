@@ -1,0 +1,78 @@
+lesson: 21-fairness-criteria-group-individual-counterfactual
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/21-fairness-criteria-group-individual-counterfactual/docs/en.md
+exercises:
+  - index: 1
+    slug: dp_reweighting_cuts_the_gap_from_0_429_to_0_012_and_narrows_equalized_odds_too_only_conditional_use_pays
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Report the three group metrics on the default data. Apply the demographic-parity-targeted re-weighting and re-report.
+    zh: |
+      跑 `code/main.py`。回報預設資料上的三項群體指標。套用那個以人口統計均等為目標的重新加權，再回報一次。
+    verifies: >-
+      on main()'s seed 53 the group1-minus-group0 gaps are DP +0.429, TPR +0.326, FPR +0.331, PPV
+      +0.157, NPV -0.256 at 71.0% accuracy, and after the 2.0/0.5 reweighting DP +0.012, TPR -0.231,
+      FPR -0.007, PPV +0.244, NPV -0.401 at 65.8%, matching main()'s printed rates; the weight on A
+      goes 1.35 -> -0.05. Against the printed 'at the cost of equalized odds', the worst EO gap
+      narrows 0.331 -> 0.231 while the worst CU gap widens 0.256 -> 0.401, and over seeds 0-9 EO
+      narrows in 9 and CU widens in 9; the baseline DP gap spans 0.048-0.648 across those seeds
+  - index: 2
+    slug: the_score_map_breaks_lipschitz_1_on_1264_of_124750_pairs_all_across_groups_and_hard_decisions_on_9051
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement the Dwork et al. 2012 individual-fairness metric using L2 on non-sensitive features. Report how many pairs violate Lipschitz with constant L=1.
+    zh: |
+      用非敏感特徵上的 L2 距離，實作 Dwork 等人 2012 的個體公平指標。回報在常數 L=1 之下有多少組配對違反 Lipschitz 條件。
+    verifies: >-
+      over main()'s 500 seeded test rows (124,750 pairs), L2 on (x0, x1) and L = 1, the baseline's
+      probability map violates on 1264 pairs (1.01%) and its hard decisions on 9051 (7.26%); the
+      reweighted model on 2 and 4075. No probability violation is same-group, because the sigmoid
+      bound 0.25*||(w0, w1)|| is 0.235 / 0.187; zeroing the 1.35 weight on A leaves 0. Hard decisions
+      still violate on 1908 / 2075 same-group pairs
+  - index: 3
+    slug: the_lessons_dag_has_a_cause_y_so_a_predictor_on_x0_and_x1_minus_0_5a_still_flips_8pct_and_0pct_once_that_edge_is_cut
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Kusner et al. 2017. Construct a simple two-feature causal DAG for resume scoring and identify the counterfactual-fairness condition it implies.
+    zh: |
+      讀 Kusner 等人 2017。替履歷評分建構一張簡單的雙特徵因果 DAG，並指出它蘊含的反事實公平條件。
+    verifies: >-
+      scm() reproduces gen() exactly on seed 53; over 20,000 people a predictor on (x0, x1 - 0.5A)
+      flips 0.0% of decisions under counterfactual A with the A -> Y edge cut (64.2% accurate) but
+      8.2% in the lesson's DAG, where 30.1% of people change Y when A flips; the majority guess is
+      55.0% against the baseline's 69.9%. main()'s baseline flips 48.2%, the DP-reweighted model 9.6%
+  - index: 4
+    slug: flipping_a_would_approve_101_of_199_denied_group_0_applicants_while_backtracking_asks_them_for_2_4x_the_gain
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The 2024 backtracking-counterfactuals paper avoids intervention on protected attributes. Describe a scenario where this matters for legal compliance.
+    zh: |
+      2024 年那篇回溯式反事實論文避開了對受保護屬性做介入。描述一個「這件事對法遵而言很要緊」的情境。
+    verifies: >-
+      on main()'s seed-53 test set, do(A = 1) approves 101 of 199 denied group-0 applicants and do(A =
+      0) 0 of 104 denied group-1; x0 carries 89.7% of the minimal backtracking shift, whose median is
+      1.254 SD for group 0 vs 0.532 for group 1 (2.4x, weight on A 1.35). After the DP reweighting: 0
+      of 170 and 10 of 181 flip, medians 0.859 vs 0.916
+  - index: 5
+    slug: dp_and_equalized_odds_coincide_only_if_a_does_not_cause_y_with_the_edge_in_equalized_odds_leaves_a_0_09_dp_gap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The ICLR 2024 reconciliation argues group and counterfactual fairness are facets of the same structure. Pick two of the three criteria in `code/main.py` and state the causal assumption that would make them equivalent.
+    zh: |
+      ICLR 2024 那份調和主張群體公平與反事實公平是同一套結構的切面。從 `code/main.py` 的三項判準中挑兩項，說出讓它們等價所需的那項因果假設。
+    verifies: >-
+      over 100,000 people from gen()'s equations, a reference-trained x0-only classifier with A -> Y
+      cut has DP 0.002, TPR -0.004, FPR +0.005, PPV -0.003 gaps and 0.0% counterfactual flips; with
+      the edge in it has TPR -0.006, FPR +0.007 but DP 0.094 (dpi*(TPR-FPR) = 0.095) and 9.3% flips.
+      main()'s baseline with the edge cut, against its 'equal base rates are the condition' takeaway,
+      keeps DP 0.423, TPR 0.473, FPR 0.381, PPV -0.152, and pi*dTPR+(1-pi)*dFPR = 0.423
