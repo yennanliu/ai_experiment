@@ -1,0 +1,72 @@
+lesson: 14-ascii-art-visual-jailbreaks
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/14-ascii-art-visual-jailbreaks/docs/en.md
+exercises:
+  - index: 1
+    slug: one_changed_letter_passes_the_filter_the_cloak_spends_126_edits_and_never_trips_the_ppl_filter
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `code/main.py`. Verify the cloaked string passes a simple keyword filter. Report the character-level change required.
+    zh: |
+      跑 `code/main.py`。驗證那段偽裝字串通得過一個簡單的關鍵字過濾器。回報所需的字元層級改動量。
+    verifies: >-
+      the 20-char original is blocked and the 143-char cloak (42 '#') is not; Levenshtein distance
+      126; 392 of 1980 single-character substitutions already pass, all at positions 16-19; cloaked
+      PPL 0.343 and at most 0.383 (weapon) across the five forbidden words against the 0.4 threshold,
+      so the PPL filter blocks 0 of 5; cloaking ['bomb'] evades the filter for 1 of 16 case variants
+  - index: 2
+    slug: both_encodings_bypass_5_of_5_base64_recovers_all_5_art_2_but_art_survives_97pct_of_one_cell_flips
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a second encoding: base64 for the same target word. Compare the filter-bypass rate against ArtPrompt and the recovery difficulty.
+    zh: |
+      對同一個目標詞實作第二種編碼：base64。比較它與 ArtPrompt 的過濾器繞過率，以及還原難度。
+    verifies: >-
+      art and base64 each bypass the keyword and 0.4 PPL filters 5/5 (base64 PPL at most 0.083); exact
+      recovery art 2/5, base64 5/5; one-cell flips recovered art 78/80 and 116/120, base64 15/512 (all
+      at index 5) and 0/512, the 6 art misses all ties, closest glyphs H-N and M-N at distance 2;
+      GLYPHS has 10 letters, missing C I L R S, so hack/malware/poison read as HAPK/MAPWAPE/POPPON
+  - index: 3
+    slug: asr_alone_cannot_say_why_a_better_reader_refusing_30pct_after_decoding_ties_a_worse_reader
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Jiang et al. 2024 Section 4.3 (five-model results). Propose a reason why Claude's ArtPrompt-resistance is higher than Gemini's on the same benchmark.
+    zh: |
+      讀 Jiang 等人 2024 年的 4.3 節（五個模型的結果）。提出一個理由，說明為何在同一份基準上 Claude 對 ArtPrompt 的抗性高於 Gemini。
+    verifies: >-
+      docs/en.md's only percent figure is 75% and it lists Claude among 'all fail'; over 2000 seeded
+      reads, (recognised, ASR) is (0.585, 0.585) at p=0.10, s=0 and (0.842, 0.594) at p=0.05, s=0.3;
+      the surface filter blocks 0; ASR at s=0 is 1.0/0.842/0.585/0.332/0.14/0.021 for
+      p=0/0.05/0.1/0.15/0.2/0.3 and 0 at every p for s=1
+  - index: 4
+    slug: a_few_ink_shape_detector_flags_0_of_2785_code_table_math_blocks_where_the_ppl_window_flags_67
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Design a pre-generation defense that detects ASCII-art-shaped regions in the prompt. Measure the false-positive rate on legitimate code, tables, and mathematical notation.
+    zh: |
+      設計一套生成前的防禦，偵測提示詞中呈 ASCII 藝術形狀的區域。在正當的程式碼、表格與數學符號上量測它的偽陽性率。
+    verifies: >-
+      over 523 curriculum docs (1555 code, 932 table, 298 math, 677 diagram blocks) the few-ink
+      detector has 0 code/table/math and 6 diagram false positives and catches 5/4/5 of
+      shipped/letter-ink/mixed-ink cloaks; the 5-line PPL window flags 17/28/22/28 and catches 2/0/2,
+      missing hack, malware, poison; single-ink has 0 false positives and catches 5/0/0; few-ink
+      misses weapon in letter ink
+  - index: 5
+    slug: structuralsleight_generalized_defense
+    kind: explain
+    tier: T0
+    deps_group: none
+    en: |
+      StructuralSleight lists 10 encoding structures. Sketch a generalized defense that handles all 10 and estimate the compute cost per defended prompt.
+    zh: |
+      StructuralSleight 列出了 10 種編碼結構。勾勒一套能處理全部 10 種的通用防禦，並估算每則被防護提示詞的運算成本。
+    cites: >-
+      StructuralSleight
