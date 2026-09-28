@@ -1,0 +1,84 @@
+lesson: 06-devops-troubleshooting-agent
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/06-devops-troubleshooting-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: on_aws_three_eks_incidents_the_agent_matches_1_remediation_and_0_root_causes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run your agent on the same three incidents AWS's DevOps Agent is demo'd on. Publish the side-by-side. Report where the agent diverges.
+    zh: |
+      在 AWS DevOps Agent 用來展示的那三起事故上跑你的代理。發表並排比較。回報代理在哪裡出現分歧。
+    verifies: >-
+      AWS's three published EKS DevOps Agent investigations (APF throttling, OOMKilled after an image
+      change, node iptables DNS fault) rebuilt as the lesson's Graph; root_cause's #1 matches AWS's
+      remediation on 1 of 4 runs (B, rollback) and the root cause on 0; A yields only the uncited 'DNS
+      flap' (1 hypothesis), a Deployment alert never reaches its Node, the node hypothesis fires only
+      on the Pod-alerted run; 'DNS flap' carries 0 citations on all 4 runs and ranks 2nd on the DNS
+      incident; a rollout from 3 days ago still ranks #1 at 0.467
+  - index: 2
+    slug: a_simulated_week_has_32_4pct_near_misses_and_the_lessons_tool_list_sees_32_of_46
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "near-miss" audit that flags any command the agent *considered* that would have been destructive without approval. Measure the near-miss rate over one week.
+    zh: |
+      加上一項「差點出事」稽核，標出任何代理「考慮過」、且在沒有核可下會造成破壞的指令。量測一週內的差點出事率。
+    verifies: >-
+      a seeded 7-day simulation through the lesson's Agent.call: 39 alerts, 142 considered commands,
+      49 flagged by effect in the audit log, 46 true near-misses (32.4%, 1.18 per alert), none
+      executed; the lesson's destructive_tools list sees 32 (22.5%) and misses kubectl_drain and
+      kubectl_exec ('blocked: unknown tool'); 3 of 18 human approvals (drains) are logged
+      approved=False with approver None; approver='devops-agent' executes 4/4 destructive tools;
+      considered=True on 142/142
+  - index: 3
+    slug: no_model_is_called_so_the_swap_moves_accuracy_0_points_and_any_model_is_capped_at_12_of_20
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the hypothesis model from Claude Sonnet 4.7 to a self-hosted Llama 3.3 70B. Measure RCA accuracy delta and dollar per incident.
+    zh: |
+      把假說模型從 Claude Sonnet 4.7 換成自架的 Llama 3.3 70B。量測根因分析準確率的差值與每起事故的花費。
+    verifies: >-
+      main.py has no model call, so RCA accuracy is 9/20 under either model (delta 0); an oracle
+      re-ranker over root_cause's candidates reaches 12/20, 8 causes unreachable, below the 80%
+      rubric; a 146-token re-rank prompt plus 250 output tokens costs 4.19 / 2.79 / 0.41 dollars per
+      1,000 incidents on Sonnet 4.6 / Sonnet 5 / Llama 3.3 70B (Together, 1.04 per MTok), Llama at
+      9.8% of Sonnet 4.6; 'Claude Sonnet 4.7' named by the lesson is not an Anthropic model; the #1 is
+      rollout for every Deployment alert and node for every Pod alert
+  - index: 4
+    slug: a_5_feature_classifier_finds_15_of_20_root_causes_and_the_lessons_evidence_score_finds_0
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a causal filter: distinguish correlated telemetry spikes from a true root cause. Train a small classifier on the 20-scenario labels.
+    zh: |
+      建一個因果過濾器：把相關的遙測尖峰與真正的根因區分開來。用那 20 個情境的標籤訓練一個小分類器。
+    verifies: >-
+      80 labelled spikes over 20 seeded scenarios; a standardised logistic regression picks the root
+      cause in 15/20 leave-one-scenario-out, vs 12/20 for the earliest spike and 0/20 for the biggest;
+      coefficients lead +0.50, hops -0.09, change +0.32, series -1.52, magnitude -1.37; the lesson's
+      Hypothesis.score picks the root 0/20 and a symptom 19/20; the doc's product formula is a
+      weighted sum in code (an uncited hypothesis scores 0.09) and recency 60, 61 and 999 minutes all
+      score 0.265
+  - index: 5
+    slug: the_dry_run_rejects_4_of_4_bad_plans_the_gate_would_execute_and_the_agent_blames_the_rollback
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a rollback dry-run: ArgoCD rollback against a staging cluster with the same manifest. Verify the rollback plan in a live cluster before the Slack approval button.
+    zh: |
+      加上回滾試跑：對一個帶相同資訊清單的預備叢集執行 ArgoCD 回滾。在 Slack 核可按鈕之前，先在一個實際叢集上驗證那份回滾計畫。
+    verifies: >-
+      the dry-run on a second build_sample_cluster verifies rev 41 as a 2-field Deployment-only diff
+      (revision 42 to 41, image v2.41 to v2.40) and rejects rev 999, 42, -1 and 'latest', all 4 of
+      which the lesson's gate executes when approved; the graph holds only revision 42, so alone it is
+      'unverifiable'; after the rollback root_cause still ranks 'bad rollout ... v2.40' #1, rising
+      0.735 to 0.817; a dry_run=True rollback and argocd_app_diff are both blocked before approval (0
+      of 2)
