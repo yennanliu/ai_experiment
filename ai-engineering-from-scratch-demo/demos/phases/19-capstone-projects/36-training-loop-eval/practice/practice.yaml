@@ -1,0 +1,78 @@
+lesson: 36-training-loop-eval
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/36-training-loop-eval/docs/en.md
+exercises:
+  - index: 1
+    slug: the_decay_split_passes_6_of_6_tests_and_either_half_of_its_rule_alone_passes_them_too
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add `weight_decay_groups()` unit tests that confirm scale and bias parameters land in the no decay group and linear and embedding weights land in the decay group.
+    zh: |
+      加上 `weight_decay_groups()` 的單元測試，確認縮放與偏置參數落進不衰減那一組，而線性層與嵌入權重落進衰減那一組。
+    verifies: >-
+      six tests (scale, shift/bias undecayed; Linear, Embedding decayed; partition; wd values) pass on
+      the tied, untied and bias-free models: 10 decayed matrices (116,736 values), 18 undecayed
+      vectors (1,792); decay-all, decay-none and swapped splits fail 2, 2 and 4 tests; the dim-only
+      and name-only halves of the rule each give identical groups; main.py has no weight_decay_groups
+      and its tests never check an embedding; demo's '(untied count)' prints the tied 118,528 (untied
+      134,912)
+  - index: 2
+    slug: on_real_text_0_of_192_sampled_bytes_leave_the_file_and_the_synthetic_demos_val_loss_climbs_to_7_49
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace synthetic random tokens with bytes from a small text file so the demo trains on something legible. Verify the generated sample uses characters present in the file.
+    zh: |
+      把合成的隨機詞元換成一個小文字檔的位元組，好讓示範訓練在看得懂的東西上。驗證生成樣本用的是該檔案中出現過的字元。
+    verifies: >-
+      the Zen of Python (856 bytes, 45 distinct) trained 80 steps with the demo config: 0/64
+      out-of-file bytes in each of 3 samples at T=0.8, top_k=20 vs 46/64 untrained; val 2.973 vs
+      unigram entropy 3.109; top_k=0 at T=1.0 gives 47/2000 outside; the synthetic demo's val loss
+      goes 5.554 untrained to 7.492 while train reaches 1.101; 400 steps on text: train 0.960, val
+      2.981 -> 3.455
+  - index: 3
+    slug: the_10pct_floor_is_already_the_default_and_the_80_step_run_never_reaches_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `min_lr` floor of 10 percent of `max_lr` to the cosine schedule and re-plot.
+    zh: |
+      替餘弦排程加上一個為 `max_lr` 一成的 `min_lr` 地板，並重新畫圖。
+    verifies: >-
+      with min_lr = 0.1 max_lr the last LR is 3.0136e-4 vs 1.5e-6 floorless, mean LR +8.4%, final
+      train loss 1.101 vs 1.130; TrainConfig already has ratio 0.1 and the shipped losses.jsonl lr
+      column matches it exactly on 80 rows; step 79 is 0.45% above the floor (only step 80 hits it),
+      step 0 is 3e-4 not zero, and steps 9 and 10 both sit at the peak
+  - index: 4
+    slug: resume_is_bit_exact_only_if_the_batch_stream_is_fast_forwarded_too
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Save a checkpoint every `eval_every` steps in addition to the JSONL log. Add a `resume_from` flag that reloads model state and optimizer state.
+    zh: |
+      除了 JSONL 日誌之外，每 `eval_every` 步再存一個檢查點。加上一個 `resume_from` 旗標，重新載入模型狀態與最佳化器狀態。
+    verifies: >-
+      train_ckpt matches the lesson's train() with worst difference 0; resumed from ckpt_39 into a
+      fresh model, steps 40-79 are identical; checkpoints at 19/39/59/79 of about 3.0x parameter
+      bytes; without fast-forwarding the batch stream 0/40 records match, model-only resume matches
+      1/40; the crashed-and-resumed log has 86 lines with steps 40-45 twice; the lesson's train()
+      leaves 1 line after a second call
+  - index: 5
+    slug: throughput_holds_a_steady_band_on_76_of_80_steps_and_each_probe_step_drops_it_4x
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Log per step throughput (tokens per second) next to the loss and confirm it stays in a steady band.
+    zh: |
+      在損失旁邊記錄逐步吞吐量（每秒詞元數），並確認它待在一個穩定的區間裡。
+    verifies: >-
+      128 tokens on each of 80 steps, tokens_per_sec logged beside train_loss in all 80 JSONL records;
+      non-probe p5-p95 CPU-time throughput within 0.5x-2x of the median (about 0.9x-1.02x measured);
+      probe steps 19/39/59/79 run 21 forwards instead of 1 and are more than 2x slower (about 4.4x
+      measured)
