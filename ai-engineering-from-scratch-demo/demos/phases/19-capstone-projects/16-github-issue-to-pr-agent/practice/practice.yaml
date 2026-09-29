@@ -1,0 +1,81 @@
+lesson: 16-github-issue-to-pr-agent
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/16-github-issue-to-pr-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: 50_green_runs_accept_a_timeout_bump_that_still_fails_1_run_in_360_and_the_label_never_reaches_the_agent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "fix flaky test" mode: the label `@agent stabilize-flake TestX` runs the test 50 times in-sandbox and proposes a minimal change that stabilizes it.
+    zh: |
+      加上一個「修不穩定測試」模式：標籤 `@agent stabilize-flake TestX` 會在沙箱裡把那個測試跑 50 次，並提出一項讓它穩定下來的最小改動。
+    verifies: >-
+      the label parses to TestX; a stand-in test waiting 80 ms on a lognormal job fails 5/50, and the
+      smallest non-masking patch to go 50/50 green is the 1-line timeout bump to 160 ms; that bump
+      still fails 0.28% exactly (0.32% over 20,000 runs, against 8.28% before), the gate accepts it in
+      864/1000 episodes, and 50/50 only bounds p below 5.8%; router.ts dispatches only action
+      'opened', so a 'labeled' delivery is skipped; run_verify flakes 5.41% of 20,000 calls and
+      ignores difficulty on 2000/2000
+  - index: 2
+    slug: on_one_token_trace_cursor_pro_wins_all_3_issues_by_the_fargate_bill_and_the_lesson_prices_them_3_8_to_7_8x_higher
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare cost vs Cursor Background Agents on three shared issues. Report which tools win where.
+    zh: |
+      在三個共同議題上與 Cursor Background Agents 比較成本。回報哪套工具在哪裡勝出。
+    verifies: >-
+      on 2,000 runs each of difficulty 0.30/0.61/0.92, resolved 94.3/90.3/60.5%; Opus 4.7 token bill
+      per resolved issue $0.432/0.680/1.800, self-hosted with Fargate $0.440/0.696/1.850, Cursor Pro
+      $0.432/0.680/1.800 (wins all 3), Cursor Teams with the $0.25/M token rate $0.479/0.777/2.127
+      (loses all 3); tokens are 97-98% of the self-hosted bill; the lesson's flat per-turn dollars are
+      3.8/5.8/7.8x the token bill; turn_cap defaults to 20 not the doc's 30, and at 30 the 30-minute
+      cap trips at turn 21 so hard resolves 61.9%
+  - index: 3
+    slug: a_user_who_floods_20_issues_costs_less_than_anyone_else_and_the_lessons_ledger_never_starts_a_new_day
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a budget dashboard: per-repo per-day cost, per-user cost. Alert on anomaly.
+    zh: |
+      實作一個預算儀表板：逐儲存庫逐日的成本、逐使用者的成本。異常時發警報。
+    verifies: >-
+      over a seeded 7-day week with a fresh ledger per day: 40 PRs, the denial alert fires only on
+      acme/service day 5 (18 denials), the MAD cost alert flags it plus 2 ordinary days; the flooding
+      user costs $10.87, below every other user ($14.04-39.05); one ledger for the week opens
+      6/4/3/2/0/0/0 PRs and denies 44/59; the worst run is $13.28 and 29.04 min so the $20 and
+      30-minute caps never fire, and 8 burst admits all pass permit and spend $65.07 on a $50 cap
+  - index: 4
+    slug: skipping_ci_saves_0_dollars_because_the_lessons_ci_is_free_and_a_3_turn_plan_costs_32pct_of_a_run
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a "dry-run" mode that opens a draft PR without running CI, so reviewers can examine the plan cheap.
+    zh: |
+      建一個「試跑」模式，開一份不跑 CI 的草稿 PR，好讓審查者能用很低的成本檢視那份計畫。
+    verifies: >-
+      on 2,000 paired issues the full run costs $4.27, skip-CI dry-run $4.27 and a 3-turn plan-only
+      dry-run $1.37 (32%); run_verify adds $0 and 0 minutes; both dry-runs open 2000 drafts, including
+      79 whose CI would be red and 245 stuck at the turn cap; open_pr opens a PR with ci_green=False;
+      5 dry-runs recorded as PRs refuse the next real issue on the daily PR cap
+  - index: 5
+    slug: 4_of_the_7_day_policys_5_deletions_close_an_open_pr_and_the_lessons_token_would_delete_main
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a retention policy: PR branches older than 7 days without merge get deleted automatically.
+    zh: |
+      加上一套保存政策：超過 7 天未合併的 PR 分支自動刪除。
+    verifies: >-
+      branches named agent/issue- per agent.ts; the policy deletes 5 of 40 seeded agent branches and
+      keeps the one at exactly 7.0 days; 4 of the 5 head an open PR, keeping open PRs deletes 1,
+      measuring from creation deletes 17; InstallationToken.can refuses only force_push and
+      write:main, allows force-push, delete:refs/heads/main, write:refs/heads/main and
+      write:.github/workflows, never reads permissions, and approves deleting the 3 stale human
+      branches an unscoped rule picks
