@@ -1,0 +1,80 @@
+lesson: 45-gradient-clipping-amp
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/45-gradient-clipping-amp/docs/en.md
+exercises:
+  - index: 1
+    slug: a_1e8_target_spike_is_clipped_not_skipped_under_the_lessons_bf16_and_only_fp16_skips_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the synthetic Inf injection with a real loss spike (multiply one batch's target by 1e8) and verify the skip path triggers.
+    zh: |
+      把那個合成的 Inf 注入換成一次真實的損失暴衝（把某個批次的目標乘上 1e8），並驗證那條跳過路徑會觸發。
+    verifies: >-
+      the lesson's 20-step demo with targets x 1e8 on step 5 instead of the Inf injection: under the
+      CPU default (autocast BF16) the loss is 9.79e15 and the grad norm 1.19e8, both finite, so 0
+      skips and the step is clipped to 1.0; FP16 autocast skips it as non_finite_grad. Factor sweep
+      1e5/1e6/1e8/1e18/1e19: FP16 skips from 1e6, BF16 only at 1e19 (non_finite_loss). Clipped the run
+      ends at 0.0614 (clean 0.0555) and 2.4e-5 after 100 steps; unclipped (max_norm 1e30) at 0.475
+      after 20 and 0.677 after 100
+  - index: 2
+    slug: bf16_leaves_the_lessons_own_demo_at_1_in_20_skips_and_its_cpu_loop_was_already_bf16
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--bf16` mode that switches autocast to BF16 instead of FP16. BF16 has a wider exponent range than FP16 and rarely needs loss scaling; verify the skip rate drops to zero on the same demo.
+    zh: |
+      加上一個 `--bf16` 模式，把 autocast 切成 BF16 而不是 FP16。BF16 的指數範圍比 FP16 寬，而且很少需要損失縮放；驗證在同一個示範上跳過率降到零。
+    verifies: >-
+      a CLI with FP16 default and --bf16: the lesson's injected-Inf demo skips 1/20 in both modes; on
+      a real x1e8 spike FP16 skips 1/20 and BF16 0/20 (finfo max 65504 vs 3.39e38).
+      AmpTrainState(device_type='cpu') already defaults to bfloat16; the CPU scaler is disabled so
+      every logged scale is 1.0, and an enabled CPU GradScaler shows 65536, 65536, 32768 on steps 4-6
+      (the skip row logs the pre-update scale)
+  - index: 3
+    slug: the_clip_wrapper_never_calls_clip_grad_norm_and_on_a_generator_reports_a_clip_it_skipped
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a unit test that the gradient-clip wrapper returns the pre-clip and post-clip norm correctly when no clipping occurs.
+    zh: |
+      加上一項單元測試：當沒有發生裁剪時，那個梯度裁剪包裝函式仍正確回傳裁剪前與裁剪後的範數。
+    verifies: >-
+      a no-clip unit test over real toy-model grads (norm 1.0080091) at thresholds 10.0 and the norm
+      itself: pre == post == global norm, within 1e-6 of torch's float32 norm (gap 4.9e-8), grads
+      bit-identical; the lesson passes with 0 failures and two broken versions fail 1 assertion each.
+      The body never calls clip_grad_norm_, which at max_norm == norm changes the grads where the
+      lesson does not; clip_global_l2_norm(model.parameters(), 0.1) returns (1.008, 0.1) and leaves
+      the norm at 1.008
+  - index: 4
+    slug: one_skip_on_step_0_reads_as_a_100pct_rate_and_the_demo_prints_0_over_its_own_skip
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a rolling-window skip-rate computation and a CLI flag that fails the run if the rate exceeds a configured threshold for 100 consecutive steps.
+    zh: |
+      加上一個滾動窗口的跳過率計算，以及一個 CLI 旗標 —— 若該率連續 100 步超過設定門檻，就讓那次執行失敗。
+    verifies: >-
+      a --max-skip-rate flag with --window and --patience 100 over the lesson's rolling_skip_rate on
+      300 real steps (window 100, threshold 0.05): clean and 1-in-50 exit 0, 1-in-10 exits 1 at step
+      108. One skip on step 0 reads 1.0, 0.5, 0.3333 and stays over 5% for 19 steps; patience 1 would
+      fail at step 0, patience 100 exits 0. run_demo prints 'skip_count=1 final_skip_rate=0.0000'
+  - index: 5
+    slug: the_lessons_csv_leaves_no_file_after_ctrl_c_and_the_flush_matters_only_under_sigkill
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Wire the loop to write the canonical CSV (`step, lr, grad_l2_pre_clip, grad_l2_post_clip, loss, skipped, skip_reason, scaler_scale`) and confirm the file survives a Ctrl-C by flushing after every row.
+    zh: |
+      把那條迴路接起來，寫出那份標準 CSV（`step, lr, grad_l2_pre_clip, grad_l2_post_clip, loss, skipped, skip_reason, scaler_scale`），並藉由每一列之後都 flush，確認那個檔案挺得過一次 Ctrl-C。
+    verifies: >-
+      a child process runs the lesson's loop, streams each StepLog row with a flush, and sends itself
+      SIGINT after step 7: exit -2, the 8 canonical columns in order, 8 rows, row 5 skipped=1
+      non_finite_grad; SIGKILL also keeps 8 rows. The lesson's write_step_log_csv after the loop
+      leaves no file; without the flush SIGINT still keeps 8 rows (the with block closes the file) and
+      SIGKILL leaves 0 bytes
