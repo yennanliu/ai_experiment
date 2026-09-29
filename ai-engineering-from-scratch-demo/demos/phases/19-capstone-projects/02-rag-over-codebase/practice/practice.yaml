@@ -1,0 +1,79 @@
+lesson: 02-rag-over-codebase
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/02-rag-over-codebase/docs/en.md
+exercises:
+  - index: 1
+    slug: a_4x_weaker_embedder_loses_0_138_dense_mrr_and_the_reranker_closes_the_gap_by_ignoring_retrieval
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap Voyage-code-3 for nomic-embed-code self-hosted. Measure the MRR@10 delta. Report whether the gap closes with re-ranking enabled.
+    zh: |
+      把 Voyage-code-3 換成自架的 nomic-embed-code。量測 MRR@10 的差值。回報開啟重排之後那個差距會不會被補上。
+    verifies: >-
+      over 20 keyed-hash embedders on 12 labelled questions, a 64-dim vs 16-dim fake_embed gives mean
+      MRR@10 dense 0.785 vs 0.647 (gap 0.138), fused 0.902 vs 0.885 (0.017), reranked 0.931 vs 0.940
+      (-0.009); a 4-dim embedder goes 0.558 to 0.960 after rerank and reranking with no retrieval
+      scores 0.958; the fused score spans 0.018 against 0.1 per summary word; all 6 chunks reach the
+      reranker on 12/12 questions
+  - index: 2
+    slug: generated_wrappers_at_20pct_steal_the_top_hit_in_984_of_1820_placements_and_halving_their_fused_score_stops_all
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Inject 20% generated code (LLM-produced boilerplate) into the corpus and re-evaluate. Observe retrieval poisoning. Add a "generated" flag to the payload and down-weight those hits.
+    zh: |
+      在語料中注入 20% 的生成式程式碼（LLM 產出的樣板碼）並重新評估。觀察檢索被毒化的情況。在酬載裡加上一個 "generated" 旗標，並把那些命中降權。
+    verifies: >-
+      4 generated wrappers among 20 chunks over all 1,820 placements: 984 placements with a top-1
+      steal, 1,210 steals, MRR@10 0.861 clean to 0.852 poisoned (worst 0.757); a generated flag zeroed
+      after rerank or halved before it leaves 0 steals and MRR@10 0.880; the flagged corpus beats the
+      clean one by +0.019 because one question climbs in 809 placements, against a -0.009 poisoning
+      drop
+  - index: 3
+    slug: both_backend_shapes_are_brute_force_scans_and_after_the_reranker_they_score_the_same_0_917
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark Qdrant hybrid search vs pgvector + pgvectorscale at your corpus size. Report p99 at batch size 1.
+    zh: |
+      在你的語料規模上，對 Qdrant 混合搜尋與 pgvector + pgvectorscale 做基準測試。回報批次大小為 1 時的 p99。
+    verifies: >-
+      at batch size 1, p99 under 1 ms on the 6-chunk corpus for the Qdrant shape (RRF k=2 zero-based),
+      the pgvector shape (dense only) and the lesson's k=60, with over 5x growth at 3,000 chunks; N
+      cosines and N BM25 scans per query term; MRR@10 after rerank 0.917 for all three, fused
+      0.875/0.875/0.771; the BM25 build sums N(N+1)/2 lengths, 4,501,500 at 3,000 chunks and 3.04e9 at
+      77,922 chunks for 2M LOC
+  - index: 4
+    slug: unchanged_code_scores_0_808_to_0_862_mrr_across_26_fresh_processes_because_fake_embed_hashes_with_a_salt
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a sampling-based drift check: weekly, rerun the 100-question eval. Alert on MRR@10 drop > 5%.
+    zh: |
+      加上一項以抽樣為基礎的漂移檢查：每週重跑那份 100 題評估。MRR@10 掉超過 5% 就發警報。
+    verifies: >-
+      the relative 5% drift alert fires when summaries are lost (MRR@10 0.838 to 0.707, -15.6%) and
+      stays quiet on 25 week-over-week steps of unchanged code; 26 subprocesses with PYTHONHASHSEED
+      0-25 give more than 10 distinct MRR@10 values over a spread above 5% (0.808-0.862) and a frozen
+      baseline alerts on 4 pairs; 1,000 bootstrap resamples alert 38 times relative and 18 times
+      absolute
+  - index: 5
+    slug: the_proto_contract_links_a_python_grpc_call_to_its_go_handler_which_hybrid_retrieval_ranks_outside_the_top_5
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend to cross-language symbol resolution: a Python function that calls a Go service over gRPC. Use the symbol graph to link them.
+    zh: |
+      擴充到跨語言的符號解析：一個透過 gRPC 呼叫 Go 服務的 Python 函式。用符號圖把它們連起來。
+    verifies: >-
+      a regex symbol graph over the proto service, the Go registration and the Python stub links
+      cancel_stale_uploads to uploaderServer.Abort to AbortMultipartOnFail in two hops; the lesson
+      module has no graph; answer ranks the caller first and holds 1 of 2 server chunks in its top 5,
+      without the handler; name-only linking gives 2 edges (uploader, exporter), service-qualified
+      gives 1
