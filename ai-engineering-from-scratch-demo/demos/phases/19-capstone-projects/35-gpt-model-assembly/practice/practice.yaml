@@ -1,0 +1,77 @@
+lesson: 35-gpt-model-assembly
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/35-gpt-model-assembly/docs/en.md
+exercises:
+  - index: 1
+    slug: untying_adds_38_597_376_and_the_lessons_dedup_counter_is_a_no_op_but_state_dict_double_counts
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Untie the LM head from the token embedding and recount parameters. Verify the delta is 50257 times 768 = 38 million.
+    zh: |
+      把語言模型頭從詞元嵌入解綁，並重新清點參數。驗證那個差值是 50257 乘 768 = 三千八百萬。
+    verifies: >-
+      on meta-device 124M models the lesson's count_parameters gives 124,439,808 tied and 163,037,184
+      untied, delta 38,597,376 = 50257 x 768 (38.6M, rounds to 39M); plain parameters() also gives
+      124,439,808 while named_parameters(remove_duplicate=False) and state_dict give 163,037,184 for
+      the tied model; one block is 7,087,872 (85,054,464 for 12) against the doc's '7 million ... 84
+      million'
+  - index: 2
+    slug: the_sinusoidal_swap_drops_786_432_but_its_table_is_35x_the_token_embedding_and_drowns_the_token
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the learned position embedding with a sinusoidal table computed at construction time. Confirm the model still forwards and the parameter count drops by 786,432.
+    zh: |
+      把可學習的位置嵌入換成一張在建構時算好的正弦表。確認模型仍然前向得了，而參數量掉了 786,432。
+    verifies: >-
+      a buffer-held sin/cos table in pos_embed forwards (1, 32, 50257) logits and drops the count from
+      124,439,808 to 123,653,376 (786,432); nn.Embedding.from_pretrained(freeze=True) drops 0; table
+      rows have norm 19.60 vs token rows 0.554 (35x), two tokens at one position have input cosine >
+      0.99, and swapping the last token leaves last-position logits at cosine > 0.99 vs < 0.85 (0.754)
+      with the learned table
+  - index: 3
+    slug: greedy_repeats_across_runs_and_processes_and_top_k_1_already_was_greedy_while_the_tied_model_copies_97pct
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `greedy=True` flag to generation that skips sampling and picks argmax. Confirm the sequence is deterministic across runs.
+    zh: |
+      替生成加上一個 `greedy=True` 旗標，跳過取樣改取 argmax。確認那段序列在各次執行間是確定性的。
+    verifies: >-
+      greedy=True gives the same 45 tokens in 3 reseeded in-process runs and 2 fresh processes,
+      unseeded sampling differs; reference generate with top_k=1 and with T=0.01 matches greedy on
+      20/20 seeds, T=0.1 on 0/20, temperature=0 raises ValueError; the tied tiny model greedily copies
+      the last token (prompt 1-5 then 5 x40; 97.0% of 200 prompts, untied 1.5%)
+  - index: 4
+    slug: a_penalty_of_5_cuts_greedy_repeats_40_to_0_but_dividing_raises_the_logit_of_44pct_of_history_tokens
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `repetition_penalty` knob that divides the logit of any token in the prompt or generated history by a constant before softmax. Show on a fixed prompt that values above one reduce repeat counts in the output.
+    zh: |
+      加上一個 `repetition_penalty` 旋鈕，在 softmax 之前把提示詞或已生成歷史中任何詞元的 logit 除以一個常數。在一段固定提示詞上展示：大於一的值會降低輸出中的重複次數。
+    verifies: >-
+      divide-by-penalty greedy repeats of 40 on the demo prompt are 40/39/37/15/0 at penalties
+      1.0/1.2/1.5/2.0/5.0 and the T=0.1 sampled mean over 100 sequences falls 26.69 -> 2.06 at 2.0;
+      dividing raises 44% (40-48%) of penalised history logits while the HF rule (multiply negatives)
+      raises 0% and repeats no more
+  - index: 5
+    slug: the_nucleus_mass_check_holds_at_0_9_but_exceeds_is_the_wrong_test_and_fails_at_top_p_1
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add `top_p` (nucleus) sampling next to `top_k`. Two-line check that the sum of probabilities of the kept tokens exceeds `top_p`.
+    zh: |
+      在 `top_k` 旁邊加上 `top_p`（核心）取樣。用兩行檢查被保留詞元的機率總和超過 `top_p`。
+    verifies: >-
+      a top_p filter keeps mass > top_p on 200/200 float64 next-token distributions at 0.5/0.9/0.95
+      (mean 224/446/477 of 512 tokens) and chains with top_k in generation; the strict 'exceeds' check
+      fails for two equal logits at 0.5 (mass exactly 0.5) and on some prompts at top_p = 1.0 (512
+      kept); top_k=20 keeps 5.5% of the mass, top_k 20 then top_p 0.9 keeps 18; the lesson's
+      top_k_filter keeps 4 of 4 tied logits at top_k=2
