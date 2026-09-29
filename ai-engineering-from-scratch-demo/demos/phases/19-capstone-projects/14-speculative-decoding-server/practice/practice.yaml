@@ -1,0 +1,87 @@
+lesson: 14-speculative-decoding-server
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/14-speculative-decoding-server/docs/en.md
+exercises:
+  - index: 1
+    slug: a_drift_that_changes_a_third_of_greedy_tokens_moves_the_lessons_acceptance_0_003
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure acceptance-rate degradation when the draft is one version behind the target (e.g., Llama 3.3 -> 3.4 drift). Build a monitoring alert.
+    zh: |
+      量測草稿落後目標一個版本時（例如 Llama 3.3 -> 3.4 的漂移）接受率的退化。建一個監控警報。
+    verifies: >-
+      with v3.4 = v3.3 weights x exp(sigma N(0,1)) and the lesson's alignment-0.9 draft at k=4 over
+      10,000 tokens, greedy acceptance goes 0.919/0.625/0.435/0.311/0.221 and the lesson's acceptance
+      0.941/0.938/0.876/0.474/0.175 at sigma 0/0.1/0.25/0.5/1; a 50-call rolling alert at 90% of
+      baseline on greedy agreement fires 16, 8, 8, 8 calls after the upgrade with 0/20 false alarms,
+      the same alert on the lesson's metric never fires at 0.1, takes 41 calls at 0.25 and
+      false-alarms 3/20; sigma 0.1 keeps the argmax on 0.674 of positions; 0.55 of tokens pass the 0.5
+      x max rule; an always-least-likely draft still scores 1.001 tok/call
+  - index: 2
+    slug: on_repetitive_traffic_the_fallback_lifts_reliable_blocks_from_34_to_92pct_and_on_the_lessons_traffic_it_hurts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement ngram-fallback: if EAGLE-3 acceptance drops below a threshold, switch to ngram drafts. Report reliability improvement.
+    zh: |
+      實作 ngram 退路：若 EAGLE-3 的接受率掉到門檻以下，就切換到 ngram 草稿。回報可靠度的改善。
+    verifies: >-
+      after an upgrade at token 2,000 of 4,000 (sigma 1.0), on repetitive code traffic EAGLE-only
+      gives 2.85 tok/call and 0.343 of 20-call blocks at >= 3.0, ngram-only 3.34 and 0.724, the
+      fallback (switch when 20-call EAGLE acceptance < 0.5) 3.75 and 0.923, switching 90 tokens in;
+      healthy streams never switch and match EAGLE (4.72, 4.76); on the lesson's own traffic the
+      fallback switches at 19 tokens and drops 1.72 to 1.28, and healthy ngram (2.13) is below a
+      uniform-random draft (2.16)
+  - index: 3
+    slug: routing_noise_of_0_1_swaps_experts_on_64pct_of_tokens_and_costs_0_15_greedy_acceptance
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run a controlled MoE experiment: same Qwen3-Coder-30B with routing noise injected vs without. Measure draft acceptance sensitivity.
+    zh: |
+      跑一次受控的 MoE 實驗：同一個 Qwen3-Coder-30B，一組注入路由雜訊、一組不注入。量測草稿接受率的敏感度。
+    verifies: >-
+      one routed layer with Qwen3-Coder-30B-A3B's 128 experts / top 8 / renormalised gates, N(0,
+      sigma) router noise per call, the lesson's alignment-0.9 draft at k=4 over 4,000 tokens: expert
+      set changed on 0/0.378/0.636/0.879/0.993/1.0 of tokens and greedy acceptance
+      0.92/0.843/0.768/0.675/0.476/0.291 at sigma 0/0.05/0.1/0.2/0.5/1, a -1.52 slope; top-8 logit gap
+      mean 0.062, median 0.044; the lesson's acceptance moves 0.924 -> 0.899 (slope -0.25, 6.1x
+      weaker) and reads 0.899 at both 0.1 and 0.2
+  - index: 4
+    slug: bf16_llama_3_3_70b_fits_the_h200_card_but_not_vllms_default_budget_and_the_h200_adds_60_gb
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend to H200 (141 GB). Report the model-size-per-replica headroom gained and whether you can serve an unquantized Llama 3.3 70B.
+    zh: |
+      擴充到 H200（141 GB）。回報每副本模型大小多出來的餘裕，以及你能不能服務一個未量化的 Llama 3.3 70B。
+    verifies: >-
+      Llama 3.3 70B's config gives 70,553,706,496 params, 141.11 GB BF16 and 72.66 GB FP8; at vLLM's
+      0.92 default the budget is 78.68 GB on an 81,559 MiB H100 and 138.69 GB on a 143,771 MiB H200
+      (+60.01 GB), FP8 KV pools 6.02 GB / 18,380 tokens vs 66.04 GB / 201,532 at 327,680 B per token;
+      BF16 misses the H200 default by 2.41 GB, needs utilisation >= 0.936 and leaves 6,438 tokens at
+      0.95 and 20,240 at 0.98; the H200 is 150.75 GB = 140.4 GiB, so the exercise's literal 141 GB
+      would reject weights that fit with 9.64 GB spare; the H100 FP8 pool gives 574 tokens per
+      sequence at batch 32, below Use It's 620-token response
+  - index: 5
+    slug: tensorrt_llms_3_1x_lead_at_temperature_1_is_greedy_text_and_from_batch_128_it_loses_to_vllm
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark TensorRT-LLM speculative decoding on the same H100 hardware. Report where it wins vs vLLM.
+    zh: |
+      在同樣的 H100 硬體上，對 TensorRT-LLM 的推測解碼做基準測試。回報它在哪裡勝過 vLLM。
+    verifies: >-
+      through the lesson's scheduler (alignment 0.9, 4,000 tokens) TensorRT-LLM's greedy-only rule
+      gives 1.916/2.784/3.543/4.283 tok/call at k=1..4 vs vLLM's lossless rule 1.378 at k=4 (3.1x),
+      with the first emitted token 0.813 TV from the target against 0.007 for vLLM over 20,000 trials;
+      on an H100 FP8 70B roofline fixed k=4 vs vLLM's best k per batch is 4.28/4.28 to batch 32,
+      4.07/4.07 at 64, 2.04/2.21 at 128, 1.02/1.14 at 256 and 0.86/1.00 at 512; the lesson's rule is
+      0.736 TV at 4.756 tok/call; the doc's 'EAGLE-3 in vLLM 0.7' cites arXiv 2503, after v0.7.0
+      (2025-01-27)
