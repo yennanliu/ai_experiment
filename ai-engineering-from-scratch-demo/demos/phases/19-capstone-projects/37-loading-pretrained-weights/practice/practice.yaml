@@ -1,0 +1,80 @@
+lesson: 37-loading-pretrained-weights
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/37-loading-pretrained-weights/docs/en.md
+exercises:
+  - index: 1
+    slug: bf16_halves_the_model_and_still_generates_but_a_cast_then_copy_dtype_argument_is_a_no_op
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `dtype` argument to the loader that casts each tensor to a target dtype (`bfloat16`, `float16`, `float32`) during assignment. Confirm a `float32` model can be downcast to `bfloat16` and still generate.
+    zh: |
+      替載入器加上一個 `dtype` 參數，在賦值時把每個張量轉成目標 dtype（`bfloat16`、`float16`、`float32`）。確認一個 `float32` 模型可以降轉成 `bfloat16` 而仍然生成得了。
+    verifies: >-
+      casting the lesson replica to bfloat16/float16/float32 before load_safetensors gives loaded=52
+      missing=0 unexpected=0 shape_mismatch=0 each, every parameter in the target dtype, the head
+      tied, 3,682,560 bytes for bf16/fp16 vs 7,365,120 for fp32, and 32 in-vocab bf16 tokens from
+      finite logits; copy_ of a bf16 tensor into a float32 parameter leaves it float32 holding
+      0.333984375 for 1/3; the stub's min top-2 logit gap 0.0042 is below the bf16 logit error 0.0105
+      (fp16 0.0015), bf16 rounding <= 2^-8, entropy 5.51 of 5.55 nats
+  - index: 2
+    slug: a_6_layer_checkpoint_loads_into_a_4_layer_model_with_ok_true_and_a_2_layer_one_half_loads_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add an `expected_layers` argument that refuses to load a checkpoint whose `h.N` indices do not match the model's `num_layers`.
+    zh: |
+      加上一個 `expected_layers` 參數，拒絕載入那些 `h.N` 索引與模型 `num_layers` 對不上的檢查點。
+    verifies: >-
+      load_checked accepts only the 4-layer stub with expected_layers=4 (loaded=52) and refuses the
+      2-layer, 6-layer, gap (h.0,1,3,4) and wrong-argument cases with 0 parameters changed; unguarded,
+      the 6-layer file reports ok() True with unexpected=24, the gap file loads 40 with missing=12
+      unexpected=12, and the 2-layer file loads 28, lists 24 missing and changes 18 of 52 parameters
+  - index: 3
+    slug: with_lesson_35s_sampler_the_random_init_and_loaded_samples_share_14_of_16_tokens
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Plug the loader into the lesson 35 generation function and produce two side by side samples: one from random init, one from the loaded fixture.
+    zh: |
+      把載入器接進第 35 課的生成函式，產出兩份並排樣本：一份來自隨機初始化，一份來自載入的固定檔。
+    verifies: >-
+      lesson 35's GPTModel takes the stub with loaded=52 missing=0 unexpected=0 shape_mismatch=0 and
+      stays tied; lesson 35 generate(seed=0) gives 16-token samples that match at 14 of 16 positions
+      before and after the load (entropies 5.49/5.51 of 5.55 nats, TV < 0.25) and 14 of 16 against a
+      seed-1 init; the replica's init entropy is < 1e-20 and it repeats 17, a wte-only file (loaded=1
+      missing=51) still changes its greedy sample, and quick_generate ignores seed and equals top_k=1
+  - index: 4
+    slug: the_export_round_trips_bit_exactly_but_the_shape_check_misses_a_wrong_transpose_on_4_of_16_matrices
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add an export path: write the current model state into a fresh safetensors file using the pretrained naming convention. Round trip the loader and confirm the report has zero shape mismatches.
+    zh: |
+      加上一條匯出路徑：用那套預訓練命名慣例，把當前模型狀態寫進一個全新的 safetensors 檔案。讓載入器來回轉換一趟，並確認報告裡的形狀不符是零。
+    verifies: >-
+      export writes 52 tensors that reload as loaded=52 missing=0 unexpected=0 shape_mismatch=0 with
+      52/52 parameters bit-identical and the same greedy sample, and re-exporting a stub-loaded model
+      is byte-identical to the 7,369,512-byte stub; save_file(state_dict) raises RuntimeError and a
+      non-contiguous .t() raises ValueError; an untransposed export gives shape_mismatch=12 while the
+      4 square attn.c_proj stored flipped load with 0 mismatches and change the sample; the doc's
+      'transformer.'-prefixed name loads 0 of 52 with no exception
+  - index: 5
+    slug: the_llama_map_lands_all_15_mapped_tensors_but_ok_stays_false_and_a_gqa_checkpoint_is_refused
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Extend `NAME_MAP` to handle the LLaMA naming convention (no biases, RMSNorm, fused qkv layout) and re-run the loader on a stub LLaMA fixture you generate.
+    zh: |
+      擴充 `NAME_MAP` 以處理 LLaMA 的命名慣例（沒有偏置、RMSNorm、融合 qkv 佈局），並在一份你自己生成的 LLaMA 存根固定檔上重跑載入器。
+    verifies: >-
+      with llama_map swapped into the lesson's loader and q/k/v fused, a 2-layer multi-head LLaMA stub
+      gives loaded=15 missing=6 unexpected=2 shape_mismatch=0, qkv == cat(q, k, v), finite logits,
+      missing = pos_embed + 5 LayerNorm shifts, unexpected = 2 gate_proj; LayerNorm with the loaded
+      scale differs from RMSNorm by 0.5-2.0; a 1-KV-head stub is refused with shape_mismatch=2 at (96,
+      64) vs (192, 64); NAME_MAP does not exist and the loader iterates the file's keys

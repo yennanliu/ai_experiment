@@ -26,8 +26,9 @@ GROUP_MODULES = {
     # imports regex behind a try/except whose fallback silently drops non-ASCII.
     # phase 11's provider lessons name OpenAI and Anthropic by name, and checking a
     # request payload against the SDK that has to accept it needs the SDK present
+    # 19/37 imports safetensors and 19/43 imports h5py at module top: build inputs there
     "llm": {"openai", "anthropic", "torch", "transformers", "jax", "jaxlib", "optax",
-            "tiktoken", "regex"},
+            "tiktoken", "regex", "safetensors", "h5py"},
     # 11/16 builds a StateGraph with the lesson's own reducer and checkpointer; the
     # graph mechanics are what the exercises measure, so langgraph is a build input
     "agents": {"langgraph", "langchain_core", "langchain_anthropic"},
