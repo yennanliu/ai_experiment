@@ -1,0 +1,76 @@
+lesson: 47-checkpoint-save-resume
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/47-checkpoint-save-resume/docs/en.md
+exercises:
+  - index: 1
+    slug: by_group_one_shard_holds_95pct_of_the_parameters_and_meta_pt_still_outweighs_all_shards_3_to_1
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace round-robin sharding with sharding by parameter group (layers ending in `.weight` vs `.bias`). When is each layout preferable?
+    zh: |
+      把輪詢式分片換成依參數群組分片（結尾為 `.weight` 的層 vs `.bias`）。什麼時候哪種佈局比較好？
+    verifies: >-
+      round robin and .weight/.bias layouts both resume with max loss diff 0.0; by group each group
+      sits in 1 file vs 3 under round robin; shard numel 600/388/120 vs 1056/52; meta.pt is >2.5x all
+      shards under round robin (33,733 vs 10,895 B on torch 2.14) and >3x by group; the RNG state
+      pickles to >2x the model state_dict
+  - index: 2
+    slug: keeping_k_needs_k_plus_1_on_disk_and_a_kill_mid_save_leaves_a_tmp_no_pruner_deletes
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Extend the save loop to keep the last K checkpoints and prune older ones. What is the right K when the disk is small?
+    zh: |
+      擴充儲存迴路，只保留最近 K 個檢查點並修剪掉更舊的。當磁碟很小時，正確的 K 是多少？
+    verifies: >-
+      peak files 2/3/4 for K=1/2/3 at (K+1) x checkpoint size within 2%; K=2 keeps ckpt-0020/0024;
+      after 3 os._exit(9) kills between temp write and os.replace the kept ckpt-0004 resumes with diff
+      0.0, 3 full-size .tmp orphans remain (>2.9 checkpoints of bytes), a ckpt-*.pt glob sees only
+      ckpt-0004, and the lesson's code has no fsync
+  - index: 3
+    slug: a_20s_trigger_cuts_worst_case_lost_work_from_124s_to_32s_and_a_scrambled_rng_changes_nothing
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--ckpt-every-seconds` flag that triggers a save on a wallclock interval, not just step count.
+    zh: |
+      加上一個 `--ckpt-every-seconds` 旗標，依實際時間間隔而不只是步數觸發儲存。
+    verifies: >-
+      the lesson's parse_args exits 2 on --ckpt-every-seconds; on an injected clock (1 s steps, steps
+      11-14 at 30 s) every-8-steps saves at 8/16/24 with 124 s worst-case loss, every-20-s at 11-14
+      with 40 s, both at 8/11/12/13/14/22 with 32 s; every such checkpoint resumes with diff 0.0; with
+      restore_rng_state replaced by manual_seed(999) run_resume_demo still gives 0.0 at all 23
+      interrupt points
+  - index: 4
+    slug: the_scan_flags_4_of_4_corrupt_checkpoints_and_the_lessons_loaders_miss_a_flipped_weight
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a checksum verification path that runs at startup, scans every checkpoint in the directory, and reports which ones are corrupt.
+    zh: |
+      加上一條校驗和驗證路徑，在啟動時執行、掃描目錄裡的每一個檢查點，並回報哪些是壞的。
+    verifies: >-
+      the scan flags exactly the truncated file, the flipped-weight file, the flipped shard
+      (shard-001) and the torn re-save (shard-000) among 7 checkpoints; the lesson's loaders raise
+      OSError, load the flipped weight file as step 16, raise AssertionError on both sharded faults,
+      and under python -O load the flipped shard (exit 0, step 24)
+  - index: 5
+    slug: the_lessons_loader_accepts_any_ckpt_schema_and_a_renamed_field_fails_after_overwriting_the_weights
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement a `migrate_v1_to_v2` function that adds a new field to the payload and bumps the schema string. Make load tolerate both versions.
+    zh: |
+      實作一個 `migrate_v1_to_v2` 函式，往酬載裡加一個新欄位並把 schema 字串升上去。讓載入能容忍兩個版本。
+    verifies: >-
+      a v1 demo checkpoint loads via load_any, is rewritten as ckpt.v2 and resumes with diff 0.0, as
+      does the v2 file; a wrong batches_per_epoch raises ValueError under v2 while the v1 loader
+      silently diverges from step 15 by 0.4375; the lesson's load_checkpoint loads ckpt.v9, ckptX and
+      ckpt-shard.v1 (load_any rejects all 3), a ckpt.v3 with train_state raises KeyError after
+      changing the model's weights, and default torch.load raises UnpicklingError
