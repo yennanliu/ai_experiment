@@ -1,0 +1,76 @@
+lesson: 12-video-understanding-pipeline
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/12-video-understanding-pipeline/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lower_rated_captioner_retrieves_better_and_fake_embed_cannot_see_action_order
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap Gemini 2.5 Pro for Qwen3-VL-Max on the captioning pass. Report caption quality delta on a human-rated 50-scene sample.
+    zh: |
+      在下字幕那一階把 Gemini 2.5 Pro 換成 Qwen3-VL-Max。在一份 50 個場景的人工評分樣本上回報字幕品質的差值。
+    verifies: >-
+      two stand-in captioners (placeholder error rates) over 50 gold scenes rated by a 1-5 rubric and
+      two noisy raters: 4.17 vs 3.83, delta +0.34, bootstrap 95% CI [-0.02, 0.71], rater agreement
+      0.56, 89% of 200 fresh studies exclude 0; through the lesson's index hit@1 is 0.418 / 0.433 /
+      0.432 gold / 0.395 blank over 100 queries x 10 salts; 6/6 order-only caption errors embed
+      exactly like the gold caption
+  - index: 2
+    slug: pooling_the_three_vectors_raises_mrr_from_0_259_to_0_391_because_rrf_drowns_the_matched_stream
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reduce per-scene frame embedding to one pooled vector instead of multi-vector. Measure the retrieval regression.
+    zh: |
+      把逐場景的影格嵌入從多向量減成單一個池化向量。量測檢索的退化幅度。
+    verifies: >-
+      150 single-stream queries over 50 scenes x 10 salts: MRR RRF 0.259, pooled 0.391, max-cosine
+      0.608 at EMB_DIM 24; at EMB_DIM 256 RRF 0.220, pooled 0.801, and fixture scene 0 is RRF's top
+      hit for 21.0% of queries; the skill file hard-rejects pooling; on the lesson's 6 scenes the 4
+      demo queries hit 4/7/10/10 (RRF) and 5/6/10/10 (pooled) of 10
+  - index: 3
+    slug: verification_cuts_hallucinated_instances_58_to_69pct_but_cannot_fix_a_miss
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a "counting strict" mode: the synthesizer extracts each counted instance with a timestamp and the user clicks to verify. Measure whether user-verification reduces hallucination.
+    zh: |
+      建一個「嚴格計數」模式：合成器把每一個被計入的實例連同時間戳抽出來，讓使用者點開驗證。量測使用者驗證有沒有降低幻覺。
+    verifies: >-
+      400 counting questions, 3 synthesizer settings: hallucinated share 0.194/0.333/0.086 ->
+      0.073/0.140/0.027 after click-verification; exact count 0.330/0.142/0.345 -> 0.525/0.525/0.338;
+      the lesson grounds its counting demo query on 'the' (01:36-01:53, 26.7% of scene 2); the doc's
+      Use It window 00:12-00:58 lies outside its top scene 01:32-01:54
+  - index: 4
+    slug: gemini_2_5_pro_indexes_4_8_video_hours_per_dollar_and_caption_length_picks_between_molmo_2_and_qwen
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Benchmark ingest cost: hours-of-video-per-dollar across three VLM choices. Pick the sweet spot.
+    zh: |
+      對攝取成本做基準測試：在三種 VLM 選擇下的「每美元多少小時影片」。挑出那個甜蜜點。
+    verifies: >-
+      one 1280x720 keyframe per scene at 80 scenes/h: image tokens 516 / 880 / 1162; hours per dollar
+      at 60-token captions Gemini 2.5 Pro 4.8, qwen3-vl-plus 44.3, Molmo 2 8B 49.1; Qwen wins at 30
+      tokens, Molmo at 60 and 120, crossover 40.3; 72.7% of Gemini's cost is output with the 128-token
+      minimum thinking; native video 0.7 h/$; lesson SAMPLE cuts 85.7 and 90 scenes/h vs the doc's
+      60-80
+  - index: 5
+    slug: per_speaker_turns_answer_78pct_of_what_did_alice_say_queries_and_the_shipped_index_0
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add speaker-diarized transcript: run pyannote speaker diarization on the audio and embed per-speaker transcripts. Demonstrate "what did Alice say about X?" queries.
+    zh: |
+      加上帶說話人分離的逐字稿：對音訊跑 pyannote 說話人分離，並嵌入逐說話人的逐字稿。示範「Alice 關於 X 說了什麼？」這類查詢。
+    verifies: >-
+      12 'what did <name> say about <topic>?' queries x 20 seeds, IoU >= 0.5: per-speaker turns 0.779
+      at DER 0 (0.996 at EMB_DIM 256), 0.521 / 0.463 / 0.446 at pyannote community-1's 11.2 / 17.0 /
+      20.2% DER; the shipped scene index 0.0 with 22.5 s windows keyed on 'the'; at DER 0.202 45% of
+      runs break the name map and hold 49% of the misses
