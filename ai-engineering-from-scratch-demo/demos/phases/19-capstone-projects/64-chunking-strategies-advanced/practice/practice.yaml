@@ -1,0 +1,64 @@
+lesson: 64-chunking-strategies-advanced
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/64-chunking-strategies-advanced/docs/en.md
+exercises:
+  - index: 1
+    slug: token_windows_tie_fixed_windows_at_8_of_9_and_cut_0_words_where_fixed_cuts_9
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a sixth strategy: token-window using `tiktoken` instead of character counts. Compare against fixed-window on the same fixture.
+    zh: |
+      加上第六種策略：用 `tiktoken` 而不是字元數的詞元窗口。在同一份固定語料上與固定窗口比較。
+    verifies: >-
+      a cl100k_base token window at the fixture's matched 75/15-token budget (2,189 chars, 413 tokens)
+      ties the lesson's 400/80-char fixed window: 8 chunks each, hits@1,3,5 8/9, 9/9, 9/9; fixed cuts
+      9 boundaries mid-word, the token window 0; no document gets more than 3 chunks, so k=3 is the
+      whole document; over 18 matched budgets 40-125 tokens the token window wins 2, fixed 5, 11 tie,
+      each 7-9 hits
+  - index: 2
+    slug: structural_keeps_3_of_3_only_as_one_whole_document_chunk_and_one_comment_per_block_drops_it_to_2
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Inject a 30 percent fraction of code blocks into the prose fixture. Re-run the table. Explain why every strategy except structural markdown loses recall.
+    zh: |
+      往散文固定語料裡注入 30% 比例的程式碼區塊。重跑那張表。解釋為什麼除了結構化 markdown 之外，每一種策略的召回率都掉了。
+    verifies: >-
+      with unrelated fenced code at 30.3% of the prose fixture's characters, prose hits@1 go fixed
+      2->1, sentence 2->1, recursive 3->1, semantic 2->1 while structural keeps 3/3 as one 1,271-char
+      whole-document chunk; all 6 top-1 misses of fixed/sentence/recursive are won by a code-bearing
+      chunk; one '#' comment per block (32.7%) makes structural drop the first 290 chars and score 2/3
+      at every k; code documenting the prose (31.8%) gives fixed/sentence/recursive 3/3 and structural
+      1/3 at k=1
+  - index: 3
+    slug: no_stand_in_moves_semantic_recall_by_more_than_1_of_9_and_a_wider_hash_lifts_the_rest_to_9_of_9
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Replace the deterministic embedding with the one from your project's real provider. Measure the semantic-clustering recall delta. Report whether the spread between strategies widens or narrows.
+    zh: |
+      把那個確定性嵌入換成你專案裡真實供應商的那個。量測語意分群的召回率差值。回報各策略之間的差距是變寬還是變窄。
+    verifies: >-
+      five offline stand-ins swapped in for mock_embed (hash at 4,096 dims, exact bag of words,
+      TF-IDF, two 8-dim LSAs): semantic hits@1 6 -> 7, 7, 6, 7, 5 of 9; the k=1 spread 3 -> 2, 2, 3,
+      2, 4, and 0-1 at k=3/5; at 4,096 dims fixed and sentence reach 9/9 like the exact bag of words
+      (195 words in 96 dims collide); semantic chunk count 20 -> 23, 23, 23, 17, 15, i.e. one chunk
+      per sentence of 23
+  - index: 4
+    slug: the_centroid_sentence_summary_costs_4_of_45_top_1_hits_because_it_repeats_words_the_chunk_has
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `summary` field per chunk: a one-sentence centroid description. Re-run the eval with the summary appended to the chunk body. Measure the recall lift.
+    zh: |
+      替每個片段加上一個 `summary` 欄位：一句話的質心描述。把摘要附在片段本體上再重跑那份評估。量測召回率的提升。
+    verifies: >-
+      appending each chunk's sentence nearest its mock_embed centroid lowers hits@1 from 39 to 35 of
+      45 (fixed 8->8, sentence 7->6, recursive 9->8, semantic 6->5, structural 9->8), every arm 9/9 at
+      k=3/5; 22 of 50 chunks (17 of 20 semantic) embed identically; a 'This section covers a, b, c.'
+      keyword summary gives 40 of 45 (sentence 7->8)
