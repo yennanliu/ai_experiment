@@ -1,0 +1,76 @@
+lesson: 10-multi-agent-software-team
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/10-multi-agent-software-team/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lessons_reviewer_false_approves_13pct_without_reading_the_diff_and_an_unreachable_code_check_reaches_0
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Inject an obvious bug into a diff mid-run (extra `return None` before the main body). Measure the reviewer's false-approve rate. Tune the reviewer prompt until false-approval is under 5%.
+    zh: |
+      在執行中途往某份差異裡注入一個明顯的臭蟲（在主體之前多加一行 `return None`）。量測審查者的誤核可率。調整審查者提示詞，直到誤核可率低於 5%。
+    verifies: >-
+      on 200 seeded run_team runs with a `return None` injected after one subtask's docstring, the
+      lesson's reviewer false-approves 26 (13.0%); prompt v1 (reject any added `return None`) 0 but
+      rejects 200/200 clean runs, v2 (reject a statement after a return in the same block) 0 and
+      approves 200/200 clean runs; unlabelled injections are approved 200/200 and pass tests 193/200;
+      130 of 174 rejections go to the wrong coder
+  - index: 2
+    slug: two_coders_are_1_22x_slower_at_the_same_pass_rate_and_n_coders_0_passes_most_often
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Reduce to two coders (architect + coder + reviewer + tester, coder runs two subtasks sequentially). Compare wall-clock and pass rate.
+    zh: |
+      減少到兩位程式設計師（架構師 + 程式設計師 + 審查者 + 測試者，程式設計師依序跑兩項子任務）。比較實際時間與通過率。
+    verifies: >-
+      over 1,000 seeded runs the critical path in generated tokens is 21,101 for 4 coders, 25,805 for
+      2 coders running 2 subtasks each (1.22x) and 34,973 for 1, all at 935/1000 pass because
+      reviewer_check and tester_run take only (diffs, rng); run_team(n_coders=2) codes 2/4 subtasks
+      and passes 936, n_coders=0 codes none and passes 973; the single agent's 21,051 serial tokens
+      tie the 4-coder team
+  - index: 3
+    slug: a_single_writer_rule_recuts_183_of_256_plans_and_nothing_in_the_lesson_checks_file_overlap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the merge coordinator with a single-writer constraint (subtasks touch disjoint file sets). Measure the planning burden on the architect.
+    zh: |
+      把合併協調者換成一項單一寫入者約束（各子任務只動互不重疊的檔案集）。量測這對架構師造成的規劃負擔。
+    verifies: >-
+      over the 256 plans where each of the lesson's 4 subtasks also edits one of 3 shared files or
+      none, 183 need re-cutting; merging leaves lanes {1: 3, 2: 54, 3: 126, 4: 73} and a 1.681x coder
+      stage (worst 3.57x), extracting a fifth shared-edits subtask 1.456x; the lesson's plan gives 4
+      lanes and an overlapping plan yields 200/200 identical run_team results
+  - index: 4
+    slug: the_swap_leaves_false_approval_at_13_2pct_because_no_model_is_called_and_costs_2_24x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap reviewer from GPT-5.4 to Claude Opus 4.7. Measure false-approval rate and token cost delta.
+    zh: |
+      把審查者從 GPT-5.4 換成 Claude Opus 4.7。量測誤核可率與詞元成本的差值。
+    verifies: >-
+      on 1,000 seeded runs false approval is 41/310 (13.2%) for either reviewer since main.py names no
+      model and reviewer tokens are only 1,800 or 3,300; reviewer cost per run is $0.04014 on GPT-5.4
+      ($2.50/$15) and $0.09003 on Opus 4.7 ($5/$25 with the 1.3x tokenizer), 2.24x, 1.73x before the
+      tokenizer; the tokenizer adds 1,511 tokens, 4.3% of a 34,973-token run
+  - index: 5
+    slug: a_documenter_reading_the_board_costs_as_much_as_the_run_for_entries_wrong_1_time_in_4
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fifth role: documenter (Haiku 4.5). After review, it produces a changelog entry. Measure whether documentation quality justifies the extra token spend.
+    zh: |
+      加上第五個角色：文件撰寫者（Haiku 4.5）。審查之後，它產出一則變更紀錄。量測文件品質對不對得起那筆額外的詞元花費。
+    verifies: >-
+      a documenter at the approved message over 1,000 seeded runs writes 744/1000 true entries (65 for
+      changes that fail tests, 198 revisions credited to parser); reading the transcript costs 33,786
+      tokens ($0.03389 on Haiku 4.5) against a 34,973-token run, reading payloads only 103 tokens
+      ($0.00021) for the same entry; MsgKind has no changelog kind
