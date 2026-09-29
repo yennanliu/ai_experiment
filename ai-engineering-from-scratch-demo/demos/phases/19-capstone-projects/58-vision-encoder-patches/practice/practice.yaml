@@ -1,0 +1,79 @@
+lesson: 58-vision-encoder-patches
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/58-vision-encoder-patches/docs/en.md
+exercises:
+  - index: 1
+    slug: sinusoidal_drops_to_27_47pct_at_the_new_resolution_and_the_interpolated_learned_table_keeps_100pct
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Replace the sinusoidal position with a learned `nn.Parameter` and compare the first-epoch loss on a tiny synthetic classification task. Learned positions win at fixed resolution; sinusoidal wins when you change resolution after training.
+    zh: |
+      把那個正弦位置換成一個學出來的 `nn.Parameter`，並在一項極小的合成分類任務上比較第一個訓練週期的損失。在固定解析度下學出來的位置勝出；當你在訓練後換解析度時，正弦勝出。
+    verifies: >-
+      on a 4-class quadrant task (32 px, patch 8, hidden 32, one encoder layer, 4,096 images, seeds
+      0-4) mean epoch-1 loss is 0.605 for a unit-init learned table, 1.394 sinusoidal and 1.399 for a
+      0.02-init learned table (both within 0.03 of ln 4); after 3 epochs all reach 100% at 32 px, and
+      at 64 px rebuilt sinusoidal falls to 27.0-47.3% while bicubic-interpolated learned keeps 100%
+      and bicubic-interpolated sinusoidal also gets 100%; the doc says the sinusoidal table
+      'interpolates cleanly'
+  - index: 2
+    slug: nn_unfold_plus_linear_matches_the_conv2d_to_1_2e_6_and_a_channels_last_weight_flatten_is_off_by_0_63
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Swap the `Conv2d` for an explicit `nn.Unfold` plus `nn.Linear` and assert the outputs match to within float tolerance. Same math, two ways to spell it.
+    zh: |
+      把 `Conv2d` 換成一個明確的 `nn.Unfold` 加 `nn.Linear`，並斷言兩者輸出在浮點容差之內相符。同樣的數學，兩種寫法。
+    verifies: >-
+      at the ViT-B/16 default nn.Unfold + nn.Linear with the Conv2d weights reshaped (c, ph, pw)
+      matches PatchEmbed to 1.19e-6 in float32 (not bitwise), 9.5e-7 on a batch of 4 and 1.8e-15 in
+      float64, both 590,592 parameters; the lesson's unfold_then_linear equals nn.Unfold bitwise; a
+      (ph, pw, c) flatten is off by 0.625; a 230 px input gives 196 patches from both and PatchEmbed
+      refuses it
+  - index: 3
+    slug: sinusoidal_2d_already_handles_a_7x28_grid_and_the_config_and_patchembed_are_what_reject_32x16_patches
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Add support for non-square patch sizes (e.g. 32x16 for wide-aspect inputs) and verify the position table handles non-square grids.
+    zh: |
+      加上非正方形圖塊大小的支援（例如給寬幅輸入用的 32x16），並驗證那份位置表處理得了非正方形網格。
+    verifies: >-
+      a 224x448 input with a (32, 16) Conv2d patched into the lesson's VisionFrontEnd returns (1, 197,
+      768); sinusoidal_2d(7, 28, 768) has constant row/column halves (0.0 drift), 196 distinct rows
+      (nearest 3.23 apart), patch (3, 20) lands in token 105, Conv2d vs nn.Unfold under 5e-6;
+      FrontEndConfig, PatchEmbed.forward and unfold_then_linear raise TypeError/ValueError/TypeError;
+      every position norm is sqrt(384) = 19.596; the 7x28 table is the first 7 rows of the 28x28 one
+  - index: 4
+    slug: the_patch_step_is_0_66pct_of_vit_b16_flops_but_costs_1_94x_a_layers_attention_score_matmuls
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Profile the patch step at batch sizes 1, 8, 64. The patch projection is rarely the bottleneck; the attention layers downstream dominate.
+    zh: |
+      在批次大小 1、8、64 上替圖塊那一步做效能剖析。圖塊投影很少是瓶頸；下游的注意力層才是主導。
+    verifies: >-
+      the patch step is 231,211,008 FLOPs per image (FlopCounterMode) vs 2,907,909,120 per pre-LN
+      encoder layer, 0.66% of patch + 12 layers, and under 25% of wall clock at batch 1, 8 and 64; per
+      layer the MLP is 64% and the two attention matmuls 4.1%, so the patch step is 1.94x them; the
+      Conv2d at batch 64 is over 2x slower than unfold_then_linear on one CPU thread (about 11x
+      measured)
+  - index: 5
+    slug: the_cls_output_is_the_same_vector_for_every_image_so_a_linear_probe_on_it_scores_25pct
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Train the front end as a frozen feature extractor on a 4-class synthetic shape dataset (circles, squares, triangles, stars). The CLS token output should linearly separate.
+    zh: |
+      在一份四類別的合成形狀資料集（圓形、方形、三角形、星形）上，把這個前端當成凍結的特徵抽取器來訓練。CLS 詞元的輸出應該線性可分。
+    verifies: >-
+      on 400/200 PIL-drawn circle/square/triangle/star images the frozen ViT-B/16 front end's CLS row
+      differs by 0.0 across all 600 and equals cls_token; a logistic-regression probe on it scores
+      25.0% train and test; mean-pooled patch tokens give 44.5%/42.5% and the raw mean patch
+      48.0%/42.0%; a CE backward from a CLS head leaves the patch Conv2d gradient exactly 0
