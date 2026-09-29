@@ -1,0 +1,82 @@
+lesson: 17-personal-ai-tutor
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/17-personal-ai-tutor/docs/en.md
+exercises:
+  - index: 1
+    slug: adaptive_wins_by_1_69_mastery_points_and_a_learner_who_never_learns_scores_9_51
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the efficacy study with and without the adaptive learner model (random concept order). Report the delta. Expect adaptive to win, but the size is the interesting number.
+    zh: |
+      在有與沒有自適應學習者模型（概念順序隨機）的情況下各跑一次成效研究。回報差值。預期自適應會贏，但那個幅度才是有趣的數字。
+    verifies: >-
+      main()'s protocol (ability seed 29, streams 100+i, 60 turns): mastery sums adaptive 9.81,
+      round-robin 8.45, random order 8.12; adaptive - random +1.69 (paired 95% CI +0.68..+2.71),
+      expected post-test 74.6% vs 69.4% from a 52.3% pre-test; 7/10 adaptive learners stop early (47.7
+      turns), 2/10 do better on round-robin; 200 cohorts +1.29 sd 0.39, range +0.09..+2.21, 0 losses.
+      A learner at mastery 0.2 answers 52.5-57.4% right vs p_guess 0.15, two right = 0.927, a
+      never-learning 55% learner scores 9.51; bkt_update(0.62, correct) = 0.918 vs the doc's 0.77
+      (needs prior 0.32); celebrate fires on 55/90,237 turns
+  - index: 2
+    slug: the_preferred_modality_finishes_7_8_turns_sooner_and_a_10pct_channel_miss_rate_erases_it
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a multimodal probe: the same concept question delivered as text, voice, and photo. Measure whether learners converge faster with the modality they prefer.
+    zh: |
+      加上一項多模態探測：同一個概念問題分別以文字、語音與照片呈現。量測學習者是否在他們偏好的模態下收斂得更快。
+    verifies: >-
+      reference run_adaptive with an assumed +0.3-logit preference: preferred modality converges 7.8
+      turns sooner (sd 2.4, 100/100 cohorts of 10); with 10% voice / 5% photo misreads the gain by
+      preference is text 15.7, photo 9.2, voice 2.0; over 300 voice-preferrers the gap goes -7.9 ->
+      +0.2 at a 10% miss rate; with no preference, misreads alone give text -7.2 / voice +7.1; a lost
+      right answer at 0.648 gives 0.277 instead of 0.927; the 10 learners split 4/3/3
+  - index: 3
+    slug: the_learner_record_has_no_timestamp_and_the_web_half_masters_a_lesson_on_one_right_answer
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a parent dashboard: topics practiced, mastery trajectories, upcoming concepts, safety events (any guardrail hits). COPPA-aligned.
+    zh: |
+      建一個家長儀表板：練習過的主題、精熟度軌跡、即將學到的概念、安全事件（任何護欄觸發）。符合 COPPA。
+    verifies: >-
+      week-1 dashboard for the first study learner: 30 turns over 8 topics, next and upcoming
+      distributive_property, replayed trajectories end at stored mastery, 6 guardrail hits on 3 days
+      with 0 raw messages shown, unverified parent refused, delete leaves 0, 1-year purge keeps
+      30/10/0 turns at day 365/368/370; LearnerState has only history, learner_id, mastery;
+      mastery_sum grows the record 8 -> 11 entries; the TS store scores 0.7 = MASTERY_THRESHOLD after
+      one right answer vs 0.927 after two in Python
+  - index: 4
+    slug: an_english_filter_catches_1_of_8_spanish_messages_and_the_lesson_ships_no_guard_to_measure
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a language-switch mode: the tutor accepts Spanish input and teaches in Spanish. Measure X-Guard coverage.
+    zh: |
+      加上一種語言切換模式：家教接受西班牙文輸入並以西班牙文教學。量測 X-Guard 的涵蓋率。
+    verifies: >-
+      Spanish wording for all 4 socratic_policy actions, 0 flagged; language detected 18/18; Spanish
+      signal reader 6/6 (English-only 2/6); translate-then-judge (X-Guard shape) catches 8/8 English,
+      Spanish and code-switched with 0/4 false alarms per language; the English filter alone 8/1/5 of
+      8; 0/4 held-out inflections through the word-level translator; 0 guard/safety/language lines in
+      code/, X-Guard named once and Llama Guard 4 five times in the doc
+  - index: 5
+    slug: a_hash_deduped_voice_memory_leaks_on_4_of_4_attacks_and_the_web_half_shares_one_store
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Stress the memory privacy: verify that learner A cannot see learner B's data even through a voice-clip re-ingest attack. Log the attempted access and alert.
+    zh: |
+      對記憶隱私施壓：驗證學習者 A 就算透過語音片段重新攝取的攻擊，也看不到學習者 B 的資料。記錄那次嘗試存取並發警報。
+    verifies: >-
+      on learners from reference run_adaptive, the session-scoped store shows A none of B's data on
+      4/4 re-ingest attacks, logs and alerts all 4, 0 alerts on 2 benign re-ingests, 0 of B's clips
+      copied into A; a shared hash-deduped store with identity from the clip leaks B's 4 mistakes on
+      4/4; the TS routes /lesson/next and /lesson/:id/submit, 0 'learner' mentions, one MasteryStore;
+      Python LearnerState isolated
