@@ -46,6 +46,7 @@ llm = [
     { name = "safetensors" },
     { name = "tiktoken" },
     { name = "torch" },
+    { name = "zstandard" },
 ]
 math = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -86,6 +87,7 @@ requires-dist = [
     { name = "torch", marker = "extra == 'llm'", specifier = ">=2.2" },
     { name = "torch", marker = "extra == 'vision'", specifier = ">=2.2" },
     { name = "torchvision", marker = "extra == 'vision'", specifier = ">=0.17" },
+    { name = "zstandard", marker = "extra == 'llm'", specifier = ">=0.22" },
 ]
 provides-extras = ["math", "vision", "audio", "llm", "agents", "infra", "dev"]
 
