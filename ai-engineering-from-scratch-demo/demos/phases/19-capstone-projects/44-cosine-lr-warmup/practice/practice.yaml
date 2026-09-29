@@ -1,0 +1,81 @@
+lesson: 44-cosine-lr-warmup
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/44-cosine-lr-warmup/docs/en.md
+exercises:
+  - index: 1
+    slug: cosine_ends_lower_at_both_peaks_and_inverse_sqrt_was_already_in_main_py
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add an inverse-square-root variant of the schedule and compare it on a 200-step toy training run. Which curve produces the lower final loss?
+    zh: |
+      加上這份排程的「反平方根」變體，並在一次 200 步的玩具訓練上比較。哪一條曲線產出較低的最終損失？
+    verifies: >-
+      on the lesson's toy model, 200 TrainState steps, warmup 20, lr_min = lr_max/100: final loss
+      cosine 0.0956 vs inverse-sqrt 0.1062 at lr_max 1e-3, and about 5e-10 vs 1e-6 at 1e-2 (both
+      memorise); InverseSqrtWarmup already ships in main.py and its tests, has no total_steps or
+      lr_min, and sits at 31.7% of peak at step 199 against cosine's 1.0%; logs are bit-identical for
+      steps 0-20, and at 1e-2 inverse-sqrt leads on 66/200 mid-run steps (26-145), at 1e-3 on none
+  - index: 2
+    slug: a_restart_helps_the_undertrained_run_only_by_adding_27pct_more_lr_and_hurts_the_memorised_one
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--restart` flag that adds a second warmup at `total_steps / 2`. Defend whether warm restarts improve or hurt on the toy run.
+    zh: |
+      加上一個 `--restart` 旗標，在 `total_steps / 2` 處再加一次暖身。針對「暖重啟在這次玩具訓練上是有幫助還是有害」提出辯護。
+    verifies: >-
+      --restart starts a fresh CosineWithWarmup(20, 100) cycle at step 100: final loss 0.0956 ->
+      0.0233 at lr_max 1e-3, 5.2e-10 -> 9.9e-10 at 1e-2; the restart adds 27.3% summed LR (100.9 ->
+      128.4 x lr_max), an area-matched cosine reaches 0.0273 (95% of the gain) and area-preserving
+      SGDR only 0.0915; the second warmup drops the LR from 5.99e-3 to 0 at step 100, and SGDR at 1e-2
+      lifts the loss 46% by step 110
+  - index: 3
+    slug: the_bound_as_worded_fails_the_demo_by_1_ulp_and_any_warmup_over_39pct_breaks_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a unit test that the schedule is continuous: for every step in `[0, total_steps]` the difference `|lr(step+1) - lr(step)|` is bounded by `lr_max / warmup_steps`.
+    zh: |
+      加上一項單元測試，檢驗排程是連續的：對 `[0, total_steps]` 內的每一步，差值 `|lr(step+1) - lr(step)|` 都被 `lr_max / warmup_steps` 界住。
+    verifies: >-
+      a unittest with 1e-12 relative tolerance passes on the demo (4/20), test-suite (10/100) and
+      200-step configs, worst step exactly lr_max/warmup inside the ramp; with no tolerance it fails
+      all three by 1, 6 and 4 ulps and 76,059 of 79,600 swept schedules; with tolerance 47,637 still
+      fail, all in the cosine region, matching the closed form warmup > total/(1 + pi/2 (1 -
+      lr_min/lr_max)) (38.9% for lr_min 0; first failure warmup 78 of 200) which predicts 47,653 and
+      misses none; warmup 0 divides by zero
+  - index: 4
+    slug: lambdalr_reproduces_the_run_but_around_trainstates_own_optimizer_it_trains_at_lr_0
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Wire the schedule into a `torch.optim.lr_scheduler.LambdaLR` so it composes with framework code. The lesson uses a plain step function; what does the wrapper change?
+    zh: |
+      把排程接進一個 `torch.optim.lr_scheduler.LambdaLR`，好讓它與框架程式碼組合。這一課用的是一個純粹的 step 函數；那層包裝改變了什麼？
+    verifies: >-
+      LambdaLR(lr(k)/lr_max) on AdamW built at lr_max, stepped after optimizer.step, applies the same
+      LR on 18/20 demo steps and 1 ulp off on 2, with 20/20 identical losses and identical weights;
+      state_dict carries last_epoch 20 and lr_lambdas [None]; wrapped around TrainState's optimizer
+      (built at lr(0) = 0) base_lrs is [0.0] and the loss never moves; the lesson's set-then-step
+      order becomes a scheduler-before-optimizer warning, first LR 2.5e-3, peak at step 3, final loss
+      0.1768 vs 0.1857; TrainState has no state_dict
+  - index: 5
+    slug: the_text_plot_is_the_ci_default_but_hides_the_floor_and_misses_2_of_18_misconfigurations
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--plot-png` flag that writes a real plot via `matplotlib`. Defend whether the lesson's text plot or the PNG is the better default for CI runs.
+    zh: |
+      加上一個 `--plot-png` 旗標，透過 `matplotlib` 寫出一張真的圖。針對「對 CI 執行而言，這一課的文字圖與 PNG 哪一個是更好的預設」提出辯護。
+    verifies: >-
+      matplotlib is not importable, so --plot-png writes a stdlib PNG (valid signature and CRCs,
+      21x100 for the demo, 21 ink pixels, byte-stable, smaller than the 1,007-byte text plot at 200
+      steps); the text plot's axis bottoms at 0.000000, renders lr_min 0 like 1e-4 at the demo's 40x10
+      and warmup 19 like 20 at 2,000 steps, missing 2 of 18 misconfigurations; the PNG and
+      write_schedule_csv differ on all 18
