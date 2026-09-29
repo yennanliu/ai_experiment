@@ -1,0 +1,73 @@
+lesson: 60-projection-layer-modality-align
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/60-projection-layer-modality-align/docs/en.md
+exercises:
+  - index: 1
+    slug: mean_and_cls_pooling_both_end_at_0_832_because_all_32_images_pool_to_the_same_vector
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Replace CLS pooling with mean pooling over the 196 patch tokens and compare final loss after 200 steps. Mean pooling usually trains faster on synthetic data; CLS is more sample-efficient on natural images.
+    zh: |
+      把 CLS 池化換成對那 196 個圖塊詞元的平均池化，並比較 200 步之後的最終損失。在合成資料上，平均池化通常訓練得比較快；在自然影像上，CLS 的樣本效率比較高。
+    verifies: >-
+      at the shipped seed-0 200-step run, CLS vs mean pooling: step-199 loss 0.7984 vs 0.7990,
+      last-32-step mean 0.8320 vs 0.8322, all-pairs loss 0.8133 vs 0.8133, first pass 1.005 vs 1.001;
+      the 32 pooled vectors have pairwise cosine >= 0.99996 under both, the best constant output
+      scores 0.8130, and shuffled captions give 0.8321
+  - index: 2
+    slug: under_adam_a_fixed_tau_from_0_01_to_100_trains_the_same_projector_and_a_learned_tau_only_falls
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Add a learned scalar temperature to the cosine loss (`cos / tau`) and observe what happens when `tau` is too small (gradient noise) or too large (loss plateaus high).
+    zh: |
+      替餘弦損失加上一個學出來的純量溫度（`cos / tau`），並觀察當 `tau` 太小（梯度雜訊）或太大（損失高位停滯）時會發生什麼。
+    verifies: >-
+      with loss 1 - cos/tau, fixed tau 0.01, 1 and 100 reach the same last-pass cosine 0.1680 (spread
+      < 1e-4) while the step-199 loss reads -19.16, 0.798, 0.998; a learned log-tau falls 1.000 ->
+      0.949 (200 steps) -> 0.833 (600), never rising after step 50, and the last-pass loss drops 0.824
+      -> 0.791 while cosine moves 0.168 -> 0.175
+  - index: 3
+    slug: a_single_linear_layer_matches_the_mlp_within_0_001_and_both_emit_one_constant_direction
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Swap the two-layer MLP for a single linear layer and quantify the loss gap. The non-linearity matters more on natural image features and less on synthetic ones.
+    zh: |
+      把那個兩層 MLP 換成單一個線性層，並量化那個損失差距。在自然影像特徵上那個非線性比較要緊，在合成特徵上比較不要緊。
+    verifies: >-
+      MLP vs nn.Linear(768, 512): step-199 loss 0.7984 vs 0.7978, last-pass 0.8320 vs 0.8318,
+      all-pairs 0.8133 vs 0.8133 (every gap < 0.001) with 1,312,256 vs 393,728 params; both heads' 32
+      outputs have pairwise cosine >= 0.9999 and sit within 0.0005 of the 0.8130 constant-output floor
+  - index: 4
+    slug: l2_cuts_the_output_norm_3x_leaves_cosine_at_0_186_and_shrinks_used_and_unused_directions_alike
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Add a small L2 penalty on the projector weights and watch how it interacts with cosine alignment (cosine is scale-invariant, so the penalty mostly shrinks unused directions).
+    zh: |
+      替投影器權重加上一個小小的 L2 懲罰，並看它怎麼與餘弦對齊互動（餘弦對尺度不變，所以那個懲罰大多是把沒用到的方向縮掉）。
+    verifies: >-
+      lam 0, 1e-4, 1e-3, 1e-2 on the projector weights: all-pairs cosine 0.1867, 0.1867, 0.1867,
+      0.1862 while embedding norm goes 51.2 -> 43.9 -> 15.5 (lam 0, 1e-3, 1e-2); fc1 keeps x0.70 /
+      x0.61 of its norm in the used / unused input span at 1e-3 and x0.26 / x0.19 at 1e-2; the unused
+      span holds 96% of fc1's init norm^2 and moves x1.002 with no penalty
+  - index: 5
+    slug: the_reloaded_projector_is_exact_but_needs_the_seed_0_encoder_train_never_saves
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Persist projector weights, then reload and run inference without the vision encoder backward pass to verify that only the projector is needed at deploy time.
+    zh: |
+      把投影器權重持久化，然後重新載入並在不做視覺編碼器反向傳遞的情況下跑推論，以驗證部署時只需要那個投影器。
+    verifies: >-
+      a 5.25 MB state_dict (4 tensors, 1,312,256 params) reloads with max abs diff 0.0 and cosine
+      0.1867 under inference_mode, with no encoder .grad; behind a seed-1 encoder the same head scores
+      -0.045 and on zero features 0.040; train() builds a 19,501,056-param encoder where the doc says
+      86M
