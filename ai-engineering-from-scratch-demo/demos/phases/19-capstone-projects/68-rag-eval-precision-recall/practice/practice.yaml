@@ -1,0 +1,75 @@
+lesson: 68-rag-eval-precision-recall
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/68-rag-eval-precision-recall/docs/en.md
+exercises:
+  - index: 1
+    slug: hit_rate_parts_from_recall_only_on_the_one_two_gold_query_and_the_reranker_returns_hybrids_lists_on_4_of_4
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fifth retrieval metric: hit-rate@k. Compare it against recall@k. Explain when they differ.
+    zh: |
+      加上第五項檢索指標：hit-rate@k。把它與 recall@k 比較。解釋它們什麼時候會不同。
+    verifies: >-
+      (hit-rate, recall)@1 is (0.5, 0.375) baseline and (1.0, 0.875) for hybrid and hybrid+rerank, 1.0
+      for both at k = 3 and 5; they differ only on q1, the one qrel with 2 gold docs; over 15,000
+      exhaustive cases 9,000 equal, 6,000 hit above recall, 0 below, 0 above with one gold doc;
+      hybrid+rerank returns hybrid's lists on 4/4 queries so MRR is 1.0 for both, against the doc's
+      'rerank row beats hybrid on MRR'
+  - index: 2
+    slug: binary_faithfulness_passes_7_of_8_one_fact_edits_and_every_fixture_claim_is_verbatim_context
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a graded faithfulness: 0 (unsupported), 1 (partially supported), 2 (fully supported). Update the metric accordingly.
+    zh: |
+      實作分級忠實度：0（沒有支持）、1（部分支持）、2（完全支持）。據此更新那項指標。
+    verifies: >-
+      graded faithfulness (mean 0/1/2 grade over 2) takes q1's answer with one edited claim from
+      binary 1.0 to 0.875; the 8 one-fact edits grade 1,1,1,1,0,1,1,1 while MockJudge passes 7 of 8;
+      all 33 fixture claims (7, 13, 13) are verbatim context so binary = graded = 1.0 on all 12
+      answers; a false recombination of context words grades 2
+  - index: 3
+    slug: a_real_cross_encoder_judge_disagrees_on_1_of_45_calls_and_accepts_the_same_7_of_8_wrong_facts
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the mock judge with a real model call. Measure the disagreement between the mock and the real judge on the fixture.
+    zh: |
+      把那個模擬裁判換成一次真實的模型呼叫。在固定資料上量測模擬裁判與真裁判之間的不一致。
+    verifies: >-
+      cross-encoder/ms-marco-MiniLM-L-6-v2 from the local HF cache (logit > 0), passed to
+      evaluate_pipeline, disagrees with MockJudge on 1 of 45 calls: baseline q4 relevance (logit
+      -3.799), which moves baseline answer relevance 0.75 -> 0.5; all 33 faithfulness calls agree
+      (logits 8.2 to 10.3); on 8 one-fact edits both judges accept the same 7
+  - index: 4
+    slug: the_lessons_4_qrels_are_all_paraphrased_and_hybrids_whole_gain_lives_in_that_slice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a query-class slice ("literal", "paraphrased", "multi-topic"). Report per-slice metrics.
+    zh: |
+      加上一個查詢類別切片（「字面」、「換句話說」、「多主題」）。回報逐切片的指標。
+    verifies: >-
+      per-slice (recall@1, MRR, nDCG@3, relevance): literal baseline (1, 1, 1, 1) vs hybrid (1, 1,
+      0.996, 1); paraphrased (0.375, 0.75, 0.724, 0.75) vs (0.875, 1, 0.882, 1); multi-topic (0.5, 1,
+      0.99, 1) for all three; each of q1-q4 has a query word no gold doc contains; pooled 12-query
+      recall@1 0.625 vs 0.792; the reranker reorders 1 list of 12 and no metric
+  - index: 5
+    slug: faithfulness_is_constant_on_the_fixture_so_r_is_undefined_and_a_verbosity_sweep_gives_minus_0_872
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an "answer length" metric and correlate it with faithfulness. Plot the curve.
+    zh: |
+      加上一項「答案長度」指標，並把它與忠實度做相關分析。把曲線畫出來。
+    verifies: >-
+      the 12 fixture answers run 15-37 words at faithfulness 1.0, so Pearson is undefined; a verbosity
+      sweep of 72 hybrid answers gives r = -0.872 with a monotone curve 1.0 up to 32 words down to
+      0.208 at 197; past the retrieved sentences (5, 3, 3, 3) the supported count stays fixed (q1 at
+      6, one from unretrieved d2)
