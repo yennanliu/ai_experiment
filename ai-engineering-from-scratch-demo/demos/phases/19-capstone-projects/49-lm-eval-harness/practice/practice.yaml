@@ -1,0 +1,79 @@
+lesson: 49-lm-eval-harness
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/49-lm-eval-harness/docs/en.md
+exercises:
+  - index: 1
+    slug: the_toy_adapter_echoes_a_sixth_task_for_0_843_and_the_runner_accepts_a_task_score_of_1_5
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a sixth task with a custom metric you write from scratch (BLEU-like overlap, BLEURT-like reference scoring, anything with a clear contract).
+    zh: |
+      加上第六項任務，配一個你從零寫起的自訂指標（類 BLEU 的重疊、類 BLEURT 的參考評分，任何契約清楚的東西都行）。
+    verifies: >-
+      a from-scratch BLEU-2 (clipped 1/2-gram precision, add-one bigram smoothing, brevity penalty)
+      scores identical 1.0, empty 0.0, 'the the the the' 0.25, one word 0.007, all in [0, 1]; the
+      runner picks up paraphrase.jsonl unchanged and a prefix-stripping adapter scores 1.0. The
+      lesson's ToyAdapter echoes the unknown prompt for 0.843 (listed 4/5 correct), overall 1.0 ->
+      0.974; pure echo scores 0.328 on the five shipped tasks and 1.0 on generation; a metric
+      returning 1.5 gives overall 1.083; echo's summary 0.639 is listed 3/5 correct
+  - index: 2
+    slug: the_shipped_code_exec_scores_a_correct_recursive_function_0_and_a_prediction_can_still_reach_os
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend `code_exec` to capture stdout and accept a list of expected stdouts as targets.
+    zh: |
+      擴充 `code_exec`，讓它擷取 stdout，並接受一份預期 stdout 的清單當作目標。
+    verifies: >-
+      code_exec_stdout scores a per-call FizzBuzz 1.0, a wrong one 0.667, a whole program 'hello' vs
+      [hi, hello] 1.0, and matches the shipped metric (1.0) on all 5 code-exec fixtures; the shipped
+      metric scores a printing prediction, a recursive factorial and an f calling a helper 0.0 each
+      (no print; split globals/locals) where the extension scores 1.0; a __subclasses__ walk to
+      os._wrap_close reaches os.getcwd() and scores 1.0 under both
+  - index: 3
+    slug: the_committed_leaderboard_names_adapter_arithmetic_and_dropping_a_task_moves_echo_overall_0_328_to_0_160
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a leaderboard diff command: given two `leaderboard.json` files, print which tasks moved and by how much.
+    zh: |
+      加上一個排行榜 diff 指令：給定兩份 `leaderboard.json`，印出哪些任務動了、動了多少。
+    verifies: >-
+      toy -> echo moves arithmetic, code-exec and multiple-choice by -1.0 and summary by -0.361,
+      generation unchanged, overall -0.672; the committed outputs/leaderboard.json names adapter
+      'arithmetic' where a fresh run writes 'toy.v1', 0/5 scores moved and 5/5 latency_ms differ;
+      removing generation.jsonl moves 0 shared tasks while echo's overall goes 0.328 -> 0.160
+  - index: 4
+    slug: capping_the_batched_call_turns_2_hung_prompts_into_8_timeouts_and_the_hung_threads_keep_running
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Cap latency per example. Wrap the adapter call in a timeout; surface a separate `timeouts` column in the leaderboard.
+    zh: |
+      限制每個樣本的延遲。把轉接器呼叫包進一個逾時；在排行榜上另外呈現一個 `timeouts` 欄位。
+    verifies: >-
+      with two prompts blocked forever and a 0.5 s cap, per-example capping gives timeouts 1/1/0/0/0,
+      arithmetic and code-exec 0.8, overall 0.92, and a timeouts field in the written JSON; capping
+      each batch of 4 gives 4/4/0/0/0 and overall 0.68; 2 hung threads are still alive after the run;
+      a while-True code_exec prediction is killed at a 5 s subprocess cap after the module loaded,
+      while a correct one prints 1.0
+  - index: 5
+    slug: a_comment_line_changes_the_file_hash_but_not_the_scores_and_task_pins_miss_a_swapped_metric
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pin task content with a sha256 in the leaderboard so a future reader can verify they scored the same tasks.
+    zh: |
+      在排行榜裡用一個 sha256 把任務內容釘住，好讓未來的讀者能驗證他們評的是同一批任務。
+    verifies: >-
+      a canonical sha256 of the loaded Examples per task plus a tasks_sha256 verifies with 0/5
+      mismatches against the seeded and the committed outputs/tasks (byte-identical, 5 files); a
+      comment and blank line change the file hash but not the pin or the 1.0 score; '25.0' -> '25' is
+      caught (arithmetic) and moves 1.0 -> 0.8; the committed leaderboard has no hash field; swapping
+      rouge_l for exact_match passes every pin and moves summary 1.0 -> 0.0

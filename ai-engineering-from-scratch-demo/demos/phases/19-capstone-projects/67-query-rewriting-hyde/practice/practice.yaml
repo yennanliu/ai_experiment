@@ -1,0 +1,76 @@
+lesson: 67-query-rewriting-hyde
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/67-query-rewriting-hyde/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lesson_66_reranker_puts_cancelling_jobs_first_on_all_3_queries_and_drops_gold_from_rank_1_to_6
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement RAG-Fusion (a 2024 variant of multi-query) where the rewriter's paraphrases are intentionally diverse, then the rerank step (lesson 66) picks the final list.
+    zh: |
+      實作 RAG-Fusion（多查詢在 2024 年的一個變體），其中改寫器的換句話說被刻意做得多樣，然後由重排步驟（第 66 課）挑出最終清單。
+    verifies: >-
+      a Jaccard < 0.5 diversity filter keeps 3/3/2 rewrites and drops all three of the multi-topic
+      query's paraphrases (pairwise Jaccard 0.60-1.00, two identical, both 'an transfer'); RRF gold
+      ranks 1/2/1 equal the lesson's multi-query; lesson 66's cross-encoder rerank by query gives
+      6/2/6 and by max over queries 6/1/4; it ranks d8 first on all 3 fixture queries and on its own
+      training query once lesson 67's wording replaces lesson 66's (d1 there)
+  - index: 2
+    slug: step_back_takes_first_place_on_1_of_3_queries_and_decomposition_never_wins_its_own_query
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth strategy: step-back prompting (ask the LLM for the more general question, retrieve on that, then narrow). Compare on the fixture.
+    zh: |
+      加上第四種策略：退一步提示（要 LLM 給出更一般化的問題、對它檢索，再收窄）。在固定語料上做比較。
+    verifies: >-
+      gold ranks transfer/merge/multi-topic: no-rewrite 3/5/1, HyDE 2/1/2, multi-query 1/2/1,
+      decompose 3/5/1, step-back fused with the original 3/1/2, step-back alone 3/1/3; outright first
+      places HyDE 1, multi-query 1, decompose 0, no-rewrite 0; d3 at rank 2 for both no-rewrite and
+      decompose on the multi-topic query
+  - index: 3
+    slug: an_atomic_head_cuts_the_over_split_rate_from_16_of_24_to_1_of_24
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Train the decomposer to recognize atomic queries by adding a "is the question atomic" head. Measure the over-split rate before and after.
+    zh: |
+      加上一個「這個問題是不是原子性的」頭，訓練分解器去認出原子性查詢。量測前後的過度切分率。
+    verifies: >-
+      on 36 labelled questions (24 atomic, 16 with 'and'; 12 multi-topic) the lesson's decomposer
+      over-splits 16/24 (66.7%); a 4-feature logistic head under 2-fold cross-validation over-splits
+      1/24 and still splits 12/12 multi-topic; over-splitting moves mean gold rank 1.00 to 1.44, worse
+      on 3 of 16 (ranks 2, 4, 4), better on 0, and the head's one miss is a rank-4 case
+  - index: 4
+    slug: the_model_call_is_over_99pct_of_every_strategys_latency_and_the_multi_query_prompt_omits_the_question
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the mock LLM with a real model call. Measure the latency-per-strategy on your stack.
+    zh: |
+      把那個模擬 LLM 換成一次真實的模型呼叫。在你的堆疊上量測逐策略的延遲。
+    verifies: >-
+      with lesson 35's GPTModel (4 layers, d_model 128) as the model and the lesson's own prompt
+      templates, HyDE/multi-query/decompose generate 78/88/33 tokens and process 4,899/3,408/1,676
+      positions over the 3 GOLD queries; the model call is >= 99% of each strategy's latency and
+      decompose is the fastest; hybrid retrievals per query are HyDE 2, multi-query 4, decompose
+      1/1/2, run sequentially; the multi-query template's only placeholder is {N}
+  - index: 5
+    slug: a_similarity_confidence_gate_only_lowers_recall_because_rewrites_that_find_gold_score_lower
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a confidence score per rewrite. Drop rewrites below the threshold. Measure the impact on recall.
+    zh: |
+      替每一次改寫加上一個信心分數。把低於門檻的改寫丟掉。量測它對召回率的影響。
+    verifies: >-
+      with confidence = mock_embed cosine to the query, recall@3 over 4 relevant pairs at thresholds
+      0/0.3/0.5/0.7/0.9 is multi-query 1.00/1.00/1.00/0.75/0.75 and decompose 0.75 flat; the 5
+      paraphrases that alone reach gold average 0.501 confidence vs 0.658 for the 4 that miss; the
+      duplicated 'an transfer' paraphrase scores 0.907 and misses

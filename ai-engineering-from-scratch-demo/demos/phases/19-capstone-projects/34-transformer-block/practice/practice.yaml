@@ -1,0 +1,64 @@
+lesson: 34-transformer-block
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/34-transformer-block/docs/en.md
+exercises:
+  - index: 1
+    slug: bias_false_saves_82944_of_85m_parameters_and_the_flag_already_ships
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `bias=False` flag to every linear in the block. Modern open weights LLMs ship without biases on the linear layers. Measure how many parameters you save in a 12 layer 768 dim model.
+    zh: |
+      替區塊裡的每一個線性層加上一個 `bias=False` 旗標。現代開放權重 LLM 出貨時線性層都不帶偏置。量出在一個 12 層、768 維的模型裡你省下多少參數。
+    verifies: >-
+      twelve d_model-768 12-head blocks go from 85,054,464 to 84,971,520 parameters with
+      use_bias=False: 82,944 saved (6,912 per block: qkv 2,304, out_proj 768, fc1 3,072, fc2 768),
+      0.098% of the stack and 0.067% of the doc's 124M GPT, 0/48 linears keep a bias;
+      BlockConfig.use_bias already exists (default True) and the doc never mentions it; 18,432
+      LayerNorm shift parameters survive, 22% of the removed count
+  - index: 2
+    slug: rmsnorm_keeps_the_shape_and_so_does_no_norm_at_all
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace `nn.LayerNorm` with a hand rolled RMSNorm and verify the output shape is unchanged.
+    zh: |
+      把 `nn.LayerNorm` 換成手工寫的 RMSNorm，並驗證輸出形狀不變。
+    verifies: >-
+      with the lesson's LayerNorm name patched to a hand-rolled RMSNorm the demo's 6-block d_model-192
+      stack still returns (2, 32, 192), drops 13 x 192 = 2,496 parameters (2,694,144 -> 2,691,648),
+      matches torch.nn.RMSNorm within 1e-6 and yields output RMS 1.000 with nonzero token means;
+      main.py uses nn.LayerNorm only in a docstring and its LayerNorm matches it within 1e-6;
+      nn.Identity also returns (2, 32, 192), output RMS 1.25
+  - index: 3
+    slug: the_upper_triangle_is_exactly_zero_but_with_dropout_on_v_sees_rows_that_do_not_sum_to_1
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a flag that returns the attention weights for the first head as a `(B, T, T)` tensor. Plot the upper triangle to confirm it is zero after softmax.
+    zh: |
+      加上一個旗標，把第一個頭的注意力權重以 `(B, T, T)` 張量回傳。把上三角畫出來，確認它在 softmax 之後為零。
+    verifies: >-
+      a return_attn wrapper hooking attn_dropout returns head-0 weights of shape (2, 16, 16) whose 240
+      upper-triangle entries are exactly 0.0, rows sum to 1 within 1e-6, w[0,0] = 1.0, the text plot
+      is the lower staircase and the flag changes the output by 0.0; in the default train mode
+      (attn_dropout 0.1) 10-60 of 272 causal weights are zeroed, row sums fall on both sides of 1 (0.0
+      to 1.11 here), the upper triangle stays 0 and two calls differ
+  - index: 4
+    slug: the_demos_204x_gradient_gap_is_layernorm_eps_and_a_real_loss_gives_1_00x
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Build a sanity check that feeds a `(2, 16, 384)` tensor with `H=6` through both variants and asserts the forward outputs are different (for example, `not torch.allclose`) when weights are initialized identically and dropout is set to zero.
+    zh: |
+      建一項健全性檢查：把一個 `(2, 16, 384)` 的張量以 `H=6` 餵過這兩種變體，並在權重以相同方式初始化、dropout 設為零時，斷言前向輸出是不同的（例如 `not torch.allclose`）。
+    verifies: >-
+      identically initialised pre-LN and post-LN blocks on a seed-0 (2, 16, 384) input with H=6 and
+      dropout 0 are not allclose (max diff 0.58, mean 0.07) while two pre-LN blocks differ by 0.0; the
+      demo prints 0.002258 vs 0.000011 (203.62x) but its loss is 12,287.9 against the constant B*T*D =
+      12,288, eps 1e-3 raises the pre-LN gradient about 100x, and a cross-entropy loss gives 2.397 vs
+      2.392 (1.00x); main.py has no optimizer or learning rate and builds 6 layers

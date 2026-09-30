@@ -1,0 +1,49 @@
+lesson: 85-content-classifier-integration
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/85-content-classifier-integration/docs/en.md
+exercises:
+  - index: 1
+    slug: a_code_injection_classifier_stops_12_of_12_payloads_and_the_exercises_two_tokens_catch_3_and_flag_5_benign
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fourth classifier for code injection (output contains `<script>`, `eval(`, etc). Decide its severity policy and integrate it.
+    zh: |
+      替程式碼注入（輸出含有 `<script>`、`eval(` 等）加上第四個分類器。決定它的嚴重度政策並整合進去。
+    verifies: >-
+      a fourth CodeInjectionClassifier behind the lesson's Router (high for
+      <script>/<iframe>/javascript:/on...= outside code, medium for eval(/exec(/__import__(/os.system(
+      outside code, low inside a code span or fence) stops 12/12 test payloads (7 block, 5 redact) and
+      0/10 benign coding answers (5 warn); the lesson's 6 fixtures keep
+      log/warn/redact/block/block/log; substring '<script>' or 'eval(' catches 3/12 and flags 5/10
+      benign; a plain \beval\( boundary flags model.eval()
+  - index: 2
+    slug: weighting_pii_moves_only_the_email_fixture_because_no_fixture_fires_two_classifiers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Make the router apply a per-classifier severity weight so PII counts more than toxicity. Demonstrate the change on the same fixtures.
+    zh: |
+      讓路由器套用逐分類器的嚴重度權重，好讓個資比毒性更有分量。在同一批固定樣本上展示那項改動。
+    verifies: >-
+      weights pii 1.5 / toxicity 0.75 on severity level (floor(level*w+0.5), capped at high) change 1
+      of 6 fixtures, the email redact -> block (block 2/6 -> 3/6); no fixture fires two classifiers; 4
+      of 15 pairwise joins change, all redact -> block and all containing the email; the leakage
+      fixture scores 0.870 alone and 0.573-0.770 in every join, warning next to the clean fixture;
+      over 25 weight pairs only pii >= 1.25 and toxicity < 0.5 move a verb
+  - index: 3
+    slug: the_first_threshold_that_lowers_block_rate_also_ships_the_email_unredacted
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a confidence threshold so low-score verdicts downgrade by one severity level. Sweep the threshold and report how block rate changes.
+    zh: |
+      加上一個信心門檻，好讓低分判決降一級嚴重度。掃過那個門檻，並回報封鎖率怎麼變化。
+    verifies: >-
+      downgrading verdicts with score < t by one level: fixture block rate 2/6 for t < 0.65, 1/6 to
+      0.87, 0/6 above; on fixtures plus 15 joins 7/21 -> 2 -> 1 (above 0.80) -> 0; a lone email and a
+      lone card both score 0.65 among 9 distinct scores 0.573-0.870; above 0.65 an unredacted email
+      ships in 4/21 outputs (5/21 above 0.741) and the card never ships

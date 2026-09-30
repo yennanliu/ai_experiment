@@ -1,0 +1,80 @@
+lesson: 07-end-to-end-fine-tuning-pipeline
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/07-end-to-end-fine-tuning-pipeline/docs/en.md
+exercises:
+  - index: 1
+    slug: grpo_beats_dpo_by_7_7_points_at_the_lessons_beta_0_08_and_by_0_6_once_beta_is_swept
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run SFT-only vs SFT+DPO vs SFT+GRPO on the same task-specific benchmark. Report which preference method wins and by how much.
+    zh: |
+      在同一份任務專屬基準上跑「只有 SFT」、「SFT+DPO」與「SFT+GRPO」。回報哪一種偏好方法勝出、勝多少。
+    verifies: >-
+      on a 4-way toy task over 5 seeds (4,000 held-out prompts, within 0.003) SFT-only scores 0.743,
+      SFT+DPO 0.858 at the lesson's beta 0.08 and SFT+GRPO 0.935; sweeping beta over {0.08, 0.3, 1, 3}
+      peaks at 1.0 with 0.929, a 0.6-point GRPO lead; the reference PIPELINE has 8 stages and no GRPO,
+      its eval reads dpo_checkpoint and dpo_beta 0.5 leaves all 8 hashes unchanged; GRPO makes 720,000
+      reward calls vs 300 DPO labels
+  - index: 2
+    slug: qwen3_14b_costs_0_52_per_1m_tokens_not_the_0_28_the_pipeline_prints_for_both
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap Llama 3.3 8B for Qwen3 14B. Measure the $/1M tokens at matched quality.
+    zh: |
+      把 Llama 3.3 8B 換成 Qwen3 14B。在品質相當的前提下量測每百萬詞元花費。
+    verifies: >-
+      scaling the pipeline's own anchor ($0.28/1M, 6,400 tok/s at bs32, 4.6 GB = 4.58 bits/param for
+      8.03B) by weight bytes gives Qwen3 14B (14.8B) 8.48 GB, 3,472 tok/s and $0.516/1M, 1.84x; the
+      swapped pipeline keeps the same endpoint hash, $0.28, 4.6/4.8/5.1 GB quants (2.49 bits/param for
+      14.8B), identical eval deltas and a llama3.3-8b reproducibility command; the lesson names 'Llama
+      3.3 8B', which Meta published at 70B only
+  - index: 3
+    slug: a_sharegpt_draft_accepts_0_93_on_generic_and_0_55_on_domain_text_a_2x_latency_miss
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Measure EAGLE-3 acceptance rate on domain data vs generic ShareGPT. Report the delta and what it means for latency budgets.
+    zh: |
+      量測 EAGLE-3 在領域資料上與在通用 ShareGPT 上的接受率。回報差值，以及它對延遲預算意味著什麼。
+    verifies: >-
+      real accept/resample speculative decoding (k=4, draft cost 1/32) with a draft fitted on generic
+      target outputs accepts 0.926 of verified tokens on generic text and 0.551 on domain text (delta
+      -0.375, exact sum(min(p,q)) within 0.0105), 4.32 vs 2.11 tokens per target pass, 3.83x vs 1.88x
+      speedup, a 2.04x latency underestimate; a domain-mix refit reaches 0.777 and 1.33x; stage_serve
+      returns 0.74 with an unchanged endpoint hash for new data; accepted/drafted is 0.829/0.279/0.558
+  - index: 4
+    slug: one_pct_of_training_leaks_20pct_of_the_benchmark_and_the_lessons_check_still_says_clean
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Inject 1% of contamination (leak MMLU-Pro answers into training data) and rerun eval. Watch MMLU-Pro accuracy jump unrealistically. Build a contamination-check CI gate that catches this.
+    zh: |
+      注入 1% 的汙染（把 MMLU-Pro 答案洩進訓練資料）再重跑評估。看著 MMLU-Pro 準確率不切實際地跳上去。建一道能抓到這件事的汙染檢查 CI 閘門。
+    verifies: >-
+      leaking 200 of 20,000 training docs (1%, half edited) into a memorising model lifts 1,000-item
+      10-option benchmark accuracy 0.443 -> 0.571; a 64-hash 32x2-band MinHash LSH gate over word
+      3-grams (Jaccard >= 0.5) passes the clean corpus with 0 flags and fails the leaked one with
+      200/200 caught (100/100 edited), 0 false positives, restoring 0.443; 16x4 bands catch 195
+      (95/100 edited) and leave 0.445; the reference stage_contamination returns clean with overlaps
+      [0, 0, 0]; 1% of 255,336 kept examples is 2,553 = 21.2% of MMLU-Pro's 12,032
+  - index: 5
+    slug: bf16_lora_caps_at_8x_less_memory_and_at_10x_a_4_bit_base_loses_0_198_agreement
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add LoRA SFT as an alternative to full fine-tune. Measure the quality gap at 10x lower memory.
+    zh: |
+      加上 LoRA SFT 作為完整微調的替代方案。在記憶體低 10 倍的情況下量測品質差距。
+    verifies: >-
+      distilling a 128x128 rank-4-plus-noise update (300 Adam steps, within 0.003) full fine-tuning
+      reaches 0.9975 teacher agreement, rank-4 LoRA on a 4-bit base 0.7995 at 10.45x lower memory (gap
+      0.198), rank 8 0.797, rank 4 on bf16 0.8355 at 5.33x; a bf16 base caps LoRA at 8.0x and Llama 3
+      8B r=16 (41.94M adapters) goes 128.5 -> 16.7 GB (7.68x), 4.9 GB (26.02x) on a 4-bit base; cfg
+      lora=True leaves every reference hash unchanged

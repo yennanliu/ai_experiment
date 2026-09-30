@@ -1,0 +1,84 @@
+lesson: 61-cross-attention-fusion
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/61-cross-attention-fusion/docs/en.md
+exercises:
+  - index: 1
+    slug: the_gated_decoder_learns_the_text_first_and_the_image_second_and_its_gate_opens_only_to_0_14
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a learned tanh gate to the cross-attention residual (the Flamingo trick) and verify training converges from a near-zero initial gate. The gate starts at 0; the model recovers text-only behavior before mixing the image stream in.
+    zh: |
+      替交叉注意力的殘差加上一個學出來的 tanh 閘門（Flamingo 那個技巧），並驗證從接近零的初始閘門開始訓練仍會收斂。閘門從 0 開始；模型先恢復純文字行為，才把影像流混進來。
+    verifies: >-
+      per-layer tanh(alpha) gate at alpha=0 on the reference CrossAttention: at step 0 logits differ
+      by 0.0 across two images and every cross-attention grad is 0.0; on a text-count + image-class
+      task (float64, Adam 3e-3, 200 steps) both runs reach text 0.002 / image 0.001, the gated run
+      gets text < 0.1 at step 19 and image < 0.1 at step 34 (image loss 1.256, near ln 4, when text
+      converges) while the ungated one learns image first (15, text 21); |tanh(alpha)| settles at
+      0.143/0.145; the doc says the gate comes 'at training-time stability cost', Flamingo says it
+      improves stability
+  - index: 2
+    slug: the_mask_cuts_segment_2_off_image_1_but_self_attention_carries_27pct_back_and_text_before_an_image_goes_nan
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement interleaved attention where the same decoder consumes multiple images plus multiple text segments. Build the per-sample cross-attention mask that prevents text segment 2 from attending to image 1.
+    zh: |
+      實作交錯注意力，讓同一個解碼器消費多張影像加多段文字。建出那份逐樣本的交叉注意力遮罩，防止文字段 2 去注意影像 1。
+    verifies: >-
+      a per-sample (B, Nt, Nv) latest-preceding-image mask on the reference projections matches
+      CrossAttention to 0.0 when all-True and moves segment 2 by 0.0 (unmasked 0.054) when image 1
+      changes in one layer; through the 4-layer decoder segment 2 still moves 0.026, 27% of segment
+      1's 0.095, and a segment-diagonal self mask cuts it to 0.0 only at batch 1 since a (2,12,12)
+      mask raises ValueError; text before the first image gives NaN at 12/12 positions unless empty
+      rows are zeroed; the doc's snippet passes cross_mask, DecoderBlock.forward has none
+  - index: 3
+    slug: cross_attention_costs_5_4x_self_attention_and_73pct_of_it_is_the_kv_projection_not_nt_x_nv
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Profile the cross-attention vs the self-attention layer at `Nt=64, Nv=576` (a 24x24 grid at higher resolution). The cross-attention cost is `Nt * Nv` and dominates at high image resolution.
+    zh: |
+      在 `Nt=64, Nv=576`（更高解析度下的 24x24 網格）上，替交叉注意力與自注意力層做效能剖析。交叉注意力的成本是 `Nt * Nv`，在高影像解析度下佔主導。
+    verifies: >-
+      FlopCounterMode at Nt=64, Nv=576, hidden 256: self-attention 37,748,736, cross-attention
+      205,520,896 (5.44x), with kv_cache 54,525,952 (1.44x), ffn 67,108,864; the Nt*Nv matmuls are
+      37.7M (18%) and the K/V projection 150,994,944 (73%); cross equals self at Nv = Nt = 64 uncached
+      and Nv = D + Nt = 320 cached; a full decoder pass costs 1,275,068,416 FLOPs with use_cache True
+      and False alike, while the doc says K/V are computed once per decode
+  - index: 4
+    slug: map_dropout_takes_greedy_captions_from_1_to_19_distinct_more_varied_than_10_different_images
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a query-side dropout on the cross-attention map and measure caption diversity on the demo (caption sample variance increases with dropout in the cross map).
+    zh: |
+      在交叉注意力圖上加上查詢端的 dropout，並在示範裡量測字幕多樣性（交叉圖上的 dropout 會增加字幕樣本的變異）。
+    verifies: >-
+      dropout on the (B,H,Nt,Nv) cross map of the demo's seed-0 untrained decoder (float64): greedy
+      captions of 9 tokens, 20 samples, p 0/0.1/0.3/0.5/0.9 give 1/2/4/5/19 distinct and
+      0/0.1/0.464/0.577/0.792 token disagreement; temperature 1 gives 20/20 distinct already at p 0
+      (entropy 6.77 of 6.93 nats, top prob 0.0045); 10 different images at p 0 give 5 distinct and
+      0.652, below p 0.9; shipped cfg.dropout is on the output projection, defaults 0.0 and main.py
+      generates no text
+  - index: 5
+    slug: the_32_query_pool_makes_a_decode_step_2_9x_cheaper_but_a_full_pass_at_ex03s_shape_costs_the_same
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Swap the cross-attention layer for a Q-Former-style attention block where a fixed 32-token query pool attends to image features once per layer.
+    zh: |
+      把交叉注意力層換成一個 Q-Former 風格的注意力區塊，讓一池固定的 32 個查詢詞元每層對影像特徵注意一次。
+    verifies: >-
+      each block's cross_attn swapped for 32 learned queries reading the image through a reference
+      CrossAttention and the text reading the 32 pooled tokens: logits (2,10,1024), move 0.042 with
+      the image, cached = uncached to 0.0, K cache (2,8,197,32) -> (2,8,32,32), +1,085,440 params;
+      layer-0 FLOPs whole/text-side lesson vs Q-Former 56,281,088/4,638,720 vs 77,824,000/2,949,120 at
+      Nt=10,Nv=197 and 205,520,896/54,525,952 vs 205,520,896/18,874,368 at Nt=64,Nv=576; break-even Nt
+      = Q(2D+Nv)/(Nv-Q) = 64

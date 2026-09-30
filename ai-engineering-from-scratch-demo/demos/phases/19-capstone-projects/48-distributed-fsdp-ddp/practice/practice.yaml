@@ -1,0 +1,87 @@
+lesson: 48-distributed-fsdp-ddp
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/48-distributed-fsdp-ddp/docs/en.md
+exercises:
+  - index: 1
+    slug: every_rank_stays_bit_identical_at_world_size_4_and_the_broadcast_does_no_work
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Run with `--world-size 4` and confirm the param spread stays under 1e-3 across the run.
+    zh: |
+      用 `--world-size 4` 跑，並確認整次執行中參數的離散度維持在 1e-3 以下。
+    verifies: >-
+      the lesson's rank_main (32/16/4, batch 8, 6 steps, seed 0) as 4 gloo subprocess ranks:
+      element-wise parameter spread 0.0 at all 7 checkpoints (before each step and after the last) and
+      sum spread 0.0; manual all-reduce vs single process < 1e-7. With broadcast_module a no-op the
+      ranks are still bit-identical (same seed before make_model); per-rank seeds are fixed by the
+      broadcast and diverge by 0.457 element-wise (sum 4.23) without it. Final losses are per-rank
+      locals 1.3705/1.5942/1.3202/1.3473, rank_main makes no dist call, and the committed
+      ddp-demo.json lists rank 1 before rank 0
+  - index: 2
+    slug: reduceop_avg_runs_on_gloo_though_documented_nccl_only_and_one_flat_call_is_4x_faster
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the manual averaging with `dist.all_reduce(op=dist.ReduceOp.AVG)` and time the difference.
+    zh: |
+      把手工平均換成 `dist.all_reduce(op=dist.ReduceOp.AVG)`，並替差異計時。
+    verifies: >-
+      the lesson's all_reduce_grads_ replaced by one ReduceOp.AVG call per tensor is bit-identical to
+      SUM + div at world sizes 2/3/4 and leaves manual_all_reduce_matches_single_process unchanged;
+      AVG and SUM+div timings within 2x of each other and the division alone under 1/20 of a sync (7
+      interleaved 100-call blocks, fastest); torch 2.14's ReduceOp docstring says AVG is NCCL-only and
+      divides before summing, while divide-then-sum differs by 1.2e-7 at world size 3; one flat
+      all-reduce is at least 2x faster than the 4 per-tensor calls at every world size (measured
+      3.4-5.4x)
+  - index: 3
+    slug: the_hook_saves_20_to_40pct_but_on_the_lessons_model_none_of_it_is_overlap
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a post-backward hook to the DDP wrapper so the all-reduce overlaps with the rest of the backward; measure the wallclock improvement.
+    zh: |
+      替那個 DDP 包裝加上一個反向後掛鉤，好讓 all-reduce 與反向的其餘部分重疊；量測實際時間的改善。
+    verifies: >-
+      register_post_accumulate_grad_hook launching async SUM all-reduces on the lesson's MinimalDDP
+      gives gradients bit-identical to sync_grads() on make_model(32, 16, 4) and make_model(1024,
+      1024, 1024) over 2 gloo ranks, and saves at least 10% of the step at 2.1M parameters (medians of
+      15 steps; seen 20-40%); on the lesson's model the time saved exceeds its whole forward+backward,
+      and issuing the same async calls after backward saves about as much; main.py's docstring
+      promises a post-backward hook that MinimalDDP never registers
+  - index: 4
+    slug: resharding_cuts_params_to_1_over_n_but_right_after_forward_it_breaks_backward
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement the FSDP re-shard step: after the forward pass, replace the full tensor with the local shard again. Confirm per-rank memory drops.
+    zh: |
+      實作 FSDP 的重新分片步驟：前向傳遞之後，把完整張量換回本地那一片。確認每個 rank 的記憶體下降。
+    verifies: >-
+      on make_model(32, 16, 4) at world sizes 2/3/4, re-sharding after a gathered forward leaves
+      1,192/804/596 of 2,384 parameter bytes on every rank, the gathered buffer is 2,384/2,412/2,384
+      bytes (padding at 3) and the output is bit-identical to the unsharded model; backward after the
+      re-shard raises a shape-mismatch RuntimeError at every world size, gathering again first gives
+      bit-identical gradients, and params plus full gradients at 4 ranks are 2,980 of 4,768 bytes;
+      fsdp_round_trip_sketch leaves all 2,384 bytes on every rank and checks with allclose, not
+      torch.equal, against a doc that says bit-equal
+  - index: 5
+    slug: master_addr_and_port_stay_the_ifname_var_renames_and_the_lessons_cpu_tensors_fail_nccl
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Switch the backend to `nccl` on a CUDA box. Note which environment variables change and which stay the same.
+    zh: |
+      在一台 CUDA 機器上把後端換成 `nccl`。記下哪些環境變數變了、哪些沒變。
+    verifies: >-
+      the lesson's init_process_group sets exactly GLOO_SOCKET_IFNAME, MASTER_ADDR, MASTER_PORT,
+      TP_SOCKET_IFNAME; 2 env:// gloo ranks given only RANK/WORLD_SIZE/MASTER_ADDR/MASTER_PORT
+      all-reduce 1 + 2 = 3; here is_nccl_available() is False and rank_main(backend='nccl') returns
+      'Distributed package doesn't have NCCL built in' in under 30 s; make_model, rank_main,
+      manual_all_reduce_matches_single_process and fsdp_round_trip_sketch never mention device, cuda
+      or .to(, and main() checks only is_gloo_available

@@ -1,0 +1,80 @@
+lesson: 66-reranker-cross-encoder
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/66-reranker-cross-encoder/docs/en.md
+exercises:
+  - index: 1
+    slug: there_is_no_knee_reranking_lowers_held_out_recall_at_1_from_4_of_8_to_3_of_8
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Sweep N from 5 to 50 and plot recall@1 of the reranked output. Find the knee on this fixture.
+    zh: |
+      讓 N 從 5 掃到 50，並把重排後輸出的 recall@1 畫出來。在這份固定語料上找出那個膝點。
+    verifies: >-
+      main()'s 60-epoch cross-encoder over the lesson's BiEncoder: reranked recall@1 at
+      N=5,10,20,30,40,50 is 5,3,3,3,3,3 of 5 training queries and 2,3,3,3,3,3 of 8 held-out
+      paraphrases, against 4/5 and 4/8 for the bi-encoder alone; held-out N=1..8 is 4,2,2,2,2,2,3,3,
+      so the best N is 1; the corpus has 8 docs so N>=10 all rerank the full corpus; at N=8 the model
+      puts d6 over d3 and d8 over d4, the two docs never labelled below 1.0; main()'s 3 demo queries
+      are all training queries and the authorization one reranks d8 to top-1
+  - index: 2
+    slug: after_ten_epochs_the_margin_is_0_113_and_held_out_queries_still_score_below_zero
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Train the cross-encoder for ten epochs instead of one. Measure the score-margin between positive and negative pairs at each epoch.
+    zh: |
+      把交叉編碼器訓練十個週期而不是一個。量測每個週期正例與負例配對之間的分數間距。
+    verifies: >-
+      fresh seeded CrossEncoder per epoch count, train_tiny(epochs=k): mean positive-minus-negative
+      margin 0.0311 (untrained), 0.0108 after 1, 0.113 after 10, 1.002 after 60; worst pos-neg gap
+      -0.192 after 1, -0.0145 after 10, first positive at epoch 15 (forward-hook trace agrees);
+      held-out gold-minus-rest margin <= 0 for epochs 0-10, 0.1531 at 60; the doc calls train_tiny
+      'one pass of supervised training' but it defaults to epochs=60; the first step raises the loss
+      0.5356 -> 0.7795
+  - index: 3
+    slug: the_cls_head_needs_50_epochs_to_the_mean_pools_33_but_38_8_to_35_over_five_seeds
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace mean-pooling with a CLS-token head. Compare convergence on this fixture.
+    zh: |
+      把平均池化換成一個 CLS 詞元頭。在這份固定語料上比較收斂情況。
+    verifies: >-
+      a forward hook on ln2 copies the CLS position over every position (matches head(x[:,0]) to
+      1.8e-7); over inits SEED+0..4 the loss first drops below 0.01 at epochs 33,32,31,44,35
+      (mean-pool, avg 35.0) and 50,36,31,34,43 (CLS, avg 38.8); on SEED the CLS head starts at 0.209
+      vs 0.536 and reaches 0.1 at epoch 36 vs 17; both end below 0.003; held-out recall@1 at N=8 is
+      8/40 mean-pool and 6/40 CLS against 20/40 for the bi-encoder alone
+  - index: 4
+    slug: the_answer_head_keeps_the_gold_doc_for_2_of_8_new_queries_and_answers_all_4_off_topic_ones
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a second cross-encoder head that predicts a binary "is this answer in the document" label. Use both heads at inference; one to rank, one to threshold.
+    zh: |
+      加上第二個交叉編碼器頭，預測一個二元的「這份文件裡有沒有這個答案」標籤。推論時兩個頭都用；一個用來排序、一個用來設門檻。
+    verifies: >-
+      a second Linear head on the pooled vector trained jointly (MSE + BCE on label == 1.0, 60 Adam
+      steps): training queries keep gold 5/5 with 6/35 wrong docs, top-1 2/5; held-out keep gold 2/8
+      with 19/56 wrong, 1 empty; all 4 off-topic queries return docs (banana bread gets d3); the doc's
+      rank-1-score OOD signal fails too: off-topic top-1 scores 0.679, 0.78, 1.27, 1.146 against
+      held-out 0.695..1.167
+  - index: 5
+    slug: lesson_65s_hybrid_gets_7_of_8_held_out_queries_right_and_the_reranker_drops_it_to_3
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace the deterministic mock bi-encoder with the one from lesson 65 and chain the two stages. Measure the change in top-K versus bi-encoder alone.
+    zh: |
+      把那個確定性的模擬雙編碼器換成第 65 課的那一個，並把兩個階段串起來。量測前 K 筆相對於「只有雙編碼器」的變化。
+    verifies: >-
+      lesson 65's HybridRetriever over this lesson's 8-doc corpus, K=3: held-out recall@1 alone 7/8,
+      chained with the reranker 3/8 at N=5 and N=8 (recall@3 7 -> 6 and 3); the mock bi-encoder goes 4
+      -> 2 (N=5) and 3 (N=8); top-1 moves on 6-7 of 8 queries; at N=8 both chains give identical top-3
+      for every query, at N=5 they differ; training queries hybrid 4 -> 4 at N=5, both 4 -> 3 at N=8

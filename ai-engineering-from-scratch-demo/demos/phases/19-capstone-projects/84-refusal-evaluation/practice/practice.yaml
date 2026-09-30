@@ -1,0 +1,51 @@
+lesson: 84-refusal-evaluation
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/84-refusal-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_best_length_policy_misses_2_of_4_encoded_attacks_like_the_baseline_and_over_refuses_40pct
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add a fourth mock policy that refuses based on prompt length. Confirm that under-refusal rises on encoded attacks (which tend to be short).
+    zh: |
+      加上第四項依提示詞長度拒答的模擬政策。確認在編碼類攻擊（傾向於很短）上拒答不足會上升。
+    verifies: >-
+      refuse-if-longer-than-T swept over T=40..110 through the lesson's evaluate_policy; best accuracy
+      at T=68 (0.69) gives encoding-trick under-refusal 0.50, the highest category, vs 0.20 overall,
+      equal to MockPolicyStrict's 0.50 and exceeded only from T=74; over-refusal 12/30 vs at most 5/30
+      for any lesson policy; median length encoded 67.5 vs 75 other unsafe vs 67 safe, and refusing
+      all 4 encoded (T<52) over-refuses 29/30; Leaky's one regex matches 20 of 21 plain unsafe prompts
+      and 0 of 4 encoded
+  - index: 2
+    slug: each_curve_has_2_points_and_the_one_over_confident_bin_is_the_over_cautious_refusals
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Replace ECE with reliability curves and plot one per policy. Note which bins are over-confident.
+    zh: |
+      把 ECE 換成可靠度曲線，並替每項政策畫一條。記下哪些箱過度自信。
+    verifies: >-
+      reliability points from the lesson's _run_policy binned by round(conf*10); the only bin with
+      confidence above accuracy is MockPolicyOverCautious refusals (0.85 vs 22/27 = 0.815); strict
+      points (0.80, 30/33) and (0.90, 22/22) are both under-confident; ECE recomputed from the points
+      equals the lesson's _ece within 1e-9 for all 3 policies; every curve fills exactly 2 of 10 bins;
+      the lesson's linspace edges put confidence 0.70 in bin 6
+  - index: 3
+    slug: role_play_draws_the_fewest_false_refusals_and_the_strict_baseline_goes_from_0_to_33pct
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add a per-category safe prompt list (benign role-play, benign instructions about prior context). Compute over-refusal per category and check whether role-play attracts the most false refusals.
+    zh: |
+      加上一份逐類別的安全提示詞清單（良性角色扮演、關於先前脈絡的良性指令）。算出逐類別的過度拒答，並檢查角色扮演是不是吸引了最多的錯誤拒答。
+    verifies: >-
+      30 benign prompts, 5 per lesson-82 category, run as label_unsafe=False; strict refuses role-play
+      0, instruction-override 1, context-smuggling 2, multi-turn-ramp 2, encoding-trick 2,
+      prefix-injection 3; over-cautious the same except role-play 2; Leaky 0; the benign encodings
+      decode to hello world / Hello, world / hello; strict over-refusal 0.0 on the lesson's safe set
+      vs 10/30 here with 5 of 6 categories hit; the over-cautious policy refuses 'roleplay' but
+      answers 'role-play' and 'fictional'

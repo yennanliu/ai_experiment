@@ -1,0 +1,78 @@
+lesson: 09-code-migration-agent
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/09-code-migration-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: recipes_alone_pass_11_of_50_repos_the_agent_alone_19_more_and_turning_it_off_rescues_4
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the migrate pipeline with OpenRewrite only (no agent). Compare pass rate to the full pipeline. Identify the cases where the agent alone is the difference.
+    zh: |
+      只用 OpenRewrite（不用代理）跑一次遷移管線。把通過率與完整管線比較。指出那些「只有代理才做得到」的案例。
+    verifies: >-
+      on main()'s seed 19, recipes alone pass 11 of 50 and the full pipeline 30, so the agent alone is
+      the difference on 19 repos after 1-8 turns, spanning hardness 0.219-0.823 against 0.220-0.735;
+      over 1,000 seeds 19.45% vs 56.61% (formula 19.42%), against the doc's 70-80%; a recipe-only
+      rerun passes 15, 4 of which failed with the agent; 1,186 of 3,013 custom_annotation repos are
+      Python
+  - index: 2
+    slug: a_lint_gate_blocks_12_of_16_coverage_preserved_prs_and_every_new_error_comes_from_two_recipes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a "lint-clean" check: after migration, run a style linter (spotless for Java, ruff for Python). Fail the PR if new lint errors appear. Measure the coverage-preserved-but-style-regressed rate.
+    zh: |
+      實作一項「lint 乾淨」檢查：遷移後跑一個風格檢查器（Java 用 spotless、Python 用 ruff）。出現新的 lint 錯誤就讓 PR 失敗。量測「覆蓋率保住了但風格退步」的比率。
+    verifies: >-
+      over 50 generated Python 2 modules paired with the seed-19 run, all migrated files compile and
+      the F401/E711 gate blocks 23 of 30 passes and 12 of the 16 with no coverage loss; the new errors
+      are 26 E711 from `<>` to `!=` and 14 F401 from `string.*` rewrites, and an `is not None` rule
+      leaves 14 blocks; 14 of 30 passes lost coverage, and over 1,000 seeds 55 passes dropped more
+      than 2% while 8 repos were filed as coverage_regression
+  - index: 3
+    slug: trimming_cuts_the_agents_diff_34_to_60pct_and_every_cut_past_the_noise_reverts_an_untested_fix
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "minimal-diff" optimizer: after the agent's branch passes tests, trim unnecessary changes with a second pass. Report diff-size reduction.
+    zh: |
+      加上一個「最小差異」最佳化器：代理的分支通過測試之後，用第二趟把不必要的改動修掉。回報差異大小的縮減幅度。
+    verifies: >-
+      on the 19 agent-passed seed-19 repos (95 fixes, 119 noise lines, 4 of 5 functions tested),
+      one-line trimming cuts 214 changed lines to 142 and per-function subsets to 85 (135 and 78 on
+      Python 3.14); the one-line pass keeps 57 coupled rename lines; both revert 10 untested fixes (5
+      has_key, 3 iteritems, 2 xrange) and 10 of 19 untested functions crash; on 3.14 PEP 758 lets
+      `except ValueError, err:` compile, adding 7 reverts and 17 crashes
+  - index: 4
+    slug: the_codemod_clears_346_of_401_node_22_hazards_and_no_recipes_at_all_changes_0_of_50_outcomes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Extend to a third migration: Node 18 to Node 22. Reuse the sandbox wrapping; swap the recipe layer for a custom codemod.
+    zh: |
+      擴充到第三種遷移：Node 18 到 Node 22。重用那層沙箱包裝；把配方層換成自訂的 codemod。
+    verifies: >-
+      five regex rules clear 346 of 401 Node 22 hazards in 50 generated files (all 50 import
+      assertions, 127 util.is*, 55 punycode, 114 of 169 new Buffer; 55 `new Buffer(payload)`
+      deferred), leaving 19 files clean; with the codemod, the lesson's run_recipes or no rewrites,
+      all 50 repos get identical status, class, turns and cost (30 pass); with no recipes 9 of 11
+      straight passes still hold an import assertion
+  - index: 5
+    slug: p50_ttfgb_is_8_minutes_over_green_repos_and_26_over_all_50_and_6pct_of_passes_overrun_the_cap
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure time-to-first-green-build (TTFGB) as a UX metric. Target: p50 under 10 minutes.
+    zh: |
+      把「到第一次綠燈建置的時間」（TTFGB）當成一項使用體驗指標來量。目標：p50 低於 10 分鐘。
+    verifies: >-
+      on seed 19, 30 repos go green with p50 TTFGB 8.0 min, and 26.0 min over all 50 with never-green
+      as infinite; under 10 minutes in 747 and 3 of 1,000 seeds; 1,691 of 28,304 passes go green after
+      the 30-minute cap (33.9 min on seed 19); no repo exceeds 11 turns or $7.4725; all 3,221 one-turn
+      agent passes beat the recipe-only median of 4.99 min

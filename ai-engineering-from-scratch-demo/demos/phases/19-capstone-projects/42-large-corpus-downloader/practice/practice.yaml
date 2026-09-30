@@ -1,0 +1,80 @@
+lesson: 42-large-corpus-downloader
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/42-large-corpus-downloader/docs/en.md
+exercises:
+  - index: 1
+    slug: width_5_makes_20_dedup_errors_to_60_at_width_3_and_the_lsh_threshold_is_0_42_not_0_8
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--shingle-width` flag and measure how the dedup verdict changes at widths 3, 5, 9. Defend the chosen default.
+    zh: |
+      加上一個 `--shingle-width` 旗標，並量測去重判定在寬度 3、5、9 時怎麼變。替你選的預設值辯護。
+    verifies: >-
+      a --shingle-width flag (default 5) drives the reference pipeline over 480 labelled docs: widths
+      3/5/9 catch footer 30/30/30, header 30/30/30, edit 30/28/16, tracking 27/13/0 of 30 and flag
+      57/1/0 of 60 templated non-duplicates, 0 originals, for 60/20/44 errors; the lesson demo flags
+      7/15 at width 3 (pairs at Jaccard 0.364, 0.5, 0.5) and 5/15 at 5 and 9; k=128 b=32 r=4 has
+      midpoint 0.42 not the doc's 0.8, P(s=0.5) 0.873, and 71 of 102 width-5 flags sit below Jaccard
+      0.8, lowest 0.182
+  - index: 2
+    slug: the_downloader_pulls_a_whole_gzip_shard_before_failing_and_a_4_byte_sniff_handles_all_6_encodings
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add gzip support next to zstd by sniffing the magic bytes. The downloader should not require the caller to specify the codec.
+    zh: |
+      在 zstd 旁邊加上 gzip 支援，做法是嗅探魔術位元組。下載器不該要求呼叫方指定編解碼器。
+    verifies: >-
+      a 4-byte sniff at the module's zstd seam decodes zstd, gzip, 2-member gzip, 2-frame zstd and
+      skippable-frame zstd to the same 200 documents and 16,624 bytes with no codec argument, and
+      refuses plain JSONL naming magic 7b226964; unpatched, gzip, 2-member gzip and plain JSONL raise
+      'Unknown frame descriptor' with the whole shard already on disk, and the sniff also refuses only
+      after all bytes landed
+  - index: 3
+    slug: resume_only_refuses_the_4_of_6_cache_states_where_the_downloader_restarts_from_byte_zero
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--resume-only` mode that refuses to start a fresh download if no checkpoint is found. Useful in CI to keep one run from accidentally re-pulling 200 GB.
+    zh: |
+      加上一個 `--resume-only` 模式，若找不到檢查點就拒絕開始一次全新下載。在 CI 裡很有用，可以避免某次執行不小心重拉 200 GB。
+    verifies: >-
+      over an in-process RFC 7233 range server, resume-only refuses empty, corrupted-partial,
+      server-ignores-Range and file:// caches with the 12,288-byte partial kept, resumes an
+      interrupted shard with one 'bytes=12288-' request and a matching sha256, and reads a 416 on a
+      finished shard as complete; the shipped downloader does a full transfer in the same 4 states,
+      raises HTTP Error 416 on rerunning a finished shard, and over file:// re-reads from byte zero
+  - index: 4
+    slug: an_sqlite_lsh_index_doubles_index_time_but_adds_3pct_end_to_end_because_minhash_dominates
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Move the LSH index to a shelf or sqlite file and measure throughput vs the in-memory variant.
+    zh: |
+      把 LSH 索引搬到一個 shelf 或 sqlite 檔案裡，並量測吞吐量與記憶體內版本的差別。
+    verifies: >-
+      an sqlite index behind the reference Dedup gives verdicts identical to the in-memory LSHIndex on
+      2,000 docs (1,400 kept, 600 dropped); end-to-end slowdown under 1.5x, commit-per-doc index over
+      5x slower, MinHash over 10x the in-memory index time; 45,552 lookups = 32 per keeper + 752 for
+      600 duplicates against the doc's 'one extra disk read per document'; 8-15 KB heap per kept doc
+      with 35-60% in the unused _signatures store
+  - index: 5
+    slug: forging_manifest_and_lock_passes_the_check_and_a_rerun_one_second_later_changes_the_hash
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a manifest sha256 check on startup. The downloader should fail closed if the manifest on disk disagrees with the manifest hash in `manifest.lock`.
+    zh: |
+      在啟動時加上一次清單 sha256 檢查。若磁碟上的清單與 `manifest.lock` 裡的清單雜湊不一致，下載器就該以失敗告終。
+    verifies: >-
+      the startup check passes the intact manifest, starts fresh on an empty cache, and refuses an
+      edited verdict, a reformatted manifest, a deleted lock, a deleted manifest and an unreadable
+      lock; the reference writes manifest.json.lock not manifest.lock; an edit with a recomputed lock
+      passes and a corrupted shard passes until each shard is re-hashed; the hash reproduces in the
+      same second but not one second later or from another source directory

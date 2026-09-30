@@ -1,0 +1,80 @@
+lesson: 78-zero-parameter-sharding
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/78-zero-parameter-sharding/docs/en.md
+exercises:
+  - index: 1
+    slug: zeroing_non_shard_grads_before_reduce_scatter_trains_each_shard_on_one_ranks_batch_and_nothing_notices
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Extend to ZeRO-2 by sharding gradients: each rank only stores the gradient for its shard, achieved by zeroing out the non-shard portion after backward.
+    zh: |
+      藉由把梯度分片擴充到 ZeRO-2：每個 rank 只儲存自己那一片的梯度，做法是在反向之後把非本片的部分歸零。
+    verifies: >-
+      the lesson's ZeroOptimizer on 4 gloo subprocess ranks (seed 13, MiniMLP P=1,732, batch 8, 20
+      steps, lr 0.05) three ways: ZeRO-2 by freeing the full gradient right after reduce_scatter ends
+      bit-identical to ZeRO-1 (max diff 0.0, rank spread 0.0) holding 1,732 gradient bytes instead of
+      8,660; zeroing the non-shard gradient before reduce_scatter makes the summed shard equal the
+      rank's own gradient on 20/20 steps (ZeRO-1 0/20), ends 0.907 from ZeRO-1, still holds 8,660
+      bytes, yet keeps rank spread 0.0 and a falling loss 10.119 -> 2.786 (ZeRO-1 2.48)
+  - index: 2
+    slug: rank_0_holds_19052_bytes_not_the_formulas_12124_because_nothing_in_the_code_is_fp16
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a memory profiler that prints actual fp32 byte usage on rank 0 versus the formula prediction.
+    zh: |
+      加上一個記憶體剖析器，印出 rank 0 上實際的 fp32 位元組用量，並與公式預測比較。
+    verifies: >-
+      rank 0 of a real 4-rank gloo run after one step: params 6,928 + grads 6,928 + master/m/v 3 x
+      1,732 = 19,052 bytes, all float32, vs memory_table's 12,124 (gap exactly 4P); torch.optim.Adam
+      DDP measures 27,712 = the formula's vanilla row, so the saving is 31.2% not the printed 56.2%;
+      master_shard equals the param slice bit for bit; a TorchDispatchMode counter sees step()
+      allocate exactly 20P = 34,640 bytes; shard_bytes at N=3 is 6,936 per rank vs 12P/3 = 6,928
+  - index: 3
+    slug: zero1_comm_takes_1_9_to_3_8x_ddps_on_gloo_so_throughput_does_not_hold
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Measure the per-step wall-clock time of vanilla DDP versus ZeRO-1 and decompose into forward, backward, comm.
+    zh: |
+      量測普通 DDP 與 ZeRO-1 逐步的實際時間，並拆解成前向、反向、通訊。
+    verifies: >-
+      4 gloo ranks, 40 steps, median of 5 interleaved blocks, hidden 32 and 1,024: DDP (one all_reduce
+      + torch Adam) and ZeRO-1 end within 1e-5; on the lesson's model comm exceeds forward+backward
+      for both and is over half the ZeRO-1 step; ZeRO-1 comm / DDP comm > 1.3 at both sizes (observed
+      1.9-3.8x) and the ZeRO-1 step is slower at hidden 32, against the doc's 'Memory wins, throughput
+      holds.'
+  - index: 4
+    slug: without_the_allreduce_each_shard_clips_by_33_to_77pct_of_the_norm_as_far_off_as_no_clipping
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement gradient clipping under ZeRO-1: the L2 norm must be computed across all shards via allreduce of the local norm squared.
+    zh: |
+      在 ZeRO-1 之下實作梯度裁剪：那個 L2 範數必須透過對本地範數平方做 allreduce，跨所有分片算出來。
+    verifies: >-
+      clipping between reduce_scatter and Adam with an all_reduce of the local norm squared matches
+      single-process clip_grad_norm_ + torch Adam (params < 1e-5, norms < 1e-4; unclipped run < 1e-5;
+      20/20 steps clip, norm range [1.54, 13.98]); without the all_reduce step-1 shard norms are
+      [0.331, 0.389, 0.378, 0.772] of the global norm (squares sum to 1 within 1e-2) and params end
+      0.413 off vs 0.503 for no clipping; all three runs keep rank spread 0.0
+  - index: 5
+    slug: naive_allreduce_zero_is_3x_faster_on_gloo_so_reduce_scatter_wins_on_bytes_not_time
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement a "naive ZeRO" with allreduce instead of reduce_scatter, measure the wire-time difference. Defend the reduce_scatter choice with numbers.
+    zh: |
+      實作一個用 allreduce 而不是 reduce_scatter 的「天真版 ZeRO」，量測線上時間差。用數字替 reduce_scatter 這個選擇辯護。
+    verifies: >-
+      naive ZeRO (all_reduce the padded gradient, keep own chunk) matches ZeRO-1 within 1e-5; its
+      gradient collective is > 1.5x faster per step on the lesson's model (observed 2.5-3.2x) and at
+      1M floats naive/ZeRO-1 time < 1.25; ring volumes per rank per step (ZeRO paper 7.1) are 10,392 /
+      15,588 / 10,392 bytes for ZeRO-1 / naive / DDP at P=1,732 and 6,291,456 / 9,437,184 / 6,291,456
+      at 1M floats, and the doc's 'Net wire is identical to DDP' is present

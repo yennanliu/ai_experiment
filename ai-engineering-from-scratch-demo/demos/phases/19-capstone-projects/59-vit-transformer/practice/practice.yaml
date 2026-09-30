@@ -1,0 +1,79 @@
+lesson: 59-vit-transformer
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/59-vit-transformer/docs/en.md
+exercises:
+  - index: 1
+    slug: registers_raise_last_layer_entropy_0_0197_nats_less_than_the_0_0201_four_more_tokens_add
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add register tokens (4 learned vectors prepended after CLS) and rerun. Compare attention map smoothness via the entropy of the softmax distribution on the last layer.
+    zh: |
+      加上暫存詞元（在 CLS 之後前置 4 個學出來的向量）並重跑。透過最後一層 softmax 分布的熵，比較注意力圖的平滑度。
+    verifies: >-
+      on the seed-0 untrained ViT-Base and seed-0 fixture, 4 registers inserted after CLS move mean
+      last-layer attention entropy from 5.2795 to 5.2992 nats (within 1e-3), a shift within 1e-3 of
+      ln(201/197) = 0.0201; normalised entropy stays above 0.999 both ways (0.99930 vs 0.99923) and
+      the registers take 2.04% of attention vs 1.99% uniform; the CLS norm rises every block 0.53 ->
+      35.80 and the final LayerNorm gives sqrt(768) = 27.713 for the fixture and for a zero image
+  - index: 2
+    slug: without_warmup_post_ln_collapses_to_one_class_on_3_of_3_seeds_and_pre_ln_reaches_67pct
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Swap pre-LN for post-LN and train for one epoch on a synthetic shape classifier. Observe which one trains stably without LR warm-up.
+    zh: |
+      把 pre-LN 換成 post-LN，並在一個合成形狀分類器上訓練一個週期。觀察哪一個在沒有學習率暖身時仍訓練得穩。
+    verifies: >-
+      one epoch (128 Adam steps, lr 1e-3, no warm-up) of the lesson's depth-12 encoder at width 64 on
+      4,096 noisy square/disc/plus images: pre-LN reaches 67.4%, 65.6%, 67.8% held-out on seeds 0-2
+      (asserted > 60%, 3 classes predicted); post-LN predicts one class for all 512 test images on all
+      3 seeds (31.4%) with end loss within 0.02 of ln 3 and a higher seed-0 loss spike (3.45 vs 2.78);
+      a 32-step warm-up lifts seed-0 post-LN to 64.1%
+  - index: 3
+    slug: the_mask_matches_sdpa_and_lesson_61_but_nn_multiheadattention_reads_the_same_tril_as_look_ahead
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement causal masking as an `attn_mask` argument so the same block can be reused as a decoder block. The mask shape is `(seq, seq)`, lower-triangular.
+    zh: |
+      把因果遮罩實作成一個 `attn_mask` 參數，好讓同一個區塊也能當解碼器區塊重複使用。遮罩形狀是 `(seq, seq)`，下三角。
+    verifies: >-
+      a masked forward bound onto the lesson's Block equals it exactly with attn_mask=None; with a
+      (10, 10) tril, weights above the diagonal are exactly 0, rows sum to 1 within 1e-6, changing
+      tokens 5-9 moves outputs 0-4 by exactly 0 (0.38 unmasked), and it matches SDPA is_causal and
+      lesson 61's CausalSelfAttention within 1e-6; nn.MultiheadAttention given the same bool tril lets
+      row 0 see only tokens 1-9, puts all weight of rows 0-8 on future tokens and returns 1 NaN row;
+      the doc's causal cross-attention in lesson 61 has no mask argument and lesson 61 says it uses no
+      mask
+  - index: 4
+    slug: the_mlp_holds_64pct_of_block_flops_but_only_51_to_59pct_of_wall_time
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Profile a forward pass at batch sizes 1, 8, 64 with `torch.profiler`. The MLP layer dominates wall time, not attention.
+    zh: |
+      用 `torch.profiler` 在批次大小 1、8、64 上替一次前向傳遞做效能剖析。主導實際時間的是 MLP 層，不是注意力。
+    verifies: >-
+      torch.profiler on the seed-0 ViT-Base at batch 1, 8, 64: MLP 1.859 vs attention 1.049 GFLOP per
+      image per block (63.9%), FLOPs scaling exactly 1/8/64x; MLP share of block wall time asserted
+      only in (0.45, 0.75), measured 0.51-0.59; the attention core is 4.1% of block FLOPs but more
+      than twice that share of block time (measured 17-26%)
+  - index: 5
+    slug: lora_on_head_5_trains_7680_weights_but_its_a_matrix_gets_exactly_zero_gradient_on_step_1
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace one attention head's q-k-v projections with a low-rank LoRA adapter, freeze the rest, and verify the gradient only flows where you expect.
+    zh: |
+      把某一個注意力頭的 q-k-v 投影換成一個低秩的 LoRA 轉接器、凍結其餘部分，並驗證梯度只流到你預期的地方。
+    verifies: >-
+      rank-8 LoRA on head 5's 192 qkv rows of block 0 of the frozen ViT-Base: only A and B get .grad
+      (0 of 149 frozen tensors), 7,680 of 85,647,360 weights train, and after 2 Adam steps only q, k,
+      v of head 5 change (3 of 36 slices); A's gradient is exactly 0.0 on step 1 (B = 0) and non-zero
+      on step 2; the contiguous rows 960-1151 change k of heads 3, 4, 5

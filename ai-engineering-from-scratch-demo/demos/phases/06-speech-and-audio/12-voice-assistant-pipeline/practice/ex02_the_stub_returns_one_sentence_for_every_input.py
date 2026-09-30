@@ -4,8 +4,8 @@
     `.wav`. Measure WER and end-to-end latency.
 
 Reading of the exercise: `whisper`, `torch`, `transformers`, `soundfile`,
-`sounddevice`, `silero_vad` and `openai` are all absent, and a scan of the whole
-reference checkout finds **0** files ending `.wav`, `.flac`, `.mp3`, `.ogg` or
+`sounddevice`, `silero_vad` and `openai` are all absent, and a scan of every lesson
+in the reference curriculum's phases/ tree finds **0** files ending `.wav`, `.flac`, `.mp3`, `.ogg` or
 `.m4a`, so there is neither a model to install nor a recording to run it on. What
 survives is the pair of measurements, and both are decided before any model is
 chosen.
@@ -42,7 +42,7 @@ for the demo's 1.72 s turn, 13.8% at 10 s and 5.1% at 30 s -- so the demo's STT
 figure is mostly its own constant, and it stops being so as soon as the utterance
 is realistic.
 
-Structure: `audio_files` scans the reference checkout; `probes` builds four very
+Structure: `audio_files` scans the reference curriculum's phases/ tree; `probes` builds four very
 different buffers; `stt_ms` is the stub's own latency model; `budget` sums the
 four Step 5 rows for a given STT cost.
 """
@@ -64,9 +64,9 @@ ABSENT = ("whisper", "torch", "transformers", "soundfile", "sounddevice", "siler
 
 
 def audio_files():
-    """Every recording anywhere in the reference checkout -- the exercise needs one."""
+    """Every recording in any lesson of the reference curriculum -- the exercise needs one."""
     root = parity.find_reference_root()
-    return [p.name for p in root.rglob("*") if p.suffix.lower() in SUFFIXES]
+    return [p.name for p in (root / "phases").rglob("*") if p.suffix.lower() in SUFFIXES]
 
 
 def probes():
@@ -113,8 +113,8 @@ def verify(result):
         practice.Check(
             "CONTROL: there is no model to install and no recording to run it on",
             len(result["absent"]) == len(ABSENT) and not result["recordings"],
-            f"find_spec is None for {result['absent']}, and scanning the whole reference "
-            f"checkout for {list(SUFFIXES)} finds {len(result['recordings'])} files. Both "
+            f"find_spec is None for {result['absent']}, and scanning every lesson in the "
+            f"reference phases/ tree for {list(SUFFIXES)} finds {len(result['recordings'])} files. Both "
             "measurements the exercise asks for are decided before a model is chosen",
         ),
         practice.Check(

@@ -1,0 +1,76 @@
+lesson: 05-autonomous-research-agent
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/05-autonomous-research-agent/docs/en.md
+exercises:
+  - index: 1
+    slug: three_seed_ideas_grow_one_identical_tree_and_76pct_of_their_spend_reruns_a_config
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the pipeline against three different seed ideas in the same domain. Compare which parts of the tree-search overlap. Identify duplicated wasted compute.
+    zh: |
+      在同一個領域裡，針對三個不同的種子想法跑這條管線。比較樹狀搜尋中哪些部分重疊。指出被重複浪費掉的運算。
+    verifies: >-
+      three seed ideas under main()'s Random(7) give identical executed runs (the seed is only
+      root.hypothesis); 12 runs, 3 distinct configs, $12.66 of $16.70 (75.8%) reruns a config; 10 of
+      25 children copy their parent, nodes 2 and 4 both run the root config ($1.53 of $5.57), 6
+      distinct configs in 26 nodes, and 24.9% of runs repeat a config over 1,000 rng seeds
+  - index: 2
+    slug: a_5_dollar_approval_gate_never_fires_because_no_node_can_cost_more_than_1_60
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a human-in-the-loop gate before experiment execution for nodes estimated above $5. Measure how much total cost drops.
+    zh: |
+      對估計超過 5 美元的節點，在實驗執行前加上一道人類介入閘門。量測總成本下降了多少。
+    verifies: >-
+      an oracle-estimate gate wrapped around the reference run_experiment at $5 declines 0 of 4,438
+      experiments over 1,000 runs, spend $6,207.24 both ways (0.0% drop), costliest node $1.5999; max
+      run spend $12.75, mean $6.21, main() $5.57 against the doc's 'budget 12/30' and '$28.40 spent';
+      gates at $1.50/$1.40/$1.20 cut spend 52.9/81.3/100% (6,849/7,460/5,000 declined)
+  - index: 3
+    slug: a_single_judge_false_accepts_70pct_of_control_rerun_papers_and_the_ensemble_85pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap the reviewer ensemble for a single judge. Measure the false-accept rate on a held-out set of known-bad papers.
+    zh: |
+      把審稿人集成換成單一位裁判。在一組已知很差的論文保留集上量測偽接受率。
+    verifies: >-
+      over 2,000 pipeline papers and 5 N(0,0.5)-lenient rubric judges at the 4.0 bar, a single judge
+      false-accepts 55.3% of 3,666 known-bad papers and the ensemble 57.4%: control reruns 70.2% vs
+      85.4%, weak papers 42.9% vs 34.1%; 1,666/2,000 headlines are the root config, noiseless mean
+      4.285 vs 4.259 for real papers (accepted 70.1%/85.0%), and main()'s 'lr=0.0003' headline is a
+      rerun
+  - index: 4
+    slug: curl_is_blocked_and_logged_4_of_4_ways_but_the_lessons_sandbox_is_a_docstring
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Introduce a network-exfiltration red team test: agent writes code that tries to `curl` an external address. Confirm the `--network=none` policy blocks it. Log the attempt.
+    zh: |
+      引入一項網路外洩的紅隊測試：代理寫出試圖 `curl` 外部位址的程式碼。確認 `--network=none` 政策擋下了它。把那次嘗試記錄下來。
+    verifies: >-
+      curl via subprocess and os.system, urllib and a raw socket to 203.0.113.7 each exit non-zero
+      with a JSON log line naming the target (subprocess.Popen, os.system, socket.getaddrinfo x2)
+      under an audit-hook deny policy, and a benign run prints loss=1.6439 with no log; the reference
+      run_experiment returns a loss for the curl payload, and its docker line lacks --pids-limit=256
+      that the doc and skill file require
+  - index: 5
+    slug: the_tree_search_is_a_fifo_queue_and_loses_7_3pct_to_flat_random_at_the_same_30_dollars
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compare your tree-search with a flat random baseline (same budget, no expansion strategy). Report the novelty × quality gain.
+    zh: |
+      把你的樹狀搜尋與一條平坦的隨機基線（同樣預算、沒有展開策略）做比較。回報「新穎度 × 品質」的增益。
+    verifies: >-
+      mean best novelty x quality over 1,000 seeds: tree 0.543, flat random at $30 0.586 (-7.3%), flat
+      at the tree's run count 0.529 (+2.6%); the tree spends $6.21 while flat runs 21.9 experiments;
+      every child is pushed at score 0.3, execution is FIFO in 1,000/1,000 runs, max depth 2; lr
+      leaves the loss at 2.747 and all 6 configs share one novelty on one rng

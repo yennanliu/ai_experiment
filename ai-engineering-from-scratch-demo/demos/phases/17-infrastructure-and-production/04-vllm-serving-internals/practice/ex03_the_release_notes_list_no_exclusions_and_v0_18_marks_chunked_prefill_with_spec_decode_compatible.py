@@ -9,7 +9,7 @@ no exclusions, so the second is the compatibility matrix that v0.18.0 ships,
 `docs/features/README.md` at that tag, whose own title is "mutually exclusive
 features". The third is the speculative-decoding docs and `arg_utils.py` at
 the same tag. The pairs are held in `MATRIX_NO`, and the check tests the
-lesson's own claim, and the toy's, against them.
+lesson's current text, and the toy's, against them.
 
 **ANSWER: the release notes list none. The v0.18.0 matrix lists 27
 incompatible pairs, 8 of them with speculative decoding.** Speculative
@@ -24,22 +24,23 @@ multimodal. Three pairs are partial: pooling with CP, pooling with APC, and
 multimodal with LoRA. Separately, the SD docs list pipeline
 parallelism as "not composible with speculative decoding as of
 `vllm<=0.15.0`". The matrix still carries V0-era rows such as multi-step, so
-treat it as the project's own statement rather than a V1 test result.
+treat it as the project's own statement rather than a V1 test result. Its
+SD x LoRA cell is also stale: upstream's review cites vllm-project/vllm#21068
+(merged 2025-11-08) for LoRA with spec decode on the V1 engine.
 
-**FINDING: the lesson's v0.18.0 gotcha is the opposite of v0.18.0's matrix.**
-The lesson says you "cannot combine `--enable-chunked-prefill` with
-draft-model speculative decoding". The skill file in `outputs/` hard-rejects
-that pairing. v0.18.0's matrix marks CP x SD as compatible. Its SD docs say
-draft models were unsupported only in `vllm<=0.10.0`. The toy scheduler has no
-speculative mode to test either way: `simulate_continuous` takes only
-`(reqs, chunked)`.
-
-**FINDING: `--speculative-model` is not a v0.18.0 flag, and the N-gram line is
-about the async scheduler.** v0.18.0's `arg_utils.py` registers
-`--speculative-config` and no `--speculative-model`. The one release-note
-sentence behind the lesson's "documented exception" reads "NGram speculative
-decoding now runs on GPU and is compatible with the async scheduler". That
-is the async scheduler, not chunked prefill.
+**CONTROL: the lesson and its skill file now agree with v0.18.0.** An
+earlier lesson text said you "cannot combine `--enable-chunked-prefill` with
+draft-model speculative decoding (`--speculative-model`)", and cited an
+N-gram GPU exception. Two findings here refuted that: the matrix marks CP x SD
+compatible, v0.18.0 registers only `--speculative-config`, and the N-gram
+release line is about the async scheduler. Upstream a05d3925 rewrote the
+section. It now says the v0.18.0 matrix marks speculative decoding compatible
+with chunked prefill and prefix caching, and it names the two SD-docs limits:
+pipeline parallelism through v0.15.0 and draft models through v0.10.0. The
+check tests each of those against the constants, and tests that neither the
+doc nor the skill file still names `--speculative-model` or the N-gram
+exception. The skill file now names `--speculative-config`. The toy still has
+no speculative mode: `simulate_continuous` takes only `(reqs, chunked)`.
 
 Structure: the sourced text lives in the constants; `solve()` reads the
 lesson doc, its skill file and the toy's signature against them.
@@ -84,12 +85,15 @@ def solve():
              / "skill-vllm-scheduler-reader.md").read_text(encoding="utf-8")
     return {
         "pairs": len(MATRIX_NO), "sd": partners("SD"), "cp": partners("CP"),
-        "cp_sd_excluded": {"CP", "SD"} in [set(p) for p in MATRIX_NO],
-        "doc_gotcha": "cannot combine `--enable-chunked-prefill` with draft-model" in doc,
-        "skill_gotcha": "`--enable-chunked-prefill` + `--speculative-model` combination as "
-                        "a hard incompatibility" in skill,
+        "doc_matrix": "matrix marks speculative decoding as compatible with chunked "
+                      "prefill and prefix caching" in doc,
+        "cp_apc_ok": not any({"SD", f} in [set(p) for p in MATRIX_NO] for f in ("CP", "APC")),
+        "doc_limits": [v.replace("vllm<=", "v") for v in SD_DOCS.values()
+                       if v.replace("vllm<=", "through v") in doc],
+        "skill_flag": "`--speculative-config`" in skill,
+        "stale": [t for t in ("--speculative-model", "N-gram GPU", "cannot combine")
+                  if t in doc or t in skill],
         "toy_params": list(inspect.signature(ref.simulate_continuous).parameters),
-        "doc_flag": "--speculative-model" in doc, "doc_ngram": "N-gram GPU" in doc,
     }
 
 
@@ -102,23 +106,19 @@ def verify(result):
                  len(result["sd"]) == 8, result["cp"] == ["enc-dec", "multi-step"]]),
             f"{result['pairs']} ❌ pairs plus {len(MATRIX_PARTIAL)} partial; SD excludes "
             f"{result['sd']}, CP excludes {result['cp']}; SD docs add pipeline parallelism "
-            f"({SD_DOCS['pipeline parallel']})",
+            f"({SD_DOCS['pipeline parallel']}); the release's N-gram line reads "
+            f"'{RELEASE['ngram']}'",
         ),
         practice.Check(
-            "FINDING: the lesson's v0.18.0 gotcha is the opposite of v0.18.0's matrix",
-            all([result["doc_gotcha"], result["skill_gotcha"], not result["cp_sd_excluded"],
+            "CONTROL: the lesson and its skill file now agree with v0.18.0's matrix",
+            all([result["doc_matrix"], result["cp_apc_ok"], len(result["doc_limits"]) == 2,
+                 result["skill_flag"], result["stale"] == [],
+                 "--speculative-model" not in ARG_FLAGS,
                  result["toy_params"] == ["reqs", "chunked"]]),
-            "the lesson and its skill file forbid chunked prefill with draft-model spec "
-            f"decode; the matrix marks CP x SD compatible, the SD docs limit the draft-model "
-            f"gap to {SD_DOCS['draft model unsupported']}, and the toy takes only "
-            f"{result['toy_params']}",
-        ),
-        practice.Check(
-            "FINDING: --speculative-model is not a v0.18.0 flag, and the N-gram line is "
-            "about the async scheduler",
-            result["doc_flag"] and result["doc_ngram"]
-            and "--speculative-model" not in ARG_FLAGS and "async scheduler" in RELEASE["ngram"],
-            f"v0.18.0 registers {list(ARG_FLAGS)}; the release says '{RELEASE['ngram']}'",
+            "upstream a05d3925 dropped the chunked-prefill gotcha: the doc says the matrix "
+            f"marks SD compatible with CP and APC (neither pair is ❌), names the limits "
+            f"{result['doc_limits']}, the skill file uses {list(ARG_FLAGS)}, stale phrases "
+            f"left: {result['stale']}; the toy still takes only {result['toy_params']}",
         ),
     ]
 

@@ -36,14 +36,14 @@ exercises:
       1.57x. Logged as accepted/proposed drafts, per-position 0.7 reads 0.388, 0.4 reads 0.132 and the
       pooled mix 0.278, under the gate
   - index: 3
-    slug: read_vllm_speculative_config
+    slug: one_matrix_row_covers_all_three_and_async_scheduling_splits_them
     kind: explain
     tier: T0
     deps_group: none
     en: |
-      Read the vLLM `speculative_config` documentation. Name the three modes (draft model, EAGLE, N-gram) and which one is compatible with chunked prefill.
+      Read the vLLM `speculative_config` documentation. Name the three modes (draft model, EAGLE, N-gram) and check which features each one composes with in your vLLM version.
     zh: |
-      讀 vLLM 的 `speculative_config` 文件。說出那三種模式（草稿模型、EAGLE、N-gram），以及哪一種與分塊預填相容。
+      讀 vLLM 的 `speculative_config` 文件。說出那三種模式（草稿模型、EAGLE、N-gram），並檢查在你的 vLLM 版本中，每一種能與哪些功能組合。
     cites: >-
       Where EAGLE-3 is already deployed
   - index: 4

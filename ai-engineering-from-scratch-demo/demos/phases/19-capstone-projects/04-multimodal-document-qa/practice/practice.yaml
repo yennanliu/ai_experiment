@@ -1,0 +1,79 @@
+lesson: 04-multimodal-document-qa
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/04-multimodal-document-qa/docs/en.md
+exercises:
+  - index: 1
+    slug: two_stand_in_models_disagree_less_than_one_model_does_with_itself_across_processes
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure ColQwen2.5-v0.2 vs ColQwen3-omni on the same corpus. Which pages does one get right and the other miss? Add a "content class" tag to the index to route by type.
+    zh: |
+      在同一批語料上量測 ColQwen2.5-v0.2 與 ColQwen3-omni。哪些頁面是一個答對、另一個漏掉的？在索引裡加上一個「內容類別」標籤，用來依型別做路由。
+    verifies: >-
+      over 50 hash salts, the lesson's index at EMB_DIM 128 (B) gets more top-1 hits than the shipped
+      EMB_DIM 16 (A) on 12 of 14 queries; A wins the EMEA demo query (22 vs 15 of 50) and 'late
+      interaction retrieval vs OCR' (33 vs 29); held-out hit@1 A 0.740, B 0.811, content-class router
+      0.783, with 27 of 79 table-routed queries not table queries. A and B disagree on 3.80 queries
+      per run, A with itself across salts on 4.36, B on 2.96; main.py under PYTHONHASHSEED 0-9 ranks
+      p.88 first for its EMEA query in neither 0 nor 10 runs; p.88 lacks '2024' and ties chart p.12 at
+      3 shared tokens
+  - index: 2
+    slug: pruning_25pct_already_drops_maxsim_below_ocr_and_the_shipped_50pct_loses_11pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Prune embeddings aggressively (75%, 90%). Find the compression cliff: the point where ViDoRe nDCG@5 drops below the OCR baseline.
+    zh: |
+      積極地剪枝嵌入（75%、90%）。找出那個壓縮懸崖：ViDoRe nDCG@5 掉到 OCR 基線之下的那個點。
+    verifies: >-
+      OCR-BM25 nDCG@5 0.974 over 14 labelled queries; the lesson's MaxSim with doc_prune scores 0.992,
+      0.975, 0.964, 0.879, 0.624, 0.511 at keep 1.0, 0.9, 0.75, 0.5, 0.25, 0.1 over 50 salts, first
+      below OCR at keep 0.75; the shipped 50% loses 0.113 nDCG@5 and takes hit@1 0.979 to 0.760
+      against the doc's < 0.5%; patches are unit-length (|L2 - 1| < 1e-12) and random 50% dropping
+      scores 0.883
+  - index: 3
+    slug: rrf_lands_between_maxsim_and_ocr_and_only_the_reranker_makes_the_hybrid_win
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a hybrid: run OCR-then-text and ColQwen in parallel, fuse with RRF, rerank with a cross-encoder. Does the hybrid beat either alone? Where does it help most?
+    zh: |
+      做一套混合：平行跑「先 OCR 再處理文字」與 ColQwen，用 RRF 融合，再用交叉編碼器重排。這個混合有沒有打敗單獨任一者？它在哪裡幫助最大？
+    verifies: >-
+      nDCG@5 over 50 salts, overall MaxSim 0.879, OCR-BM25 0.974, RRF 0.925, RRF + rerank 0.986; per
+      class text/table/chart/handwriting RRF 0.955/0.887/0.927/0.919 (above both inputs only on
+      tables), rerank 1.000/0.936/0.998/1.000; the lesson's MaxSim trails OCR-BM25 on charts (0.905)
+      and handwriting (0.791)
+  - index: 4
+    slug: the_smaller_qwen2_5_vl_7b_costs_1_8_to_2x_per_query_and_scores_higher_on_docvqa
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap Qwen3-VL-30B for a smaller VLM (Qwen2.5-VL-7B). Measure the accuracy-per-dollar curve.
+    zh: |
+      把 Qwen3-VL-30B 換成一個較小的 VLM（Qwen2.5-VL-7B）。量測那條「每一美元換到多少準確率」的曲線。
+    verifies: >-
+      the lesson's retriever gives recall@1..5 of 0.760, 0.884, 0.926, 0.959, 0.974 over 50 salts;
+      with published DocVQA 95.7 / 95.0, list prices and each model's smart_resize tokens (4,015 vs
+      3,072 per 1536x2048 page), Qwen2.5-VL-7B costs 1.79-1.96x per query and the 30B-A3B gives
+      1.8-1.9x the accuracy per dollar; k = 1 is best value for both (1,538 vs 867 correct per
+      dollar); 180 DPI Letter/A4 is 1530x1980 / 1489x2104, not 1536x2048
+  - index: 5
+    slug: the_shipped_index_retrieves_handwriting_worse_than_ocr_misreading_1_character_in_5
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add handwritten-note support. Render the handwriting corpus, embed with ColQwen, measure retrieval. Compare against a handwriting OCR pipeline.
+    zh: |
+      加上手寫筆記支援。渲染手寫語料、用 ColQwen 嵌入、量測檢索。與一條手寫 OCR 管線做比較。
+    verifies: >-
+      on 4 handwriting queries over the lesson's 10 pages, the shipped index scores nDCG@5 0.837
+      (hit@1 0.735) over 50 salts; BM25 over OCR with characters misread at CER 0-0.5 (20 draws)
+      scores 1.000, 1.000, 0.975, 0.870, 0.850, 0.637, 0.600, 0.225, first below vision at CER 0.25; a
+      lesson Page has no image field and unpruned MaxSim scores 1.000, equal to OCR at CER 0

@@ -1,0 +1,87 @@
+lesson: 11-llm-observability-dashboard
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/11-llm-observability-dashboard/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lessons_store_counts_0_of_6_canonical_haystack_spans_because_it_keys_on_the_deprecated_gen_ai_system
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add custom instrumentation for the Haystack framework. Verify canonical spans land in ClickHouse with faithful `gen_ai.*` attributes.
+    zh: |
+      替 Haystack 框架加上自訂檢測。驗證標準 span 帶著忠實的 `gen_ai.*` 屬性落進 ClickHouse。
+    verifies: >-
+      6 Haystack-shaped runs (OpenAI, Anthropic, Google generators; tags and meta as Haystack's tracer
+      and generators emit them) become 24 lesson Spans in SpanStore; all 6 generator spans carry only
+      registry gen_ai.* keys, gen_ai.operation.name and gen_ai.provider.name, well-known providers
+      anthropic/gcp.gen_ai/openai, and model plus 2,388 input / 1,140 output tokens equal to the
+      source meta. The store's by_model counts 0 of them because Span.is_llm keys on the deprecated
+      gen_ai.system (6 once it is added back); the lesson's own LLM span has 5 non-semconv keys, the
+      deprecated gen_ai.system with values claude/gemini/gpt (0 of 16 well-known), and no
+      gen_ai.operation.name
+  - index: 2
+    slug: deepeval_and_phoenix_agree_on_153_of_400_traces_because_deepeval_counts_an_unstated_claim_as_faithful
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap DeepEval for Phoenix evaluators on the same traces. Measure score drift between the two eval engines.
+    zh: |
+      在同一批軌跡上把 DeepEval 換成 Phoenix 的評估器。量測這兩套評估引擎之間的分數漂移。
+    verifies: >-
+      on 400 lesson synth_trace spans with 1-4 labelled claims each, DeepEval's rule (non-contradicted
+      claims / claims) averages 0.907 and Phoenix's binary grounded label 0.345; mean drift 0.562,
+      pass/fail agreement 153/400 with all 247 disagreements DeepEval-pass / Phoenix-hallucinated;
+      reading Phoenix's 1.0 = hallucinated raw raises agreement to 247/400; DeepEval scores the SSN
+      leak 1.0; the lesson's eval_faithfulness gives a faithful answer 0.5 and correlates r = 0.13
+      with DeepEval, 0.83 with Phoenix
+  - index: 3
+    slug: per_app_psi_catches_a_drift_global_psi_misses_and_the_trailing_baseline_forgets_it_by_week_9
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sharpen the drift detector: compute PSI per app-id rather than globally. Show per-app drift trails.
+    zh: |
+      把漂移偵測器磨利：逐 app-id 計算 PSI，而不是全域計算。呈現逐應用的漂移軌跡。
+    verifies: >-
+      10 weeks x 500 traces over 3 apps (60/25/15%), support drifting from week 6; with the lesson's
+      psi and prompt_fingerprint against a trailing 4-week baseline, support reads 0.109, 1.723,
+      0.329, 0.406 in weeks 5-8 and alerts in weeks 6-8, global peaks at 0.165 and stable apps never
+      alert; by week 9 the trailing baseline reads 0.011 and 0.032 while a frozen weeks 1-4 baseline
+      reads 0.494 and 0.885; two of the lesson's four prompts share bin 4 (PSI 0 for a full swap); the
+      lesson's app_id is only 'chatbot' on root spans and its null PSI crosses 0.2 in 31 of 1,000
+      seeds (median 0.040)
+  - index: 4
+    slug: the_sampled_store_shows_a_fifth_of_each_users_cost_and_5x_their_failure_rate_until_reweighted
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a "user impact" page: cost-per-user and failure-rate-per-user with sparklines.
+    zh: |
+      加上一個「使用者影響」頁面：帶迷你走勢圖的每使用者成本與每使用者失敗率。
+    verifies: >-
+      on 10,000 traces through main()'s loop (TailSampler 0.20), the rendered page has 4 user rows and
+      8 ten-point SVG sparklines; Horvitz-Thompson-weighted cost is within 4.3% of true per user and
+      failure rate within 0.05 points; raw stored cost is 20-21% of true and raw failure rate over 3x
+      true (3.8-5.4% vs 0.75-1.15%); on main()'s 200 traces u_01 is second by true cost and last in
+      the printout; 0 error-status spans and r(cost_usd, tokens) = 0.01
+  - index: 5
+    slug: keeping_toxic_traces_makes_the_sample_6_9x_as_toxic_and_a_28_word_rant_escapes_the_density_eval
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a tail-sampling policy that keeps 100% of traces with toxicity > 0.5 plus a 10% stratified sample of the rest. Measure sampling bias introduced.
+    zh: |
+      建一套尾端抽樣政策，保留 100% 毒性 > 0.5 的軌跡，加上其餘的 10% 分層抽樣。量測引入的抽樣偏差。
+    verifies: >-
+      on 10,000 lesson traces with labelled toxic responses (2%, 20% for u_03), the policy keeps
+      1,454; raw bias +29.3 points toxic share (5.0% true), +16.1 u_03 (25.4% true), 6.1 points worst
+      stratum share, +$0.0001 mean cost; inside the sampled rest the stratified sample's worst stratum
+      error rounds to 0.0 against 2.8 for the lesson's TailSampler(0.10); weighted biases round to
+      0.0; the 28-word rant scores 0.36 so 166 of 665 toxic traces escape (14 kept); lesson traffic
+      has 0 of 10,000 over 0.5; main() evaluates 200/200 traces before sampling at 0.20 where the doc
+      says 10%

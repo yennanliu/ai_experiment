@@ -1,0 +1,79 @@
+lesson: 03-realtime-voice-assistant
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/03-realtime-voice-assistant/docs/en.md
+exercises:
+  - index: 1
+    slug: any_real_asr_lag_drops_the_last_word_for_14pct_wer_and_1s_whisper_chunks_never_commit
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Swap Deepgram Nova-3 for faster-whisper v3 turbo on a g5.xlarge. Measure the latency and WER gap. Identify where CPU-vs-GPU decisions matter.
+    zh: |
+      把 Deepgram Nova-3 換成跑在 g5.xlarge 上的 faster-whisper v3 turbo。量測延遲與 WER 的差距。指出 CPU 與 GPU 的抉擇在哪裡要緊。
+    verifies: >-
+      with partials lagged 0/280 ms (Nova-3) the reference run_session drops the last word: WER 0.143
+      and 0.111 on the 7- and 9-word calls, the 6-word call never commits; 1 s whisper chunks commit
+      0/3; read at the commit frame the 280 ms runs score WER 0; user stop to first audio 800 vs 1320
+      ms (520 ms gap); latency_ms is 320 for every committed run; faster-whisper README RTFs hide a
+      final decode up to 5.94 s (GPU fp16) vs 2.38 s (CPU small fp32) inside the 480 ms window and
+      sustain 45.9 (GPU batch 8) vs 5.0 (CPU) real-time streams, short of 50
+  - index: 2
+    slug: the_scheduler_cannot_hear_a_barge_in_during_a_tool_call_and_finish_tool_then_stop_saves_420ms
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an interruption-arbitration policy: what does the agent do when the user barges in during a tool call? Compare three policies (hard cancel, finish-tool-then-stop, queue next turn).
+    zh: |
+      加上一套插話仲裁政策：當使用者在工具呼叫期間插話時，代理該怎麼做？比較三種政策（硬取消、把工具做完再停、把下一輪排入佇列）。
+    verifies: >-
+      measured constants tool 420, filler 300, 740/320 ms commit-to-audio; over 40 barge-ins
+      finish-tool-then-stop has 0 ms talk-over and 800 ms follow-up vs hard cancel 1220 and
+      queue-next-turn 390 ms talk-over, 3880/4300 ms and a stale answer; the shipped scheduler hears
+      33/40 barge-ins, all exactly at tool return, speaks the stale answer on 7 and plays the filler
+      over the user on 30; the TS port runs the tool inside THINKING
+  - index: 3
+    slug: within_900ms_the_best_tuning_still_cuts_off_32_of_60_paused_sentences
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run an adversarial turn-detector test: give the user long pauses mid-sentence. Tune the VAD silence threshold and the turn-detector score threshold for lowest false-cutoff without blowing past 900ms.
+    zh: |
+      跑一次對抗性的輪次偵測器測試：讓使用者在句子中間停很久。調整 VAD 的靜默門檻與輪次偵測器的分數門檻，在不超過 900 毫秒的前提下把誤截斷率壓到最低。
+    verifies: >-
+      on 60 seeded paused utterances over S 500-1500 ms x T {0.2,0.55,0.75,0.95} first audio is S +
+      300 ms, the only settings answering all within 900 ms are S 500/600 x T 0.2/0.55, best (500,
+      0.55) cuts off 32/60 and no S in the grid reaches 3%; the shipped (500, 0.6) cuts 7 and never
+      answers 21 (all 3-5-word turns); zero cutoffs only at T 0.95 which answers none; the clean call
+      reports 740 ms but is 1220 ms from user stop, the tool path's worst turn is 1220 and the no-tool
+      floor 800
+  - index: 4
+    slug: the_lesson_reports_320ms_on_both_paths_while_pstn_is_heard_at_1426ms_and_webrtc_at_928ms
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Deploy the same agent on PSTN via Twilio. Compare PSTN first-audio-out to WebRTC. Explain the jitter-buffer and codec differences.
+    zh: |
+      透過 Twilio 把同一個代理部署到 PSTN 上。比較 PSTN 與 WebRTC 的首個音訊輸出。解釋抖動緩衝區與編解碼器的差異。
+    verifies: >-
+      under the stated path assumptions with 3% loss, UDP loses 3.1% with a 24 ms p99 buffer while TCP
+      loses 0 but stalls 17.5% of packets past 100 ms and needs 213 ms; heard first audio 928 ms
+      WebRTC vs 1426 ms PSTN; mu-law 8 kHz is 160 B / 216 base64 chars per 20 ms, 37.5 dB SNR, and
+      drops 2.8% of energy (all of 4-8 kHz); latency_ms is 320 on both paths
+  - index: 5
+    slug: a_1pct_per_frame_false_trigger_cancels_58pct_of_turns_and_japanese_turns_never_commit
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add voice activity detection for non-English languages (Japanese, Spanish). Measure the Silero VAD v5 false-trigger rate versus language-specific fine-tunes.
+    zh: |
+      替非英語語言（日語、西班牙語）加上語音活動偵測。量測 Silero VAD v5 的誤觸發率，並與語言專屬的微調版本比較。
+    verifies: >-
+      over 400 seeded sessions per rate, i.i.d. false triggers at 0.1/1/5% per frame cancel
+      9.75/58/99.75% of agent turns (predicted 1-(1-p)^85 = 8.2/57.4/98.7%) and a 13-frame (250 ms)
+      minimum speech takes all to 0; en and es turns commit 4/4, all 3 ja turns score 0.2 and never
+      commit; synth_call noise=0.5 flags 622/1200 lead-in frames and 0/22000 trailing frames

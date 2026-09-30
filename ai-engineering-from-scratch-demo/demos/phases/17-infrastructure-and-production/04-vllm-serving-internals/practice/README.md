@@ -120,18 +120,28 @@ caching, and multimodal with LoRA. The speculative-decoding docs add
 pipeline parallelism, "as of `vllm<=0.15.0`". The matrix still carries V0-era
 rows such as multi-step.
 
-**The lesson's gotcha is the opposite of what v0.18.0 says.** The matrix
-marks chunked prefill × speculative decoding compatible. The docs limit the
-draft-model gap to `vllm<=0.10.0`.
+The matrix's speculative decoding × LoRA ❌ is stale. Upstream's review cites
+vllm-project/vllm#21068 (merged 2025-11-08) for LoRA with spec decode on the
+V1 engine.
 
-There are two more problems:
+**The lesson now agrees with v0.18.0.** An earlier version of this answer
+had two findings against the lesson's "v0.18.0 gotcha": that chunked prefill
+could not be combined with draft-model spec decode (`--speculative-model`),
+with N-gram GPU as the one exception. The matrix marks that pair compatible,
+v0.18.0 registers only `--speculative-config`, and the N-gram release line
+reads "compatible with the async scheduler". Upstream a05d3925 rewrote the
+section. The check now confirms each part of the new text:
 
-- `--speculative-model` is not a v0.18.0 flag. Only `--speculative-config`
-  is registered.
-- The N-gram line the lesson cites reads "compatible with the async
-  scheduler". It says nothing about chunked prefill.
+| lesson now says | v0.18.0 source |
+|---|---|
+| matrix marks SD compatible with chunked prefill and prefix caching | neither pair is ❌ |
+| pipeline parallelism incompatible through v0.15.0 | SD docs: `vllm<=0.15.0` |
+| draft models unsupported through v0.10.0 | SD docs: `vllm<=0.10.0` |
+| skill file takes `--speculative-config` | the only flag `arg_utils.py` registers |
 
-The skill file in `outputs/` hard-codes the same wrong rejection.
+Neither the doc nor the skill file still names `--speculative-model` or the
+N-gram exception. The toy scheduler still has no speculative mode:
+`simulate_continuous` takes only `(reqs, chunked)`.
 
 ### 4 — contiguous wastes 81.6%, paged 0.5%, and the toy reserves like neither
 

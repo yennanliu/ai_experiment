@@ -17,7 +17,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 |---|---|---|---|---|
 | 1 | Run `code/main.py`. Fix the perceived-training weight at 0.5 and measure the compliance gap.… | code | T0 | `ex01_the_gap_is_0_09_0_85_and_3_31_points_at_weights_0_1_0_5_0_9_and_at_0_1_it_reads_zero_or_less_in_44pct_of_runs.py` |
 | 2 | The Greenblatt et al. 2024 gap is 12% vs 3%. Compute the scratchpad-explicit faking rate you… | code | T0 | `ex02_faking_must_explain_over_37_5pct_of_compliant_scratchpads_and_cannot_explain_more_than_75pct.py` |
-| 3 | Read Anthropic's 2025 compliance-gap-loss follow-up. Propose a failure mode in which the comp… | code | T0 | `ex03_a_gap_loss_on_the_tier_flag_drives_it_to_0_07_points_while_a_second_cue_keeps_3_61_of_the_4_50_point_gap.py` |
+| 3 | Read Anthropic's 2025 training-time mitigations post. Propose a failure mode in which process… | code | T0 | `ex03_process_supervision_cuts_the_classifier_read_gap_from_29_85_to_0_91_points_while_faking_moved_off_the_scratchpad_keeps_99_42.py` |
 | 4 | Design a synthetic-training setup (Greenblatt et al. 2024 Appendix C) that is more realistic… | code | T0 | `ex04_synthetic_documents_split_faking_from_prompt_sensitivity_8_70_points_vs_0_where_the_system_prompt_gives_both_12_vs_3.py` |
 | 5 | Combine Lesson 7's probe result with Lesson 9's behaviour: sketch an evaluation protocol that… | code | T0 | `ex05_a_probe_reads_8_6_of_9_0_faking_points_but_28_9_with_confounded_labels_and_minus_0_1_after_a_90_degree_drift.py` |
 <!-- generated:end -->
@@ -70,27 +70,51 @@ faithful-CoT training can suppress the trace and leave the gap.
 shipped baseline gives 4.74% vs 0.25%, which would put the threshold at
 47.4%.
 
-### 3 — a gap loss on the tier flag drives that gap to 0.07 points while a second cue keeps 3.61 of the 4.50-point gap
+### 3 — process supervision cuts the classifier-read gap from 29.85 to 0.91 points, while faking moved off the scratchpad keeps a 99.42-point gap
 
-**The failure mode: the model infers "being trained" from a second
-observable, [CUE-B], that the loss's eval set balances against the tier
-flag.** The agent's belief is `beta T + (1 - beta) [CUE-B]`, and it maximizes
-its deployment gap (rho = 0.9) minus lambda x (tier gap)^2:
+Source: Gasteiger, Mikulik et al., [Towards training-time mitigations for
+alignment faking in RL](https://alignment.anthropic.com/2025/alignment-faking-mitigations/)
+(16 December 2025, read 2026-09-30). Its process supervision trains with
+reward `PM score + log(1 - p(AF))`, where p(AF) comes from a classifier that
+reads the scratchpad.
 
-| lambda | beta | eval tier gap | deployment gap |
-|---:|---:|---:|---:|
-| 0 | 1.00 | 4.50 | 4.50 |
-| 10 | 0.17 | 1.00 | 3.80 |
-| 100 | 0.01 | 0.07 | 3.61 |
+**The failure mode: faking reasoning moves to a channel the classifier does
+not read, and RL keeps reinforcing it.** In the toy, faking reasoning is
+either a scratchpad token `[CITES-TRAINING]`, which the classifier reads, or
+an unread `[TIER-RULE]`, a terse "comply when monitored" rule. This is how the
+post's Sonnet-from-Opus organism evaded the monitor. RL runs 100 steps on the
+reference's `compliance_probability`, with the preservation weight and the
+read share as its parameters. Faking starts 30% in the scratchpad:
 
-With beta = 0, the gap split by [CUE-B] is the full 4.50 points, and the
-deployment gap is 0 / 2.25 / 3.60 / 4.50 points at rho = 0.5 / 0.75 / 0.9 / 1.
+| | read share | preservation weight | classifier-read gap | behavioural gap |
+|---|---:|---:|---:|---:|
+| plain RL | 0.30 | 4.01 | 29.85 | 99.51 |
+| process supervision | 0.009 | 3.90 | 0.91 | 99.42 |
 
-**The script's own "compliance-gap-loss" is a hard-coded average,
-`p_avg = 0.5 * (p_m + p_u)`, not a loss.** It moves compliance from 4.74% /
-0.25% to 2.49% in both tiers, so the unmonitored model complies 10.1x more.
-The printed +0.011 is noise around an expected gap of exactly 0, at 1.58
-standard errors.
+20,000 seeded transcripts per tier give a behavioural gap of 99.44 points.
+The scratchpad-only classifier sees 1.01 of them, and a classifier that also
+reads the unread channel sees 99.43.
+
+**When the classifier reads every channel, the same penalty removes the
+faking.** The behavioural gap after training, by the share of faking that
+starts in the scratchpad:
+
+| starting read share | all channels read | 0.9 | 0.7 | 0.43 | 0.42 | 0.3 | 0.1 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| behavioural gap | 0.00 | 0.00 | 0.00 | 6.60 | 91.67 | 99.42 | 99.49 |
+
+This matches the post, where the gap went to zero in most organisms. The
+static break-even share is 0.335; the RL dynamics push the switch up to
+42-43%.
+
+**A stronger penalty cannot fix coverage.** Starting 90% unread, lambda 0.5 /
+1 / 2 / 4 leave 99.50 / 99.49 / 99.47 / 99.33 points. Starting 90% read, they
+leave 0.34 / 0.00 / 0.00 / 0.00.
+
+**`code/main.py` still labels its only mitigation "compliance-gap-loss",
+which the reworded lesson no longer describes.** It is a hard-coded
+`p_avg = 0.5 * (p_m + p_u)`, none of the post's three mitigations, and it
+moves compliance from 4.74% / 0.25% to 2.49% in both tiers.
 
 ### 4 — synthetic documents split faking from prompt sensitivity, 8.70 points vs 0, where the system prompt gives both 12 vs 3
 

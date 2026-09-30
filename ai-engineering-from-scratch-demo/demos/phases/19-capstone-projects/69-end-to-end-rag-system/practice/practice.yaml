@@ -1,0 +1,83 @@
+lesson: 69-end-to-end-rag-system
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/69-end-to-end-rag-system/docs/en.md
+exercises:
+  - index: 1
+    slug: a_length_conjunction_and_jargon_selector_picks_13_of_14_queries_right_and_no_strategy_moves_an_eval_metric
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a per-query strategy selector inside the rewriter: heuristics from lesson 67 (length, conjunctions, jargon ratio) pick HyDE, multi-query, or decomposition.
+    zh: |
+      在改寫器內部加上一個逐查詢的策略選擇器：用第 67 課的捷思（長度、連接詞、術語比例）去挑 HyDE、多查詢或分解。
+    verifies: >-
+      a length / conjunction / jargon-ratio selector installed on the lesson's Rewriter picks right on
+      13 of 14 labelled queries against the lesson's pick_strategy's 7; forcing HyDE, multi-query,
+      decompose or no rewrite gives identical metrics (recall@5 1.000, precision@1 0.500, mrr 0.708)
+      because the 8-10 chunk candidate pool always holds gold (4/4); _REWRITE_HYDE is keyed by exactly
+      the 4 eval queries, 2 of its hypotheticals are gold docs d3 and d7 verbatim, and it has none for
+      the 4 jargon queries
+  - index: 2
+    slug: citing_in_parentheses_as_the_prompt_asks_drops_faithfulness_to_0_667_and_off_topic_questions_are_never_refused
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a real LLM call for the generator behind an env flag. Default to the mock. Measure the latency delta.
+    zh: |
+      在一個環境變數旗標後面，替產生器加上一次真實的 LLM 呼叫。預設走模擬。量測那個延遲差值。
+    verifies: >-
+      RAG_REAL_LLM=1 swaps the mock for lesson 35's GPTModel (4 layers, d_model 128) on the lesson's
+      prompt template: prompts 127-135 tokens, answers 16-30, generate stage at least 20x the mock and
+      over half of each query's latency (printed, not asserted exactly); the mock answers with
+      (anchor) citations as the template asks score faithfulness 0.667/0.5/1.0/0.5, mean 0.667 < 0.75;
+      0 of 6 off-topic queries are refused, all with faithfulness 1.0 and a top-1 score over 10x
+      REFUSE_THRESHOLD 0.05, and a refusal scores faithfulness 0.0 on all 4 eval queries
+  - index: 3
+    slug: the_six_lesson_pages_fail_only_answer_relevance_at_0_625_and_a_corpus_without_qrels_is_scored_on_the_fixtures
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Extend the demo to take a `--corpus path` flag that loads a real corpus. Re-run the eval and the threshold check.
+    zh: |
+      把示範擴充成接受一個 `--corpus path` 旗標，載入一份真實語料。重跑評估與那項門檻檢查。
+    verifies: >-
+      main(['--corpus', path]) over the English pages of lessons 64-69 (62 KB, 208 chunks) with 8
+      qrels gives recall@5 1.000, precision@1 0.875, mrr 0.917, faithfulness 1.000, answer_relevance
+      0.625 and exits 1 naming answer_relevance, while the fixture exits 0; a corpus with no
+      qrels.json is scored on the fixture's qrels (recall@5, precision@1, mrr 0.000, four metrics
+      failing); gold_answer_substring is declared once in main.py and setting all 4 to 'zzz' changes
+      no metric
+  - index: 4
+    slug: recall_at_5_is_1_under_all_6_chunkers_on_both_corpora_and_5_of_6_build_the_same_fixture_index
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--strategy` flag to the chunker. Measure each strategy's contribution to end-to-end recall.
+    zh: |
+      替切片器加上一個 `--strategy` 旗標。量測每一種策略對端到端召回率的貢獻。
+    verifies: >-
+      --strategy over the lesson's Chunker and lesson 64's five chunkers: recall@5 1.000 for all 6 on
+      the fixture and on lessons 64-69's pages; recall@1 fixture 0.375 except semantic 0.875, real
+      0.875/0.875/1.0/0.5/0.875/1.0 on 208/195/124/172/371/97 chunks; only structural passes all
+      thresholds on the real pages; the longest fixture doc is 137 chars so 5 of 6 strategies build
+      the same 12-chunk index (semantic splits to 18, precision@1 0.5 to 1.0); lesson 64's
+      recursive_split gets precision@1 0.5 where the lesson's Chunker gets 0.875
+  - index: 5
+    slug: the_streamed_eval_equals_the_batch_eval_and_faithfulness_matches_the_final_score_on_72_of_73_prefixes
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a streaming generator interface and feed it into the eval. Confirm that faithfulness is computed on the final string and not on the streamed prefix.
+    zh: |
+      加上一個串流產生器介面，並把它餵進評估。確認忠實度是在最終字串上算的，不是在串流出來的前綴上。
+    verifies: >-
+      a word-piece stream over the mock generator fed to the lesson's metrics on the joined final
+      string equals run_eval on all 5 metrics (1.0, 0.5, 0.708, 1.0, 1.0) and on 4/4 answer strings,
+      73 pieces; faithfulness differs from its final value on 1 of 73 prefixes and a first-piece eval
+      still scores 0.750, passing the 0.75 threshold, while answer_relevance differs on 22 of 73 and
+      the first-piece eval scores 0.250

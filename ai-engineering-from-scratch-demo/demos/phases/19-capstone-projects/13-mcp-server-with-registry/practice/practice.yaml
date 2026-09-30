@@ -1,0 +1,113 @@
+lesson: 13-mcp-server-with-registry
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/13-mcp-server-with-registry/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lessons_registry_checks_pass_3_of_3_drifted_remote_urls_because_nothing_probes_the_url
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Change the published remote URL while leaving the live server unchanged. Make the registry validation report the exact drift.
+    zh: |
+      改掉已發布的遠端網址，但不動活著的伺服器。讓登錄庫驗證回報出確切的漂移。
+    verifies: >-
+      for 3 edits of the published remotes[0].url (path typo, http downgrade, the destructive server's
+      URL) a drift report that probes the published URL names field, published and live value for all
+      3, 2 unreachable and 1 answering as com.example/internal-destructive; the lesson's
+      validate_registry_document, validate_publisher_namespace and validate_runtime_alignment report 0
+      issues on all 3, and fed the discovery that answers at the URL its alignment check catches 1 of
+      3
+  - index: 2
+    slug: tools_list_is_byte_stable_but_its_private_cache_hands_a_1_scope_caller_2_tools
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Send `tools/list` twice with identical inputs and prove byte-stable tool order. Then expire `ttlMs` and refresh.
+    zh: |
+      用一樣的輸入送兩次 `tools/list`，證明工具排序在位元組層級穩定。然後讓 `ttlMs` 到期並重新取回。
+    verifies: >-
+      two tools/list results and a reverse-registered server's are byte-identical (744 bytes,
+      postgres.readonly then s3.list); a TTL cache with an injected clock hits at 59,999 ms, refetches
+      at 60,000 ms (the result's ttlMs) with identical bytes, 2 server calls over 4 reads; the list is
+      marked private yet takes no token, so an s3:list-only token lists 2 tools and dispatch denies 1;
+      the TypeScript model hints 300,000 ms public against Python's 60,000 private
+  - index: 3
+    slug: the_lesson_has_no_header_layer_so_a_mismatched_version_header_runs_policy_and_the_tool
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Send a valid body with a different `MCP-Protocol-Version` header. Return `-32020` and do not invoke policy or the tool.
+    zh: |
+      送一個有效的本體，但 `MCP-Protocol-Version` 標頭不同。回 `-32020`，而且不要叫到政策或工具。
+    verifies: >-
+      a header front returns HTTP 400 and -32020 with 0 policy and 0 tool invocations for a 2025-11-25
+      header on a 2026-07-28 body, an unsupported header version and a mismatched Mcp-Name, and 200
+      with 1 and 1 for matching headers in either case; the same body handed to the lesson's dispatch
+      directly completes with policy and tool each run once, and -32020 occurs 0 times in the 6
+      reference source files
+  - index: 4
+    slug: the_audience_check_stops_a_read_only_token_but_tools_list_shows_it_the_destructive_tool
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Mint a token for the read-only server and present it to the state-changing server. Prove audience validation fails before the handler runs.
+    zh: |
+      為唯讀伺服器簽發一個權杖，然後把它拿給會改變狀態的伺服器。證明受眾驗證在處理器執行之前就失敗。
+    verifies: >-
+      a read-only-audience token at the destructive server is denied 'token audience does not match
+      this server' as minted, with jira:write added and with a valid approval, the jira.create handler
+      runs 0 times and each denial is audited; the reverse direction is denied the same way and the
+      correct token runs the handler once; tools/list takes no token and lists jira.create with
+      destructiveHint true to the refused caller; wrong audience and unknown tool both return -32000
+  - index: 5
+    slug: a_changed_field_cannot_replay_the_approval_but_the_unchanged_action_replays_5_of_5_times
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Bind an approval to one normalized argument digest. Change one field and prove the approval cannot be replayed.
+    zh: |
+      把一筆核可綁到一個正規化引數摘要上。改動一個欄位，證明那筆核可無法被重播。
+    verifies: >-
+      an approval bound to {title: new bug} denies title 'new bug!' with 'approval arguments do not
+      match requested action' and 0 handler runs, and another target or actor is denied with its own
+      reason; the digest is key-order invariant but not NFC/NFD or 1/1.0 invariant; the unchanged
+      action is allowed 5 of 5 times with 5 handler runs all returning PROJ-99; an approval for an
+      out-of-schema assignee field is honoured and the handler receives it despite
+      additionalProperties false
+  - index: 6
+    slug: with_cursor_state_in_process_memory_alternating_replicas_answer_0_of_75_page_reads
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Route consecutive calls to alternating replicas. Replace hidden process memory with an explicit shared handle wherever the workflow needs persistence.
+    zh: |
+      把連續的呼叫輪流路由到不同的副本。凡是流程需要持久性的地方，都把藏在行程記憶體裡的狀態換成一個明確的共用把手。
+    verifies: >-
+      25 open-plus-3-page cursor workflows (100 calls) over 2 round-robin replicas read 75/75 pages
+      correctly with an explicit shared UUID handle, 0/75 with per-replica memory (50 unknown-handle
+      errors, 25 silently wrong pages) and 75/75 again with affinity; 100 alternating calls of the
+      lesson's own tools are byte-identical to one replica and both replicas encode tools/list
+      identically; the TypeScript incidents_ack mutates process-local memory once and main.py has no
+      stateful tool
+  - index: 7
+    slug: a_new_id_retry_never_resumes_and_after_a_late_break_it_creates_the_jira_issue_twice
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Break a request-scoped SSE connection and retry with a new JSON-RPC request ID. Verify that no `Last-Event-ID` recovery path is used.
+    zh: |
+      弄斷一條請求範圍的 SSE 連線，然後用一個新的 JSON-RPC 請求 ID 重試。確認沒有用到任何 `Last-Event-ID` 復原路徑。
+    verifies: >-
+      in 4 scenarios (read-only and jira.create, broken after event 1 or 2) the server logs id 7 as
+      cancelled, the id-8 retry restarts at 'started' and ends with id 8, no stream carries an SSE id:
+      line, the retry sends no Last-Event-ID, and a retry with Last-Event-ID: 1 gets the same stream
+      and reruns the tool once; broken late, jira.create runs twice (1 then 2) with the same PROJ-99
+      reply while the read-only replies are identical; the reference code mentions last-event-id,
+      event-stream and idempot 0 times

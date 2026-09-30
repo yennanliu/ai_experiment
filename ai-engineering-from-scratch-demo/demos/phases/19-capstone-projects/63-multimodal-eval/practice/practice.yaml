@@ -1,0 +1,80 @@
+lesson: 63-multimodal-eval
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/63-multimodal-eval/docs/en.md
+exercises:
+  - index: 1
+    slug: cider_scores_a_caption_with_no_shared_token_0_where_bleu4_gives_it_97pct_of_the_untrained_score
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Add CIDEr to the captioning metrics. CIDEr uses TF-IDF weighting on n-grams, which rewards informative tokens.
+    zh: |
+      替字幕指標加上 CIDEr。CIDEr 在 n-gram 上用 TF-IDF 加權，這會獎勵資訊量高的詞元。
+    verifies: >-
+      CIDEr-D (pycocoevalcap's cider_scorer, df over the eval references) on the captions the shipped
+      main() scores: 0.0354 before and 0.335 after training against a first-reference ceiling of 5.79,
+      a copy of the only reference scores 10; a caption of 8 tokens in no reference gets BLEU-4 0.1186
+      (97% of the untrained 0.1220) and CIDEr 0; the trained captioner emits 4 distinct captions for
+      50 images, 22 scoring CIDEr 0; a one-image eval scores a perfect caption 0
+  - index: 2
+    slug: the_trained_model_scores_0_on_exact_match_and_soft_accuracy_below_the_1_in_128_chance_level
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Implement soft-accuracy VQA: multiple human answers per question, accuracy is `min(human_count / 3, 1)` if any matches. Replicates VQA v2.
+    zh: |
+      實作軟性準確率的 VQA：每個問題有多個人工答案，只要有任何一個相符，準確率就是 `min(human_count / 3, 1)`。重現 VQA v2。
+    verifies: >-
+      stated min(count/3, 1) and VQA v2's official 10-way leave-one-out average over 10 labelled
+      annotations per question; the shipped model's predictions score EM/stated/official
+      0.02/0.0333/0.032 before and 0/0/0 after; 1-4 matching annotators give 0.333/0.667/1/1 stated vs
+      0.3/0.6/0.9/1 official; any image-only rule tops out at 0.14 EM and 0.0 after training is below
+      the 1/128 chance the doc's 'VQA improving above random' implies
+  - index: 3
+    slug: bleu4_never_crashes_on_an_empty_caption_but_raises_on_521_of_2000_inputs_with_no_references
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Add a NaN-safe variant of `bleu4` that handles empty generated sequences without crashing.
+    zh: |
+      加上一個對 NaN 安全的 `bleu4` 變體，能在生成序列為空時不當機。
+    verifies: >-
+      bleu4_safe wraps the lesson's bleu4 and raises on 0 of 2,000 seeded inputs, all in [0, 1]; the
+      lesson's bleu4 returns 0.0 on an empty caption, raises ValueError on 521 (every one an empty
+      reference list, 52 also with an empty caption) and scores 0.1349 against only empty references;
+      NLTK's method 1 (eps 0.1) gives 0.0188/0.0955 before/after vs the lesson's add-1 0.122/0.173 and
+      0.0137 vs 0.1186 for a no-shared-token caption, identical where no precision is zero; an exact
+      3-token caption scores 0
+  - index: 4
+    slug: training_lifts_image_to_text_mrr_from_0_083_to_0_104_while_r_at_1_falls_from_0_02_to_0
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Compute mean reciprocal rank (MRR) alongside R@K. MRR is sensitive to where the correct item lands beyond the top K; R@K is sensitive to whether it lands in the top K.
+    zh: |
+      在 R@K 旁邊計算平均倒數排名（MRR）。MRR 對「正確項目落在前 K 之外的哪裡」很敏感；R@K 只對「有沒有落在前 K 之內」敏感。
+    verifies: >-
+      ranks from the same topk test recall_at_k uses reproduce its R@1/5/10 exactly; MRR i2t 0.083 ->
+      0.1036 and t2i 0.1007 -> 0.1528, medians 26/26 -> 18/16, 42/40 -> 37/31 queries beyond rank 10;
+      R@1_i2t goes 0.02 -> 0.0 and its one hit is a tie at 0.149 with a duplicate caption; 39 of 50
+      captions are distinct, so an oracle scores R@1 0.78 and MRR 0.89 (1.0 best, 0.78 worst), and
+      50/50 eval captions are in the training corpus
+  - index: 5
+    slug: held_out_loss_falls_at_all_5_checkpoints_but_only_bleu4_tracks_it_and_vqa_ends_below_chance
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      Run the eval on the model at five checkpoints during training (step 0, 10, 20, 30, 40, 50) and plot the learning curve. Confirm the metric trajectories track the loss trajectory.
+    zh: |
+      在訓練過程的五個檢查點（第 0、10、20、30、40、50 步）上跑那份評估，並把學習曲線畫出來。確認那些指標的軌跡與損失的軌跡一致。
+    verifies: >-
+      the shipped main() evaluated from inside its loop at steps 0-50 gives the same final metrics as
+      an unhooked run; held-out loss 9.5825 -> 7.2832 falls on all 5 intervals, BLEU-4 0.122 -> 0.173
+      tracks 5/5, R@10_i2t 3/5, R@5 and R@10_t2i 2/5, R@1 1/5, VQA EM 0/5; main() has no assert or
+      baseline although the doc says the demo checks the baselines, and ends at R@1_i2t 0.0 < 0.02 and
+      VQA 0.0 < 1/128; R@1_i2t reads 0.02, 0.02, 0.04, 0, 0, 0

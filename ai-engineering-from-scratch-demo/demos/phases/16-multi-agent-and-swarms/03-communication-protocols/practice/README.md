@@ -15,7 +15,7 @@ compares against the reference implementation and not a fork of it (`DESIGN D5`)
 
 | # | Exercise | Kind | Tier | Ships |
 |---|---|---|---|---|
-| 1 | Multi-hop task delegation. Extend the `TaskManager` so an agent handler can delegate subtasks… | code | T0 | `ex01_send_message_returns_before_the_work_it_started.py` |
+| 1 | Multi-hop task delegation. Extend the `TaskManager` so an agent handler can delegate subtasks… | code | T0 | `ex01_the_task_is_finished_before_anyone_can_subscribe.py` |
 | 2 | Streaming audit trail. Modify the `AuditableRunner` to support streaming mode. Instead of wai… | code | T0 | `ex02_there_is_nothing_to_stream_because_nothing_is_appended.py` |
 | 3 | DID rotation. Add key rotation to the `IdentityRegistry`. An agent should be able to publish… | code | T0 | `ex03_both_verification_methods_hold_the_same_key.py` |
 | 4 | Protocol negotiation. Implement ANP's meta-protocol concept. Two agents exchange `protocolNeg… | code | T0 | `ex04_the_three_round_cap_is_never_reached.py` |
@@ -31,31 +31,41 @@ JavaScript still runs **synchronously to its first `await`**. Several of the
 findings below follow from that single fact, and a port that schedules the
 body instead of starting it would hide all of them.
 
-### 1 — sendMessage returns before the work it started
+### 1 — the task is finished before anyone can subscribe
 
-The multi-hop works. The researcher sends `search` and `summarize`, awaits
-both, and merges their artifacts: three tasks in the manager, researcher
-`completed`, two merged artifacts.
+**The multi-hop works, and it is now a plain `await`.** The researcher sends
+`search` and `summarize`, awaits both together, and merges their artifacts:
+three tasks in the manager, researcher `completed`, two merged artifacts.
 
-Getting there is awkward for a reason. `processTask` is called in **one**
-place and awaited in **zero** — the manager attaches a `.catch` and returns.
-So its first two statements, setting `working` and emitting, run before
-`sendMessage` returns. Which means:
+That is because upstream changed the bug this solution used to report.
+[#357](https://github.com/rohitg00/ai-engineering-from-scratch/pull/357) (in
+the fork via merge `31f21f1d`) turned the single call site into
+`await this.processTask(...)` — called in **1** place, awaited in **1**.
+Before, `sendMessage` returned a task already reading `working` while the
+handler was still running; now its promise resolves with a task reading
+**`completed`**, so a delegating handler needs no polling.
 
-- `sendMessage` assigns `state: "submitted"` and hands back a task already
-  reading **`working`**. The submitted state is written on every call and
-  observable on none.
-- The caller learns the task id *from the return value*. By then the `working`
-  update has been delivered to a listener list that is necessarily empty. A
-  listener subscribed at the first possible moment receives **1** of the task's
-  **2** status updates. The streaming API cannot observe the transition it
-  exists for.
+| | `sendMessage` resolves with | listener at first moment hears |
+|---|---|---:|
+| before #357 (un-awaited) | `working` | 1 of 2 status updates |
+| now (awaited) | **`completed`** | **0 of 4** events |
 
-And a delegated task cannot be told from a root one. `Task` declares five
-fields — `id`, `contextId`, `status`, `artifacts`, `history` — and none names
-a parent. `createTask` mints a fresh random `contextId` whenever the caller
-does not thread one through, so a subtask that forgets becomes a root, and the
-audit trail exercise 2 is about has no edge to record.
+The fix moves the blind spot rather than closing it. The caller still learns
+the task id only from what `sendMessage` returns, and that is now after the
+task is terminal: `submitted` and `working` are both written and neither is
+ever held by a caller, and a subscriber hears **none** of the researcher's
+four events (working, two artifacts, completed). The streaming API has no
+stream left to observe.
+
+The lesson page did not follow the code. `docs/en.md` still calls
+`this.processTask(` in **1** place and awaits it in **0**, so a reader typing
+along builds the old, returns-early behaviour.
+
+And a delegated task still cannot be told from a root one. `Task` declares
+five fields — `id`, `contextId`, `status`, `artifacts`, `history` — and none
+names a parent. `createTask` mints a fresh random `contextId` whenever the
+caller does not thread one through, so a subtask that forgets becomes a root,
+and the audit trail exercise 2 is about has no edge to record.
 
 ### 2 — there is nothing to stream because nothing is appended
 
@@ -137,8 +147,8 @@ The last clause of the exercise — "the agreed format determines which
 `TaskManager` or `AuditableRunner` they use" — has nothing to attach to.
 `capabilities.streaming` is declared three times and read zero. `delegateTask`
 has zero branches on any capability. And it does not choose between the two
-runners at all: it calls `auditRunner.run(...)` and then
-`taskManager.sendMessage(...)`, both of which execute the target agent. The
+runners at all: it calls `taskManager.sendMessage(...)` and then
+`auditRunner.run(...)`, both of which execute the target agent. The
 port counts **two executions per delegation**, through two registries sharing
 no state, returning a `task` and an `audit` that describe different runs of
 the same request.

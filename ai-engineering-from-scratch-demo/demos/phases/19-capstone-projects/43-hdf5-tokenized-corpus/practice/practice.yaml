@@ -1,0 +1,76 @@
+lesson: 43-hdf5-tokenized-corpus
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/43-hdf5-tokenized-corpus/docs/en.md
+exercises:
+  - index: 1
+    slug: any_hdf5_filter_crashes_the_swmr_writer_on_close_and_gzip_saves_62pct_of_bytes
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--compression gzip` flag to the HDF5 writer and measure the throughput cost on the demo corpus. Defend the chosen default.
+    zh: |
+      替 HDF5 寫入器加上一個 `--compression gzip` 旗標，並在示範語料上量測吞吐量代價。替你選的預設值辯護。
+    verifies: >-
+      --compression gzip (default none) on the demo corpus: stored bytes 26,624 -> 10,130 (62% saved)
+      -> 7,670 with shuffle, write and 250-batch read times under 3x of uncompressed (measured about
+      1.1x and 1.0x), all configs validate clean; the unmodified SWMR writer raises on close with lzf,
+      shuffle, fletcher32 and gzip but closes unfiltered; the uint16 high byte is zero on 100% of
+      tokens
+  - index: 2
+    slug: the_seed_already_exists_and_matches_10_of_10_batches_but_a_restart_replays_batch_0
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a deterministic seed to the sliding-window dataloader and verify two runs with the same seed produce identical batches.
+    zh: |
+      替滑動窗口 dataloader 加上一個確定性種子，並驗證兩次同種子的執行產出完全相同的批次。
+    verifies: >-
+      two seed-7 loaders match on 10/10 batches (inputs and targets), their blake2b checksums
+      (e2747ebe, 14bc5794, fe65c4c3, ...) equal all 10 run_demo prints, chunk 64 vs 512 gives 10/10,
+      seed 8 gives 0/10; a restart after batch 5 matches the next 5 batches 0/5 when rebuilt, 5/5
+      after replaying 20 draws or restoring RNG state; a second seed-7 worker repeats 40/40 windows
+  - index: 3
+    slug: the_reference_validator_passes_a_shifted_global_start_that_corrupts_49pct_of_windows
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--validate` mode that reads every shard, recomputes the sha256 over its tokens, and compares against `shards.json`. CI should run this before training starts.
+    zh: |
+      加上一個 `--validate` 模式，讀過每一個分片、對它的詞元重算 sha256，並與 `shards.json` 比對。CI 應該在訓練開始前跑這個。
+    verifies: >-
+      --validate exits 1 on a flipped token, an index token_count lowered by 1 and a global_start
+      moved 6,456 -> 6,400, and 0 on the clean and a moved corpus; the reference validate_corpus flags
+      only the flipped token and raises FileNotFoundError on the moved corpus; the store then raises
+      on 65 of 12,847 windows (lowered count) or returns wrong tokens for 6,336 of 12,848 and raises
+      on 176 (moved global_start); both demo shards share sha256 5c811f78961b
+  - index: 4
+    slug: chunk_equal_to_window_touches_2_chunks_per_read_and_the_corpus_never_leaves_hdf5_cache
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Compare the dataloader throughput at chunk sizes equal to, half of, and twice the window size. Report the page-cache effect.
+    zh: |
+      在分塊大小等於窗口、等於半個窗口、等於兩倍窗口的三種情況下比較 dataloader 的吞吐量。回報那個頁面快取效應。
+    verifies: >-
+      over 2,000 seed-7 reads of 65 tokens, chunk 32/64/128 touch 3.0/2.0/1.51 chunks (192/256/386
+      bytes) per read, chunk 64 never fewer than 2; the 25,824-byte corpus fits HDF5 2.0's 8 MiB chunk
+      cache; throughputs are within 2x of each other and half-window is above 0.5x of window;
+      get_offset() is None at all three sizes
+  - index: 5
+    slug: a_512_token_cap_keeps_23_8pct_of_the_corpus_and_read_time_would_reject_76pct_of_windows
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `--max-document-tokens` flag that truncates very long documents at write time. Defend the trade-off against deciding at read time.
+    zh: |
+      加上一個 `--max-document-tokens` 旗標，在寫入時就把超長文件截斷。拿它與「在讀取時才決定」做取捨辯護。
+    verifies: >-
+      --max-document-tokens 512 shrinks the demo corpus 12,912 -> 3,078 tokens (23.8% kept) with 6
+      documents, changes sha256 5c811f78961b -> d3102859baae; a read-time cap rejects 76.4% of 10,000
+      seed-7 windows; a capped 3-byte-per-char document decodes to 170 whole characters then U+FFFD;
+      pack_documents keeps 12,911 tokens in 26 groups

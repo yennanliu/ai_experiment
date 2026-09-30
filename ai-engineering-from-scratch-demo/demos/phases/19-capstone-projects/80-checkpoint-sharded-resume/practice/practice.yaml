@@ -1,0 +1,79 @@
+lesson: 80-checkpoint-sharded-resume
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/80-checkpoint-sharded-resume/docs/en.md
+exercises:
+  - index: 1
+    slug: an_async_save_must_snapshot_first_or_5_training_steps_land_in_the_step_100_checkpoint
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add async write: kick off the save in a thread and let training continue. Block the next save until the previous one completes.
+    zh: |
+      加上非同步寫入：在一條執行緒上啟動那次存檔並讓訓練繼續。把下一次存檔擋住，直到上一次完成。
+    verifies: >-
+      the snapshotting saver logs save100-start, 5 train steps, save105-waiting, save100-done,
+      save105-start, save105-done with at most 1 save in flight, and both checkpoints load byte-equal
+      (param/m/v, 4 ranks) at the step requested; handing the live dicts to the thread instead gives a
+      step-100 checkpoint holding step-105 params on 4/4 ranks (shard step 105, manifest step 100)
+      that load_sharded accepts
+  - index: 2
+    slug: rotate_before_save_needs_keep_last_4_and_5_crashed_saves_rotate_away_all_5_good_checkpoints
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `last_5_steps` rotation: keep the 5 most recent checkpoints, delete the oldest before saving a new one.
+    zh: |
+      加上一套 `last_5_steps` 輪替：保留最近 5 份檢查點，存新的之前刪掉最舊的。
+    verifies: >-
+      rotate_checkpoints(keep_last=4) before each of 8 saves gives dir counts 1,2,3,4,5,5,5,5 and
+      keeps step_0003..0007; keep_last=5 gives 6 dirs from the sixth save on; after 5 good saves and 5
+      saves crashed on the third rank, the lesson's rotation leaves 0 loadable of 5 dirs, a
+      complete-only rotation leaves steps 1-4 loadable
+  - index: 3
+    slug: crc_catches_2000_of_2000_bit_flips_but_a_4_byte_fixup_forges_it_and_a_crc32_field_crashes_the_loader
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a CRC-only fast verification path for the inner-loop reload (rotation rolls a checkpoint into being the new active one without full sha256).
+    zh: |
+      替內圈重新載入加上一條只做 CRC 的快速驗證路徑（輪替會把某份檢查點轉成新的作用中那一份，而不做完整的 sha256）。
+    verifies: >-
+      the crc32 sidecar path passes the clean checkpoint and rejects 2000/2000 seeded bit flips, a
+      1-byte truncation and the lesson's append tamper; sha256/crc32 time ratio > 2 (best of 5 over 4
+      x 4 MB); a crc32 field in the manifest (schema_version 2) raises TypeError from ShardEntry, not
+      CheckpointError; a GF(2)-solved 4-byte fix-up leaves CRC residue 0, passes fast_verify, changes
+      2 values, and only load_sharded's sha256 rejects it
+  - index: 4
+    slug: n4_to_n8_and_back_rewrites_the_original_shards_but_view_shards_each_hold_the_whole_tensor
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a cross-world-size load: shard rebalance from N=4 to N=8 by reading the manifest, concatenating, and re-sharding.
+    zh: |
+      加上跨世界大小的載入：讀那份清單、串接起來、再重新分片，把分片從 N=4 重新平衡到 N=8。
+    verifies: >-
+      the lesson loader refuses N=4 at N=8 with world_size mismatch; reshard to N=8 gives offsets
+      512*i with numel 512, flat param/m/v equal before and after one more elementwise Adam step, and
+      8->4 reproduces the original shard sha256s; resharding views gives shards with numel 512 over a
+      4096-element storage and > 5x the cloned bytes; a manifest with rank 1 offset 0 loads through
+      load_sharded and is rejected by the tiling check
+  - index: 5
+    slug: at_half_the_save_cadence_the_lessons_rotation_deletes_6_of_20_checkpoints_before_upload
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add an upload to a fake S3 (a second directory) and write the upload manifest. Defend the two-tier storage policy.
+    zh: |
+      加上一次上傳到假 S3（第二個目錄），並寫出那份上傳清單。替那套兩層儲存政策辯護。
+    verifies: >-
+      the upload manifest lists rank0-3.bin then manifest.json, the step-100 checkpoint resumes from
+      the fake S3 byte-equal after the local tier is deleted, an upload killed after 2 objects leaves
+      no marker and resume falls back to step 100; over 20 saves with 5 local checkpoints, 1 upload
+      per save loses 0 (peak 5 local, remote step 19), 1 upload per 2 saves loses steps 4,6,...,14
+      under rotate_checkpoints (remote step 15), and pinning un-uploaded checkpoints loses 0 but peaks
+      at 11 local with remote step 9

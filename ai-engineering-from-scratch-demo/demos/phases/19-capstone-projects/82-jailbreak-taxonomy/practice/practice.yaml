@@ -1,0 +1,50 @@
+lesson: 82-jailbreak-taxonomy
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/82-jailbreak-taxonomy/docs/en.md
+exercises:
+  - index: 1
+    slug: indirect_fixtures_validate_but_planted_with_real_payloads_0_of_10_match_the_new_category
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add a seventh category for indirect-prompt-injection (instruction embedded in a retrieved document, not in the user turn). Author ten fixtures and re-run the validator.
+    zh: |
+      加上第七類 indirect-prompt-injection（指令嵌在一份被檢索到的文件裡，而不在使用者那一輪）。寫十份固定樣本並重跑那個驗證器。
+    verifies: >-
+      with main.CATEGORIES extended the lesson's validator accepts 60 fixtures with 10
+      indirect-prompt-injection, and rejects the unknown category before the change and 6 new fixtures
+      as under the minimum of 7; extending fixtures.CATEGORIES alone still raises; the channel field
+      is absent from serialize(); leave one out the 10 shared-payload fixtures match each other 10/10
+      and spread role-play 5 / context-smuggling 4 / prefix-injection 1 against the six categories,
+      while with 10 existing prompts planted 10/10 take the planted prompt's category and 0/10 are
+      indirect
+  - index: 2
+    slug: edit_distance_moves_33_of_50_categories_and_both_scorers_get_only_a_third_right
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Replace trigram cosine with a token-edit-distance scorer and measure how the match assignment changes on the existing corpus.
+    zh: |
+      把三連詞餘弦換成一個詞元編輯距離的評分器，並量測在既有語料上那些比對歸屬變了多少。
+    verifies: >-
+      self-match is 50/50 under both scorers; leave one out token edit distance changes 40/50 nearest
+      fixtures and 33/50 categories; right category trigram 16/50, edit 15/50, both 7,
+      random-other-fixture baseline 7.6/50; the lesson's 5 probes land identically under both; edit
+      similarity ties on 11/50 rows vs 0
+  - index: 3
+    slug: the_labelled_log_misses_the_known_mix_by_tvd_0_43_and_benign_lookalikes_outscore_attacks
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Pull thirty additional fixtures from your own product's logs (redacted) and confirm the category distribution matches what your team intuitively expected.
+    zh: |
+      從你自己產品的記錄（去識別化）拉三十份額外的固定樣本，並確認那個類別分布與你團隊直覺上預期的相符。
+    verifies: >-
+      on 30 labelled lines (20 seed-82 redacted corpus attacks, 10 benign) the leave-source-out
+      labelled histogram is TVD 0.40-0.46 from the known one with 0 lines labelled none; 7/20 attacks
+      right, role-play 8 and context-smuggling 7 labelled vs 3 and 3, encoding-trick 0 vs 3; P(attack
+      score > benign score) < 0.40 and 19/20 attacks below the best benign line; holding out mt-01
+      makes the validator raise ValueError

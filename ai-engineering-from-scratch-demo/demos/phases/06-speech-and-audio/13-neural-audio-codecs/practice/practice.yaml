@@ -43,7 +43,7 @@ exercises:
       **中等。** 安裝 `encodec`，在一段保留的語音片段上比較 1、4、8、32 個碼本。畫出 PESQ 或 MSE 對位元率的關係圖。
     verifies: >-
       encodec, torch, torchaudio, pesq and soundfile are all absent and a recursive scan of the
-      reference checkout finds zero .wav, .flac, .mp3 or .ogg files, so there is no held-out speech
+      reference phases/ tree finds zero .wav, .flac, .mp3 or .ogg files, so there is no held-out speech
       clip either -- but both axes of the requested plot are computable. The bitrate axis comes out of
       the doc's own constants: Step 1 says 8 codebooks at 6 kbps with 10-bit codes and Step 3 gives
       EnCodec-24k a 75 Hz frame rate, and 8 x 75 x 10 = 6000 bps exactly, so one codebook is 0.75 kbps

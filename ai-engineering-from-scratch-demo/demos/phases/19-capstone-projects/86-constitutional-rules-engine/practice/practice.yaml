@@ -1,0 +1,49 @@
+lesson: 86-constitutional-rules-engine
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/86-constitutional-rules-engine/docs/en.md
+exercises:
+  - index: 1
+    slug: the_rule_fires_on_6_of_6_safety_prompts_and_the_lessons_engine_would_fire_it_on_every_response
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a rule that requires every response to include the phrase "If this is urgent" when the prompt mentions safety. Use composition.
+    zh: |
+      加上一條規則：當提示詞提到安全時，要求每一段回應都要含有 "If this is urgent" 這個片語。用組合子。
+    verifies: >-
+      with applies_when_prompt bound per call, the rule is a violation on 6/6 safety prompts and clean
+      after the prepend fix, not_applicable on 6/6 others, pass when the phrase is present, and the 5
+      demo drafts keep their violations; the plain lesson Engine ignores the unknown key and fires the
+      rule on 6/6 responses; a plain safe/safety word trigger fires on 3/6 non-safety prompts
+      (thread-safe, memory safety, type-safe)
+  - index: 2
+    slug: slot_templates_match_the_regex_fixer_on_5_of_5_drafts_and_a_misspelled_fix_is_a_silent_no_op
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the regex fixer with a templating fixer that takes named slots. Demonstrate one rule rewritten under the new design.
+    zh: |
+      把那個正規表達式修補器換成一個接受具名插槽的模板式修補器。展示在新設計之下被改寫的一條規則。
+    verifies: >-
+      slot-free templates reproduce the lesson Fixer on 5/5 demo drafts (text and second-pass
+      violations); the rewritten PII rule changes only the PII draft and maps 4 probes to
+      [example-email]/[example-phone] with 0 violations left; the lesson's regex leaves a stray ( and
+      + on 2/4 probes with 0 violations reported; a misspelled fix op returns the draft unchanged in
+      the lesson Fixer and raises ValueError in the template fixer, as does an undeclared slot
+  - index: 3
+    slug: the_pii_rule_is_the_over_firer_at_precision_0_25_while_the_refusal_rule_has_the_top_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a metrics endpoint that, given a corpus of drafts, returns the per-rule violation rate so the team can see which rule is over-firing.
+    zh: |
+      加上一個指標端點：給一份草稿語料，回傳逐規則的違規率，好讓團隊看得出哪一條規則觸發過頭了。
+    verifies: >-
+      POST /metrics on a localhost ThreadingHTTPServer over 20 labelled drafts names
+      no-pii-in-examples (4 fired, 1 tp, 3 fp, 1 fn, rate 0.2, precision 0.25); no-empty-refusal has
+      the top rate 0.25 with 3 of 5 fires real; the other rules have 0 false fires; unlabelled drafts
+      return the same rates and no over-firer; bad JSON gets 400; the PII rule fires on 4/4 applicable
+      drafts and misses an email outside them

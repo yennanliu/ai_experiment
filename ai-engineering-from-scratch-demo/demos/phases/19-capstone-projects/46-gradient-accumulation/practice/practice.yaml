@@ -1,0 +1,79 @@
+lesson: 46-gradient-accumulation
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/46-gradient-accumulation/docs/en.md
+exercises:
+  - index: 1
+    slug: samples_per_sec_flattens_by_effective_batch_16_to_32_and_every_points_loss_sits_at_ln_16
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Re-run the sweep with `--num-steps 100` and plot samples per second against effective batch. Where does the curve flatten?
+    zh: |
+      用 `--num-steps 100` 重跑那次掃描，並把每秒樣本數對有效批次畫出來。那條曲線在哪裡變平？
+    verifies: >-
+      the lesson's args parsed with --num-steps 100 (micro 4, lr 0.05, seed 0, grid 1,2,4,8,16), the
+      sweep extended to accum 64 and run 3 times: 7 points of 100 steps and 100 syncs each; rate = eff
+      / best median step time; against the plateau (median rate at eff 64, 128, 256) eff 4 sits below
+      85% (69-72% measured) and the rate is within 90% from eff <= 64 (16-32 measured); average loss
+      at all 7 points identical over the repeats and within 0.01 of ln 16 = 2.7726 (random targets);
+      the shipped outputs/accum-curve.json holds accum 1,2,4 at 8 steps while the defaults are
+      1,2,4,8,16 at 25
+  - index: 2
+    slug: without_the_division_sgds_first_step_is_4x_too_big_but_adamws_is_1_000015x
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a wrong scaling variant (no division) and show the parameter diff at step 1 against the reference.
+    zh: |
+      加上一個錯誤縮放的變體（不做除法），並在第 1 步展示它與參考版本的參數差異。
+    verifies: >-
+      equivalence_check's fixture (seed 7, 16 samples, lr 0.1), train_one_optimizer_step over 4 chunks
+      with loss_scaled_for_accum patched to skip the division: under SGD the step-1 parameter diff
+      from the full-batch reference is 0.0215 = 3 * lr * max|g| (within 1e-4 relative) and the
+      update-norm ratio 4.0000002, the scaled variant 1.5e-8; under AdamW the ratio is 1.000015 and
+      the diff 7.8e-4; the lesson's logged (loss, grad norm) reads (8.4088, 1.2109) unscaled vs
+      (2.1022, 0.3027)
+  - index: 3
+    slug: adamws_step_counter_reads_10_after_10_effective_steps_and_per_micro_stepping_moves_2_4x_as_far
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Swap SGD for AdamW and confirm the optimizer state advances once per effective step, not once per micro-batch.
+    zh: |
+      把 SGD 換成 AdamW，並確認最佳化器狀態是每個有效步驟前進一次，不是每個微批次一次。
+    verifies: >-
+      the lesson's sweep with its hard-coded SGD built as AdamW: after 10 steps at accum 1, 4, 16 (10,
+      40, 160 micro-batches) all 6 parameters' step counters read 10; 5 accumulated AdamW steps match
+      5 full-batch steps to 6.3e-8 (params) and 5.5e-12 (exp_avg_sq); stepping per micro-batch reads
+      20 and lands 0.116 from the full-batch run, which itself moved 0.049
+  - index: 4
+    slug: the_stock_no_sync_stand_in_reports_1_sync_per_step_while_real_ddp_all_reduces_all_n
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Introduce a real `DistributedDataParallel` wrapper and route the `no_sync_context` to its method. Confirm sync_calls drops by N-1 per effective batch.
+    zh: |
+      引入一個真的 `DistributedDataParallel` 包裝，並把 `no_sync_context` 路由到它的方法上。確認每個有效批次的 sync_calls 少了 N-1 次。
+    verifies: >-
+      a real DistributedDataParallel in a 1-process gloo group with a counting comm hook, 3 effective
+      steps at N = 2, 4, 8: no_sync_context routed to model.no_sync gives 3 sync_calls and 3
+      all-reduces, without no_sync 6/12/24 of each (drop 3 * (N - 1)), with bit-identical gradients;
+      the stock _NoSyncCtx reports 3 sync_calls while DDP launches 6/12/24 all-reduces
+  - index: 5
+    slug: 2x8_and_4x4_agree_to_one_float32_ulp_and_only_bf16_needs_the_1e_4_bound_relaxed
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Modify the equivalence check to compare two different micro splits (2 by 8 vs 4 by 4) and explain any tolerance you need to relax.
+    zh: |
+      修改那個等價性檢查，去比較兩種不同的微切分（2 乘 8 對 4 乘 4），並解釋你需要放寬的任何容許誤差。
+    verifies: >-
+      on equivalence_check's fixture the shipped check gives 1.3e-8 vs full batch at accum 2 and 4;
+      2x8 and 8x2 vs 4x4 differ by 9.3e-9 and 7.5e-9 in float32 (asserted < 1e-7 and < 4 eps max|g|,
+      max|g| 0.0717), 2.1e-17 in float64 (< 1e-15); in bfloat16 both differ by 4.9e-4 = 2^-11, one
+      bf16 ulp, which fails the lesson's 1e-4 (asserted in (1e-4, 2^-10])

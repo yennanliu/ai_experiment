@@ -86,9 +86,9 @@ def precision_floor(ref, signal, count=32):
 
 
 def clips_present():
-    """Any audio file anywhere in the reference checkout -- the held-out clip."""
+    """Any audio file in any lesson of the reference curriculum -- the held-out clip."""
     root = parity.find_reference_root()
-    return [p.name for p in root.rglob("*") if p.suffix.lower() in AUDIO_SUFFIXES][:3]
+    return [p.name for p in (root / "phases").rglob("*") if p.suffix.lower() in AUDIO_SUFFIXES][:3]
 
 
 def solve():
@@ -127,8 +127,8 @@ def verify(result):
         practice.Check(
             "CONTROL: no codec, no metric, and no held-out clip anywhere in the tree",
             len(result["absent"]) == len(ABSENT) and not result["clips"],
-            f"find_spec is None for {result['absent']}, and a recursive scan of the reference "
-            f"checkout finds {len(result['clips'])} files ending in {list(AUDIO_SUFFIXES)}. Both "
+            f"find_spec is None for {result['absent']}, and a recursive scan of the "
+            f"reference phases/ tree finds {len(result['clips'])} files ending in {list(AUDIO_SUFFIXES)}. Both "
             "axes are still computable, which is what the rest of this measures",
         ),
         practice.Check(

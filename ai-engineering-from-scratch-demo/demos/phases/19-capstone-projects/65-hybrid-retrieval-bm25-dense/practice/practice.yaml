@@ -1,0 +1,63 @@
+lesson: 65-hybrid-retrieval-bm25-dense
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/65-hybrid-retrieval-bm25-dense/docs/en.md
+exercises:
+  - index: 1
+    slug: a_real_encoder_moves_the_upload_doc_from_dense_rank_2_to_1_but_bm25_already_had_it_first
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace `mock_embed` with a real model from your provider. Re-run the demo and report how the dense-only ranking changes on the paraphrased query.
+    zh: |
+      把 `mock_embed` 換成你供應商那裡的一個真模型。重跑示範，並回報那個純稠密排名在改寫過的查詢上怎麼變。
+    verifies: >-
+      with paraphrase-multilingual-MiniLM-L12-v2 run offline from the HF cache (from-scratch BERT
+      forward, float64), the paraphrased query's dense order goes from d3, d2, d6, d1, d4 (mock) to
+      d2, d1, d3, d5, d4, top cosines 0.6247 / 0.4517; the fused top-2 stays d2, d3 but the mock's
+      exact d2/d3 tie is broken. The query shares cancelled, do, uploads with d2 (BM25 4.8541 vs
+      1.6862) and d1 has no cancel* token; the doc's rank claims (1,4,1), (6,1,1), (3,3,1) measure
+      (1,1,1), (1,2,1), (1,1,1), and a rank 6 cannot occur at k_each = 5
+  - index: 2
+    slug: a_summary_list_lowers_mrr_from_0_850_to_0_820_and_the_lessons_fusion_already_trails_bm25_alone
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a third modality: chunk summaries indexed separately and fused as a third ranked list. Measure the gain.
+    zh: |
+      加上第三種模態：把片段摘要另外建索引，並當成第三份排序清單融合進去。量測那個增益。
+    verifies: >-
+      on 14 labelled queries over the lesson's corpus (7 literal, 7 paraphrased), fusing a
+      first-sentence summary index as a third RRF list moves MRR / hits@1 from 0.8495 / 11 to 0.8197 /
+      10 (dense summaries) or 0.8245 / 11 (BM25 summaries), all loss on paraphrases; summaries alone
+      score 0.7031 / 8; BM25 alone scores 0.8673 / 12, above the lesson's two-list fusion
+  - index: 3
+    slug: the_recall_curve_is_flat_from_k_9_to_1000_so_it_peaks_at_k_2_below_the_whole_sweep
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Sweep RRF k across 10, 30, 60, 100, 200. Plot the recall@k curve from lesson 68. Report the value of k where the curve peaks on your corpus.
+    zh: |
+      讓 RRF 的 k 掃過 10、30、60、100、200。畫出第 68 課的 recall@k 曲線。回報在你的語料上那條曲線達峰時的 k 值。
+    verifies: >-
+      lesson 65's retriever on lesson 68's corpus and qrels, graded by lesson 68's evaluate_pipeline:
+      k = 10, 30, 60, 100, 200 all give recall@1/3/5 0.375 / 0.75 / 1.0 and MRR 0.675; the fused order
+      changes only at k = 1, 2, 3, 6, 9 in 1..1000 and the curve peaks at k = 1 and 2 (0.625 / 1.0 /
+      1.0, MRR 0.8333); BM25 alone 0.625 / 1.0 / 1.0, MRR 0.875, beats fusion at every k; lesson 68's
+      stand-in hybrid scores 0.875 / 1.0 / 1.0, MRR 1.0
+  - index: 4
+    slug: bm25f_lifts_symbol_lookups_from_375_to_383_of_400_and_the_multiplier_trick_misses_long_bodies
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement BM25F properly (per-field length normalization rather than the multiplier trick) and compare on a corpus where symbol matches matter most.
+    zh: |
+      把 BM25F 好好實作出來（逐欄位的長度正規化，而不是那個乘數技巧），並在「符號相符最要緊」的語料上做比較。
+    verifies: >-
+      per-field BM25F (TREC-13 section 4.1) vs the lesson's title-x3 multiplier on 400 generated
+      symbol lookups (10 seeds x 40 docs): hits@1 383 vs 375, MRR 0.9788 vs 0.9658, better on 18 and
+      worse on 8; one-field BM25F equals the lesson's BM25 to 8.9e-16; the multiplier's 25 misses
+      average 130.2 body words, BM25F's 17 average 82.1, the corpus 83.3

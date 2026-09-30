@@ -47,7 +47,7 @@ exercises:
       **中等。** 把 STT 替身換成真的 Whisper 模型，跑在一段預錄的 `.wav` 上。量測 WER 與端到端延遲。
     verifies: >-
       whisper, torch, transformers, soundfile, sounddevice, silero_vad and openai are all absent, and
-      scanning the whole reference checkout for .wav, .flac, .mp3, .ogg and .m4a finds 0 files, so
+      scanning every lesson in the reference curriculum's phases/ tree for .wav, .flac, .mp3, .ogg and .m4a finds 0 files, so
       there is neither a model to install nor a recording to run it on. Both measurements are decided
       anyway. WER is 0.000 for every input because streaming_stt never reads its argument: the
       captured turn, pure silence, white noise and an empty buffer return 1 distinct transcript, 'set

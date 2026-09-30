@@ -1,0 +1,53 @@
+lesson: 83-prompt-injection-detector
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/83-prompt-injection-detector/docs/en.md
+exercises:
+  - index: 1
+    slug: a_json_rule_family_catches_8_of_8_tool_results_only_when_it_outscores_the_payload_rule
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a rule family for context-smuggling (instructions hidden in tool result JSON). Measure the recall improvement and the false-positive cost on benign prompts.
+    zh: |
+      替 context-smuggling（藏在工具結果 JSON 裡的指令）加上一個規則家族。量測召回率的改善，以及在良性提示詞上的假陽性代價。
+    verifies: >-
+      three regex rules for instructions inside JSON string values, at score 0.92, lift
+      context-smuggling recall 3/8 -> 4/8 (cs-06) on the lesson's fixtures with precision 1.0, other
+      categories' TPs unchanged and accuracy 31 -> 32/50, and 1/8 -> 8/8 on eight CANARY-7 tool-result
+      probes; benign pass-through stays 25/25 and benign JSON prompts flagged go 2/8 -> 3/8; none of
+      the 25 benign prompts holds a '{' and only cs-01 and cs-06 carry JSON; at 0.80 the family
+      catches 7/8 because disregard-prior 0.85 wins the argmax
+  - index: 2
+    slug: 18_rules_guard_one_true_positive_each_and_leave_one_out_credits_13_of_31_to_no_rule
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Compute per-rule contribution: for each rule, count how many true positives would be lost if it were removed. Sort rules by marginal contribution.
+    zh: |
+      算出逐規則的貢獻：對每條規則，數出若移除它會損失多少真陽性。依邊際貢獻替規則排序。
+    verifies: >-
+      leave-one-out over 53 rules gives net +1 for 18 rules, 0 for 33 and -1 for override-claim and
+      from-now-on-unchained (sum 16 against 31 TPs), sorted non-increasing; 13 TPs are lost by no
+      single removal, 14 are fired by >=2 in-category rules and each of the 13 two-rule pairs loses
+      its TP when both go; dropping ignore-prior plus ignore-family gains cs-08; 5 rules never fire on
+      the 75 prompts (ignore-previous, disregard-prior, sure-here-the, morse-instruction, act-as-x)
+      and dropping no-warning, leet-letters, override-claim or from-now-on-unchained removes a wrong
+      label
+  - index: 3
+    slug: no_threshold_beats_zero_because_the_wrong_labels_are_the_confident_ones
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a `confidence_threshold` knob. Sweep it from 0 to 1 and plot precision-recall per category.
+    zh: |
+      加上一個 `confidence_threshold` 旋鈕。把它從 0 掃到 1，並逐類別畫出精確率-召回率曲線。
+    verifies: >-
+      a confidence_threshold wrapper swept over 21 steps through the lesson's evaluate gives macro F1
+      0.713 for every t <= 0.40, non-increasing after and 0 from t = 0.95, with 2 to 5 distinct PR
+      points per category; the rules carry 13 scores from 0.40 to 0.90 and at t = 1.0 every category
+      reports tp = fp = 0 with precision 0.0; at t = 0.85 role-play precision falls 0.86 -> 0.50 and
+      instruction-override 0.75 -> 0.50, the 5 wrong-category verdicts average 0.732 confidence vs
+      0.710 for the 31 TPs, and no benign prompt is flagged at any threshold
