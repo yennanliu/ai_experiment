@@ -46,12 +46,13 @@ exercises:
     zh: |
       重讀 vLLM v0.18.0 的發行說明。哪些旗標組合是互斥的？把它們列出來。
     verifies: >-
-      the v0.18.0 release body states no exclusions; the v0.18.0 compatibility matrix has 27
-      incompatible pairs and 3 partial, speculative decoding excluding 8 features and chunked prefill
-      2 (enc-dec, multi-step), with CP x SD compatible. The lesson doc and its skill file both claim
-      the chunked-prefill + draft-model incompatibility; the toy's simulate_continuous takes only
-      (reqs, chunked); v0.18.0 registers --speculative-config and no --speculative-model, and the
-      NGram release line is about the async scheduler
+      the v0.18.0 release body states no exclusions (its NGram line is about GPU NGram and
+      the async scheduler); the v0.18.0 compatibility matrix has 27 incompatible pairs and 3 partial,
+      speculative decoding excluding 8 features and chunked prefill 2 (enc-dec, multi-step), with CP x
+      SD and APC x SD compatible. The lesson doc now says the same and names the SD-docs limits
+      (pipeline parallelism through v0.15.0, draft models through v0.10.0); neither it nor the skill
+      file still names --speculative-model or the N-gram exception, the skill file uses
+      --speculative-config, and the toy's simulate_continuous takes only (reqs, chunked)
   - index: 4
     slug: contiguous_wastes_81_6_percent_paged_0_5_and_the_toy_reserves_like_neither
     kind: code
