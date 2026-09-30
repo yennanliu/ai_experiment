@@ -1,0 +1,80 @@
+lesson: 76-collective-ops-from-scratch
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/76-collective-ops-from-scratch/docs/en.md
+exercises:
+  - index: 1
+    slug: the_tree_wins_2x_below_16kb_on_the_queue_mesh_and_moves_exactly_the_rings_bytes
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a tree allreduce variant and switch between ring and tree by message size. Measure the crossover.
+    zh: |
+      加上一個樹狀 allreduce 變體，並依訊息大小在環與樹之間切換。量測那個交叉點。
+    verifies: >-
+      a binomial tree allreduce (reduce onto rank 0 + the lesson's broadcast) within 6e-7 of a float64
+      sum at world sizes 2/3/4 for 64 and 66 floats; allreduce(threshold) dispatches by size; on the
+      4-rank queue mesh the tree is faster by more than 1.2x at 1 KB and 16 KB and within 2x of the
+      ring at 16 MB (median of 7); at T = 4096 B the ring sends 6144 B x 6 msgs per rank and the tree
+      8192/8192/4096/4096 B in 2/2/1/1, both 24,576 B total; a queued 1 KB or 16 MB tensor pickles to
+      under 512 bytes (~360)
+  - index: 2
+    slug: a_300ms_deadline_catches_a_dead_rank_but_broadcast_from_any_src_but_0_spins_forever
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `recv_timeout_ms` so a stalled rank surfaces a deadline error instead of hanging forever.
+    zh: |
+      加上一個 `recv_timeout_ms`，好讓卡住的 rank 浮現一個逾期錯誤，而不是永遠掛著。
+    verifies: >-
+      with rank 3 of 4 never started and a 300 ms recv deadline, allreduce/allgather/reduce_scatter
+      raise DeadlineError on all 3 live ranks in 0.3-5 s, blaming (peer, recv #) 3#1, 0#2, 1#3, and
+      broadcast from 0 completes; the lesson's recv raises a bare queue.Empty with message '' after
+      RECV_TIMEOUT_S = 30.0 and run_mesh waits get(timeout=60); the lesson's broadcast returns within
+      3 s for src 0 and is still running for src 1, 2, 3
+  - index: 3
+    slug: the_tcp_mesh_passes_the_lessons_tests_bit_for_bit_and_a_plain_sendall_deadlocks_at_64mb
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace `multiprocessing.Queue` with TCP sockets for the four primitives. Same tests, real wire.
+    zh: |
+      把那四個原語底下的 `multiprocessing.Queue` 換成 TCP socket。同樣的測試，真實的線路。
+    verifies: >-
+      the lesson's four primitives on a loopback TCP mesh with the inputs of
+      tests/test_collectives.py: bit-equal to run_mesh on all 4 4-rank cases, within the tests' atol
+      of gloo in the same ranks, 2-rank ones+twos = 3.0; a blocking-sendall mesh passes at 128 B and
+      fails (TimeoutError, no rank ok) on a 64 MB allreduce while per-peer feeder threads complete it;
+      allreduce and reduce_scatter differ from gloo by more than one float32 epsilon (4.8e-7 = 4 eps
+      here) though the doc says more than epsilon fails, broadcast and allgather by 0
+  - index: 4
+    slug: the_jsonl_log_shows_broadcast_sends_2t_t_0_0_not_t_and_padding_breaks_2t_n_1_over_n
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a bandwidth instrumentation hook so the per-rank byte counter logs to JSONL.
+    zh: |
+      加上一個頻寬檢測掛鉤，好讓那個逐 rank 位元組計數器記錄到 JSONL。
+    verifies: >-
+      jsonl_hook writes 75 lines (one per send, keys dst/nbytes/op/rank/seq/t_ns) whose per-rank sums
+      equal the lesson byte_counter for all 5 runs; per rank allreduce 384 = 2T(N-1)/N and
+      reduce_scatter 768 = T(N-1)/N, broadcast 512/256/0/0 against the table's T = 256 and allgather
+      768 against T(N-1)/N = 192; a 66-float allreduce sends 408 per rank against the formula's 396
+      and main.py's 384
+  - index: 5
+    slug: over_tcp_the_ring_overtakes_the_tree_at_about_1mb_but_on_the_queue_mesh_the_tree_always_wins
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Compare wall-clock time of ring versus tree on 4 ranks for tensors of size 1KB, 1MB, 16MB. Defend the crossover empirically.
+    zh: |
+      在 4 個 rank 上，對大小為 1KB、1MB、16MB 的張量比較環與樹的實際時間。以實證替那個交叉點辯護。
+    verifies: >-
+      4 ranks, 1 KB / 1 MB / 16 MB, median of 7 interleaved calls: over loopback TCP ring/tree > 1.1
+      at 1 KB and < 1/1.1 at 16 MB; on the lesson's queue mesh ring/tree > 1.1 at 1 KB and > 0.8 at
+      every size; gloo is more than 1.1x faster than the Python ring at 16 MB and more than 1.1x
+      slower than the Python tree at 1 KB
