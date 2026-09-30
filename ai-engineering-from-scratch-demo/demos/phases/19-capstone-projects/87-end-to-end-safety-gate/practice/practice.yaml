@@ -1,0 +1,50 @@
+lesson: 87-end-to-end-safety-gate
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/87-end-to-end-safety-gate/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lessons_gate_allows_7_of_9_tool_targeting_prompts_and_a_substring_match_catches_4
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add a fifth checkpoint: a `policy-check` that runs against the original system prompt before pre-gen. It must reject prompts targeting a known internal tool name.
+    zh: |
+      加上第五道檢查點：一個在生成前之前、對著原本那段系統提示詞跑的 `policy-check`。它必須否決指向某個已知內部工具名稱的提示詞。
+    verifies: >-
+      policy-check reads acct_admin_reset/billing_export_v2/kb_reindex from the system prompt's
+      Internal tools line and rejects 9/9 tool-targeting prompts (case, hyphen, space, zero-width,
+      full-width, leet), 0/6 lookalikes and 0/60 corpus prompts, whose actions stay unchanged; the
+      lesson's gate gives 7 allow, 1 redact, 1 block on the 9; a case-insensitive substring match
+      catches 4/9; a tool-less system prompt rejects 0/9
+  - index: 2
+    slug: raising_the_threshold_lowers_precision_on_10_lookalikes_and_the_code_disagrees_with_its_doc_on_25_of_60
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Replace the deterministic aggregator with a weighted score: each signal contributes a 0-1 confidence and the gate trips at a threshold. Sweep the threshold and report the precision-recall trade-off on the lesson 82 corpus.
+    zh: |
+      把那個確定性彙總器換成一個加權分數：每項訊號貢獻一個 0 到 1 的信心值，而閘門在某個門檻上跳閘。掃過那個門檻，並在第 82 課那份語料上回報精確率-召回率的取捨。
+    verifies: >-
+      weighted noisy-OR over detector, token filter, classifier and rules; on 50 attacks + 10 benign
+      precision is 1.0 at all 19 thresholds and recall 0.74 at t<=0.4 falling to 0.08 at 0.95; 13
+      attacks and all benign score 0; post-gen signals are 0 on 70/70; adding 10 lookalikes gives
+      precision 0.822 at 0.05 falling to 0.571 at 0.95, and the lesson's gate blocks 4 and redacts 4
+      of them; the code disagrees with the doc's table on 25/60 (23 redact vs warn, 2 warn vs allow),
+      stopping 35/50 attacks vs 12
+  - index: 3
+    slug: an_early_stop_lets_the_model_run_one_chunk_past_the_match_so_the_50ms_budget_caps_chunk_time
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add an async streaming variant where during-gen runs in a thread; verify the latency impact stays within a 50ms budget.
+    zh: |
+      加上一個非同步串流變體，讓生成中在一條執行緒上跑；驗證延遲影響維持在 50 毫秒的預算之內。
+    verifies: >-
+      threaded _during_gen (queue of 1, 5 s join timeout) matches the lesson's gate on action, output
+      and during verdict for 120/120 runs; max latency overhead < 50 ms with the instant stream and at
+      2 ms per chunk; both early stops pull 1 chunk sync vs 1 to 3 threaded; at 60 ms per chunk the
+      early-stop overhead equals extra chunks x 60 ms within 20 ms; the regex sweep costs < 1 ms per
+      chunk
