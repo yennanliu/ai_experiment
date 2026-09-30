@@ -1,0 +1,81 @@
+lesson: 77-data-parallel-ddp
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/77-data-parallel-ddp/docs/en.md
+exercises:
+  - index: 1
+    slug: one_25mb_bucket_syncs_64_small_grads_35x_faster_but_1mb_weights_gain_only_1_5x
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add gradient buckets of configurable size and measure the speedup vs one-allreduce-per-parameter on a deeper model.
+    zh: |
+      加上大小可設定的梯度桶，並在一個更深的模型上量測它相對「每參數一次 allreduce」的加速。
+    verifies: >-
+      on 4 gloo ranks, 32 Linear(64,64) layers (64 tensors, 133,120 floats): per-parameter sync_grads
+      makes 64 calls, caps 64 KB/256 KB/1 MB/25 MB make 11/3/1/1, gradients bit-identical, 25 MB >= 5x
+      and 64 KB >= 2x faster (measured ~35x and ~5.5x); on 32 Linear(512,512) layers caps up to 1 MB
+      still make 64 calls, 25 MB makes 2 and its speedup is at least 4x smaller (measured 1.5-2x);
+      the lesson's sync_grads makes 6 all_reduce calls on MiniMLP though the doc says one bucket;
+      torch's default bucket cap is 25 MB
+  - index: 2
+    slug: no_sync_matches_the_baseline_to_1_5e_8_and_forgetting_it_costs_4x_the_calls_not_the_answer
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement `no_sync()` as a context manager and verify gradient accumulation matches a single-process baseline over K microbatches.
+    zh: |
+      把 `no_sync()` 實作成一個脈絡管理器，並驗證在 K 個微批次上的梯度累積與單行程基線相符。
+    verifies: >-
+      K = 4 microbatches on 4 gloo ranks, 10 steps: no_sync params within 1e-6 of a single-process
+      baseline (measured 1.5e-8, params moved 0.084), all ranks identical, torch's DDP.no_sync the
+      same; forgetting no_sync makes 240 lesson all_reduce calls instead of 60 and lands within 1e-6
+      too, not bit-identical; the doc's 'byte-equal parameter equivalence' fails in the lesson's own K
+      = 1 setting (1.5e-8)
+  - index: 3
+    slug: without_the_flag_one_rank_aborts_and_three_block_and_pytorch_raises_instead_of_deadlocking
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a `find_unused_parameters` mode where the forward sometimes skips one of the MLP layers; without the flag the run should deadlock.
+    zh: |
+      加上一個 `find_unused_parameters` 模式，其中前向有時會跳過某一個 MLP 層；沒有那個旗標，那次執行應該會死鎖。
+    verifies: >-
+      skipping the middle layer when (step + rank) % 4 == 0 on 4 gloo ranks for 6 steps: zero-filled
+      unused grads before sync_grads and torch find_unused_parameters=True both match a single-process
+      baseline within 1e-6 (3.0e-8, 1.5e-8); without the flag the lesson's wrapper SIGABRTs rank 0
+      (exit -6) and ranks 1-3 do 0 steps, timing out at 5 s or hanging (killed at 15 s), default
+      timeout 1,800 s; torch DDP without the flag raises 'Expected to have finished reduction' on rank
+      0 at step 1 while the rest block, though the doc says it deadlocks
+  - index: 4
+    slug: barrier_only_ranks_drift_0_23_apart_while_rank_0s_loss_stays_within_3_6pct_of_true_ddp
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Replace gloo with `torch.distributed.barrier()`-only synchronisation to feel the difference between allreduce-based and barrier-based sync.
+    zh: |
+      把 gloo 換成只用 `torch.distributed.barrier()` 的同步，去感受「以 allreduce 為基礎」與「以屏障為基礎」的同步之間的差別。
+    verifies: >-
+      the lesson's 4-rank 20-step run with sync_grads replaced by dist.barrier (still on gloo): max
+      element-wise spread 0.0538/0.1714/0.2307 after steps 1/5/20 against 0.0 with all-reduce, barrier
+      at least 2x cheaper than the sync; rank 0's loss within 3.53% of reference_single_process
+      (all-reduce 0.0); seeding SEED + rank leaves spread and loss gap at 0.0, contradicting the doc's
+      'fails on step 1'
+  - index: 5
+    slug: sync_is_93pct_of_the_step_at_batch_1_16_and_256_and_compute_catches_up_only_past_4096_rows
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Measure the gradient-sync overhead as a fraction of step time for batch sizes 1, 16, 256 and explain the scaling.
+    zh: |
+      在批次大小 1、16、256 上，量測梯度同步開銷佔步驟時間的比例，並解釋那個縮放。
+    verifies: >-
+      the lesson's MiniMLP on 4 gloo ranks, 30 interleaved rounds: sync / step >= 0.6 and within 0.15
+      at batch 1, 16, 256 (measured 0.93-0.94); 6 tensors, 6,928 gradient bytes at every batch, sync
+      medians within 2x of each other, compute at 256 < 2.5x compute at 1, one flat all-reduce at
+      least 2x cheaper than the 6 calls (measured ~5.5x); sync / step > 0.5 at 4,096 rows and < 0.5 at
+      32,768 (measured 0.75 and 0.21)
