@@ -3,7 +3,7 @@ phase: 16-multi-agent-and-swarms
 source: phases/16-multi-agent-and-swarms/03-communication-protocols/docs/en.md
 exercises:
   - index: 1
-    slug: send_message_returns_before_the_work_it_started
+    slug: the_task_is_finished_before_anyone_can_subscribe
     kind: code
     tier: T0
     deps_group: none
@@ -13,11 +13,12 @@ exercises:
       **多跳任務委派。** 擴充 `TaskManager`，讓代理處理器能把子任務委派給其他代理。研究員收到一項任務，把「搜尋」與「摘要」兩個子任務委派給兩個專家代理，等兩者都完成，再把結果合併進自己的產物。
     verifies: >-
       the multi-hop runs 3 tasks -- researcher plus search and summarize awaited together -- and the
-      researcher ends completed with 2 merged artifacts. processTask is called in 1 place and awaited
-      in 0, so its first two statements run before sendMessage returns: sendMessage assigns state
-      "submitted" and hands back a task already reading "working". A listener subscribed at the first
-      possible moment hears 1 of the task's 2 status updates. Task declares 5 fields and 0 name a
-      parent, and createTask mints a fresh random contextId when none is passed
+      researcher ends completed with 2 merged artifacts. processTask is called in 1 place and now
+      awaited in 1 (upstream #357), so sendMessage still assigns state "submitted" but resolves with a
+      task already reading "completed". A listener subscribed at the first possible moment hears 0 of
+      the task's 4 events. docs/en.md still calls processTask in 1 place and awaits it in 0. Task
+      declares 5 fields and 0 name a parent, and createTask mints a fresh random contextId when none
+      is passed
   - index: 2
     slug: there_is_nothing_to_stream_because_nothing_is_appended
     kind: code
@@ -64,7 +65,7 @@ exercises:
       agrees -- 3796 in one round and 168 in two -- while 132 share none. No pair takes 3 rounds, so
       the cap changes the outcome for 0 pairs, and a one-shot exchange of whole capability sets
       settles all 4096 in 1. capabilities.streaming is declared 3 times and read 0, and delegateTask
-      has 0 capability branches. delegateTask calls auditRunner.run and then taskManager.sendMessage,
+      has 0 capability branches. delegateTask calls taskManager.sendMessage and then auditRunner.run,
       so the port counts 2 executions of the target agent per delegation
   - index: 5
     slug: the_cache_removes_the_scans_and_not_the_stampede

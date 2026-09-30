@@ -31,8 +31,8 @@ times, and `delegateTask` contains **0** branches on any capability -- there
 is no switch for a negotiation to set.
 
 **FINDING: the gateway already runs both, on every delegation.**
-`delegateTask` calls `auditRunner.run(targetAgent, [message], sessionId)` and
-then `taskManager.sendMessage(targetAgent, message)`. Both execute the target
+`delegateTask` calls `taskManager.sendMessage(targetAgent, message)` and
+then `auditRunner.run(targetAgent, [message], sessionId)`. Both execute the target
 agent. The port counts **2** executions per delegation, through two registries
 that share no state, and returns a `task` and an `audit` describing different
 runs of the same request. A negotiated format cannot pick one path when the
@@ -175,7 +175,7 @@ def verify(result):
             "FINDING: the gateway already runs both, on every delegation",
             all([result["calls_audit"], result["calls_task"],
                  result["executions"] == 2, result["paths"] == 2]),
-            f"delegateTask calls auditRunner.run then taskManager.sendMessage, both of "
+            f"delegateTask calls taskManager.sendMessage then auditRunner.run, both of "
             f"which execute the target agent: the port counts {result['executions']} "
             f"executions over {result['paths']} registries per delegation, so task and "
             "audit describe different runs of the same request",
