@@ -28,7 +28,8 @@ The lesson's `code/main.py` is a toy analyzer with two parts: a closed-form
 `expected_speedup` and a seeded latency simulator, `simulate_tail`. The
 exercises show the two disagree. Exercises 1, 2 and 4 use the simulator's
 exact expectation, which matches `simulate_tail` to within 0.2% at 200,000
-tokens. The vLLM docs and Hugging Face configs were read on 2026-09-26.
+tokens. The Hugging Face configs and the vLLM docs for exercises 2 and 4 were read on
+2026-09-26; exercise 3's vLLM sources were re-read on 2026-09-30.
 
 ### 1 — the formula asks alpha 0.26 for 2x, and its own simulator asks 0.78
 
@@ -83,59 +84,81 @@ Per-position alpha 0.7 logs as 0.388, 0.4 as 0.132, and the mix as 0.278.
 Gated at 0.55, the logged number would switch off a config the formula
 rates at 3.47x.
 
-### 3 — the docs name many methods and mark speculative decoding as a whole compatible with chunked prefill
+### 3 — one matrix row covers all three modes, and async scheduling is where they split
 
-*Draws on "Where EAGLE-3 is already deployed".*
+*Draws on "Where EAGLE-3 is already deployed" and "When not to use
+speculative decoding".*
 
-`docs.vllm.ai/en/latest/features/spec_decode/` now redirects, so I read the
-docs source in the vLLM repository instead: `docs/features/speculative_decoding/`
-on `main` and at tag `v0.18.0`.
+Sources, read on 2026-09-30: the rendered docs at
+<https://docs.vllm.ai/en/v0.18.0/features/> (the compatibility matrix) and
+<https://docs.vllm.ai/en/v0.18.0/features/speculative_decoding/>, plus the
+same files at tag `v0.18.0` (commit `bcf2be9612`) in `vllm-project/vllm`.
+For the config checks I read `vllm/config/speculative.py`,
+`vllm/config/vllm.py`, `vllm/engine/arg_utils.py` and
+`vllm/sampling_params.py` at that tag. "Your vLLM version" is taken as the
+lesson's v0.18.0. The latest release, v0.30.0 (commit `ced6857afa`), is
+noted where it differs. No vLLM ran on a GPU for this answer.
 
 **The three modes, as `speculative_config` spells them:**
 
-- **Draft model:** `"method": "draft_model"`, with `model` set to the smaller
-  model and `num_speculative_tokens`.
-- **EAGLE:** `"method": "eagle"` or `"eagle3"`, with `model` set to the head.
-  The docs' example is `RedHatAI/Llama-3.1-8B-Instruct-speculator.eagle3`.
-- **N-gram:** `"method": "ngram"`, with `prompt_lookup_min` / `prompt_lookup_max`
-  (default 5 when both are omitted) and no model. The v0.18.0
-  `SpeculativeMethod` literal also has `ngram_gpu`.
+- **Draft model:** `"method": "draft_model"`, with `model` set to the
+  smaller model and `num_speculative_tokens`.
+- **EAGLE:** `"method": "eagle"` or `"eagle3"`, with `model` set to the head
+  (for example `RedHatAI/Llama-3.1-8B-Instruct-speculator.eagle3`) and an
+  optional `draft_tensor_parallel_size`.
+- **N-gram:** `"method": "ngram"` (CPU) or `"ngram_gpu"`, with
+  `prompt_lookup_min` / `prompt_lookup_max` and no model.
 
-The docs list more than three. The index names EAGLE, MTP, draft model,
-PARD, MLP, n-gram and suffix decoding. `main` adds LiLiCorr, hidden-state
-extraction, a custom proposer, dynamic speculative decoding and adaptive
-verification. The literal also carries `medusa`, `mlp_speculator` and
-`extract_hidden_states`.
+The docs list more methods than these three: MTP, PARD, MLP and suffix
+decoding. The `SpeculativeMethod` literal also carries `medusa`,
+`mlp_speculator` and `extract_hidden_states`.
 
-**Chunked prefill: the docs single out no method.** No speculative-decoding
-page, on `main` or at v0.18.0, mentions chunked prefill. The feature
-compatibility matrix (`docs/features/README.md`) marks SD × chunked prefill
-✅ at v0.8.0, v0.10.0, v0.18.0 and `main`. It rates speculative decoding as a
-whole, not per method. The documented incompatibilities are these two:
+**What they compose with: the matrix does not answer per mode.** Its
+feature-by-feature table has a single `SD` row, so all three modes get the
+same verdict. At v0.18.0 that row reads:
 
-- pipeline parallelism (`vllm<=0.15.0`);
-- draft models, unsupported in `vllm<=0.10.0`.
+| composes (✅) | does not (❌) | unknown (❔) |
+|---|---|---|
+| chunked prefill, prefix caching, CUDA graph, logprobs, prompt logprobs | LoRA, pooling, encoder-decoder, async output, multi-step, best-of, beam search, prompt embeds | multimodal inputs |
 
-I also grepped v0.18.0's `engine/arg_utils.py`, `config/vllm.py`,
-`config/scheduler.py`, `config/speculative.py` and
-`v1/spec_decode/draft_model.py` and found no check that combines chunked
-prefill with a spec method.
+The v0.30.0 row is identical. The docs' "Known Feature Incompatibility"
+list adds two version limits for the whole feature: pipeline parallelism
+at `vllm<=0.15.0`, and draft models at `vllm<=0.10.0`.
 
-So I could not confirm two lesson claims: that N-gram GPU is "the variant
-compatible with chunked prefill", and that v0.18.0 draft-model spec decode
-with `--enable-chunked-prefill` "does not compile". I did not run vLLM on a
-GPU to test either one.
+The LoRA ❌ is out of date. At v0.18.0, `arg_utils.py` accepts LoRA with
+spec decode and only requires `max_num_batched_tokens >= max_num_seqs *
+(num_speculative_tokens + 1)`. Upstream's review cites
+vllm-project/vllm#21068 (merged 2025-11-08) for LoRA support.
 
-Two smaller mismatches:
+**The per-mode differences are in the config code:**
 
-- **The metric name.** The lesson's `spec_decode_metrics.accepted_tokens_per_request`
-  does not appear in these docs. vLLM exposes
-  `vllm:spec_decode_num_accepted_tokens_total` and
-  `vllm:spec_decode_num_draft_tokens_total`, plus an experimental per-request
-  `metrics.speculative_decoding.draft_acceptance_rate`.
-- **The positioning.** The docs pitch spec decode for "medium-to-low QPS ...
-  memory-bound workloads". They also document per-batch-size K, which can be
-  0, for high concurrency.
+| v0.18.0 | draft model | EAGLE / EAGLE-3 | N-gram |
+|---|---|---|---|
+| async scheduling, default | turned off, with a warning | on | `ngram_gpu`: on; `ngram`: off |
+| async scheduling, forced on | allowed | allowed | `ngram_gpu`: allowed; `ngram`: `ValueError` |
+| model constraint | vocab size must equal the target's | `eagle3`: target family must be in a 12-name list (llama, qwen, deepseek_v3, gpt_oss, ...) | none |
+| draft tensor parallel | 1 or the target's TP | 1 or the target's TP | n/a |
+| `kv_sharing_fast_prefill` | allowed | `ValueError` | allowed |
+| `min_p`, `logit_bias` | rejected per request | rejected per request | rejected per request |
+
+At v0.30.0, the draft model also gets async scheduling by default. The
+CPU `ngram` path still does not.
+
+**Chunked prefill is not where the modes differ.** The matrix marks it ✅
+for speculative decoding as a whole. No v0.18.0 speculative-decoding page
+mentions it, and none of the four files above ties chunked prefill to a
+method. The old wording ("which one is compatible with chunked prefill")
+had no single-mode answer, and the lesson has now dropped it, along with
+its claim that draft model plus `--enable-chunked-prefill` "does not
+compile" on v0.18.0.
+
+The lesson still has two smaller mismatches:
+
+- **The metric name.** Its `spec_decode_metrics.accepted_tokens_per_request`
+  is not in these docs. vLLM exposes `vllm:spec_decode_num_accepted_tokens_total`
+  and `vllm:spec_decode_num_draft_tokens_total`.
+- **The positioning.** The docs pitch spec decode for "medium-to-low QPS
+  ... memory-bound workloads".
 
 ### 4 — a P99 up 15% is one verify overhead on the steps that accept nothing
 
