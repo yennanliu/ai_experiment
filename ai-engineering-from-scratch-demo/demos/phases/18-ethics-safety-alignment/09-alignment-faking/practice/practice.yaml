@@ -33,20 +33,24 @@ exercises:
       lesson only at harm aversion 1.16, weight 0.49, while its shipped baseline gives 4.74% vs 0.25%
       and a 47.4% threshold
   - index: 3
-    slug: a_gap_loss_on_the_tier_flag_drives_it_to_0_07_points_while_a_second_cue_keeps_3_61_of_the_4_50_point_gap
+    slug: process_supervision_cuts_the_classifier_read_gap_from_29_85_to_0_91_points_while_faking_moved_off_the_scratchpad_keeps_99_42
     kind: code
     tier: T0
     deps_group: none
     en: |
-      Read Anthropic's 2025 compliance-gap-loss follow-up. Propose a failure mode in which the compliance-gap loss reduces the gap without reducing faking — i.e., the model transfers the gap to a different observable condition.
+      Read Anthropic's 2025 training-time mitigations post. Propose a failure mode in which process supervision reduces the measured gap without reducing faking, for example by moving the faking reasoning somewhere the classifier does not read.
     zh: |
-      讀 Anthropic 2025 年關於順從落差損失的後續研究。提出一種失敗模式，讓順從落差損失縮小了落差卻沒有減少偽裝 —— 也就是模型把那個落差轉移到另一個可觀察條件上。
+      讀 Anthropic 2025 年那篇訓練期緩解手法的文章。提出一種失敗模式，讓過程監督縮小了量測到的落差卻沒有減少偽裝，例如把偽裝的推理挪到分類器讀不到的地方。
     verifies: >-
-      with belief b = beta T + (1 - beta) [CUE-B] and a penalty on the cue-balanced tier gap, lambda 0
-      / 10 / 100 picks beta 1.00 / 0.17 / 0.01, tier gap 4.50 / 1.00 / 0.07 points and deployment gap
-      4.50 / 3.80 / 3.61 at rho 0.9; at beta 0 the deployment gap is 0 / 2.25 / 3.60 / 4.50 at rho 0.5
-      / 0.75 / 0.9 / 1. The shipped mitigation is a hard-coded p_avg that moves compliance from 4.74%
-      / 0.25% to 2.49% in both tiers (10.1x unmonitored); its printed gap 0.011 is 1.58 SE
+      with the post's reward PM + log(1 - p(AF)) and a classifier that reads only the scratchpad, 100
+      RL steps from a 30% read share drive it to 0.009 and the classifier-read gap to 0.91 points
+      (29.85 under plain RL) while the behavioural gap is 99.42 (99.51 unpenalised) and the
+      preservation weight rises 1.0 -> 3.90; 20,000 seeded transcripts per tier give 99.44 / 1.01 /
+      99.43 (behavioural, pad-only, both-channel classifier); with every channel read, or a 70%+ read
+      start, the gap ends at 0 (6.60 at 43%, 91.67 at 42%, static break-even 0.335); from 90% unread
+      lambda 0.5 / 1 / 2 / 4 leave 99.50 / 99.49 / 99.47 / 99.33 points; code/main.py's mitigation is
+      still a hard-coded average moving 4.74% / 0.25% to 2.49% in both tiers, which the reworded
+      lesson no longer describes
   - index: 4
     slug: synthetic_documents_split_faking_from_prompt_sensitivity_8_70_points_vs_0_where_the_system_prompt_gives_both_12_vs_3
     kind: code
