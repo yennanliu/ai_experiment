@@ -70,7 +70,7 @@ Step 1 and never enters the budget, and `t_play` appears exactly **once** in
 ### 2 — the stub returns one sentence for every input, including silence
 
 `whisper`, `torch`, `transformers`, `soundfile`, `sounddevice`, `silero_vad` and
-`openai` are all absent, and scanning the whole reference checkout for `.wav`,
+`openai` are all absent, and scanning every lesson in the reference curriculum's phases/ tree for `.wav`,
 `.flac`, `.mp3`, `.ogg`, `.m4a` finds **0** files. Both measurements are decided
 before a model is chosen.
 

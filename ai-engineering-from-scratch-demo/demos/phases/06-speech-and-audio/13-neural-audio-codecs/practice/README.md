@@ -72,7 +72,7 @@ twelve codebooks — **17.1%**, the same share at every row of the table.
 ### 2 — three of the four points plot at zero
 
 `encodec`, `torch`, `torchaudio`, `pesq` and `soundfile` are all absent, and a
-recursive scan of the reference checkout finds **zero** `.wav`, `.flac`, `.mp3`
+recursive scan of the reference curriculum's phases/ tree finds **zero** `.wav`, `.flac`, `.mp3`
 or `.ogg` files — so there is no held-out speech clip either. Both axes are still
 computable.
 
