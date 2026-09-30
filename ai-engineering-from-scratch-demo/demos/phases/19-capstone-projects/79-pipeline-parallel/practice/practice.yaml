@@ -1,0 +1,84 @@
+lesson: 79-pipeline-parallel
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/79-pipeline-parallel/docs/en.md
+exercises:
+  - index: 1
+    slug: 1f1b_matches_gpipes_bubble_on_42_grids_and_holds_min_n_m_microbatches_instead_of_m
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Implement 1F1B and verify the bubble fraction matches GPipe but activation memory is bounded.
+    zh: |
+      實作 1F1B，並驗證氣泡比例與 GPipe 相符、但激活記憶體被框住了。
+    verifies: >-
+      a dependency-driven simulator reproduces the lesson's gpipe_schedule cycles exactly;
+      PipeDream-Flush 1F1B and GPipe both give (N-1)/(M+N-1) on 42/42 (N, M) grids (N 1-8, M 1-64),
+      also with backward = 2 units; peak in-flight microbatches is M for GPipe and min(N, M) for 1F1B
+      (N=4, M=64: 64 vs 4); FORWARD_UNITS/BACKWARD_UNITS appear only at their definitions; at N=4, M=8
+      the lesson's 27.3% of total vs Megatron's (p-1)/m 37.5% of ideal and 18.75% interleaved at v=2;
+      PipelineStage and Pipeline named by the doc are absent from main.py
+  - index: 2
+    slug: rebalancing_by_measured_time_halves_the_slowest_stage_yet_idle_stays_above_the_closed_form
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Profile real per-stage time on a deeper model and rebalance stages by measured wall-clock.
+    zh: |
+      在一個更深的模型上剖析真實的逐階段時間，並依量到的實際時間重新平衡階段。
+    verifies: >-
+      16 layers (Embedding(4000, 64), 11 StageMLP(64, 32, 64), 4 StageMLP(64, 2048, 64)), batch 64,
+      one thread, fastest of 41 fwd+bwd runs; the best of 455 contiguous 4-stage cuts by measured time
+      has a slowest stage at least 1.4x below 4-layers-per-stage (measured 2.0x) and at least 1.3x
+      when the rebuilt stages are re-timed (about 2.1x); GPipe M=8 idle for the 4-per-stage cut is
+      over twice the 27.3% closed form (about 64%) and the time-balanced cut still idles above it
+      (about 39%); Embedding(16000) fwd+bwd at least 2x Embedding(4000) on the same tokens (measured
+      5-6x) and the parameter-balanced cut is slower than the time-balanced one (about 1.2x)
+  - index: 3
+    slug: the_lessons_gloo_pipeline_steps_on_the_sum_of_microbatch_gradients_4x_the_full_batch
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add gradient accumulation across pipeline microbatches and check the gradient equals the gradient of the equivalent full-batch forward.
+    zh: |
+      跨管線微批次加上梯度累積，並檢查那個梯度等於等價的全批次前向所給的梯度。
+    verifies: >-
+      on the lesson's 2-stage StageMLP pipeline (seeds 23/24, M = 4 microbatches of 8, MSE to zeros)
+      accumulation with loss / M matches the full 32-row batch gradient to under 1e-6 (3.7e-9) and the
+      unscaled sum is 4 x it (relative 1.8e-7); the gradient the lesson's real 2-rank gloo
+      _pipe_worker hands optim.step(), recorded by a global pre-step hook on all 8 tensors, is 4 x the
+      full-batch gradient (relative under 1e-5) while the doc says it is the combined-batch gradient
+  - index: 4
+    slug: checkpointing_cuts_the_stash_6x_but_spent_on_more_microbatches_throughput_drops_3_7pct
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Pair the pipeline with activation checkpointing and measure the memory drop versus compute cost.
+    zh: |
+      把管線與激活檢查點配成一對，量測記憶體下降相對於運算成本。
+    verifies: >-
+      4 stages of StageMLP(64, 256, 64), M=8 microbatches of 32 in GPipe order; saved-tensor hooks
+      count 49,152 activation bytes per microbatch per stage without checkpointing and 8,192 with it
+      (6.0x; 3.4x with one rebuilt microbatch), linear in M (1, 2, 4, 8); forward calls per stage 8 ->
+      16, priced (1+1+2)/(1+2) = 1.33x with the lesson's units; gradients bit-identical; wall-clock
+      above 1.05x (1.6-3.0x measured); the same memory holds M = 42 with checkpointing, bubble 27.3%
+      -> 6.7%, throughput 0.242 -> 0.233 microbatches per unit, 3.7% lower
+  - index: 5
+    slug: a_2x2_pipeline_ddp_grid_matches_the_full_batch_and_send_before_recv_deadlocks_gloo
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Combine pipeline with DDP (each pipeline rank is replicated across a data-parallel group) and reason through the 2D schedule.
+    zh: |
+      把管線與 DDP 結合（每個管線 rank 跨一個資料平行群組被複製），並把那個二維排程推理一遍。
+    verifies: >-
+      4 gloo ranks as 2 pipeline stages x 2 data-parallel replicas (send/recv in {0,1},{2,3},
+      all-reduce in {0,2},{1,3}), M = 4 per replica; averaged gradients match a single-process 64-row
+      full batch to under 1e-6 (1.9e-7), replicas bit-identical after and different before the
+      all-reduce, 8 p2p calls per rank; from the lesson's gpipe_schedule (N=4, M=8) stages finish
+      their last backward 0, 1, 2, 3 cycles before the step ends; an ordered send/recv pair swaps its
+      16 floats while a both-send-first pair is still stuck after 12 s
