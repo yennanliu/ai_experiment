@@ -8,6 +8,11 @@
 
 ## Progress
 
+- 20260930
+
+	- https://www.youtube.com/watch?v=6zigF2a-2Pw
+
+
 - 20260922
 	- https://youtu.be/AiwCCvFW1uE?si=LSPKALBi8Qc1VwTs
 
