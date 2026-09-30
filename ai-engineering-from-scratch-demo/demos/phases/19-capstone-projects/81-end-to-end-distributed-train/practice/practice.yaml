@@ -1,0 +1,88 @@
+lesson: 81-end-to-end-distributed-train
+phase: 19-capstone-projects
+source: phases/19-capstone-projects/81-end-to-end-distributed-train/docs/en.md
+exercises:
+  - index: 1
+    slug: allreducing_the_attention_output_matches_the_loss_but_only_megatrons_f_and_g_train_the_same_model
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a tensor-parallel split of the attention head and verify the loss matches the single-rank baseline. Two ranks: half the heads per rank, allreduce of the attention output.
+    zh: |
+      加上注意力頭的張量平行切分，並驗證損失與單 rank 基線相符。兩個 rank：每個 rank 一半的頭，注意力輸出做 allreduce。
+    verifies: >-
+      two gloo ranks each holding half the heads of the lesson's MiniGPT (4,096 of 8,192 attention
+      weights), 20 Adam steps at the lesson's LR on its data vs the unsplit model on one rank: with
+      Megatron's f (allreduce of the input gradient) and g (allreduce of the output) the loss matches
+      at every step within 1e-5 (seen 4.8e-7) and the ranks' losses are identical; allreducing only
+      the output (gradient passed through) and torch.distributed.nn.functional.all_reduce both match
+      the step-0 loss within 1e-5 but leave the baseline by more than 1e-3, the ranks more than 1e-3
+      apart, and a step-0 embedding gradient 0.993x / 1.006x the baseline's
+  - index: 2
+    slug: 4_microbatches_match_one_batch_to_5e_7_and_replay_the_lessons_4_rank_run_on_1_rank
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add gradient accumulation across 4 microbatches and prove the gradient equals the gradient of one big batch.
+    zh: |
+      跨 4 個微批次加上梯度累積，並證明那個梯度等於一個大批次的梯度。
+    verifies: >-
+      on the lesson's seeded MiniGPT and step-0 data (16 sequences), 4 microbatches of 4 with each
+      loss scaled by 1/4 give the big-batch gradient within 1e-5 relative to its largest element (seen
+      4.8e-7, not bit-equal) over all 29,824 elements, and 4.0000x its norm unscaled; one gloo rank
+      running the lesson's ZeroOptimizer on the 4 ranks' batches as microbatches reproduces the
+      unmodified 4-rank _train_worker's 20 rank-0 losses and final norm (54.513171) within 1e-5;
+      splitting 1/3/5/7 with 1/4 scaling is off by more than 50% (seen 124%), n/16 weighting within
+      1e-5
+  - index: 3
+    slug: the_step_10_resume_is_bit_exact_with_adam_state_and_drifts_to_4_2399_without_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a resume-from-step-10 path that actually continues training to step 20 and produces the same final loss as the original run.
+    zh: |
+      加上一條「從第 10 步續跑」的路徑，讓它真的繼續訓練到第 20 步，並產出與原本那次執行相同的最終損失。
+    verifies: >-
+      the lesson's unmodified _train_worker as 4 gloo ranks writes the step-10 checkpoint; 4 fresh
+      ranks that load it with load_sharded and restore model plus ZeroOptimizer state reproduce all 10
+      rank-0 losses of steps 10-19 and the final norm exactly (final loss 4.2224 within 1e-3, Adam
+      step_count 20); restoring weights only matches step 10 then differs at every later step (final
+      4.2399); each shard file holds the same 119,296-byte model_state the concatenated master shards
+      already equal, 50-60% of the shard bytes (seen 55%), world size 2 is refused with the manifest
+      error, and main/run_e2e/verify_resume never call load_state_dict
+  - index: 4
+    slug: rank_0s_grad_norm_is_2x_the_runs_and_the_loss_rises_at_10_of_19_steps
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a metrics export (loss, grad norm, step time) to JSONL so the run can be visualised after the fact.
+    zh: |
+      加上一份指標匯出（損失、梯度範數、步驟時間）到 JSONL，好讓那次執行事後能被視覺化。
+    verifies: >-
+      the lesson's _train_worker as 4 gloo ranks with cross_entropy and ZeroOptimizer.zero_grad/step
+      wrapped: rank 0 writes 20 JSONL rows with keys step, loss, loss_rank0, grad_norm,
+      grad_norm_rank0, step_time_s, all finite and non-negative; rank-0 losses and the final norm are
+      identical to an unexported run; rank 0's grad norm is 1.5-2.5x the rank-averaged one at every
+      step (seen 1.80-2.10); the global and rank-0 losses each rise at 5 or more of 19 steps (seen 10
+      and 8), the global loss never goes below ln 64 = 4.1589, and rank 0's does
+  - index: 5
+    slug: rollback_replays_the_run_exactly_but_300x_lr_slips_past_the_2x_guard_and_a_spike_before_the_checkpoint_poisons_it
+    kind: code
+    tier: T1
+    deps_group: llm
+    en: |
+      Add a NaN guard that rolls back to the previous checkpoint on a loss spike, and force a spike with a one-step LR multiplier to exercise the rollback.
+    zh: |
+      加上一道 NaN 守衛，在損失尖峰時回捲到前一份檢查點，並用一個單步的學習率乘數硬逼出一個尖峰來演練那次回捲。
+    verifies: >-
+      the lesson's loop as 4 gloo ranks with a guard that reloads the step-10 load_sharded checkpoint
+      when the rank-averaged loss is non-finite or more than 2x the previous step's: a 1000x LR on
+      step 12's update raises step 13's loss over 10x (seen 16.8x), one rollback follows and steps
+      10-19 and the final norm match the clean run exactly; the loss stays finite for every multiplier
+      up to 1e6, 300x raises it under 2x (1.37x) while leaving the unguarded final loss over 1.2x the
+      clean one, 500x trips it (3.5x), and main.py has no guard; 1000x on step 9 poisons the step-10
+      checkpoint so all 4 rollbacks (cap 3 retries) reload the same spiked loss
