@@ -1,0 +1,86 @@
+lesson: 10-video-generation
+phase: 08-generative-ai
+source: phases/08-generative-ai/10-video-generation/docs/en.md
+exercises:
+  - index: 1
+    slug: joint_wins_but_is_still_half_again_rougher_than_the_data
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** In `code/main.py`, compare frame-to-frame delta for (a) independent per-frame sampling, (b) joint sequence sampling. Report the mean and variance of the deltas.
+    zh: |
+      **簡單。** 在 `code/main.py` 裡，比較 (a) 逐格獨立取樣、(b) 整串序列聯合取樣兩者的相鄰影格差值。回報差值的平均數與變異數。
+    verifies: >-
+      main() is reproduced exactly (seed 21, T=40, 3000 steps) and then sampled 200 times per sampler,
+      1000 deltas each, through the lesson's own frame_deltas. Joint sampling has mean delta 0.367 and
+      variance 0.113; independent_per_frame has 1.085 and 0.729, so joint is 3.0x smaller in mean and
+      6.5x in variance. The lesson's baseline is hand-written gauss(0,1) + 0.3t whose frame means
+      climb 0.05 to 1.43 while the data's stay within 0.04 of zero, but a fair baseline -- the same
+      trained model's frames shuffled across clips -- still gives 0.938, so coupling buys most of the
+      gap. Joint is still 1.5x the data's own 0.243 (variance 0.034) and its per-frame spread is
+      U-shaped, 0.97 down to 0.69 and back to 1.11, where the data fans out 0.92 to 1.75. The first
+      five joint clips reproduce main()'s printed 0.61, a 25-delta headline 1.7x the 1000-delta mean,
+      and the data's 0.243 matches the closed form 0.246
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train_joint
+      - sample_joint
+      - independent_per_frame
+      - make_video
+      - frame_deltas
+  - index: 2
+    slug: the_pin_fades_to_nothing_by_the_last_frame
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add a first-frame condition: pin frame 0 to a given value and sample the rest. Measure how the pinned value propagates.
+    zh: |
+      **中等。** 加上首格條件：把第 0 格釘在指定的數值上，再取樣其餘影格。量測這個被釘住的值如何往後傳播。
+    verifies: >-
+      main()'s model is trained unchanged and frame 0 is pinned at sampling time inside sample_joint's
+      own reverse loop, built from the lesson's forward, patchify_with_pos, flatten and sin_embed. The
+      regression slope of E[frame k] on the pinned value over pins -2..2, 80 clips each, is 1.00,
+      0.46, 0.34, 0.28, 0.14, 0.01 for a clean pin, while make_video's own slopes are 1.00 to 1.04
+      because every frame shares base -- frame 5 should keep all of the pin and keeps 0.01. A
+      RePaint-style noised pin gives 1.00, 0.47, 0.33, 0.27, 0.12, -0.01, within 0.02, and the
+      unpinned model's lag regression on frame 0 already falls 0.75 to -0.10, so the decay is in the
+      model, not the conditioning. make_schedule(40) ends at alpha_bar 0.667, so the chain starts
+      where training showed 0.82 clip + 0.58 noise yet sample_joint starts from iid N(0,1), and each
+      output frame keeps a correlation of 0.37 to 0.76 with its own independent starting draw
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train_joint
+      - sample_joint
+      - forward
+      - patchify_with_pos
+      - flatten
+      - sin_embed
+      - make_video
+  - index: 3
+    slug: full_3d_costs_about_one_factor_per_latent_frame
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use HuggingFace diffusers to run CogVideoX-2B on a local GPU. Time 20 inference steps at 720p for a 6-second clip. Profile the spatiotemporal attention to identify the bottleneck.
+    zh: |
+      **困難。** 用 HuggingFace diffusers 在本機 GPU 上跑 CogVideoX-2B。為一段 6 秒的片段在 720p 下計時 20 個推論步驟。剖析時空注意力，找出瓶頸在哪裡。
+    verifies: >-
+      diffusers, torch and transformers return None from find_spec and there is no GPU, so the profile
+      is done by counting over CogVideoX-2B's published shape (30 layers, width 1920, 8x spatial and
+      4x temporal VAE, 2x2 patches, 226 text tokens, 49 frames). A 720p 6 s clip is 47,026 tokens and
+      the attention core is 80% of each layer's FLOPs, against 61% at the native 480x720 (17,776
+      tokens); 20 steps with CFG are 2.5e16 FLOPs, 81 s at an A100's 312 TFLOP/s bf16 peak, and one
+      head's score matrix is 4.4 GB, 133 GB per layer. Full over factorized attention is Nt*Ns/(Nt+Ns)
+      = 12.95x at 720p and 12.88x at native, about the 13 latent frames whatever the resolution, below
+      the lesson's claimed 16-100x. The lesson's own denoiser has no attention at all -- three dense
+      layers of 1824, 2304 and 288 multiply-adds and no softmax or attention function. Executed on a 4
+      x 6 grid with the lesson's matmul, full and factorized attention compute 576 and 240 scores,
+      2.40 = 24/10 as the formula predicts
+    uses_reference:
+      - matmul
+      - init_net

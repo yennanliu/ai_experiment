@@ -1,0 +1,80 @@
+lesson: 21-keypoint-pose
+phase: 04-computer-vision
+source: phases/04-computer-vision/21-keypoint-pose/docs/en.md
+exercises:
+  - index: 1
+    slug: identical_markers_leave_keypoint_identity_at_chance
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Easy)** Train the tiny keypoint model on the synthetic 4-point dataset. Report mean L2 error between predicted and true keypoints after 200 steps.
+    zh: |
+      **（簡單）** 在那個 4 點的合成資料集上訓練這個小關鍵點模型。回報 200 步之後預測關鍵點與真實關鍵點之間的平均 L2 誤差。
+    verifies: >-
+      the lesson's own main(), run unchanged at seed 0, prints a mean L2 error of 12.458 px after 200
+      steps (8 evaluation images), asserted between 5 and 25 px -- a fifth of the 64-pixel canvas. The
+      error is identity, not localisation: every keypoint is drawn as the same black 4x4 square in
+      random order, and the same net retrained and scored on 64 images errs 14.59 px against 17.03 px
+      for a uniform pick among the four squares, while a prediction lies on average 0.51 px from some
+      square (asserted < 1.5) and every heatmap peaks at 0.26, the MSE-optimal quarter height
+      (asserted within 0.08 of 0.25). main()'s F.interpolate to full resolution is a no-op --
+      TinyKeypointNet already returns 64x64, and the resize changes it by exactly 0.0. Control:
+      drawing keypoint k in its own colour, same net, seed and 200 steps, gives 0.84 px (asserted < 2)
+      with peaks of 0.74
+    uses_reference:
+      - main
+      - TinyKeypointNet
+      - make_synthetic_sample
+      - heatmap_to_coords
+  - index: 2
+    slug: lesson_refine_recovers_a_tenth_of_the_offset
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Medium)** Add sub-pixel refinement: given the argmax position, fit a 1D parabola along x and y from the neighbouring pixels. Report the accuracy gain vs integer argmax.
+    zh: |
+      **（中等）** 加上次像素精修：給定 argmax 的位置，用鄰近像素沿 x 與 y 各擬一條 1D 拋物線。回報相對於整數 argmax 的精度提升。
+    verifies: >-
+      on 200 of the lesson's own gaussian_heatmap targets at continuous centres, integer argmax errs
+      0.400 px and the 1D parabola through argmax and its neighbours 0.0117 px, a 34x gain (asserted >
+      10x). The lesson's own subpixel_refine is not a parabola: 0.25 * (r - l) moves a 0.3 px offset
+      10.9% of the way where the parabola moves 96%, and because it is a value difference used as a
+      distance it scales with heatmap height -- 0.400 -> 0.357 px at height 1 but only -> 0.389 px at
+      the 0.26 height the lesson's trained net produces, while the parabola stays at 0.0117. On the
+      lesson's own data there is nothing to refine: keypoints come from rng.integers, so argmax on its
+      targets is exact (0.0 px), and on its trained 200-step pipeline the parabola moves 14.59 px to
+      14.63 px. Control: the parabola on the log heatmap, exact for a Gaussian, recovers the centres
+      to 9e-08 and 2e-07 px
+    uses_reference:
+      - heatmap_to_coords
+      - subpixel_refine
+      - gaussian_heatmap
+      - TinyKeypointNet
+      - make_synthetic_sample
+  - index: 3
+    slug: learned_paf_beats_proximity_only_where_proximity_fails
+    kind: code
+    tier: T1
+    deps_group: vision
+    en: |
+      **(Hard)** Build a 2-person synthetic dataset where each image shows two instances of the 4-keypoint pattern. Train a bottom-up pipeline with PAFs that predict which keypoint belongs to which instance, and evaluate OKS.
+    zh: |
+      **（困難）** 建一個兩人的合成資料集，每張影像裡有兩份 4 關鍵點的圖樣。訓練一個帶 PAF 的自下而上流程，預測哪個關鍵點屬於哪個實例，並評估 OKS。
+    verifies: >-
+      two colour-coded 4-keypoint chains (8 px limbs, 3 PAFs) per 64x64 image, learned by the lesson's
+      own TinyKeypointNet(num_keypoints=10) on its gaussian_heatmap targets plus PAF targets for 600
+      steps, decoded bottom-up through its heatmap_to_coords and a PAF line integral per limb. OKS
+      (s=24 px, k=0.1) is 0.880 on random layouts and 0.963 on antiparallel ones, both asserted >
+      0.85. Where proximity fails the PAF is decisive: antiparallel chains put the middle limb's wrong
+      pairs 4 px apart and the right ones 8 px, so nearest-neighbour grouping gets 0.0% of 64 images
+      right (OKS 0.489) and the learned PAF 100.0% (OKS 0.963). Everywhere else the learned PAF is the
+      worse grouper: on random layouts it groups 73.4% against 87.5% for proximity (OKS 0.880 vs
+      0.937), its dot with the true limb direction averaging only 0.41 on limb pixels (asserted < 0.6)
+      against 1.0 in the target. Control: fed the target heatmaps and PAFs the same decoder groups
+      100% of both layouts at OKS 1.000, while proximity on those targets groups 92.2% and 0.0%
+    uses_reference:
+      - TinyKeypointNet
+      - gaussian_heatmap
+      - heatmap_to_coords

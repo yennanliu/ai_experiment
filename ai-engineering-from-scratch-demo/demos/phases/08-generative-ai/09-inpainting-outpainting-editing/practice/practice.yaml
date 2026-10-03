@@ -1,0 +1,89 @@
+lesson: 09-inpainting-outpainting-editing
+phase: 08-generative-ai
+source: phases/08-generative-ai/09-inpainting-outpainting-editing/docs/en.md
+exercises:
+  - index: 1
+    slug: never_equal_one_pinned_dim_still_names_the_cluster
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** In `code/main.py`, vary the fraction of dimensions masked from 0.2 to 0.8. At what fraction does the inpaint quality (residual in masked dims) equal unconditional generation?
+    zh: |
+      **簡單。** 在 `code/main.py` 裡，把被遮罩維度的比例從 0.2 掃到 0.8。在哪個比例上，修補品質（遮罩維度上的殘差）會等同於無條件生成？
+    verifies: >-
+      the DDPM is trained exactly as main() trains it (seed 5, 5000 steps) and the lesson's own
+      inpaint and sample_unconditional are run on 200 held-out sources per fraction; with d=5 the
+      fractions 0.2 to 0.8 are 1 to 4 masked trailing dims. Masked residual, inpaint against
+      unconditional, is 0.339 vs 1.187 at 0.2, 0.365 vs 1.164 at 0.4, 0.438 vs 1.134 at 0.6 and 0.640
+      vs 1.119 at 0.8, so the two are never equal in the swept range -- one pinned dim still leaves
+      inpainting 43% better -- and they meet only at 1.0 (1.173 vs 1.106, two runs of one sampler).
+      The information never runs out: every dim is the cluster centre plus N(0, 0.2), so one pinned
+      dim names the cluster almost surely and a perfect conditional sampler would score 2*0.2/sqrt(pi)
+      = 0.226 at every fraction; the rise from 0.339 to 0.640 is the naive reinjection picking the
+      wrong cluster more often, cluster match falling from 98% to 71%. With every dim masked the
+      lesson's inpaint and sample_unconditional agree to 0.0 from one seed
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train
+      - sample_data
+      - inpaint
+      - sample_unconditional
+  - index: 2
+    slug: repaint_helps_but_there_is_no_edge_to_heal
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement RePaint: at every 10th reverse step, jump back 5 steps (add noise) and re-denoise. Measure whether it reduces boundary residual at the mask edge.
+    zh: |
+      **中等。** 實作 RePaint：每 10 個逆向步驟就往回跳 5 步（加噪）並重新去噪。量測它是否降低了遮罩邊緣的邊界殘差。
+    verifies: >-
+      RePaint is the lesson's own reinjection reverse step plus a closed-form 5-step re-noising after
+      reverse steps 30, 20 and 10, 55 network calls instead of 40, run on main()'s trained model over
+      500 sources. It lowers the mask-edge residual modestly, 0.344 to 0.307 with dims 3-4 masked and
+      0.793 to 0.696 with dims 1-4 masked. But there is no edge in this data: sample_data draws every
+      dim independently around one cluster centre, and the plain sampler's edge and interior residuals
+      are 0.344 and 0.367, the edge no worse than the interior, so no seam can form. What RePaint
+      fixes is the cluster -- regenerated dims landing in the source's cluster rise from 96.0% to
+      98.6% (dims 3-4) and 65.8% to 75.0% (dims 1-4), global coherence rather than a healed seam. With
+      no jumps the sampler reproduces the lesson's inpaint from one seed to 0.0
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train
+      - sample_data
+      - forward
+      - sin_embed
+      - inpaint
+  - index: 3
+    slug: pose_is_free_and_the_fill_model_is_not_better
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use Hugging Face diffusers to compare: SD 1.5 Inpaint + ControlNet-Openpose vs Flux.1-Fill on 20 face-regeneration tasks. Score pose adherence and identity preservation separately.
+    zh: |
+      **困難。** 用 Hugging Face diffusers 做對照：在 20 個臉部重新生成任務上比較 SD 1.5 Inpaint + ControlNet-Openpose 與 Flux.1-Fill。分別為姿態遵循度與身分保持度評分。
+    verifies: >-
+      diffusers and torch return None from find_spec, so the scaled-down comparison DESIGN D11 asks
+      for runs on the lesson's code: 20 face tasks (dims 3-4 masked, a requested pose x3 - x4 = +-0.4)
+      from 5 seeds each. Inpaint+ControlNet is the lesson's model and reinjection sampler plus a
+      pose-guidance pull; Fill is a context-conditioned denoiser trained with the lesson's own
+      init_net, forward, backward and apply for 5000 steps. Pose error is 0.021 vs 0.483 and identity
+      (face in the source's cluster) 99% vs 92%. Pose control costs identity nothing: without the pose
+      term the sampler scores pose 0.593 and identity 94%, a 28-fold pose gain with identity not
+      falling, because pose is x3 - x4 and identity lies along x3 + x4. The context-seeing fill model,
+      which the doc calls the proper fix for reinjection that works badly, keeps identity 92% against
+      reinjection's 94%. Identity outside the mask is 0.0 residual for every pipeline because each
+      pastes the source back, so it cannot rank them
+    uses_reference:
+      - make_schedule
+      - init_net
+      - train
+      - sample_data
+      - forward
+      - backward
+      - apply
+      - sin_embed

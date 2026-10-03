@@ -1,0 +1,131 @@
+lesson: 19-visual-autoregressive-var
+phase: 08-generative-ai
+source: phases/08-generative-ai/19-visual-autoregressive-var/docs/en.md
+exercises:
+  - index: 1
+    slug: coarse_passes_cost_quality_and_four_full_res_passes_win
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Scale count ablation.** Train VAR with 4, 6, 8, 10 scales. Measure reconstruction quality vs number of autoregressive passes. More scales = finer residuals = better quality but more passes.
+    zh: |
+      **尺度數量消融。** 分別用 4、6、8、10 個尺度訓練 VAR。量測重建品質相對於自迴歸傳遞次數的變化。尺度越多 = 殘差越細 = 品質越好，但傳遞次數也越多。
+    verifies: >-
+      the lesson's own train_codebooks and reconstruction_mse, refitted per SCALES schedule on
+      main()'s 64 train / 16 val images. The 8x8 grid admits only four distinct sizes, so 6, 8 and 10
+      scales repeat one. Repeats at 8x8 give val MSE 1.5e-04, 5.9e-07, 2.0e-09, 2.3e-12 at 4/6/8/10
+      passes; repeats at the coarse sizes give 1.5e-04, 1.2e-04, 4.0e-04, 4.2e-04, so 10 coarse-heavy
+      passes are worse than 4. Four 8x8 passes reach 3.8e-10, about 396,000x below the lesson's
+      (1,2,4,8) at the same pass count, and a single 8x8 pass gets 5.2e-04. The paper's
+      (1,2,3,4,5,6,8,10,13,16) schedule raises ValueError in downsample at size 3. The pyramid's
+      saving is tokens, 85 against 256, and coarse-only (1,2,4) sits at 0.071 against 0.121 for
+      predicting the mean
+    uses_reference:
+      - make_patterns
+      - train_codebooks
+      - reconstruction_mse
+      - downsample
+      - SCALES
+  - index: 2
+    slug: past_256_codes_the_codebook_collapses_and_both_axes_get_worse
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Codebook size.** Train tokenizers with codebook sizes 512, 4096, 16384. Larger codebooks give better reconstruction but harder prediction. Find the knee.
+    zh: |
+      **碼書大小。** 分別用 512、4096、16384 的碼書大小訓練分詞器。碼書越大重建越好，但預測越難。找出那個轉折點。
+    verifies: >-
+      the lesson's own train_codebooks, tokenize_multiscale and fit_predictor with CODEBOOK swept
+      16..512 on 512 training images (the most the scale-1 codebook can be initialised from at 512
+      codes). Val MSE is 2.5e-04, 4.5e-06, 4.3e-06, 3.4e-08, 2.5e-08, 2.1e-06 and held-out NLL 1.46,
+      1.63, 1.96, 2.21, 2.36, 2.56 nats per token, so the knee is 256 and past it both axes get worse;
+      512 is worse than the best smaller size on 3/3 data seeds. At 512 codes the four scales hold
+      only 111, 19, 17, 36 distinct values. 512, 4096 and 16384 each raise ValueError on main()'s 64
+      images because fit_codebook needs as many samples as codes. The add-one prior is 3% of the
+      scale-1 table at 16 codes and 50% at 512, and NLL 2.56 stays far below log(512) = 6.24
+    uses_reference:
+      - make_patterns
+      - train_codebooks
+      - tokenize_multiscale
+      - fit_predictor
+      - context_key
+      - reconstruction_mse
+      - CODEBOOK
+  - index: 3
+    slug: no_mask_exists_and_the_last_scale_is_uniform_noise_98_percent_of_the_time
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Parallel-within-scale check.** For a trained VAR, measure the attention pattern explicitly. Within scale k, does the model attend to cross-scale positions but not intra-scale? Verify the mask implementation.
+    zh: |
+      **尺度內平行性檢查。** 對一個訓練好的 VAR，明確量測它的注意力樣態。在尺度 k 內部，模型是不是只注意跨尺度的位置而不注意尺度內的位置？驗證遮罩的實作是否正確。
+    verifies: >-
+      the model main() trains, probed by dependence because it has no attention weights. Instrumenting
+      sample_categorical inside the lesson's own generate shows every position of a scale drawn from
+      one shared distribution (1 per scale per sample over 200 draws), while real 8x8 per-position
+      token histograms differ from the pooled one by mean TV 0.55. context_key moves on 19,200/19,200
+      single-token edits to the 2x2 and 4x4 scales and on 0/3,681 within-scale swaps, so cross-scale
+      conditioning sees values, never positions. At generation the sampled context is unseen, and
+      generate falls back to uniform, in 0%, 10%, 86%, 98% of draws at the four scales. main()'s
+      printed mask check is sum(s*s) arithmetic over scales 1..k-1, 1,428 pairs, while docs/en.md says
+      scales 1..k, 5,797 pairs
+    uses_reference:
+      - make_patterns
+      - train_codebooks
+      - tokenize_multiscale
+      - fit_predictor
+      - generate
+      - sample_categorical
+      - context_key
+      - SCALES
+  - index: 4
+    slug: the_toy_var_is_no_closer_to_the_data_than_uniform_noise_at_any_size
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **VAR vs DiT scaling.** For the same ImageNet class-conditional task, train VAR and DiT at matched param budgets (e.g., 33M, 130M, 458M). Plot FID vs compute. VAR should pull ahead of DiT at each size — reproduce the paper's result at small scale.
+    zh: |
+      **VAR 對比 DiT 的縮放。** 在同一個 ImageNet 類別條件任務上，以相同的參數預算（例如 33M、130M、458M）訓練 VAR 與 DiT。畫出 FID 對計算量的曲線。VAR 在每個規模上都應該領先 DiT —— 在小規模上複現那篇論文的結果。
+    verifies: >-
+      torch and torchvision are absent, so the comparison is scaled down to the lesson's own VAR at
+      growing table budgets (16 to 4096 training images, 304 to 6,080 parameters) scored by a
+      pixel-space Frechet distance to 500 held-out images. Its samples score 14.8, 10.5, 9.5, 12.1,
+      11.1 against 11.4 for uniform random pixels, with a log-log slope on parameters of -0.05 rather
+      than a power law, and every budget runs the same 4 passes and 85 tokens. Replaying the training
+      token streams through the lesson's decoder scores 0.06-0.21 and real against real 0.03, so the
+      tokenizer and the metric work and the predictor is what fails
+    uses_reference:
+      - make_patterns
+      - train_codebooks
+      - tokenize_multiscale
+      - fit_predictor
+      - generate
+      - detokenize_multiscale
+  - index: 5
+    slug: conditioning_cannot_fix_a_predictor_that_does_not_know_where_pixels_go
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Text conditioning.** Extend VAR to take a text embedding (CLIP pooled) as an extra conditioning input via adaLN. This is the HART recipe. How much does FID improve on text-aligned sampling?
+    zh: |
+      **文字條件控制。** 擴充 VAR，透過 adaLN 把一個文字嵌入（CLIP 池化後的向量）當成額外的條件輸入。這就是 HART 的配方。文字對齊取樣的 FID 能改善多少？
+    verifies: >-
+      the text embedding is replaced by the pattern class and adaLN by per-class tables, i.e. the
+      lesson's own fit_predictor fitted once per class and sampled through its own generate.
+      Class-matched Frechet distance over the four structured classes drops 17.7 to 15.9 (10%) and
+      nearest-image alignment stays at most 5%. Each class's true tokens with positions shuffled
+      within each scale score 6.4-31.9 against 0.002-0.040 unshuffled, so position blindness is the
+      ceiling. The add-one prior leaves the correct 1x1 token of a fixed-image class at (n+1)/(n+16) =
+      0.44-0.52, and the share of samples carrying it rises from 16-22% to 45-54% with conditioning
+    uses_reference:
+      - make_patterns
+      - train_codebooks
+      - tokenize_multiscale
+      - fit_predictor
+      - generate
+      - detokenize_multiscale

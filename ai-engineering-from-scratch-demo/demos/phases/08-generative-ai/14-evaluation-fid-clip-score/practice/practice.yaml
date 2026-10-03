@@ -1,0 +1,78 @@
+lesson: 14-evaluation-fid-clip-score
+phase: 08-generative-ai
+source: phases/08-generative-ai/14-evaluation-fid-clip-score/docs/en.md
+exercises:
+  - index: 1
+    slug: small_n_fid_is_biased_up_not_down
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py`. Compare FID at N=100 vs N=1000 on the same synthetic distributions. Report bias magnitude.
+    zh: |
+      **簡單。** 跑 `code/main.py`。在同樣的合成分布上比較 N=100 與 N=1000 的 FID。回報偏誤的大小。
+    verifies: >-
+      real and generated pools are both drawn by the lesson's own make_features(0.0, n, 4, rng), so
+      the true FID is 0 and the lesson's own fid measures pure bias; averaged over 30 seeds it is
+      0.0268 at N=100 and 0.00287 at N=1000, a ratio of 9.3, with N*FID at 2.68 and 2.87, so the bias
+      falls as 1/N. It is upward: 60 of 60 null draws score above zero, while docs/en.md says small N
+      'gives falsely low FID' and 'under-estimates covariance' -- the covariance divides by n - 1 and
+      its trace averages 0.638 against a true 0.64. The bias matches the closed form s^2 (2d +
+      d(d+1)/2) / N, predicted 0.0288 and 0.00288 at d=4 and 0.0208 against a measured 0.0223 at d=8,
+      N=400; the mean term alone is 0.0122 against 2ds^2/N = 0.0128, and the covariance term is
+      (d+1)/4 times it, 512x at Inception's d=2048. The lesson's jacobi_sqrt (a Denman-Beavers
+      iteration) squares back to cov_r @ cov_g within 6.9e-18
+    uses_reference:
+      - fid
+      - make_features
+      - mean_vec
+      - covariance
+      - trace
+      - matmul
+      - jacobi_sqrt
+  - index: 2
+    slug: cmmd_at_sigma_10_only_sees_the_mean
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Implement CMMD from synthetic CLIP-style features (see Jayasumana et al., 2024 for the formula). Compare sensitivity to quality differences vs FID.
+    zh: |
+      **中等。** 從合成的 CLIP 風格特徵實作 CMMD（公式見 Jayasumana 等人，2024）。比較它與 FID 對品質差異的敏感度。
+    verifies: >-
+      CMMD is implemented as 1000 x the unbiased MMD^2 under an RBF kernel of bandwidth 10 on
+      unit-norm 8-D features, its distance taken from the lesson's own clip_like, and compared with
+      the lesson's own fid by z-score against a null over 12 seeds of N=100. Tilting the generated
+      cloud 0.25 rad moves CMMD by z=7.4 and FID by z=4.9; moving the cloud's variance from 7
+      directions into 2 at the same centre and total spread moves FID by z=64.0 and CMMD by z=0.79. At
+      sigma=10 the kernel stays in [0.98, 1] on unit vectors, so CMMD equals 10 x the unbiased |mu_r -
+      mu_g|^2 within 0.0039 on every seed -- a mean difference, blind to any degradation that leaves
+      the mean alone; the same CMMD at sigma=0.5 flags the reshaped cloud at z=29.8. On identical
+      pools CMMD averages -0.0070 and is negative on 7 of 12 seeds, while FID is at least 0.0154 on
+      every seed
+    uses_reference:
+      - clip_like
+      - fid
+  - index: 3
+    slug: agreement_is_capped_by_the_annotators
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Replicate the HPSv2 setup: take 1000 image-prompt pairs from a subset of Pick-a-Pic, fine-tune a small CLIP-based scorer on the preferences, and measure its agreement with a held-out set.
+    zh: |
+      **困難。** 複現 HPSv2 的設定：從 Pick-a-Pic 的一個子集取 1000 組影像—提示詞配對，在這些偏好上微調一個小型的 CLIP 評分器，再量測它與留出集合的一致程度。
+    verifies: >-
+      torch, transformers, open_clip and datasets all return None from find_spec, so Pick-a-Pic and a
+      CLIP backbone cannot be loaded and the scaled-down runnable of DESIGN D11 ships instead: 1000
+      training and 1000 held-out 8-D prompt/image-pair items labelled by Bradley-Terry with sharpness
+      8 on a hidden map, and an HPSv2-shaped scorer clip_like(W x, t) with a logit scale, built on the
+      lesson's own clip_like and fine-tuned from W = identity by pairwise logistic loss. Held-out
+      agreement is 85.2% after fine-tuning against 72.3% zero-shot. That is 99% of what the labels
+      allow: the true utility agrees with them only 85.8% (expected ceiling 86.1%), and against the
+      noise-free ordering the tuned scorer is right on 93.8% of pairs. clip_like is bounded in [-1,
+      1], so with the logit scale fixed at 1 agreement is 84.2% but held-out log loss is 0.556 against
+      0.352 with the scale learned, and the learned scale lands at 8.34, recovering the annotators'
+      sharpness of 8
+    uses_reference:
+      - clip_like

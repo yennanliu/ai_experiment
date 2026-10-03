@@ -45,7 +45,7 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**2026 / 2150 exercises** (94.2%) across 20 phases.
+**2057 / 2150 exercises** (95.7%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
@@ -53,11 +53,11 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `01-math-foundations` | 92 | 92 | 21 |
 | 🚧 `02-ml-fundamentals` | 78 | 30 | 8 |
 | ✅ `03-deep-learning-core` | 63 | 63 | 13 |
-| 🚧 `04-computer-vision` | 84 | 81 | 27 |
+| ✅ `04-computer-vision` | 84 | 84 | 28 |
 | ✅ `05-nlp-foundations-to-advanced` | 87 | 87 | 29 |
 | ✅ `06-speech-and-audio` | 51 | 51 | 17 |
 | ✅ `07-transformers-deep-dive` | 52 | 52 | 16 |
-| 🚧 `08-generative-ai` | 47 | 24 | 8 |
+| ✅ `08-generative-ai` | 47 | 47 | 15 |
 | ✅ `09-reinforcement-learning` | 36 | 36 | 12 |
 | ✅ `10-llms-from-scratch` | 116 | 116 | 24 |
 | ✅ `11-llm-engineering` | 79 | 79 | 17 |
@@ -67,7 +67,7 @@ hand-written "simulation" of the answer could not have found it.
 | ✅ `15-autonomous-systems` | 110 | 110 | 22 |
 | ✅ `16-multi-agent-and-swarms` | 123 | 123 | 25 |
 | ✅ `17-infrastructure-and-production` | 140 | 140 | 28 |
-| 🚧 `18-ethics-safety-alignment` | 150 | 145 | 29 |
+| ✅ `18-ethics-safety-alignment` | 150 | 150 | 30 |
 | ✅ `19-capstone-projects` | 252 | 252 | 53 |
 
 Regenerate with `uv run python scripts/coverage.py`.
