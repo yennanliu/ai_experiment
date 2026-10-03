@@ -1,0 +1,87 @@
+lesson: 13-flow-matching-rectified-flows
+phase: 08-generative-ai
+source: phases/08-generative-ai/13-flow-matching-rectified-flows/docs/en.md
+exercises:
+  - index: 1
+    slug: one_step_lands_every_sample_on_zero
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` and compare 1-step vs 20-step MSE vs the true data distribution.
+    zh: |
+      **簡單。** 跑 `code/main.py`，比較 1 步與 20 步相對於真實資料分布的 MSE。
+    verifies: >-
+      the network is trained exactly as main() does it (seed 31, 24 hidden, 6000 steps, lr 0.01) by
+      the lesson's own init_net and train and sampled with its own sample on 1000 fixed noise seeds,
+      and MSE against the true distribution is read as quantile MSE against the mixture's exact
+      quantiles (squared 1-D Wasserstein-2). 1-step scores 1.249 and 20-step 0.521, with 2-step 0.236,
+      4-step 0.338 and 8-step 0.434. The closed-form velocity field E[x_1 - x_0 | x_t] scores 4.090 at
+      one step because at t=1 both components share mean 0, so v*(x,1) = x and one Euler step sends
+      every sample to 0 (largest |sample| 4e-16, error E[x0^2] = 4.09): one step returns the data
+      mean, in neither mode, and the network's 1.249 is better than perfect only because it is wrong.
+      The lesson's left/right count reads 514 / 486 at one step while only 32% of samples land within
+      three standard deviations of a mode. More steps converge to the network, not the data: its
+      2-step error beats its 20-step error, which is 31x the exact field's 0.017 (0.057 at 4 steps)
+    uses_reference:
+      - init_net
+      - train
+      - sample
+      - sample_data
+  - index: 2
+    slug: logit_normal_starves_the_ends_and_helps_nothing
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Switch from uniform `t` sampling to logit-normal (concentrates sampling at mid-t). Does the model quality improve?
+    zh: |
+      **中等。** 把均勻的 `t` 取樣換成 logit-normal（把取樣集中在中段的 t）。模型品質有變好嗎？
+    verifies: >-
+      the lesson's train hard-codes t = rng.random(), so a loop around its own sample_data, forward,
+      backward and apply takes the t draw as a parameter; with the uniform draw it matches the
+      lesson's train to 0.0 in the weights after 500 steps. Logit-normal is sigmoid(z), z ~ N(0,1).
+      Over seeds 31 and 1-5 logit-normal is worse on every measure: mean squared error against the
+      closed-form velocity field 0.508 vs 0.813 over all t, 0.613 vs 1.393 at the ends (t <= 0.1 or >=
+      0.9), 0.446 vs 0.666 in the middle 0.3..0.7, and 20-step quantile MSE 1.150 vs 1.259. The ends
+      are starved: a logit-normal draw lands there with probability 2.8% against uniform's 20%, and
+      end error rises 2.3x, while every Euler sample starts with a query at t=1 where logit-normal has
+      zero density. The middle gets 1.5x the draws and still gets worse. The six uniform seeds span
+      0.276 to 0.709, wider than the 0.306 gap between means, and the best logit-normal seed (0.364)
+      beats the worst uniform one, so a single run could return either verdict
+    uses_reference:
+      - init_net
+      - sample_data
+      - forward
+      - backward
+      - apply
+      - train
+      - sample
+  - index: 3
+    slug: reflow_copies_the_teacher_not_the_data
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Implement one reflow iteration: generate paired (x_0, x_1) by integrating the first model, train a second model on the pairs, and compare 1-step sample quality.
+    zh: |
+      **困難。** 實作一輪 reflow：積分第一個模型產生配對的 (x_0, x_1)，在這些配對上訓練第二個模型，再比較 1 步樣本的品質。
+    verifies: >-
+      main()'s own model (seed 31) is the teacher; 1000 pairs come from integrating it with the
+      lesson's sample at 20 steps, and a second model with the same network, loss and budget is
+      trained on them through the lesson's forward, backward and apply. One reflow cuts 1-step
+      quantile MSE from 1.211 to 0.877, against the teacher's own 20-step 0.663. The student learns
+      the teacher rather than the data: its 1-step samples are 0.266 from the teacher's 20-step
+      distribution and 0.877 from the data, and the identical student code given the closed-form field
+      as teacher reaches 0.179 at one step against that field's own 1-step 4.09. Pair-lines cross
+      52.2% of the time under independent pairing and 0.0% under reflow pairing, and the mean squared
+      gap between a sample's 1-step and 20-step landing falls from 2.149 to 0.122. Control: the same
+      loop on independent pairs scores 2.465 at one step, so the gain comes from the pairing
+    uses_reference:
+      - init_net
+      - train
+      - sample
+      - sample_data
+      - forward
+      - backward
+      - apply
