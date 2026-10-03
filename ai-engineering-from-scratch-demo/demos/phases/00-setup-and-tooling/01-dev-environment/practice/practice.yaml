@@ -1,0 +1,73 @@
+lesson: 01-dev-environment
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/01-dev-environment/docs/en.md
+exercises:
+  - index: 1
+    slug: python_3_10_passes_two_of_the_three_verifiers
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the verification script and fix any failures
+    zh: |
+      執行驗證腳本，把所有失敗的項目修掉
+    verifies: >-
+      the lesson's own verify.py main() is run unchanged with every probe forced to fail and then to
+      pass, simulating a fresh machine before and after its printed fixes: the beginner route prints
+      0/2 and exits 1 with a Fix line under each of its 2 FAIL lines, then prints 2/2, exits 0 and
+      names vectors.py as the next lesson. The lesson's three verifiers disagree on what passing
+      means: python_result returns ok=False on a Python 3.10 interpreter because verify.py wants 3.11,
+      while verify.ts accepts minor >= 10 and main.rs >= (3, 10); and the beginner route requires 2
+      tools (python, git), verify.ts 3 (adds node) and main.rs 5 (adds node, rustc, cargo), so a
+      machine verify.py calls ready can fail 3 of main.rs's required checks. Control: the 6 routes
+      ending in a python3 phases/ command name 5 distinct files, and all 5 exist in the reference
+      phases/ tree
+    uses_reference:
+      - main
+      - Probe
+      - Result
+      - PROBES
+      - ROUTES
+      - python_result
+  - index: 2
+    slug: the_fix_for_a_missing_torch_needs_a_pip_uv_venv_lacks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a Python virtual environment for this course and install PyTorch
+    zh: |
+      為本課程建立一個 Python 虛擬環境，並安裝 PyTorch
+    verifies: >-
+      a real virtual environment is created in a temp directory without pip, as uv venv makes it, and
+      the lesson's own verify.py is run by that environment's interpreter: sys.prefix !=
+      sys.base_prefix inside it and --show-later reports PyTorch LATER, not importable by the venv's
+      python, so host packages do not leak in. Installing PyTorch needs the network, so the step is
+      replaced by the exact fix the script prints, python3 -m pip install torch, one of 4 fix lines
+      that call python3 -m pip install: in the pip-less venv -m pip exits 1 with No module named pip,
+      so the verifier's remedy fails in the environment the lesson's Step 2 builds. PyTorch is in
+      route.required for 0 of 7 routes, so skipping the exercise never turns verify.py red. Control:
+      the same -m pip --version in a venv created with pip exits 0
+    uses_reference:
+      - PROBES
+      - ROUTES
+  - index: 3
+    slug: no_verifier_requires_a_typescript_runner_or_julia
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a "hello world" in all four languages and run each one
+    zh: |
+      用四種語言各寫一支「hello world」，並逐一執行
+    verifies: >-
+      hello world is written in Python, TypeScript, Rust and Julia to a temp directory and only the
+      Python one is run, since node, rustc and julia are facts about the host; it exits 0 and prints
+      exactly hello world. The lesson never installs a TypeScript runner: tsx appears 0 times in the
+      lesson text and 0 times in verify.py, and verify.ts probes it as npx -y tsx --version, which
+      downloads tsx unprompted. Across verify.py's beginner route, verify.ts and main.rs, Python is
+      required 3 times, rustc once (by main.rs, which needs rustc to be built at all), and Julia and
+      the TypeScript runner 0 times; verify.ts probes deno, which the lesson text mentions 0 times,
+      and has no julia probe
+    uses_reference:
+      - ROUTES
