@@ -1,0 +1,82 @@
+lesson: 09-model-evaluation
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/09-model-evaluation/docs/en.md
+exercises:
+  - index: 1
+    slug: roc_cannot_see_prevalence_ap_can
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement precision-recall curves: plot precision vs recall at different thresholds. Compute the average precision (area under the PR curve). Compare the PR curve to the ROC curve on an imbalanced dataset and explain when each is more informative.
+    zh: |
+      實作 PR 曲線（精確率-召回率曲線）：在不同閾值下畫出精確率對召回率。計算平均精確率（PR 曲線下的面積）。在一個不平衡的資料集上比較 PR 曲線與 ROC 曲線，並說明各自在什麼情況下更有參考價值。
+    verifies: >-
+      PR curves scored with the lesson's own precision and recall at every distinct threshold of its
+      SimpleLogistic, average precision as the step sum. Holding the ranking fixed by replicating a
+      balanced make_classification_data pool's negatives 1x, 9x and 19x (48%, 9%, 5% positive), the
+      lesson's auc_roc stays 0.9682 to 1e-12 while AP falls 0.967 -> 0.846 -> 0.787, and precision at
+      80% recall 0.91 -> 0.53 -> 0.35 with the false-positive rate fixed at 0.048. The lesson's own
+      make_imbalanced_data is nearly separable and its split leaves 3 positives in 60 test rows, AUC
+      1.0000 and AP 1.0000, so it cannot show the difference. auc_roc equals the Mann-Whitney
+      P(score_pos > score_neg), 0.968159 both
+    uses_reference:
+      - SimpleLogistic
+      - precision
+      - recall
+      - roc_curve
+      - auc_roc
+      - make_classification_data
+      - make_imbalanced_data
+      - train_val_test_split
+  - index: 2
+    slug: stratified_folds_dump_the_minority_in_the_last_fold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build a nested cross-validation loop: the outer loop evaluates model performance, the inner loop tunes hyperparameters. Use it to compare two models fairly without leaking validation data into the evaluation.
+    zh: |
+      打造一個巢狀交叉驗證迴圈：外層迴圈評估模型效能，內層迴圈調整超參數。用它公平地比較兩個模型，而不讓驗證資料洩漏到評估裡。
+    verifies: >-
+      nested CV with the lesson's kfold_split outside and its cross_validate (3 folds) inside,
+      comparing SimpleLogistic tuned over epochs 1-30 with a kNN tuned over k 1-31 on 8
+      make_classification_data sets of 120: nested accuracy 0.8865 vs 0.8583 (gap 0.0281) against
+      best-of-grid CV 0.8969 vs 0.8781 (gap 0.0187). On 24 random-label sets kNN's best-of-grid
+      reports 0.5372 against nested 0.5031 while logistic's barely moves (0.5038 vs 0.5052), so the
+      shortcut inflates kNN by 0.020 and logistic by 0.010 on real data and understates logistic's
+      lead by a third. The lesson's stratified_kfold_split gives [2, 2, 2, 2, 5] positives per fold on
+      make_imbalanced_data(300, 0.05)'s 13 and [0, 0, 0, 0, 4] with 4, all of the minority in one
+      fold, the failure docs/en.md says stratification prevents. The outer folds partition all 120
+      rows
+    uses_reference:
+      - kfold_split
+      - cross_validate
+      - stratified_kfold_split
+      - SimpleLogistic
+      - accuracy
+      - make_classification_data
+      - make_imbalanced_data
+  - index: 3
+    slug: the_lessons_reseeding_makes_every_permutation_identical
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Implement a permutation test for model comparison: shuffle the labels, retrain, and measure performance. Repeat 100 times to build a null distribution. Compute the p-value for the observed model performance against this distribution.
+    zh: |
+      為模型比較實作一個排列檢定（permutation test）：把標籤打亂、重新訓練、量測效能。重複 100 次來建立虛無分布。針對這個分布，計算實際觀測到的模型效能的 p 值。
+    verifies: >-
+      a 100-shuffle label permutation test of the lesson's 5-fold cross_validate accuracy for
+      SimpleLogistic on make_classification_data(100, seed=3): observed 0.84 against a null of mean
+      0.503 (range 0.36-0.62), p = 1/101. Shuffling with the module-level random.shuffle yields 1
+      distinct label order in 100 because kfold_split calls random.seed(42), so the null is one score
+      (0.52) and p can only be 1/101 or 1. On 10 coin-flip label sets of 50 rows that test rejects at
+      5% three times (p only 0.0099 or 1.0) while a private random.Random rejects 0 times with p from
+      0.158 to 0.802 and gives 100 distinct permutations
+    uses_reference:
+      - cross_validate
+      - kfold_split
+      - SimpleLogistic
+      - accuracy
+      - make_classification_data
