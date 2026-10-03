@@ -1,0 +1,83 @@
+lesson: 11-audio-generation
+phase: 08-generative-ai
+source: phases/08-generative-ai/11-audio-generation/docs/en.md
+exercises:
+  - index: 1
+    slug: the_alternating_style_is_a_ramp
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` and set style explicitly. Verify the generated sequences match the style's pattern.
+    zh: |
+      **簡單。** 執行 `code/main.py` 並明確指定風格。驗證生成出來的序列符合該風格的模式。
+    verifies: >-
+      the lesson's own count table is trained exactly as main() trains it (seed 42, 500 sequences of
+      20 per style) and the lesson's own generate is called with style=0 and style=1 directly; a step
+      outside the style's training step set ({0,1,2} for style 0, {2,3,4} for style 1, mod 16) is a
+      glitch. The sequences match their style up to a glitch rate the smoothing sets: at temperature
+      1.0, 2.3% and 2.2% of steps are off-pattern and 64% and 65% of 20-token sequences are clean; at
+      0.7 the rate is 0.28% and 0.24%. The add-one prior in init_counts leaves 2.6% of each row's mass
+      on tokens no training step reached, while the training data itself is 0.0% off-pattern. Style 0,
+      labelled 'speech-like (alternating)', is not alternating: 100% of its 9500 training steps go
+      forward by 0, 1 or 2, a +1 ramp with a stutter, and the +2 step (25% of its steps) is shared
+      with style 1. generate with style=2 raises IndexError while style=-1 silently returns style 1's
+      ramp, because counts[-1] is the last table
+    uses_reference:
+      - init_counts
+      - update_counts
+      - make_tokens
+      - generate
+      - probs
+  - index: 2
+    slug: the_delay_is_what_carries_the_coupling
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Add delayed parallel decoding: simulate 2 streams of tokens that must stay offset by 1 step. Train a joint predictor.
+    zh: |
+      **中等。** 加上延遲平行解碼：模擬兩條必須維持相差 1 步的詞元串流。訓練一個聯合預測器。
+    verifies: >-
+      two codebook streams, a from the lesson's own make_tokens (style 0) and b = a + 8 mod 16, are
+      modelled by two 16-way heads trained with the lesson's own init_counts, update_counts and probs
+      and sampled with its own sample_from. In the delayed layout, where frame t carries (a_t,
+      b_{t-1}), the b head conditions on the already-decoded a_t and the streams stay coupled in 97.3%
+      of 19000 generated frames, the head putting 96.9% of its mass on the right partner. Removing the
+      delay drops coupling to 36.5%, against a closed-form 0.375 for two independent draws from the
+      step distribution {1/4, 1/2, 1/4}, so one extra frame buys 2.7x. A 256-way joint frame predictor
+      without delay is worse still at 27.1%: the lesson's add-one prior scales with the output
+      vocabulary and leaves 71% of an average seen row on valid pairs, and only 16 of 256 contexts are
+      ever seen. The delayed layout offsets b by exactly one frame, 20 frames taking 21 steps
+    uses_reference:
+      - init_counts
+      - update_counts
+      - make_tokens
+      - probs
+      - sample_from
+  - index: 3
+    slug: ab_is_won_in_five_tokens_and_every_clip_glitches
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Use HuggingFace transformers to run MusicGen-small locally. Generate a 10-second clip with three different prompts; A/B for style adherence.
+    zh: |
+      **困難。** 用 HuggingFace transformers 在本機跑 MusicGen-small。用三個不同的提示詞各生成一段 10 秒的片段；做 A/B 比較風格遵循度。
+    verifies: >-
+      transformers, torch and torchaudio return None from find_spec, so MusicGen-small cannot run, and
+      the same experiment runs on the lesson's own token model (DESIGN D11): a 10-second clip is 500
+      tokens at MusicGen's 50 Hz, the three prompts are style 0, style 1 and an untrained third slot,
+      and an A/B judge prefers the clip with the higher log-likelihood under the prompt's own model
+      via the lesson's probs. Both trained prompts win 100% of 100 pairs of 500-token clips, but the
+      A/B already reaches 90% and 94% at 2 tokens and 100% at 5, a tenth of a second, so the 10-second
+      A/B cannot separate generators. Yet at temperature 1.0 the average clip carries 11.0 off-pattern
+      tokens and 0 of 200 clips are clean (0.7: 1.2 per clip, 63 of 200 clean). The third prompt
+      cannot be A/B'd: generate with style=2 raises IndexError, and an untrained slot is uniform, so
+      100% of its pairs tie
+    uses_reference:
+      - init_counts
+      - update_counts
+      - make_tokens
+      - generate
+      - probs
