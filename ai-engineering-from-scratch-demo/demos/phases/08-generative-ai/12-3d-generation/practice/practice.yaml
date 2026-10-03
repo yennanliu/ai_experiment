@@ -1,0 +1,82 @@
+lesson: 12-3d-generation
+phase: 08-generative-ai
+source: phases/08-generative-ai/12-3d-generation/docs/en.md
+exercises:
+  - index: 1
+    slug: sixty_four_overflows_on_step_zero_from_a_stale_base_loss
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Easy.** Run `code/main.py` with 4, 16, 64 Gaussians. Report final MSE vs target.
+    zh: |
+      **簡單。** 分別用 4、16、64 個高斯執行 `code/main.py`。回報相對於目標的最終 MSE。
+    verifies: >-
+      main()'s n list swapped for 4, 16, 64 at the lesson's own seed 7+n, 30 calls of
+      finite_diff_step(lr=0.5, eps=0.2): final MSE is 0.0575 at n=4 and 0.0280 at n=16, and n=64
+      raises OverflowError inside gaussian_value on step 0, so it has no MSE at all. The cause is
+      finite_diff_step itself: it updates each coordinate in place but divides every probe against the
+      base_loss measured before any update, so on step 0 at n=64 the probe loss passes 100x the base
+      at probe 29 of 257. The same step with every difference taken first (same lr, eps and init)
+      takes n=64 from 15.36 to 0.0601 in 5 steps without overflow, and ends n=16 at 0.0099 against the
+      lesson's 0.0280. The target is exactly two Gaussians (sigma sqrt(3) colour 1 at (3,3), sigma 2
+      colour 0.5 at (8,8)), which the lesson's render reproduces to MSE 9.8e-34, so every reported MSE
+      is optimiser residual, and n=24 ends at 0.1173, worse than n=16. Seeds 0-4 at n=64 all overflow
+      on step 0
+    uses_reference:
+      - make_target
+      - init_gaussians
+      - finite_diff_step
+      - render
+      - mse
+  - index: 2
+    slug: only_the_hue_matches_and_a_colourless_model_beats_the_fit
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Medium.** Extend to color Gaussians (RGB). Confirm reconstruction matches the target color pattern.
+    zh: |
+      **中等。** 擴充成彩色高斯（RGB）。確認重建結果符合目標的顏色分布。
+    verifies: >-
+      the lesson's two blobs recoloured (1, 0.5, 0) and (0, 0.5, 1), fitted by the lesson's
+      finite_diff_step unchanged with render drawn per channel and mse averaged over channels. At n=8
+      (seed 15, 30 steps) the dominant channel is right at 50 of 50 bright pixels, but the red centre
+      renders (0.24, 0.18, 0.12) and the RGB MSE is 0.0398; n=16 also scores 50/50 at MSE 0.1404,
+      overshooting to (1.00, 0.73, 0.48) and (0.49, 0.94, 1.40), so hue agreement cannot tell
+      undershoot from overshoot. One grey value per splat on the true geometry leaves MSE 0.0245,
+      below n=8's RGB fit. Render is linear in colour, so a 2x2 least-squares solve through the
+      lesson's render recovers the true colours to 6e-17, while 30 lesson steps from grey
+      on that same geometry reach (0.69, 0.46, 0.22) and (0.16, 0.46, 0.75), MSE 0.0056. The best grey
+      model and the grey init both score 21/50 on hue, as every channel ties
+    uses_reference:
+      - init_gaussians
+      - finite_diff_step
+      - render
+      - mse
+      - SIZE
+  - index: 3
+    slug: half_the_capture_is_mirror_images_so_held_out_is_not_held_out
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      **Hard.** Using gsplat or Nerfstudio, reconstruct a real object from a 50-photo capture. Report fit time and final SSIM on held-out views.
+    zh: |
+      **困難。** 用 gsplat 或 Nerfstudio，從 50 張照片的拍攝素材重建一個真實物件。回報擬合時間，以及在保留視角上的最終 SSIM。
+    verifies: >-
+      gsplat, nerfstudio and torch are absent, so the scaled-down runnable (DESIGN D11) captures three
+      isotropic 3D Gaussians with 50 orthographic cameras around the vertical axis, each photo the
+      lesson's own render of the projected splats, and fits nine front-arc views with the lesson's
+      finite_diff_step, unchanged. 100 steps take 14,400 view renders, about 2 s, and lift
+      single-window SSIM on the 16 untrained front-arc views from 0.674 to 0.904, against 0.902 on the
+      training views. Because the lesson's render sums with no depth order, camera c+25 is the
+      left-right mirror of camera c to 6.7e-16, so views opposite the training views score exactly the
+      training SSIM, 0.902488, and are not held out. The 25 back-arc views, none trained on, score
+      0.903: without occlusion the back side cannot be hallucinated. The real ns-train splatfacto run
+      is printed with the lesson's 5-30 minute consumer-GPU estimate
+    uses_reference:
+      - render
+      - mse
+      - finite_diff_step
+      - SIZE
