@@ -1,0 +1,123 @@
+lesson: 10-bias-variance
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/10-bias-variance/docs/en.md
+exercises:
+  - index: 1
+    slug: without_noise_the_optimum_runs_off_the_sweep
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run the decomposition with `noise_std=0` (no noise). What happens to the irreducible error term? Does the optimal complexity change?
+    zh: |
+      用 `noise_std=0`（沒有雜訊）跑一次分解。不可約誤差項會發生什麼事？最佳複雜度有改變嗎？
+    verifies: >-
+      the lesson's own bias_variance_decomposition over degrees 1-15 at noise_std=0.5 and 0: the noise
+      term goes 0.25 -> 0 and find_optimal moves from degree 6 (total 0.3095) to degree 15, the
+      largest degree offered. With no noise the error keeps falling, 1.30e-03 at degree 6 to 6.22e-13
+      at degree 15 (2.1e9x), while noisy degree 15 scores 26504. Variance survives the noise: 0.0298
+      at degree 1 (69% of its noisy 0.0434) and 0.0096 at degree 3. The Total column equals B+V+N to
+      4.7e-10 by construction (noise_std**2 is added, the doc says 'should approximately equal');
+      measured on 200 degree-6 fits the error is 0.3413 against fresh noisy labels and 0.0917 against
+      the truth, a gap of 0.2497 = sigma^2
+    uses_reference:
+      - bias_variance_decomposition
+      - find_optimal
+      - generate_data
+      - fit_polynomial
+      - predict_polynomial
+      - true_function
+  - index: 2
+    slug: degree_6_wins_only_by_monte_carlo_luck
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Increase the training set size from 30 to 300. How does this affect the variance component? Does the optimal polynomial degree shift?
+    zh: |
+      把訓練集大小從 30 提高到 300。這對變異這個成分有什麼影響？最佳的多項式次數會位移嗎？
+    verifies: >-
+      the lesson's own sweep at n_train=30 and 300: degree-6 variance falls 0.0583 -> 0.0040 (14.4x)
+      and degree 15 falls 2.5e6x, and find_optimal picks degree 6 at both sizes. Refit with every
+      degree on the same 300 datasets, degree 5 beats 6 at n=30 (0.0556 vs 0.0660), n=300 (0.00532 vs
+      0.00594) and n=1000, with equal bias^2 (0.00122) because sin(1.5x) + 0.5x is odd; the lesson's
+      per-degree draws make its degree-6 optimum Monte Carlo luck. The real optimum is 5 at n=30, a
+      0.4% tie between 5 and 7 at n=300, and 7 at n=1000 (0.00154 vs 0.00231). Bias^2 is unmoved by
+      data: 0.4310 -> 0.4379 at degree 1, 0.00117 -> 0.00117 at degree 5
+    uses_reference:
+      - bias_variance_decomposition
+      - find_optimal
+      - generate_data
+      - fit_polynomial
+      - predict_polynomial
+      - true_function
+  - index: 3
+    slug: ridge_on_raw_monomials_penalises_the_wrong_terms
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add L2 regularization (Ridge regression) to the experiment. For a fixed high-degree polynomial (degree 15), sweep lambda from 0 to 100. Plot bias^2 and variance as functions of lambda.
+    zh: |
+      在實驗裡加入 L2 正則化（Ridge 迴歸）。固定一個高次多項式（次數 15），把 lambda 從 0 掃到 100。把 bias^2 與變異畫成 lambda 的函式。
+    verifies: >-
+      the lesson's own bias_variance_decomposition([15], lam) at lambda 0, 1e-3, 0.01, 0.1, 1, 10,
+      100: bias^2 102, 2.06, 0.391, 0.0602, 0.334, 0.330, 0.588 and variance 12400, 315, 82.5, 72.4,
+      124, 31.9, 47.4, best at lambda=10 with bias^2 + variance 32.2, 500x the best unregularised
+      degree. Variance is not monotone in lambda, and the doc's 'near-constant function' never
+      appears: raw x^15 is ~1e7 on [-3, 3], so the penalty lands on the low terms (the x coefficient
+      falls 2.07 -> 0.08 from lambda 1e-3 to 100 while the fit still spans 2.74). With x rescaled to
+      [-1, 1] before the lesson's fit_polynomial the sweep is the textbook U: bias^2 rises
+      monotonically 0.0016 -> 1.25, variance falls 0.073 -> 0.039, best lambda=0.01 at 0.064. The
+      replay loop matches the lesson's decomposition exactly at scale 1
+    uses_reference:
+      - bias_variance_decomposition
+      - generate_data
+      - fit_polynomial
+      - predict_polynomial
+      - true_function
+  - index: 4
+    slug: above_degree_8_the_bias_column_is_monte_carlo_noise
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Modify the true function from a polynomial to `sin(x)`. How does the bias-variance decomposition change? Is there still a clear optimal degree?
+    zh: |
+      把真正的函式從多項式改成 `sin(x)`。偏差變異分解會有什麼變化？還存在一個明確的最佳次數嗎？
+    verifies: >-
+      the lesson's sweep with its module-level true_function swapped: sin(x) moves find_optimal from
+      degree 6 to 3, bias^2 at degree 3 0.0529 -> 0.0020, degree 3 totals 0.282 against 0.292 at
+      degree 4 (+3.4%) and 0.308 at 6. From degree 8 to 15 bias^2 and total agree between sin(x) and
+      the lesson's function within 0.5%, though degree-1 bias^2 differs 3.5x. The high-degree bias^2
+      is variance leaking through the 200-draw mean: at degree 9 variance/199 is 0.552 against a
+      reported bias^2 of 0.545 (99%). The lesson's truth is sin(1.5x) + 0.5x, not a polynomial; with a
+      real cubic 0.5x^3 - x bias^2 is 2.78 at degree 1 and 6.7e-5 at degree 3, optimum degree 3
+    uses_reference:
+      - bias_variance_decomposition
+      - find_optimal
+      - true_function
+  - index: 5
+    slug: bagging_a_polynomial_raises_its_variance
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a simple bootstrap aggregating (bagging) wrapper: train 10 models on bootstrap samples and average predictions. Show that this reduces variance without increasing bias much.
+    zh: |
+      實作一個簡單的自助聚合（bagging）包裝器：在 bootstrap 樣本上訓練 10 個模型，再把預測平均起來。證明這能降低變異，而偏差不會增加太多。
+    verifies: >-
+      10-model bootstrap bagging of the lesson's fit_polynomial over its 200 seeded training sets of
+      30: variance goes 0.0434 -> 0.0495 at degree 1, 0.0365 -> 0.0423 at 3, 0.0449 -> 0.0798 at 5,
+      0.281 -> 36.7 at 8 and 1.24e4 -> 1.13e15 at 15 -- higher at every degree, against docs/en.md's
+      rule to bag high-degree polynomials. A resample of 30 keeps 19.1 distinct points, so degree 15's
+      median per-set error goes 0.52 -> 5.2e6. At degree 1 bias^2 0.431 -> 0.425 and nothing is
+      gained, as least squares is linear. Averaging 10 independent training sets instead cuts degree-5
+      variance 0.0449 -> 0.0052 (8.6x); the single model reproduces the lesson's degree-5 variance
+      exactly
+    uses_reference:
+      - bias_variance_decomposition
+      - generate_data
+      - fit_polynomial
+      - predict_polynomial
+      - true_function
