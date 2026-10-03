@@ -1,0 +1,63 @@
+lesson: 03-gpu-setup-and-cloud
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/03-gpu-setup-and-cloud/docs/en.md
+exercises:
+  - index: 1
+    slug: one_cold_timed_matmul_and_a_slower_gpu_prints_0x
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run the benchmark above and compare CPU vs GPU times
+    zh: |
+      執行上面的效能測試，比較 CPU 與 GPU 的時間
+    verifies: >-
+      the lesson's own check_gpu runs against a recording fake torch and a scripted clock. With cuda
+      unavailable it prints no 'matrix multiply' line at all, so a CPU-only host gets no CPU time
+      either. With a GPU it times one (4000, 4000) matmul each way (128 GFLOP), the GPU window
+      ['sync', 'time', 'matmul', 'sync', 'time'] with both .to('cuda') copies before it, and 2.000 s /
+      0.020 s prints Speedup: 100x. Both timings are cold: 0 CUDA matmuls precede the timed one, 2
+      matmuls in total, time.time read 4 times. The ':.0f' format prints a GPU 2.5x slower than the
+      CPU as Speedup: 0x, and a 0-tick GPU interval raises ZeroDivisionError. docs/en.md benchmarks
+      size = 5000 (250 GFLOP) while gpu_check.py uses 4000 (128 GFLOP), 1.95x less work
+    uses_reference:
+      - check_gpu
+  - index: 2
+    slug: on_a_colab_t4_the_benchmark_never_touches_the_tensor_cores
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      If you don't have a GPU, run it on Google Colab and compare
+    zh: |
+      如果你沒有 GPU，就在 Google Colab 上跑，然後比較
+    verifies: >-
+      Colab is unreachable, so the lesson's own check_gpu runs on a fake torch reporting a Colab T4
+      (Tesla T4, 15102 MiB, compute capability 7.5) with the GPU matmul scripted at the T4's fp32
+      floor. It prints Tesla T4, 15.8 GB, cc 7.5 and ~8B; the 128 GFLOP matmul has a 15.8 ms fp32
+      floor at the datasheet's 8.1 TFLOPS, so a placeholder CPU second prints Speedup: 63x. Both randn
+      calls pass no dtype (float32), and TF32 needs cc (8, 0), so the benchmark never uses the Tensor
+      Cores the doc calls '4-8x faster': the fp16 Tensor-Core floor at 65 TFLOPS is 1.97 ms, 8.0x
+      lower. On Colab's default CPU runtime the script prints 'use Google Colab (free)' and runs no
+      benchmark
+    uses_reference:
+      - check_gpu
+  - index: 3
+    slug: rounding_promises_an_8b_model_a_t4_cannot_hold
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Check how much GPU memory you have and estimate the largest model you can fit (rule of thumb: 2 bytes per parameter for fp16)
+    zh: |
+      查看你有多少顯示記憶體，估算最大能塞進多大的模型（經驗法則：fp16 每個參數 2 bytes）
+    verifies: >-
+      on this runner the lesson's own check_gpu prints 'PyTorch not installed. Run: pip install
+      torch', so no memory is reported. On a fake torch reporting four cards' total_memory (MiB as
+      drivers report it) the script prints Tesla T4 15.8 GB -> ~8B, RTX 4090 25.8 GB -> ~13B, A100
+      40GB 42.5 GB -> ~21B, H100 80GB 85.5 GB -> ~43B, exactly round(total_memory / 2e9) (7.92, 12.88,
+      21.25, 42.76). Rounding to nearest overstates 3 of 4 cards: Llama-3-8B needs 16.06 GB of fp16
+      weights against the T4's 15.84 GB, and Llama-2-13B 26.03 GB against the 4090's 25.76 GB. At the
+      16 bytes/param of mixed-precision Adam the T4 trains at most 0.99B, 8.1x less than it prints
+    uses_reference:
+      - check_gpu
