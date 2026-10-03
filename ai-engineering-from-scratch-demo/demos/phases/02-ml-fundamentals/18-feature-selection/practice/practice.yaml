@@ -1,0 +1,110 @@
+lesson: 18-feature-selection
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/18-feature-selection/docs/en.md
+exercises:
+  - index: 1
+    slug: rfe_spends_three_slots_on_one_signal
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Forward selection**: implement the opposite of RFE. Start with zero features. At each step, add the feature that improves model performance the most. Stop when adding features no longer helps. Compare the selected features against RFE results. Which is faster? Which gives better results?
+    zh: |
+      **前向選擇**：實作 RFE 的反向操作。從零個特徵開始。每一步都加入最能提升模型表現的那個特徵。當加特徵已經沒有幫助時就停下。把選出的特徵和 RFE 的結果做比較。哪個比較快？哪個結果比較好？
+    verifies: >-
+      greedy forward selection with the lesson's simple_logistic_importance, scored on a 300/100 split
+      of the lesson's 400 standardised training rows, keeps info_0, info_4, info_2 -- one copy each of
+      x1, x2, x3 -- and stops at validation accuracy 0.96; the lesson's rfe to 5 keeps info_0, info_1,
+      info_2, info_3, corr_0, three copies of x1 (r = 0.995, 0.993). RFE takes 15 fits against 74, but
+      195 feature-columns trained against 180. On the lesson's 100 test rows RFE scores 0.96 and
+      forward 0.94; on 5000 fresh rows from the same generator forward scores 0.929, RFE 0.919 and all
+      20 features 0.912, and the oracle x1, x2, x3 subset 0.930
+    uses_reference:
+      - make_feature_selection_data
+      - simple_logistic_importance
+      - rfe
+  - index: 2
+    slug: l1_keeps_every_copy_and_stability_agrees
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Stability selection**: run L1 feature selection 50 times, each time on a random 80% subsample of the data, with slightly different alpha values. Count how often each feature is selected. Features selected in > 80% of runs are "stable." Compare stable features against single-run L1 selection. Which is more reliable?
+    zh: |
+      **穩定性選擇**：把 L1 特徵選擇跑 50 次，每次都在資料的隨機 80% 子樣本上跑，alpha 值也略作變動。統計每個特徵被選中的次數。在超過 80% 的執行中都被選到的特徵算是「穩定的」。把穩定特徵和只跑一次的 L1 選擇結果做比較。哪個比較可靠？
+    verifies: >-
+      50 runs of the lesson's l1_feature_selection on random 320-of-400 subsamples with alpha drawn
+      from 0.04-0.06 mark 8 features stable (> 80%) -- info_0-4 and corr_0-2, corr_2 at 98% -- exactly
+      the single run's 8; only the stability count shows noise_9 entering 38% of runs, and 11 features
+      are never selected. The doc says L1 'picks one and zeros the others' among correlated features,
+      yet the single run keeps all three copies of x1 (pairwise r >= 0.989) at weights 0.554, 0.553,
+      0.534, and still 0.846, 0.712, 0.277 after 50,000 epochs; stability selection selects all three
+      in 100% of runs
+    uses_reference:
+      - make_feature_selection_data
+      - l1_feature_selection
+  - index: 3
+    slug: mi_tiebreak_drops_the_true_features
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Multicollinearity detection**: compute the correlation matrix for all features. Implement a function that, given a correlation threshold (e.g., 0.9), removes one feature from each highly-correlated pair (keeping the one with higher mutual information with the target). Test on the synthetic dataset and verify it removes the redundant correlated features.
+    zh: |
+      **多重共線性偵測**：計算所有特徵的相關係數矩陣。實作一個函式，給定一個相關係數閾值（例如 0.9），從每一對高度相關的特徵中移掉其中一個（留下與目標互資訊較高的那個）。在合成資料集上測試，並確認它確實移掉了冗餘的相關特徵。
+    verifies: >-
+      pruning pairs with |r| > 0.9 on the lesson's 500-row dataset, keeping the higher score of the
+      lesson's mutual_information, removes info_1, info_3, corr_0, corr_1 and info_2 and keeps 15. The
+      tiebreak discards x2 and x3 themselves for noisier copies -- info_4 0.104 over info_1 0.099,
+      corr_2 0.022 over info_2 0.021 -- by margins below the 0.011 that pure-noise columns average.
+      Pairwise correlation misses the mixture corr_3 (max |r| 0.672 to any survivor, R^2 0.975 on
+      them, VIF 39) and corr_4 (0.822, R^2 0.929); the ten noise columns survive with R^2 at most
+      0.040
+    uses_reference:
+      - make_feature_selection_data
+      - mutual_information
+  - index: 4
+    slug: mi_filter_discards_a_true_signal
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Feature selection pipeline**: chain variance threshold, mutual information filter, and RFE into a single pipeline. First remove near-zero-variance features, then keep the top 50% by mutual information, then run RFE on the survivors. Compare this pipeline against running RFE alone on all features. Is the pipeline faster? Is it equally accurate?
+    zh: |
+      **特徵選擇流程**：把變異數閾值、互資訊過濾與 RFE 串成單一條流程。先移除近乎零變異數的特徵，再依互資訊留下前 50%，最後對存活下來的特徵跑 RFE。把這條流程和「直接對全部特徵單跑 RFE」做比較。流程比較快嗎？準確度一樣嗎？
+    verifies: >-
+      variance_threshold(0.01), then the top half by the lesson's mutual_information, then the
+      lesson's rfe to 5 costs 5 RFE fits over 40 feature-columns against 15 over 195 for RFE alone,
+      but scores 0.854 against 0.919 on 5000 fresh rows (0.90 against 0.96 on the lesson's 100 test
+      rows). The MI filter ranks x3 (info_2, MI 0.023) 11th of 20, below noise_9 and noise_5, so the
+      pipeline ends with three copies of x1, two of x2 and none of x3. The variance stage removes
+      nothing (smallest variance 0.217), and without the MI stage the pipeline selects exactly RFE's
+      five
+    uses_reference:
+      - make_feature_selection_data
+      - variance_threshold
+      - mutual_information
+      - rfe
+      - simple_logistic_importance
+  - index: 5
+    slug: tree_importance_buries_x3_under_noise
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Permutation importance from scratch**: implement permutation importance. For each feature, shuffle its values 10 times, measure the average drop in F1 score. Compare the ranking against tree-based importance. Find cases where they disagree and explain why (hint: correlated features).
+    zh: |
+      **從零實作排列重要性**：實作排列重要性。對每個特徵，把它的值打亂 10 次，量測 F1 分數的平均下降幅度。把排序結果和樹模型的特徵重要性做比較。找出兩者不一致的情況並解釋原因（提示：相關特徵）。
+    verifies: >-
+      permutation importance (10 shuffles, F1 drop on 2000 fresh rows) of the lesson's
+      simple_logistic_importance ranks info_2 (x3) 1st with a drop of 0.057, while the lesson's
+      tree_importance ranks it 14th, below four noise columns; corr_3 is 6th by trees and 18th by
+      permutation, rank correlation 0.54. Every column has 400 distinct values, so this is not the
+      cardinality bias the doc names: the noise columns take 22% of tree importance against a summed
+      permutation drop of -0.005. Shuffling each correlated group as a block drops F1 by 0.293, 0.177
+      and 0.101 against single-column sums of 0.155, 0.120 and 0.081; noise columns average a drop of
+      -0.0005
+    uses_reference:
+      - make_feature_selection_data
+      - simple_logistic_importance
+      - tree_importance
