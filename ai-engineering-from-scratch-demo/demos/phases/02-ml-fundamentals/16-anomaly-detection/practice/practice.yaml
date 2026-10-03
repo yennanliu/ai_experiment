@@ -1,0 +1,106 @@
+lesson: 16-anomaly-detection
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/16-anomaly-detection/docs/en.md
+exercises:
+  - index: 1
+    slug: threshold_3_works_only_on_seed_42
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Threshold tuning.** Run the Z-score detector with thresholds from 1.0 to 5.0 in steps of 0.5. Plot precision and recall at each threshold. Where is the sweet spot for your data?
+    zh: |
+      **調校閾值。** 用 1.0 到 5.0、每次加 0.5 的閾值跑一遍 Z-score 偵測器。把每個閾值下的精確率與召回率畫出來。對你的資料來說，最佳落點在哪裡？
+    verifies: >-
+      on make_anomaly_data(seed=42) the lesson's zscore_detect gives precision/recall 0.16/1.00 at
+      1.0, 0.89/1.00 at 2.0, 0.96/1.00 at 2.5, 1.00/1.00 at 3.0, 1.00/0.76 at 3.5 and 1.00/0.04 at
+      5.0, so F1 peaks at 3.0 inside the separating window (2.58, 3.04). On seeds 0-19 the window's
+      upper end is 2.16-2.97, below 3.0 every time, and the classes separate on 15 of 20. The
+      anomalies inflate the per-feature std 1.52x and 1.46x; with clean normal statistics the window
+      is (3.85, 4.38) and precision at 3.0 is 0.893. Average precision is 1.000 both ways
+    uses_reference:
+      - make_anomaly_data
+      - zscore_detect
+      - precision_recall
+  - index: 2
+    slug: isolation_forest_catches_only_half_of_off_diagonal_points
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Multivariate anomalies.** Create 2D data where each feature individually looks normal, but the combination is anomalous (e.g., points far from the main cluster diagonal). Show that Z-score per feature misses these but Isolation Forest catches them.
+    zh: |
+      **多變量異常。** 造一份 2D 資料，讓每個特徵單獨看都很正常，但組合起來是異常的（例如遠離主群對角線的點）。證明逐特徵的 Z-score 會漏掉它們，而 Isolation Forest 抓得到。
+    verifies: >-
+      over 5 seeds of 500 normals with correlation 0.95 and 25 anomalies 5.4-8.9 sigma off the
+      diagonal (every coordinate within |2.77|), zscore_detect at 3.0 flags 0 of 25 on every seed.
+      P@25 is 0.33 for the z-score ranking and 0.55 for the lesson's IsolationForest, whose top-25
+      normals sit at |x| 2.71, the tips of the diagonal. Mahalanobis gets 1.00 on every seed and
+      sklearn's IsolationForest 0.54. On uncorrelated normals Isolation Forest reaches 0.90 against
+      0.98 for Mahalanobis
+    uses_reference:
+      - zscore_detect
+      - IsolationForest
+      - precision_at_k
+  - index: 3
+    slug: lof_matches_sklearn_and_k_barely_matters_below_cluster_size
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **LOF from scratch.** Implement Local Outlier Factor using k-nearest neighbors. Compare against sklearn's LocalOutlierFactor on the same data. Use k=10 and k=50 -- how does the choice of k affect results?
+    zh: |
+      **從零實作 LOF。** 用 k 近鄰實作 Local Outlier Factor。在同一份資料上和 sklearn 的 LocalOutlierFactor 做比較。試 k=10 和 k=50——k 的選擇對結果有什麼影響？
+    verifies: >-
+      a from-scratch LOF on make_multimodal_data matches sklearn's LocalOutlierFactor within 1.5e-9 at
+      k=10, 1.2e-9 at k=50 and 9.4e-11 at k=200. P@20 is 0.85 at both k=10 and k=50, with AP 0.840 and
+      0.875; anomalies above LOF 1.5 number 17, 17 and 8 at k=10, 50, 200. 3 of the 20 anomalies lie
+      within 2.35 Mahalanobis units of a cluster centre (k=10 ranks 106, 143, 353), and at k=50 the
+      other 17 hold ranks 0-16. Normals above 1.5 number 18, 26 and 0 at k=10, 50, 200
+    uses_reference:
+      - make_multimodal_data
+      - precision_at_k
+  - index: 4
+    slug: streaming_matches_batch_until_it_refuses_to_learn_from_anomalies
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Streaming anomaly detection.** Modify the Z-score detector to work in a streaming setting: update the running mean and variance as new points arrive (Welford's online algorithm). Compare to batch Z-score on the same data.
+    zh: |
+      **串流式異常偵測。** 改寫 Z-score 偵測器，讓它能在串流情境下運作：新的點一進來就更新累進的平均值與變異數（Welford 的線上演算法）。在同一份資料上和批次版的 Z-score 做比較。
+    verifies: >-
+      on make_anomaly_data(seed=42) in stored order, a Welford streaming z-score at 3.0 flags 25 with
+      precision and recall 0.96, against batch zscore_detect at 1.00/1.00. They differ only at
+      positions 2 (a normal) and 48 (an anomaly), and the final running mean and std equal the batch
+      values within 2.4e-15. Skipping the update for flagged points gives 38 flags, precision 0.66 and
+      recall 1.00. On N(0,1) shifted by 1e8 the one-pass E[x^2]-E[x]^2 variance is -2.0, while Welford
+      gives 0.975268 against a true 0.975268
+    uses_reference:
+      - make_anomaly_data
+      - zscore_detect
+      - precision_recall
+  - index: 5
+    slug: the_winner_flips_on_one_irrelevant_amount_column
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Real-world evaluation.** Take a dataset with known anomalies (credit card fraud from Kaggle, for example). Evaluate all four methods using precision@100, precision@500, and AUPRC. Which method works best? Why?
+    zh: |
+      **真實世界評估。** 找一份有已知異常的資料集（例如 Kaggle 上的信用卡詐欺資料）。用 precision@100、precision@500 與 AUPRC 評估這四種方法。哪一個最好？為什麼？
+    verifies: >-
+      on a 20,000-row fraud-shaped fixture (34 frauds, 0.172%, shifted -4 in 5 of 28 components),
+      heavy-tailed with a log-normal Amount: AUPRC is 0.005 for zscore_detect, 0.004 for iqr_detect,
+      0.127 for the lesson's IsolationForest and 0.012 for LOF k=20, with Isolation Forest's AUROC at
+      0.967. With Gaussian components and no Amount, z and IQR reach 0.965 and 0.971 against Isolation
+      Forest's 0.560. Adding only the Amount column drops them to 0.114 and 0.015 while LOF leads at
+      0.487, and z's AUROC there is 0.994. In the Gaussian variant LOF k=20 has AUROC 0.336 on the
+      34-fraud ring, rising to AUPRC 0.456 at k=50 and 0.998 at k=100. The vectorised tree walk equals
+      anomaly_score exactly, and P@500 is capped at 34/500 = 0.068
+    uses_reference:
+      - zscore_detect
+      - iqr_detect
+      - IsolationForest
+      - _c_factor
+      - precision_at_k
