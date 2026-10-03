@@ -1,0 +1,100 @@
+lesson: 30-dual-use-risk-cyber-bio-chem-nuclear
+phase: 18-ethics-safety-alignment
+source: phases/18-ethics-safety-alignment/30-dual-use-risk-cyber-bio-chem-nuclear/docs/en.md
+exercises:
+  - index: 1
+    slug: the_report_names_6_human_gates_4_of_them_policy_and_its_stated_obstacle_is_hallucination_not_the_4_6_steps
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Read Anthropic's November 2025 cyber report. Enumerate the 4-6 human-intervention steps and argue which would be first to automate in a next-generation model.
+    zh: |
+      讀 Anthropic 2025 年 11 月的網路報告。列舉那 4-6 個人類介入步驟，並論證在下一代模型中哪一個會最先被自動化。
+    verifies: >-
+      the GTG-1002 PDF (read 2026-10-03) yields 6 human gates: 1 intent, 4 policy, 1 capability
+      (validating overstated or fabricated results), which goes first; its two timed sign-offs are
+      3.8% and 5.0% of the time at the midpoints, below the report's 10-20% human share. DOMAINS
+      stores the news page's hedged 'perhaps 4-6' as cyber's bottleneck_remaining, the page says gains
+      'would reduce that count', and page plus DOMAINS contain authoriz-, approv-, hallucinat- and
+      validat- 0 times; the page says 'up to 90%' and '80-90%' of a campaign where the PDF says
+      tactical work
+    uses_reference:
+      - DOMAINS
+  - index: 2
+    slug: one_per_step_correction_rate_reads_1_65x_at_5_steps_and_7_5x_at_20_so_a_benign_proxy_must_report_the_rate
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      The chem/bio execution gap is eroding via vision. Design an evaluation that measures tacit-knowledge uplift without crossing ITAR/EAR boundaries.
+    zh: |
+      化學／生物的執行落差正被視覺侵蝕。設計一項在不跨過 ITAR/EAR 界線的前提下，量測默會知識提升的評估。
+    verifies: >-
+      a 2 x 2 benign-proxy design scored with Lesson 17's evaluate() at 200 per arm, seed 0: novice
+      ratio 2.74x true, 3.41x measured, recovered per-step correction c = 0.648 against 0.6; over 50
+      seeds the ratio spans 1.85-3.89 (rel sd 0.15) and c 0.438-0.695 (0.09). The same c reads 1.65x,
+      2.74x, 7.48x at 5, 10, 20 steps; novices gain 2.74x (+0.342), experts 1.20x (+0.149) and end at
+      0.886 vs 0.539; the page files the human-executed 79x demonstration under vision-driven
+      execution-gap erosion
+    uses_reference:
+      - 17-wmdp-dual-use-evaluation.evaluate
+      - 17-wmdp-dual-use-evaluation.DOMAINS
+  - index: 3
+    slug: a_material_bottleneck_caps_absolute_risk_but_leaves_the_2_53x_ratio_untouched_and_bios_inflection_automates_its_own_bottleneck
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Nuclear uplift appears bounded by material access. Argue for and against the position that a future AI breakthrough could shift this bottleneck.
+    zh: |
+      核子的能力提升看來被材料取得界住。針對「未來某項 AI 突破可能移動這個瓶頸」這個立場，分別辯護與反駁。
+    verifies: >-
+      in a two-stage model with p_info 0.2 and u = 2.53 the relative uplift is 2.53x at p_mat
+      1e-1..1e-4 while the absolute gain falls 0.0306 to 0.00003, unlimited information help reaches
+      exactly p_mat, and also acting on acquisition (v = 2) gives 5.06x; bio's DOMAINS inflection is
+      'acquisition-phase automation' while its bottleneck names procurement and equipment, which Key
+      Terms define as the acquisition phase. DOMAINS is bio/chem/cyber/nuclear, main() prints 'three
+      of four CBRN domains crossed thresholds' but only bio and chem of the 3 CBRN present crossed,
+      and Lesson 17 has 0 nuclear or radiological domains
+    uses_reference:
+      - DOMAINS
+      - main
+      - 17-wmdp-dual-use-evaluation.DOMAINS
+  - index: 4
+    slug: illegibility_is_refuted_by_the_lessons_own_cyber_section_so_the_case_rests_on_monitoring_which_holds_an_expert_only_below_5pct
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Construct a safety case (Lesson 18 three-pillar) for a cyber-capable frontier model that bounds both novice and expert uplift.
+    zh: |
+      替一個具網路能力的前沿模型建構一份安全論證（第 18 課的三支柱），要能同時界住新手與專家的提升。
+    verifies: >-
+      Lesson 18's pillars parse as Monitoring, Illegibility, Incapability and Lesson 30's cyber
+      section describes a coherent multi-phase plan; Lesson 17's unlearning puts cyber on the 0.25
+      floor (1.00x) from strength 0.6875, evidence the skill file hard-rejects as non-agentic; Lesson
+      10's trusted editing at H 0.10 over 2,000 tasks ships 0 for the novice (t_skill 0.9) up to rate
+      0.30 and for the expert (t_skill 0) only up to 0.04, then 0.008/0.032/0.203 at 0.05/0.1/0.3
+      (analytic limit 0.053); t_edit flags 10,000 of 10,000 outputs it fails to fix
+    uses_reference:
+      - 17-wmdp-dual-use-evaluation.apply_rmu_style_unlearning
+      - 17-wmdp-dual-use-evaluation.baseline_model
+      - 10-ai-control-subversion.run_protocol
+      - 10-ai-control-subversion.t_edit
+  - index: 5
+    slug: the_2024_column_holds_0_numbers_and_a_30_target_campaign_cannot_tell_4_successes_from_15_so_falsify_on_gates_not_rates
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Pick one of the four domains and write a one-paragraph 2027 forecast based on the 2024-2025 trajectory. Identify the evidence that would falsify your forecast.
+    zh: |
+      從四個領域中挑一個，依 2024-2025 年的軌跡寫出一段 2027 年的預測。指出什麼證據會否證你的預測。
+    verifies: >-
+      the skill file refuses numeric uplift forecasts, so the cyber forecast is on the human role;
+      DOMAINS' 2024 column holds 0 non-year numbers and the 2025 column 2.53, 80, 90; exact 95%
+      Clopper-Pearson intervals for 3, 4, 6 of 30 are 0.021-0.265, 0.038-0.307, 0.077-0.386, and a
+      rerun needs 15 of 30 before its interval clears 4 of 30
+    uses_reference:
+      - DOMAINS
