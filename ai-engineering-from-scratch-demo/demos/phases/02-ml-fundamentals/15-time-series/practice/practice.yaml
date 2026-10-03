@@ -1,0 +1,114 @@
+lesson: 15-time-series
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/15-time-series/docs/en.md
+exercises:
+  - index: 1
+    slug: one_difference_passes_a_noisy_quadratic
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Stationarity experiment.** Generate a series with a linear trend. Check stationarity with rolling statistics. Apply first differencing. Check again. How many rounds of differencing does it take for a quadratic trend?
+    zh: |
+      **定態實驗。** 產生一條帶線性趨勢的序列。用滾動統計量檢查定態性。做一階差分。再檢查一次。二次趨勢要做幾輪差分才會定態？
+    verifies: >-
+      over 300 points with N(0, 2^2) noise, the lesson's check_stationarity first passes a 0.1 t trend
+      after 1 difference and a 0.01 t^2 trend after 2, and the second difference of a noise-free b t^2
+      is constant (spread 2.3e-13). After one difference a 0.001 t^2 trend passes on 100/100 seeds,
+      0.005 t^2 on 40/100 and 0.01 t^2 on 0/100, against a half-split boundary predicted at b =
+      0.0049. White noise passes at d = 0, 1, 2, 3 while its variance grows 1.96x then 5.83x and its
+      lag-1 ACF becomes -0.49 then -0.66, against the doc's 'differencing never hurts'. A random walk
+      passes on 13/100 seeds, white noise on 100/100
+    uses_reference:
+      - check_stationarity
+      - difference
+      - autocorrelation
+  - index: 2
+    slug: acf_picks_28_not_7_and_the_gain_is_averaging
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Lag selection.** Compute ACF on a seasonal series (period=7). Which lags have the highest autocorrelation? Create lag features using only those lags (not consecutive lags). Does accuracy improve compared to using lags 1 through 7?
+    zh: |
+      **滯後選擇。** 對一條季節性序列（週期 = 7）算 ACF。哪些滯後的自相關最高？只用那些滯後來建特徵（不要用連續的滯後）。跟用滯後 1 到 7 相比，準確率有變好嗎？
+    verifies: >-
+      on make_seasonal_series(period=7) the top four ACF lags of the differenced series are 28, 7, 14,
+      21 (0.684, 0.676, 0.672, 0.664), and SimpleAR walk-forward MSE falls from 5.17 with lags 1-7 to
+      3.81 with those four (noise floor 2.25). On the raw series lag 28 (0.855) beats lag 7 (0.738),
+      and by |ACF| the next four lags are the anti-phase 10, 4, 17, 25 at about -0.64. Lag 7 alone
+      scores 10.70 and lags 7, 14 score 10.72, so the gain is averaging four seasonal copies, not
+      selection. All 30 lags score 3.10; seasonal naive y[t-7] scores 12.23
+    uses_reference:
+      - make_seasonal_series
+      - autocorrelation
+      - difference
+      - make_lag_features
+      - walk_forward_split
+      - SimpleAR
+      - mse
+  - index: 3
+    slug: random_split_flatters_knn_2x_but_ridge_only_1_3x
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Walk-forward vs random split.** Train a Ridge regression on lag features. Evaluate with random 80/20 split and with walk-forward validation. How much does the random split overestimate performance?
+    zh: |
+      **前向驗證 vs 隨機切分。** 在滯後特徵上訓練一個 Ridge 迴歸。分別用隨機 80/20 切分跟前向驗證來評估。隨機切分把效能高估了多少？
+    verifies: >-
+      on make_synthetic_series(500) with 10 lags, Ridge(alpha=1) scores 6.99 MSE under a random 80/20
+      split (mean of 20 shuffles) and 9.42 walk-forward, 1.35x; kNN(k=5) scores 9.12 against 18.71,
+      2.05x. With the 0.05 t trend subtracted the gaps nearly close: kNN 4.94 against 5.26, Ridge 4.82
+      against 5.49. The lesson's demo shuffle RandomState(42) scores 5.92, below 5.5% of 200 shuffles
+      (mean 7.38), so its printed ratio 0.63 is 0.78 typically. Ridge matches SimpleAR within 0.01 MSE
+      on both protocols
+    uses_reference:
+      - make_synthetic_series
+      - make_lag_features
+      - walk_forward_split
+      - SimpleAR
+      - mse
+  - index: 4
+    slug: rolling_mean_is_a_lag_combination_and_adds_nothing
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Feature engineering.** Add rolling mean (window=7), rolling std (window=7), and day-of-week features to the lag features. Compare accuracy with and without these extras using walk-forward validation.
+    zh: |
+      **特徵工程。** 在滯後特徵之外，加上滾動平均（視窗 = 7）、滾動標準差（視窗 = 7）跟星期幾特徵。用前向驗證比較加與不加這些額外特徵的準確率。
+    verifies: >-
+      on make_seasonal_series with 7 lags, SimpleAR walk-forward MSE is 5.32, unchanged by a past-only
+      7-day rolling mean or std, 3.81 with day-of-week and 3.82 with all three. The rolling mean
+      equals the mean of the 7 lag columns exactly (difference 0.0, design rank 8 of 9); with 3 lags
+      it helps, 10.13 -> 5.96. With 14 lags every combination scores 3.997-4.011. A window that
+      includes y[t] gives walk-forward MSE 2.9e-25
+    uses_reference:
+      - make_seasonal_series
+      - make_lag_features
+      - walk_forward_split
+      - SimpleAR
+      - mse
+  - index: 5
+    slug: direct_beats_recursive_by_29pct_at_five_steps
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Multi-step forecasting.** Modify the AR model to predict 5 steps ahead instead of 1. Compare two strategies: (a) predict one step, use the prediction as input for the next step (recursive), and (b) train separate models for each horizon (direct). Which is more accurate?
+    zh: |
+      **多步預測。** 把 AR 模型改成預測往前 5 步而不是 1 步。比較兩種策略：(a) 預測一步，再把預測值當成下一步的輸入（遞迴），以及 (b) 為每個期程各訓練一個模型（直接）。哪一種更準？
+    verifies: >-
+      on make_synthetic_series(500) with 10 lags, refitted at each of 246 origins, recursive
+      SimpleAR.forecast scores MSE 8.12, 11.92, 18.18, 27.74, 39.79 at h=1..5 and direct per-horizon
+      models 8.12, 11.18, 15.71, 22.08, 28.08: 29% lower at h=5, 19% averaged, where the doc says to
+      start with recursive for 1-5 steps. On make_seasonal_series they tie, 6.79 against 6.57. An
+      oracle that knows the curve scores 3.97 (sigma^2 = 4) while recursive grows 4.9x from h=1 to
+      h=5. On a true AR(1) with phi 0.8, recursive scores 2.54 against 2.59 direct at h=5, theory 2.48
+    uses_reference:
+      - make_synthetic_series
+      - make_seasonal_series
+      - make_lag_features
+      - SimpleAR
+      - forecast
