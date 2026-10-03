@@ -1,0 +1,84 @@
+lesson: 09-data-management
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/09-data-management/docs/en.md
+exercises:
+  - index: 1
+    slug: load_and_inspect_shows_one_row_and_breaks_without_a_split
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Load the `glue` dataset with the `mrpc` config and inspect the first 5 examples
+    zh: |
+      用 `mrpc` 這個 config 載入 `glue` 資料集，檢視前 5 筆範例
+    verifies: >-
+      datasets is stubbed (no network, no datasets install) with an MRPC-shaped table of synthetic
+      rows and the GLUE MRPC split sizes 3668/408/1725. The lesson's own load_and_inspect('glue',
+      'mrpc') calls load_dataset(path='glue', name='mrpc', split='train') and prints 'Rows: 3668';
+      select(range(5)) gives the first five. Its transcript shows 1 example, not 5 (it prints ds[0]
+      only). With split=None the 'if split:' guard drops the split, a DatasetDict comes back, the
+      helper prints 'Rows: 3' for 5801 rows and raises AttributeError on .features before any row.
+      With datasets absent, importing data_utils raises SystemExit(1), not an ImportError. The stub
+      recorded exactly the two calls
+    uses_reference:
+      - load_and_inspect
+      - import guard
+  - index: 2
+    slug: stream_dataset_keeps_every_row_it_counts
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Stream the `c4` dataset and count how many examples you can process in 10 seconds
+    zh: |
+      串流 `c4` 資料集，數一數 10 秒內能處理多少筆範例
+    verifies: >-
+      an endless stubbed C4-shaped stream (2,000-character synthetic text per row) through the
+      lesson's own stream_dataset, and a 10-second count on an injected clock at 4 ms per example:
+      2500 examples; stream_dataset takes max_rows, not a time budget. The doc says streaming memory
+      'stays constant regardless of dataset size', but stream_dataset returns a list: it retains 0.46
+      MB at 200 rows and 4.64 MB at 2000 (10.0x), while a counting loop retains 0 bytes. max_rows=0
+      and max_rows=-5 each return 1 row, because the break test runs after the append. max_rows=5
+      pulls exactly 5 rows through load_dataset(path='c4', split='train', streaming=True)
+    uses_reference:
+      - stream_dataset
+  - index: 3
+    slug: parquet_win_is_compression_and_tiny_files_lose
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Convert a dataset to Parquet and compare the file size to CSV
+    zh: |
+      把一個資料集轉成 Parquet，跟 CSV 比較檔案大小
+    verifies: >-
+      pyarrow and datasets are absent, so the lesson's own convert_format writes CSV and JSON Lines
+      exactly and a Parquet stand-in (each column contiguous and gzip-compressed, no dictionary/RLE
+      encodings or footer) for three synthetic tables. The stand-in is 2.4x smaller than CSV on 500
+      free-text reviews and 6.9x on 500 rows of low-cardinality columns; JSON Lines is 1.16x and 4.0x
+      CSV. gzip of the row-major CSV is within 1.01x of the columnar file on reviews and 1.05x on the
+      coded table, so the size win is compression, not layout. On 3 rows, 75 B of CSV become 118 B and
+      the lesson prints 'Parquet is 0.6x smaller than CSV'. The helper's printed CSV size matches
+      stat()
+    uses_reference:
+      - convert_format
+  - index: 4
+    slug: 70_15_15_never_comes_out_exact
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Create a 70/15/15 train/val/test split with a fixed seed and verify the sizes
+    zh: |
+      固定種子，做出 70/15/15 的訓練／驗證／測試切分，並驗證各自的筆數
+    verifies: >-
+      the lesson's own make_splits(ds, 0.7, 0.15, seed=42) over a stubbed Dataset whose
+      train_test_split delegates to scikit-learn's train_test_split (the ceil-for-test size rule
+      Hugging Face copies) gives 699/150/151 at n=1000, a disjoint, complete and reproducible
+      partition. 100 of 100 sizes n=20..2000 miss 70/15/15 by one row, because 1 - 0.7 - 0.15 =
+      0.15000000000000005 makes ceil() take an extra test row and the second test_size
+      0.5000000000000001; the default 80/10/10 misses on 0. The doc's own snippet (test_size 0.2, then
+      0.125) gives 700/100/200, beside bullets that say 80/10/10. Integer test sizes 300 then 150 give
+      exactly 700/150/150
+    uses_reference:
+      - make_splits
