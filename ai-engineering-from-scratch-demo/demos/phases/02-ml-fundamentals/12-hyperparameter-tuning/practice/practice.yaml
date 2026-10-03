@@ -1,0 +1,119 @@
+lesson: 12-hyperparameter-tuning
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/12-hyperparameter-tuning/docs/en.md
+exercises:
+  - index: 1
+    slug: random_wins_4_of_10_optimum_on_grid_edge
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run grid search and random search with the same total budget (e.g., 50 evaluations). Compare the best scores found. Run the experiment 10 times with different seeds. How often does random search win?
+    zh: |
+      用同樣的總預算（例如 50 次評估）跑網格搜尋與隨機搜尋，比較找到的最佳分數。換不同的種子把實驗跑 10 次。隨機搜尋贏的頻率有多高？
+    verifies: >-
+      the doc's own 3x3 grid (lr 0.01/0.1/1.0 x max_depth 3/5/7) against 9 random draws (log-uniform
+      lr, depth 3-7), run by the lesson's unchanged grid_search and random_search with the model class
+      swapped for scikit-learn's GradientBoostingRegressor at GBMForTuning's defaults; data and search
+      reseeded together over 10 seeds. Random search wins 4 of 10; mean best validation MSE 0.6117 for
+      the grid against 0.6435. The grid's best cell has depth 3, its smallest value, on 10 of 10
+      seeds, while random search draws depth 3 on 19 of 90 trials and its winner has depth 3 on 3
+      seeds. With min_samples_split 2/11/20 in place of depth, random search wins 10 of 10 (0.4684
+      against 0.5889). The lesson's own GBMForTuning agrees depth 3 beats depth 5 at lr 0.1 (0.6836
+      against 0.9621; stand-in 0.7451 against 0.9011)
+    uses_reference:
+      - grid_search
+      - random_search
+      - sample_param
+      - make_data
+      - neg_mse
+      - GBMForTuning
+  - index: 2
+    slug: halving_saves_22x_but_cuts_the_winner
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement Hyperband from scratch. Start with 81 configurations, each trained for 1 epoch. Keep the top 1/3 at each round and triple their budget. Compare total compute (sum of all epochs across all configs) to running 81 configs for the full budget.
+    zh: |
+      從零實作 Hyperband。從 81 組設定開始，每組先訓練 1 個 epoch。每一輪留下前 1/3，並把它們的預算變成三倍。把總運算量（所有設定所有 epoch 的總和）跟讓 81 組設定都跑完整預算比一比。
+    verifies: >-
+      one epoch is one boosting tree; 81 configs drawn by the lesson's sample_param from its
+      demo_random_search space on make_data, each fitted once to 81 trees with scikit-learn's
+      GradientBoostingRegressor and replayed through successive halving (81x1, 27x3, 9x9, 3x27, 1x81).
+      Compute is 297 epochs resuming (22.1x less than 6,561) or 405 retraining (16.2x), inside the
+      doc's '10-50x faster'; Li et al.'s full five-bracket Hyperband spends 1,902 epochs on 143
+      configs, 3.45x less. Over seeds 0-2 halving finds the best of 81 once; its pick ranks 25, 1 and
+      26 (0.693 vs 0.457, 0.367, 0.750 vs 0.526), both missed winners cut at the 3-tree rung, and the
+      expected best of 3 random full-budget runs (243 epochs) beats it on 2 of 3 seeds (0.689, 0.594,
+      0.720). A GBM with subsample 0.7 fitted fresh for 9 trees predicts exactly what an 81-tree run
+      predicts after 9
+    uses_reference:
+      - sample_param
+      - make_data
+  - index: 3
+    slug: cosine_is_a_halved_rate_and_loses_to_one
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Add a learning rate scheduler (cosine annealing) to the gradient boosting implementation from Lesson 11. Does it help compared to a fixed learning rate?
+    zh: |
+      為單元 11 的梯度提升實作加上學習率排程器（餘弦退火）。跟固定學習率相比，它有幫助嗎？
+    verifies: >-
+      Lesson 11's boosting loop (its SimpleRegressionTree, depth 3, 100 trees) with tree t shrunk by
+      lr * 0.5 * (1 + cos(pi t / T)), on Lesson 11's 320 training rows and a fresh 400-row test draw.
+      At lr 0.1 cosine raises test MSE 46% (0.3941 against 0.2693); at lr 0.5 it lowers it 4% (0.3049
+      against 0.3168). The cosine shrinkages sum to lr (T+1)/2, and at lr 0.5 the schedule's train MSE
+      (0.02015) is within 0.2% of a fixed 0.2525 (0.02011), whose test MSE 0.2614 beats the schedule.
+      At a constant 0.1 the loop reproduces GradientBoostingScratch(n_estimators=10) exactly
+    uses_reference:
+      - SimpleRegressionTree
+      - GradientBoostingScratch
+      - make_regression_data
+      - train_test_split
+  - index: 4
+    slug: importance_ranking_flips_with_the_metric
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Use Optuna to tune a RandomForestClassifier on a real dataset (e.g., sklearn's breast cancer dataset). Use `optuna.visualization.plot_param_importances(study)` to see which hyperparameters matter most. Does it match the importance ranking from this lesson?
+    zh: |
+      用 Optuna 在一份真實資料集上調 RandomForestClassifier（例如 sklearn 的乳癌資料集）。用 `optuna.visualization.plot_param_importances(study)` 看哪些超參數最重要。這跟本單元列出的重要性排序一致嗎？
+    verifies: >-
+      optuna is not a dependency, so 40 trials are drawn with the lesson's sample_param over a
+      RandomForestClassifier's n_estimators, max_depth, min_samples_leaf and max_features plus a dummy
+      never passed to the model, scored on a stratified 30% breast-cancer holdout; importance is an
+      fANOVA-style main effect under a random-forest surrogate. For accuracy: min_samples_leaf 73.8%,
+      max_features 23.9%, dummy 2.0%, n_estimators 0.2%, max_depth 0.1%, against the doc's Random
+      Forest row 'n_estimators, max_depth, min_samples_leaf' and max_features under 'Low importance'.
+      For log loss on the same trials n_estimators is first at 59.4% (max_features 37.2%, max_depth
+      2.8%, min_samples_leaf 0.5%, dummy 0.0%)
+    uses_reference:
+      - sample_param
+  - index: 5
+    slug: ei_exploits_first_explores_last
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a simple acquisition function (Expected Improvement) and demonstrate exploration vs exploitation. Plot the surrogate model's mean and uncertainty, and show where EI chooses to evaluate next.
+    zh: |
+      實作一個簡單的採集函式（期望改善量），並示範探索與利用的取捨。把代理模型的平均值與不確定性畫出來，標出 EI 選擇下一個評估點的位置。
+    verifies: >-
+      the lesson's SimpleBayesianOptimizer searches log learning rate 0.005-0.5 for its GBMForTuning
+      (30 trees) on make_data, 4 random then 8 EI-guided points, with each guided step replayed on the
+      same 500 candidates. After 4 points the GP mean and EI both peak at lr 0.5 (mean -0.163, sd
+      0.454, EI 0.828) and EI picks lr 0.417. The explore term beats the exploit term at the chosen
+      point on steps 5-8 and none of 1-4, the reverse of the doc's 'Early on ... explores. Later, it
+      focuses'; edge picks lr 0.0050 (step 3) and 0.0078 (step 7) score MSE 5.82 and 5.26. _norm_cdf
+      is 0.5(1 + tanh(0.798 x)) without the cubic term, off by up to 0.0177, so EI/sigma goes negative
+      below z = -1.55 (minimum -0.0288), on 107-308 of 500 candidates per step, and the argmax differs
+      from exact EI on 3 of 8 steps. The replay matches suggest() on 8 of 8 steps and exact EI never
+      goes below -2.6e-17
+    uses_reference:
+      - SimpleBayesianOptimizer
+      - GBMForTuning
+      - make_data
+      - neg_mse
