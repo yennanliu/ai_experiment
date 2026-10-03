@@ -1,0 +1,89 @@
+lesson: 07-docker-for-ai
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/07-docker-for-ai/docs/en.md
+exercises:
+  - index: 1
+    slug: only_the_torch_trio_is_pinned
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Build the Dockerfile and run `python -c "import torch; print(torch.__version__)"` inside the container
+    zh: |
+      建置這份 Dockerfile，並在容器內執行 `python -c "import torch; print(torch.__version__)"`
+    verifies: >-
+      the lesson's code/Dockerfile is split into 13 instructions with no docker daemon; its only torch
+      is torch==2.6.0+cu124, so the command prints '2.6.0+cu124', with python as /usr/bin/python3.12
+      via update-alternatives. Only 3 of the 15 pip packages are pinned (torch, torchvision,
+      torchaudio); pip, setuptools, wheel and 9 libraries including transformers and datasets resolve
+      on build day. docs/en.md says 'PyTorch 2.3' 5 times, including the 'Same image everywhere'
+      diagram, while the Dockerfile pins 2.6.0. Control: base cuda 12.4.1, wheel +cu124 and the cu124
+      index agree, torchvision 0.21.0 and torchaudio 2.6.0 pair with torch 2.6.0, get-pip carries a
+      64-hex sha256, and the doc's dockerfile block equals code/Dockerfile
+    uses_reference:
+      - code/Dockerfile
+      - docs/en.md
+  - index: 2
+    slug: the_docs_qdrant_test_cannot_import
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Start the docker-compose stack and verify Qdrant is accessible from the AI container at `http://qdrant:6333/collections`
+    zh: |
+      啟動 docker-compose 堆疊，確認能從 AI 容器透過 `http://qdrant:6333/collections` 連到 Qdrant
+    verifies: >-
+      code/docker-compose.yml is parsed with harness yamlite after its one flow list is rewritten;
+      services ai-dev and qdrant declare no networks, so both join code_default, qdrant listens on
+      container ports 6333 and 6334, and curl is in the ai-dev apt list, so `docker compose exec
+      ai-dev curl -s http://qdrant:6333/collections` is the working check. The doc's own test, `from
+      qdrant_client import QdrantClient`, raises ModuleNotFoundError because the Dockerfile never
+      installs qdrant-client. The ../../../ bind mount resolves to phases, not the repository root
+      that the doc's docker run -v $(pwd) mounts. Control: the doc's yaml block equals the file,
+      qdrant is pinned to v1.12.5, the GPU reservation is count all, and 0 services declare depends_on
+    uses_reference:
+      - code/docker-compose.yml
+      - code/Dockerfile
+      - docs/en.md
+  - index: 3
+    slug: adding_flask_rebuilds_nine_unpinned_libs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add `flask` to the Dockerfile, rebuild, and run a simple API server on port 5000. Map the port with `-p 5000:5000`
+    zh: |
+      把 `flask` 加進 Dockerfile，重建，然後在 5000 埠跑一個簡單的 API 伺服器。用 `-p 5000:5000` 對應埠號
+    verifies: >-
+      a build-cache simulation over the 13 instructions of code/Dockerfile: adding flask to the
+      library RUN first changes instruction 8 (0-based) and appending a separate RUN changes
+      instruction 9, so the torch RUN at 7 stays cached either way; but the edited RUN installs 10
+      unpinned packages, so 9 libraries besides flask silently re-resolve to build-day versions, while
+      the appended RUN installs only flask. 3 of 3 Jupyter commands in docs/en.md and
+      docker-compose.yml pass --ip=0.0.0.0, the same bind a Flask server needs behind -p 5000:5000.
+      Control: devel to runtime first changes instruction 0 (13 of 13 re-run) and torch 2.6.0 to 2.5.1
+      re-runs 6 of 13
+    uses_reference:
+      - code/Dockerfile
+      - code/docker-compose.yml
+      - docs/en.md
+  - index: 4
+    slug: runtime_saves_at_most_29_percent
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Measure the image size with `docker images`. Try switching the base image from `devel` to `runtime` and compare sizes
+    zh: |
+      用 `docker images` 量測映像檔大小。試著把基礎映像檔從 `devel` 換成 `runtime`，再比較大小
+    verifies: >-
+      sizes come from the doc's Step 3 table: nvidia/cuda:12.4.1-devel ~4 GB to runtime ~1.5 GB saves
+      2.5 GB, and the Dockerfile mentions none of nvcc, flash-attn, bitsandbytes, CUDA_HOME or
+      TORCH_CUDA_ARCH, so the swap is safe. The doc's PyTorch runtime image (~6 GB) minus CUDA runtime
+      leaves a ~4.5 GB torch stack both images carry, so the finished-image saving is at most 2.5 /
+      8.5 = 29.4%, against 62.5% on the bare base. FROM is instruction 0, so the one-token swap
+      re-runs all 13 instructions. Control: exactly 1 instruction changes and the runtime tag keeps
+      CUDA 12.4.1 / ubuntu22.04 and is in the doc's table
+    uses_reference:
+      - code/Dockerfile
+      - docs/en.md

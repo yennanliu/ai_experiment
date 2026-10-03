@@ -1,0 +1,59 @@
+lesson: 02-git-and-collaboration
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/02-git-and-collaboration/docs/en.md
+exercises:
+  - index: 1
+    slug: a_fork_never_receives_the_next_lesson
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Fork this repo, clone your fork, create a branch called `my-progress`, make a file, commit it, push it
+    zh: |
+      Fork 這個儲存庫，clone 你的 fork，開一個叫 `my-progress` 的分支，建一個檔案、提交、推上去
+    verifies: >-
+      the fork is git clone --bare of a course repository in a temp directory, under an isolated git
+      config with fixed identity and dates, and Step 4 then runs verbatim: git push origin my-progress
+      exits 0 and the fork's my-progress equals the reader's HEAD, whose tree holds the new file. When
+      the course then adds lesson 02, git fetch --all in the reader's clone does not bring it in: the
+      clone's only remote is origin, the fork, and the lesson text says upstream 0 times, remote add 0
+      times and sync 0 times. The push as written leaves my-progress@{upstream} unresolved, so the
+      next bare git push exits 128 with has no upstream branch, and push -u appears 0 times in the
+      lesson. Control: after git remote add upstream, upstream/main is the lesson-02 commit, and after
+      push -u the upstream is origin/my-progress
+  - index: 2
+    slug: the_curriculum_writes_checkpoints_the_three_rules_miss
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a `.gitignore` that excludes model checkpoint files (`.pt`, `.pth`, `.safetensors`)
+    zh: |
+      寫一份 `.gitignore`，排除模型檢查點檔案（`.pt`、`.pth`、`.safetensors`）
+    verifies: >-
+      a .gitignore of *.pt, *.pth and *.safetensors is judged by git check-ignore in a temp repository
+      with an isolated config: it claims fresh.pt, weights.pth and model.safetensors and leaves
+      train.py tracked. Against the 6 checkpoint names the curriculum's own code writes, each
+      confirmed by its literal in that lesson's source under phases/, it ignores mnist_mlp.pt (03/11),
+      ckpt.pt (19/47) and gpt2-stub.safetensors (19/37) and passes 3: the atomic-save temp
+      ckpt.pt.<random>.tmp of 19/47, and the torch-serialized shards rank0.bin and rank0.bin.tmp of
+      19/80. A weights.pt committed before the rules stays tracked, git status reporting ' M
+      weights.pt' after retraining. Control: after git rm --cached the status is 'D weights.pt' with
+      no untracked line, because the rule now ignores it
+  - index: 3
+    slug: a_shallow_clone_says_every_lesson_arrived_at_once
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Look at the commit history of this repo with `git log --oneline` and read how lessons were added
+    zh: |
+      用 `git log --oneline` 看這個儲存庫的提交歷史，讀讀各個單元是怎麼被加進來的
+    verifies: >-
+      the history is rebuilt in a temp repository rather than read from this checkout: the 12 real
+      phase-00 lessons from the reference phases/ tree are committed one per day with fixed identity.
+      git log --oneline prints 12 lines and --diff-filter=A names 12 distinct adding commits. On a
+      file:// --depth 1 clone the same commands print 1 line and name that 1 commit as the adder of
+      all 12 lessons, the only hint being a grafted decoration under --decorate. git clone --depth 1
+      on a plain local path logs 12 lines and only warns that --depth is ignored in local clones.
+      Control: the shallow tip lists the same 12 lesson directories as the full repository

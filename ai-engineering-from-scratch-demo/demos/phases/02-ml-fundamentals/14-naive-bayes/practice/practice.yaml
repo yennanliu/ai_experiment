@@ -1,0 +1,101 @@
+lesson: 14-naive-bayes
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/14-naive-bayes/docs/en.md
+exercises:
+  - index: 1
+    slug: high_alpha_loses_to_the_prior_not_the_data
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Smoothing experiment.** Train MultinomialNB on text data with alpha values of 0.01, 0.1, 1.0, 10.0, and 100.0. Plot accuracy vs alpha. Where does performance peak? Why does very high alpha hurt?
+    zh: |
+      **平滑實驗。** 用 alpha 值 0.01、0.1、1.0、10.0 與 100.0 在文本資料上訓練 MultinomialNB。畫出準確率對 alpha 的曲線。表現在哪裡達到高峰？為什麼 alpha 非常大時會扣分？
+    verifies: >-
+      on the lesson's demo split (make_text_data(1200), 25% held out) the lesson's MultinomialNB
+      scores 1.000 at alpha 0.01, 0.1, 1, 10, 100 and still 1.000 at 1e6: no peak. On the same
+      generator thinned to 3% of tokens (11.2 words/doc) with 40 training docs it peaks at alpha=1:
+      0.990, 0.994, 0.997, 0.996, 0.966, then 0.498 at 1000. The prior-free log-odds shrinks as
+      1/alpha (median x alpha = 21.4, 26.2, 26.9, 27.0 at 10..1e4) while the 21/19 prior gap stays
+      0.100 nats; at alpha=1000 the evidence is 0.027 and 100% of test docs get the majority class.
+      The lesson's 452/448 split has a gap of 0.0089. Log loss is 0 at 1e4 and 0.426 at 1e6 with
+      accuracy still 1.000
+    uses_reference:
+      - make_text_data
+      - train_test_split
+      - MultinomialNB
+  - index: 2
+    slug: correlated_words_cost_confidence_not_accuracy
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Feature independence test.** Take a real text dataset. Pick two words that are obviously correlated ("machine" and "learning"). Compute P(word1 | class) * P(word2 | class) and compare to P(word1 AND word2 | class). How wrong is the independence assumption? Does it affect classification accuracy?
+    zh: |
+      **特徵獨立性檢驗。** 拿一份真實的文本資料集。挑兩個明顯相關的詞（「machine」與「learning」）。算出 P(word1 | class) * P(word2 | class)，再跟 P(word1 AND word2 | class) 比較。這個獨立假設錯得有多離譜？它會影響分類準確率嗎？
+    verifies: >-
+      on 678 phase-02 and 424 phase-03 prose paragraphs of this curriculum's own docs/en.md,
+      'learning' and 'rate' co-occur at 0.027 against an independence product of 0.0042 (lift 6.3) in
+      phase 02 and lift 4.5 in phase 03; 'machine'/'learning' lift is 8.7 on 13 paragraphs. Merging
+      'learning rate' into one token flips 1 of 300 held-out predictions of the lesson's MultinomialNB
+      (accuracy 0.930 -> 0.933), but 90% of held-out paragraphs get P > 0.99 and those are right only
+      97.0% of the time. The lesson's feature_log_prob_ matches sklearn MultinomialNB within 8.9e-16
+    uses_reference:
+      - MultinomialNB
+  - index: 3
+    slug: bernoulli_wins_on_bursts_not_short_text
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Bernoulli implementation.** Extend the code with a BernoulliNB class. Convert bag-of-words to binary (present/absent) and compare accuracy against MultinomialNB on text data. When does Bernoulli win?
+    zh: |
+      **伯努利實作。** 為程式碼加上一個 BernoulliNB 類別。把詞袋轉成二元（出現／未出現），在文本資料上跟 MultinomialNB 比準確率。伯努利在什麼情況下會贏？
+    verifies: >-
+      a BernoulliNB in the lesson's interface matches sklearn BernoulliNB's joint log-likelihood
+      within 5.2e-12. Against the lesson's MultinomialNB on make_text_data (2000 train, 1000 test):
+      1.000 vs 1.000 at full length; 0.986 vs 0.985 on 7.3-word docs; with 5% of present words
+      repeated 20x (class-independent bursts) Multinomial falls to 0.953 and Bernoulli stays 0.985. On
+      3.6-word docs with 20 training docs Bernoulli loses, 0.527 vs 0.773, and with 2000 they tie
+      (0.929 vs 0.928)
+    uses_reference:
+      - make_text_data
+      - MultinomialNB
+  - index: 4
+    slug: lr_only_overtakes_when_words_are_copied
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **NB vs Logistic Regression.** Train both on text data. Start with 100 training samples and increase to 10,000. Plot accuracy vs training set size for both. At what point does Logistic Regression overtake Naive Bayes?
+    zh: |
+      **NB vs 邏輯迴歸。** 兩者都用文本資料訓練。從 100 個訓練樣本開始，一路增加到 10,000。為兩者畫出準確率對訓練集大小的曲線。邏輯迴歸在哪個點超車單純貝氏？
+    verifies: >-
+      on the lesson's make_text_data thinned to 1% of tokens, averaged over 3 seeds and tested on 4000
+      docs, the lesson's MultinomialNB vs sklearn LogisticRegression is 0.908/0.890 at 100,
+      0.924/0.924 at 300, 0.935/0.934, 0.937/0.939, 0.938/0.939 at 10000: LR is never more than 0.0017
+      ahead, because the generator is NB's own independent-Poisson model. With 10 tech words copied
+      8x, LR leads from n=100 (0.889 vs 0.872) to 10000 (0.940 vs 0.902), and NB stops improving after
+      1000 (0.906)
+    uses_reference:
+      - make_text_data
+      - MultinomialNB
+  - index: 5
+    slug: rare_spam_halves_recall_at_92_accuracy
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Spam filter.** Build a complete spam classifier: tokenize raw email text, build vocabulary, create bag-of-words features, train MultinomialNB, evaluate with precision and recall (not just accuracy -- why?).
+    zh: |
+      **垃圾郵件過濾器。** 打造一個完整的垃圾郵件分類器：把原始郵件文字分詞、建詞彙表、造出詞袋特徵、訓練 MultinomialNB，然後用精確率與召回率評估（不是只看準確率——為什麼？）。
+    verifies: >-
+      regex tokenizer, train-only vocabulary, bag of words and the lesson's MultinomialNB on 2000
+      synthetic raw emails score precision 0.924, recall 0.818, accuracy 0.963 on 2000 fresh ones
+      (14.8% spam; always-ham scores 0.852). Trained on 0.9% spam it keeps 0.921 accuracy but recall
+      falls to 0.475 (precision 0.993): the log-prior gap of 4.65 nats exceeds the median spam
+      evidence of 4.32; a 50/50 prior restores recall 0.879 at precision 0.735. The doc's
+      free/money/meeting example reproduces as -3.108 and -8.841 (doc -3.109, -8.838), which are joint
+      log scores: the posterior P(spam | email) is 0.9968, not exp(-3.108) = 0.045
+    uses_reference:
+      - MultinomialNB

@@ -1,0 +1,90 @@
+lesson: 06-python-environments
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/06-python-environments/docs/en.md
+exercises:
+  - index: 1
+    slug: one_missing_package_aborts_verification_before_the_failure_count_is_printed
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Run `env_setup.sh` and verify all checks pass
+    zh: |
+      執行 `env_setup.sh`，確認所有檢查都通過
+    verifies: >-
+      env_setup.sh is read from the reference phases/ tree and its own blocks are run in bash with
+      only python and python3 faked as shell functions. With every import present the verification
+      tail ends 'All checks passed', exit 0, after five packages, the matmul and a torch WARN. With
+      matplotlib missing the run stops after 2 of 5 packages (numpy, matplotlib), exit 1, and the
+      'package(s) failed verification' summary never prints, because set -euo pipefail exits on
+      verify_package's bare return 1 -- scikit-learn, pandas and jupyter go unchecked. The version
+      gate tests major and minor separately, so 3.10 and 4.0 exit 1 with 'Python 3.11+ not found'
+      while 3.11 and 3.13 pass. REPO_ROOT, code/../../../.., resolves to the directory that holds
+      phases/
+    uses_reference:
+      - env_setup.sh: verify_package
+      - env_setup.sh: python version gate
+  - index: 2
+    slug: isolation_holds_until_one_pythonpath_and_the_scripts_venv_check_passes_a_non_venv
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a second virtual environment, install a different version of numpy in it, and confirm the two environments are isolated
+    zh: |
+      建立第二個虛擬環境，在裡面裝一個不同版本的 numpy，確認兩個環境彼此隔離
+    verifies: >-
+      two stdlib venvs named .venv are created in a temp dir with no pip seeded, and a stand-in numpy
+      declaring 1.26.4 or 2.1.0 is planted in the site-packages each interpreter reports. Each
+      interpreter, run in a subprocess with an empty environment, imports its own version from its own
+      site-packages, and a third unplanted venv cannot import numpy at all. One PYTHONPATH pointing at
+      B's site-packages makes A import 2.1.0. Activation is only PATH: A called by absolute path with
+      no activate reports sys.prefix inside its .venv and sys.prefix != sys.base_prefix.
+      env_setup.sh's own venv check, run in bash, accepts both A and B and
+      /home/u/.venvs-old/bin/python, which is no venv, and rejects a conda env, because it only tests
+      that the path contains .venv
+    uses_reference:
+      - env_setup.sh: venv path check
+  - index: 3
+    slug: the_lessons_template_installs_neither_torch_nor_anthropic_and_drops_the_pandas_its_script_installs
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Write a `pyproject.toml` for a project that needs both PyTorch and the Anthropic SDK
+    zh: |
+      為一個同時需要 PyTorch 與 Anthropic SDK 的專案寫一份 `pyproject.toml`
+    verifies: >-
+      the answer pyproject parses with tomllib, requires torch>=2.3 and anthropic>=0.39 in [project]
+      dependencies, requires-python >=3.11 and names hatchling as build backend. The lesson's own
+      pyproject template, parsed from docs/en.md, keeps torch in an extra called torch and anthropic
+      in one called llm; its required dependencies are numpy, matplotlib, jupyter and scikit-learn,
+      holding 0 of the 2 libraries a project that needs them must install. The lesson's two dependency
+      lists disagree -- env_setup.sh installs pandas, the template omits it, and lesson 05's
+      notebook_tips.py imports pandas at top level. The template has no [build-system] table while the
+      lesson runs uv pip install -e against it. Both sources agree on Python 3.11
+    uses_reference:
+      - docs/en.md pyproject.toml
+      - env_setup.sh: CORE_PACKAGES
+  - index: 4
+    slug: inside_an_activated_uv_style_venv_pip_still_resolves_to_the_global_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Deliberately install a package globally (without activating a venv), notice where it goes, then uninstall it
+    zh: |
+      故意不啟用虛擬環境、把套件裝到全域，觀察它跑到哪裡去，然後把它移除
+    verifies: >-
+      nothing is installed outside a temp dir; a pip-less stdlib venv (what uv venv produces) is
+      created with a stand-in global bin holding python and pip behind it on PATH, and the venv's own
+      activate script is sourced in bash. A global install would land in the base interpreter's
+      site-packages, named via pyvenv.cfg and reporting sys.prefix == sys.base_prefix, while the
+      venv's purelib sits inside .venv. After activation the shell resolves python to .venv/bin/python
+      but pip to the global bin, so the lesson's 'GOOD' activate-then-pip-install is a global install
+      for a uv venv. The lesson says which pip should show .venv/bin/pip, yet the venv holds no pip,
+      and python -m pip exits 1 with 'No module named pip' rather than installing elsewhere. Without
+      activation both names resolve to the stand-in global bin
+    uses_reference:
+      - docs/en.md Common Mistakes 1 (which pip)
+      - docs/en.md Option 1 (uv venv)

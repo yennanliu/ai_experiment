@@ -1,0 +1,82 @@
+lesson: 10-terminal-and-shell
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/10-terminal-and-shell/docs/en.md
+exercises:
+  - index: 1
+    slug: trainenv_fills_two_panes_and_a_rerun_makes_five
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Install tmux, create a session with three panes, and run `htop` in one, `watch -n1 date` in another, and a Python script in the third. Detach and reattach.
+    zh: |
+      裝好 tmux，建立一個有三個窗格的工作階段，一個跑 `htop`、一個跑 `watch -n1 date`、第三個跑一支 Python 腳本。離開再重新接上。
+    verifies: >-
+      the lesson's trainenv runs in bash --norc with tmux shadowed by a recorder, and its 7 recorded
+      calls are replayed through a pane model: three panes, pane 1 'watch -n1 nvidia-smi', pane 2
+      'htop', pane 0 left at a shell, so 2 of 3 panes get a command and one of them needs an NVIDIA
+      GPU. A second 'trainenv train' leaves 5 panes, with nvidia-smi and htop each running twice,
+      because new-session fails on the existing name and both splits still run. 3 calls hardcode
+      window 0 ('train:0.N') while the splits use the bare session name, which breaks under base-index
+      1. The last call is 'attach -t train' and bash -n accepts the file
+    uses_reference:
+      - shell_aliases.sh: trainenv
+      - shell_aliases.sh: ta
+  - index: 2
+    slug: memhogs_fallback_never_fires_and_killtraining_misses_torchrun
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Add the aliases from `code/shell_aliases.sh` to your shell config and reload with `source ~/.zshrc` (or `~/.bashrc`).
+    zh: |
+      把 `code/shell_aliases.sh` 裡的別名加進你的 shell 設定檔，再用 `source ~/.zshrc`（或 `~/.bashrc`）重新載入。
+    verifies: >-
+      shell_aliases.sh sourced into bash --noprofile --norc with an empty HOME defines 22 aliases and
+      10 functions, matching its declarations and unchanged by a second source. memhogs with a
+      BSD-style ps prints nothing and exits 0, since the || tests head's status and the 'ps aux -m'
+      fallback never runs. killtraining's 'python.*train' matches 3 of 3 non-training commands and 0
+      of 3 torchrun / accelerate / deepspeed jobs, while matching 'python train.py'. In the
+      non-interactive shell the alias diskuse exits 127 and the function lastexp exits 0. The doc's
+      relative 'source phases/...' rc line, run from HOME, exits 1 with 0 aliases defined
+    uses_reference:
+      - shell_aliases.sh: memhogs
+      - shell_aliases.sh: killtraining
+      - shell_aliases.sh: lastexp
+  - index: 3
+    slug: bc_drops_the_leading_zero_so_a_number_regex_finds_one_loss
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a fake training log with `for i in $(seq 1 100); do echo "epoch $i loss: $(echo "scale=4; 1/$i" | bc)"; sleep 0.1; done > fake_train.log` and then use `grep`, `tail`, and `awk` to extract just the loss values.
+    zh: |
+      用 `for i in $(seq 1 100); do echo "epoch $i loss: $(echo "scale=4; 1/$i" | bc)"; sleep 0.1; done > fake_train.log` 造一份假的訓練日誌，然後用 `grep`、`tail` 與 `awk` 只把 loss 數值抽出來。
+    verifies: >-
+      the exercise's log is written by a model of bc (and, where bc exists, by the exercise's own loop
+      without sleep, byte-identical). grep 'loss:' | awk '{print $4}' extracts 100 values and tail -n
+      5 keeps .0104 .0103 .0102 .0101 .0100. 99 of 100 values have no leading zero, so grep -oE 'loss:
+      [0-9]+\.[0-9]+' matches 1 line, while float() reads all of them. 38 of 100 are truncated away
+      from round(1/i, 4), 1/6 logged as .1666. The lesson's taillog reads logs/*.log and prints
+      nothing beside fake_train.log
+    uses_reference:
+      - shell_aliases.sh: taillog
+  - index: 4
+    slug: syncto_sends_your_laptop_home_path_and_nests_the_folder
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Set up an SSH config entry for a server you have access to (or use `localhost` to practice the syntax).
+    zh: |
+      為一台你有權限的伺服器設定一筆 SSH config（或者拿 `localhost` 來練語法）。
+    verifies: >-
+      the doc's Host gpu entry pointed at localhost (User learner, Port 2222) resolves under ssh -G -F
+      to hostname localhost, user learner, port 2222, and an unrelated host stays on port 22. The
+      lesson's syncto run with a recording rsync turns its usage example 'syncto gpu ~/data ./data'
+      into 'rsync -avz --progress ./data gpu:/Users/learner/data', the local home, while the doc's own
+      rsync keeps ':~/data/'. Run with the real rsync against a local 'remote', it lands
+      data/data/a.txt because it drops the trailing slash. Below a 'Host * / Port 22' block the same
+      entry resolves to port 22
+    uses_reference:
+      - shell_aliases.sh: syncto
