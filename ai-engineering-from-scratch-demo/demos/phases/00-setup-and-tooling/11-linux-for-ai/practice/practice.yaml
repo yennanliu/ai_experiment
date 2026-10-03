@@ -1,0 +1,103 @@
+lesson: 11-linux-for-ai
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/11-linux-for-ai/docs/en.md
+exercises:
+  - index: 1
+    slug: the_fifteen_commands_are_thirteen_and_touch_is_not_one
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      SSH into any Linux machine (or open WSL2) and navigate to your home directory. Create a project folder, create three empty files inside it with `touch`, then list them with `ls -la`.
+    zh: |
+      SSH 進任何一台 Linux 機器（或打開 WSL2），切換到你的家目錄。建一個專案資料夾，用 `touch` 在裡面建三個空檔案，再用 `ls -la` 列出它們。
+    verifies: >-
+      the session runs in a temp dir standing in for ~ with the umask pinned to 022; mkdir, three
+      touch-style creates (mode 0666) and an lstat listing that includes . and .. give 5 rows, the
+      three files 0 bytes and -rw-r--r--, the directory drwxr-xr-x, and the same files are -rw-------
+      under umask 077. The lesson promises 'the 15 commands that cover 95%' but the code blocks of its
+      Essential Commands section use 13 distinct commands (pwd, ls, cd, mkdir, cp, mv, rm, cat, head,
+      tail, less, grep, find), and touch, which this exercise needs, occurs 0 times in the 60 code
+      blocks and inline code spans before the Exercises. The lesson's -rwxr-xr-- is mode 754, and
+      chmod 755 and 644 on a real file read back -rwxr-xr-x and -rw-r--r--
+    uses_reference:
+      - docs/en.md
+  - index: 2
+    slug: the_biggest_virt_is_the_smallest_process
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Install `htop` with apt, run it, and identify which process is using the most memory.
+    zh: |
+      用 apt 安裝 `htop`，執行它，找出哪個程序吃掉最多記憶體。
+    verifies: >-
+      apt and interactive htop cannot run in CI, so two real child processes are read through ps -o
+      pid=,vsz=,rss= (KiB on Linux and macOS) -- a reserver that maps 1 GiB and never touches it, as
+      GPU frameworks do, and a worker that fills 128 MiB. By RSS (htop's RES) the worker uses the
+      most, about 130 MiB above the reserver; by VSZ (htop's VIRT) the reserver ranks first, 896 MiB
+      above the worker, while its RSS stays within 32 MiB of an idle interpreter's. docs/en.md names
+      no memory column -- RES, VIRT, RSS, VSZ and %MEM occur 0 times -- and describes htop only as an
+      'Interactive process viewer'
+    uses_reference:
+      - docs/en.md
+  - index: 3
+    slug: ctrl_b_capital_d_does_not_detach
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Start a tmux session, run `sleep 300` inside it, detach, list sessions, and reattach.
+    zh: |
+      開一個 tmux 工作階段，在裡面執行 `sleep 300`，卸離、列出工作階段，再重新接回去。
+    verifies: >-
+      tmux is absent in CI, so what it protects against is measured with a real pseudo-terminal
+      (pty.fork) hung up by closing its master, as a dropped SSH connection does. sleep 300 run on the
+      terminal dies of signal 1 (SIGHUP); a sleep 300 job in the terminal's process group under a
+      shell stand-in dies too; a sleep 300 started with setsid, as the tmux server is, is still alive
+      after the hang-up. The lesson's 'Ctrl+B, then D -- Detach' is wrong: tmux binds d to
+      detach-client and D to choose-client -Z. Its split labels are swapped relative to tmux: the
+      lesson calls % 'Split pane vertically' and the double quote 'Split pane horizontally', while
+      tmux binds % to split-window -h, 'Split window horizontally'
+    uses_reference:
+      - docs/en.md
+  - index: 4
+    slug: du_star_skips_the_hidden_half_of_the_cache
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Use `df -h` to check available disk space, then use `du -sh ~/.cache/*` to find what's taking up space in your cache.
+    zh: |
+      用 `df -h` 查看可用磁碟空間，再用 `du -sh ~/.cache/*` 找出快取裡是什麼在占空間。
+    verifies: >-
+      a labelled stand-in ~/.cache (pip with 500 files of 100 bytes, huggingface with a 4 MiB blob and
+      a 2 GiB sparse safetensors, a hidden .hidden with 8 MiB) is measured with the real du and df
+      through sh. du -sk .cache/* reports huggingface 4096 KiB and pip about 2000 KiB, while du -sk
+      .cache reports about 14288 KiB, because the shell's * skips the 8192 KiB hidden directory, over
+      half the cache. The 50,000 bytes of pip files take 2000 KiB on disk (41x, one 4 KiB block each)
+      and the 2 GiB sparse file takes 0. The lesson's 'du -h --max-depth=1 / 2>/dev/null' uses a
+      GNU-only flag whose BSD error the redirect hides, and du is absent from its macOS-to-Linux
+      table. df -Pk agrees with statvfs within 1% and summing st_blocks reproduces du
+    uses_reference:
+      - docs/en.md
+  - index: 5
+    slug: the_lessons_rsync_does_not_resume
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Transfer a file from your local machine to a remote one using `scp`, then do the same transfer with `rsync` and compare the experience.
+    zh: |
+      用 `scp` 把一個檔案從本機傳到遠端機器，再用 `rsync` 做同樣的傳輸，比較兩者的體感差異。
+    verifies: >-
+      rsync's delta algorithm (rolling weak checksum plus MD5 per block, block size max(700,
+      sqrt(size)) = 1024) is run on a 1 MiB float32 checkpoint. After a 1-byte edit scp sends
+      1,048,576 bytes and rsync 25,596 (41x less) -- 1,024 literal bytes, 20,480 of signatures and
+      4,092 of block references. Inserting one byte at the front matches all 1024 blocks and sends 1
+      literal byte, where a fixed-offset compare would match none. The lesson says rsync 'resumes on
+      failure' and 'handles interrupted connections', but its only rsync command is rsync -avz
+      --progress, with no --partial or -P, so an interrupted transfer deletes the partial file. zlib
+      (rsync -z) shrinks the weights only to 92.8%. Both reconstructions are byte-exact
+    uses_reference:
+      - docs/en.md
