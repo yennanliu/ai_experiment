@@ -1,0 +1,113 @@
+lesson: 12-debugging-and-profiling
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/12-debugging-and-profiling/docs/en.md
+exercises:
+  - index: 1
+    slug: a_zero_divide_before_tanh_is_caught_one_step_late
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Run `debug_tools.py` and read through each section's output. Modify the dummy model to introduce a NaN (hint: divide by zero in the forward pass) and watch the detector catch it.
+    zh: |
+      執行 `debug_tools.py`，把每一節的輸出讀過一遍。改一下那個假模型，讓它產生 NaN（提示：在前向傳播裡除以零），看偵測器怎麼抓到它。
+    verifies: >-
+      torch is absent, so the lesson's 784-256-10 dummy MLP is rebuilt in numpy with torch's divide
+      rule and its parameters fed to the lesson's own detect_nan and check_gradient_health
+      (torch.isnan pointed at numpy.isnan). Dividing the ReLU output by zero gives a nan loss at step
+      0 and detect_nan names all 4 parameters. Dividing before a tanh gives tanh(+-inf) = +-1 and a
+      finite loss of 3.206 with nan gradients in 0.weight and 0.bias; detect_nan returns False because
+      it inspects gradients only once the loss is nan, and check_gradient_health prints no warning
+      because nan > 100 and nan == 0 are both False, reporting only a nan norm; the detector fires at
+      step 1, after SGD wrote the nan into the weights. Without torch the lesson's main() runs 2 of
+      its 10 sections (memory tracking, logging) and returns 1. With the divisor at 1 the losses are
+      3.408 and 2.663 and nothing fires
+    uses_reference:
+      - detect_nan
+      - check_gradient_health
+      - main
+      - docs/en.md
+  - index: 2
+    slug: the_slowest_function_is_random_gauss_and_matmul_has_no_row
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Profile a training loop with `cProfile` and identify the slowest function.
+    zh: |
+      用 `cProfile` 分析一個訓練迴圈，找出最慢的函式。
+    verifies: >-
+      a 30-step numpy MLP loop (batch 64, 256-128-10) with a per-sample Python loader runs under
+      cProfile; the largest own time is random.gauss, called exactly 491,520 = 30 x 64 x 256 times,
+      and load_batch is ~98% of train's cumulative time against ~1% for forward, backward and sgd.
+      Sorted by cumtime, as the lesson's -s cumtime prints it, the top three rows are train,
+      load_batch, gauss -- the entry point always leads. None of the profile's rows mentions matmul --
+      the @ operator is not a call, so its cost is charged to forward's own time. load_batch, forward,
+      backward and sgd are each called 30 times, and the lesson's own Timer prints 120 lines for the
+      30 steps
+    uses_reference:
+      - Timer
+  - index: 3
+    slug: the_end_snapshot_names_the_wrong_line
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Use `tracemalloc` to find which line in your data loading pipeline allocates the most memory.
+    zh: |
+      用 `tracemalloc` 找出你的資料載入流程裡，哪一行配置了最多記憶體。
+    verifies: >-
+      a three-line CSV pipeline (splitlines, parse to Python floats, np.array float32) over 2000 x 32
+      generated values; per-line peaks via tracemalloc.reset_peak are 688 KiB, 2124 KiB and 313 KiB,
+      so the parsing line allocates the most, 6.8x the array line and 3.6x the 594 KiB of text. The
+      lesson's recipe -- one take_snapshot() after the pipeline -- ranks np.array first at 250 KiB and
+      shows the parsing line at 6.6 KiB, because the lists were freed; the process peak of 3.05 MiB is
+      12x the snapshot's top line. The lesson's own demo_memory_tracking (no-torch path) is a tie,
+      3913 KiB against 3906 KiB, because both lines allocate exactly 4,000,000 payload bytes. With
+      intermediates kept alive the snapshot's top line is the parsing line
+    uses_reference:
+      - demo_memory_tracking
+  - index: 4
+    slug: val_loss_doubles_while_val_accuracy_peaks
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Set up TensorBoard for a simple training run and identify whether the model is overfitting.
+    zh: |
+      為一次簡單的訓練設定 TensorBoard，判斷模型有沒有過度擬合。
+    verifies: >-
+      logistic regression by gradient descent on 100 training and 2000 validation points (50 features,
+      5 informative, labels from the true model), logged through an add_scalar(tag, value, step)
+      stand-in for SummaryWriter. By the lesson's rule it overfits -- val loss bottoms at step 57
+      (0.565) and ends at 1.191 while train loss falls 0.329 to 0.060 and train accuracy reaches 100%.
+      The lesson's own Part 8 snippet logs only loss/train and lr, so it has no validation curve to
+      apply that rule to. Val accuracy is 69.8% at the val-loss minimum and 71.1% at the end, the best
+      of the run, so the rising loss is overconfidence and early stopping on val loss keeps the less
+      accurate model. With 2000 training points val loss ends within 1% of its minimum
+    uses_reference:
+      - docs/en.md
+  - index: 5
+    slug: the_gradient_at_the_breakpoint_is_stale
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Use `breakpoint()` inside a training loop. Practice inspecting tensor shapes, devices, and gradient values from the debugger prompt.
+    zh: |
+      在訓練迴圈裡用 `breakpoint()`。練習從除錯器的提示符檢查張量的形狀、裝置與梯度值。
+    verifies: >-
+      the lesson's Part 2 training_step on an 8-to-1 numpy regression with one NaN in sample 2 of step
+      3, with a real pdb fed a fixed command script through sys.breakpointhook. At the stop the prompt
+      shows shape (16, 8), device 'cpu', 1 NaN in outputs at inputs[2][4], and the lesson's
+      debug_print reports has_nan=True. Because the lesson's breakpoint sits before loss.backward()
+      and its snippet has no zero_grad, .grad there is the exact sum of steps 0-2's gradients
+      (difference 0.0) and check_gradient_health reports a finite norm of 15.17 while the loss is nan.
+      The NaN reaches the weights, so steps 3 and 4 both stop. The prose threshold is loss.item() >
+      100 while debug_tools.py prints > 10; the clean losses are 17.6, 7.1 and 12.7, so the > 10
+      version would also stop on 2 healthy steps
+    uses_reference:
+      - debug_print
+      - check_gradient_health
+      - demo_conditional_breakpoint
+      - docs/en.md
