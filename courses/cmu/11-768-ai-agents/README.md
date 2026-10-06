@@ -12,6 +12,8 @@
 
 	- https://www.youtube.com/watch?v=S8v-dR4s29M
 
+		- 50:53
+
 
 - 20261004
 
