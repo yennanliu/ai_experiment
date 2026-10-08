@@ -49,11 +49,20 @@ AUTH_ERROR = {"type": "error",
               "error": {"type": "authentication_error", "message": "invalid x-api-key"}}
 
 
+
+# the harness finds the reference through AIEFS_REFERENCE (CI sets it), so a cleared
+# environment keeps that one variable and nothing else from the host
+KEEP = {k: os.environ[k] for k in ("AIEFS_REFERENCE",) if k in os.environ}
+
+
+def clean_env(env):
+    return mock.patch.dict(os.environ, {**KEEP, **env}, clear=True)
+
 def call(env, urlopen):
     """Run call_raw_http in a cleared env; return the exception it raised."""
-    with mock.patch.dict(os.environ, {}, clear=True):
+    with clean_env({}):
         ref = parity.load_reference(PHASE, LESSON, "first_api_call")
-    with mock.patch.dict(os.environ, env, clear=True), \
+    with clean_env(env), \
             mock.patch("urllib.request.urlopen", urlopen), \
             contextlib.redirect_stdout(io.StringIO()):
         try:

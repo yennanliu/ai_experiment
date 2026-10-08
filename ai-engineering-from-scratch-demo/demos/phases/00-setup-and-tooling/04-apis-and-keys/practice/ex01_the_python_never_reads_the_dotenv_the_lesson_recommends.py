@@ -47,6 +47,15 @@ PHASE, LESSON = "00-setup-and-tooling", "04-apis-and-keys"
 DUMMY_KEY = "sk-ant-dummy-not-a-real-key"
 
 
+
+# the harness finds the reference through AIEFS_REFERENCE (CI sets it), so a cleared
+# environment keeps that one variable and nothing else from the host
+KEEP = {k: os.environ[k] for k in ("AIEFS_REFERENCE",) if k in os.environ}
+
+
+def clean_env(env):
+    return mock.patch.dict(os.environ, {**KEEP, **env}, clear=True)
+
 def fake_sdk(calls):
     reply = types.SimpleNamespace(
         content=[types.SimpleNamespace(text="A neural network is a learned function.")],
@@ -64,14 +73,14 @@ def fake_sdk(calls):
 
 
 def load(env):
-    with mock.patch.dict(os.environ, env, clear=True):
+    with clean_env(env):
         return parity.load_reference(PHASE, LESSON, "first_api_call")
 
 
 def sdk_call(import_env, call_env=None):
     """(stdout, recorded calls) of call_with_sdk under a clean environment."""
     ref, calls, out = load(import_env), [], io.StringIO()
-    with mock.patch.dict(os.environ, call_env or import_env, clear=True):
+    with clean_env(call_env or import_env):
         with mock.patch.dict(sys.modules, {"anthropic": fake_sdk(calls)}):
             with contextlib.redirect_stdout(out):
                 ref.call_with_sdk()
@@ -86,7 +95,7 @@ def dotenv_only():
         pathlib.Path(tmp, ".env").write_text(f"ANTHROPIC_API_KEY={DUMMY_KEY}\n")
         os.chdir(tmp)
         try:
-            with mock.patch.dict(os.environ, {}, clear=True), \
+            with clean_env({}), \
                     mock.patch("urllib.request.urlopen", lambda *a, **k: sent.append(a)), \
                     contextlib.redirect_stdout(out):
                 ref.call_raw_http()

@@ -51,8 +51,17 @@ RESPONSE = {  # the documented /v1/messages response shape, with fixture values
 }
 
 
+
+# the harness finds the reference through AIEFS_REFERENCE (CI sets it), so a cleared
+# environment keeps that one variable and nothing else from the host
+KEEP = {k: os.environ[k] for k in ("AIEFS_REFERENCE",) if k in os.environ}
+
+
+def clean_env(env):
+    return mock.patch.dict(os.environ, {**KEEP, **env}, clear=True)
+
 def load():
-    with mock.patch.dict(os.environ, ENV, clear=True):
+    with clean_env(ENV):
         return parity.load_reference(PHASE, LESSON, "first_api_call")
 
 
@@ -65,7 +74,7 @@ def raw(response):
         body = types.SimpleNamespace(read=lambda: json.dumps(response).encode())
         return contextlib.nullcontext(body)
 
-    with mock.patch.dict(os.environ, ENV, clear=True), \
+    with clean_env(ENV), \
             mock.patch("urllib.request.urlopen", urlopen), contextlib.redirect_stdout(out):
         load().call_raw_http()
     return out.getvalue(), seen
@@ -78,7 +87,7 @@ def sdk(response):
     create = lambda **kwargs: sent.append(kwargs) or reply  # noqa: E731
     module = types.SimpleNamespace(Anthropic=lambda **k: types.SimpleNamespace(
         messages=types.SimpleNamespace(create=create)))
-    with mock.patch.dict(os.environ, ENV, clear=True), \
+    with clean_env(ENV), \
             mock.patch.dict(sys.modules, {"anthropic": module}), contextlib.redirect_stdout(out):
         load().call_with_sdk()
     return out.getvalue(), sent[0]
