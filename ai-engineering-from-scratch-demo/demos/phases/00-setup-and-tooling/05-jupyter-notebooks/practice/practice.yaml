@@ -1,0 +1,73 @@
+lesson: 05-jupyter-notebooks
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/05-jupyter-notebooks/docs/en.md
+exercises:
+  - index: 1
+    slug: the_lessons_own_timer_squares_a_range_and_draws_no_random_number
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Open JupyterLab, create a notebook, and use `%timeit` to compare list comprehension vs numpy for creating an array of 100,000 random numbers
+    zh: |
+      打開 JupyterLab，建立一個 notebook，用 `%timeit` 比較串列生成式與 numpy 在建立 100,000 個隨機數陣列時的差別
+    verifies: >-
+      %timeit is the stdlib timeit with autorange and repeats, so the comparison runs without a
+      kernel: [random.random() for _ in range(n)] against np.random.rand(n) at n = 100,000, best of 5.
+      numpy wins by an order of magnitude, about 2.4-2.9 ms against 0.18-0.25 ms, 11-14x on the
+      machine that wrote this; the ratio is wall-clock and host-dependent, so the check asks only for
+      2x, and the exercise is T1. The lesson's own timing_comparison measures something else -- its
+      source squares range(1_000_000) against np.arange(size) ** 2, draws no random number, uses ten
+      times the exercise's n and times each side with one perf_counter shot; it printed 13.0-13.6x,
+      while timeit on that same squaring gives about 22x. The two sides do not build the same object
+      either: the list holds 100,000 boxed floats, 3.20 MB, exactly 4.00x the array's 0.80 MB, and
+      converting it with np.array costs 16-20x numpy's time in all. Both contestants produce 100,000
+      floats in [0, 1)
+    uses_reference:
+      - timing_comparison
+  - index: 2
+    slug: a_deleted_cell_passes_every_click_fails_run_all_and_its_gap_is_already_in_the_json
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Create a notebook with both markdown and code cells that loads a CSV, displays a dataframe, and plots a chart. Then run Kernel > Restart & Run All to verify it works top to bottom
+    zh: |
+      建立一個同時含 markdown 與程式碼儲存格的 notebook，讓它載入一個 CSV、顯示 dataframe，並畫出一張圖。接著執行 Kernel > Restart & Run All，確認它從頭跑到尾都沒問題
+    verifies: >-
+      the .ipynb is built as nbformat-4 JSON and a kernel is a namespace that cells are exec'd into,
+      both with the stdlib; the CSV is the lesson's own Step 5 table parsed out of docs/en.md, the
+      chart an SVG display_data output. The clean notebook (2 markdown, 4 code cells) runs top to
+      bottom under Restart & Run All with zero errors, execution counts [1, 2, 3, 4], 3 table rows, 3
+      bars and Neural Net at 0.94. The lesson's hidden-state trap, measured -- run the same cells
+      interactively, delete the helper that builds accuracy, and the saved notebook keeps every output
+      and records 0 errors, yet Run All stops with NameError: name 'accuracy' is not defined. The
+      ghost is visible without running anything: the saved execution counts read [1, 3, 4], and a scan
+      for counts that are not exactly 1..k flags it and an out-of-order notebook ([1, 2, 4, 3]) while
+      passing the clean one. Two Run All passes serialise to byte-identical JSON (1935 bytes)
+    uses_reference:
+      - docs/en.md Step 5 DataFrame
+  - index: 3
+    slug: a_free_gpu_changes_nothing_because_the_code_never_touches_one
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Take the code from `code/notebook_tips.py`, paste it into a Colab notebook, and run it with a free GPU
+    zh: |
+      把 `code/notebook_tips.py` 的程式碼貼進 Colab notebook，用免費 GPU 跑一次
+    verifies: >-
+      Colab needs a browser, an account and a network, so the scaled-down runnable reads the source
+      with ast and runs its numpy-only functions on CPU. The file imports time, sys, numpy, matplotlib
+      and pandas and references none of torch, cuda, cupy, jax, tensorflow or device, so a T4 runtime
+      changes nothing it computes. Pasted into a cell it never asks for an inline plot -- it calls
+      matplotlib.use('Agg') at import and inline_plotting calls savefig, never show, while printing
+      that plt.show() displays the plot inline. memory_check's 'Python process memory ~80.0 MB' is
+      sys.getsizeof of the array, 80,000,112 bytes against nbytes 80,000,000, and a view of the same
+      80 MB reports 112 bytes, so it measures the array and not the process. The __main__ guard
+      evaluates True in a kernel-like namespace, and timing_comparison and memory_check complete with
+      no GPU present
+    uses_reference:
+      - timing_comparison
+      - memory_check
+      - inline_plotting

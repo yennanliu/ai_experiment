@@ -16,7 +16,8 @@ from harness import manifest, runner  # noqa: E402
 
 GROUP_MODULES = {
     "none": set(),
-    "math": {"numpy", "sklearn", "scipy"},
+    # scipy and joblib are hard install requirements of scikit-learn
+    "math": {"numpy", "sklearn", "scipy", "joblib"},
     # sklearn ships the sample images, pillow decodes them; phase 04's lesson code is
     # torch, and four of its lessons (05, 08, 12, 15) import torchvision directly
     "vision": {"numpy", "PIL", "sklearn", "torch", "torchvision"},

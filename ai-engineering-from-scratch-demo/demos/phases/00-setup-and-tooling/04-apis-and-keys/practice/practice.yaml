@@ -1,0 +1,63 @@
+lesson: 04-apis-and-keys
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/04-apis-and-keys/docs/en.md
+exercises:
+  - index: 1
+    slug: the_python_never_reads_the_dotenv_the_lesson_recommends
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Get an Anthropic API key and make your first API call
+    zh: |
+      申請一組 Anthropic API 金鑰，並發出你的第一個 API 呼叫
+    verifies: >-
+      the lesson's own call_with_sdk, run in a cleared environment against a recording fake anthropic
+      module, sends model='claude-sonnet-5', max_tokens=256 and 1 user message, builds the client with
+      no arguments, and prints 'Tokens used: 12 in, 28 out'. With the key only in ./.env,
+      call_raw_http prints 'Set ANTHROPIC_API_KEY environment variable first' and makes 0 requests,
+      although docs/en.md says to use a .env file and first_api_call.ts has loadDotenv. LLM_MODEL=''
+      sends model='' where the TS port's .trim() || falls back, and LLM_MODEL set after import still
+      sends 'claude-sonnet-5'; set before import, 'claude-test-model' is sent
+    uses_reference:
+      - call_with_sdk
+      - call_raw_http
+  - index: 2
+    slug: both_paths_print_a_truncated_reply_as_if_it_were_complete
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Try the raw HTTP version and compare the response format to the SDK version
+    zh: |
+      試試原始 HTTP 的版本，把回應格式和 SDK 版本的比一比
+    verifies: >-
+      the lesson's own call_raw_http and call_with_sdk are fed one fixture in the documented
+      /v1/messages response shape, via a fake urlopen and a fake SDK. The raw JSON body equals the SDK
+      kwargs, the raw path hand-sets Anthropic-version 2023-06-01, Content-type and X-api-key, and
+      both print the same text and 'Tokens used: 12 in, 28 out'; a response cut to content and usage
+      alone (2 of 8 fields) prints the same. Replaying it with stop_reason 'max_tokens' instead of
+      'end_turn' prints byte-identical output on both paths. urlopen gets 1 positional argument and no
+      timeout, so the socket default None applies
+    uses_reference:
+      - call_raw_http
+      - call_with_sdk
+  - index: 3
+    slug: the_401_body_is_never_shown_and_a_newline_key_leaks_whole
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Intentionally use a wrong API key and read the error message
+    zh: |
+      故意用一組錯的 API 金鑰，把錯誤訊息讀過一遍
+    verifies: >-
+      the lesson's own call_raw_http sends a dummy wrong key to a fake urlopen that raises HTTP 401
+      with the documented authentication_error body; the traceback ends 'urllib.error.HTTPError: HTTP
+      Error 401: Unauthorized' and contains 'invalid x-api-key' 0 times, while e.read() recovers it
+      and first_api_call.ts prints the body. The same key with a trailing newline goes through the
+      real urllib stack behind a socket.create_connection tripwire: ValueError: Invalid header value
+      b'sk-ant-wrong-dummy-key-00000\n', all 28 characters of the key in the message, with 0
+      connection attempts. The fake server saw exactly the dummy key in x-api-key
+    uses_reference:
+      - call_raw_http

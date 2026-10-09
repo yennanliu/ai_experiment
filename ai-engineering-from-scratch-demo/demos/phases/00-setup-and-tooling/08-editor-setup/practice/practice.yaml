@@ -1,0 +1,82 @@
+lesson: 08-editor-setup
+phase: 00-setup-and-tooling
+source: phases/00-setup-and-tooling/08-editor-setup/docs/en.md
+exercises:
+  - index: 1
+    slug: the_recommendations_live_where_vs_code_never_looks
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Install VS Code and all extensions listed in Step 2
+    zh: |
+      安裝 VS Code 以及步驟 2 列出的所有擴充套件
+    verifies: >-
+      Step 2 of docs/en.md has 8 well-formed, duplicate-free `code --install-extension` lines, one per
+      table row; code/vscode/extensions.json is strict JSON recommending 13, a superset, so Step 2
+      never installs remote-containers, jupyter cell-tags, jupyter slideshow, vscode-yaml or
+      even-better-toml. The doc cites code/.vscode/ twice (zh twice) and promises VS Code will prompt,
+      but the lesson ships code/vscode/ with 0 .vscode directories, so no prompt appears
+    uses_reference:
+      - code/vscode/extensions.json
+      - docs/en.md
+      - docs/zh.md
+  - index: 2
+    slug: format_on_save_is_python_only_in_the_file
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Copy the `settings.json` from this lesson into your VS Code config
+    zh: |
+      把本單元的 `settings.json` 複製到你的 VS Code 設定裡
+    verifies: >-
+      code/vscode/settings.json is strict JSON with 30 top-level keys and 0 comment lines, so it
+      copies as-is. The doc's Step 3 key-settings snippet sets editor.formatOnSave at the top level,
+      formatting every language, while the file sets it only inside [python]; 4 of the snippet's 5
+      keys match the file's top level. Control: every extension the settings configure (Pylance,
+      Black, Ruff, GitLens) is recommended, and the Step 4 terminal snippet matches 4 of 4 keys
+    uses_reference:
+      - code/vscode/settings.json
+      - code/vscode/extensions.json
+      - docs/en.md
+  - index: 3
+    slug: auto_save_skips_format_on_save
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      Open a Python file and verify that Pylance shows type hints and Black formats on save
+    zh: |
+      開一個 Python 檔案，確認 Pylance 會顯示型別提示、Black 會在存檔時格式化
+    verifies: >-
+      settings.json gives Pylance basic type checking with inlay hints functionReturnTypes on and
+      variableTypes off, and Black as the [python] formatter on an explicit save. It also sets
+      files.autoSave afterDelay at 1000 ms, and VS Code runs formatOnSave only if 'the file must not
+      be saved after delay' and codeActionsOnSave 'explicit' only on explicit saves, so auto-saves run
+      neither the format nor organize-imports, contradicting the doc's 'Never think about formatting
+      again'. Control: --line-length 88 equals the first ruler and Black's default, and
+      black-formatter is recommended
+    uses_reference:
+      - code/vscode/settings.json
+      - code/vscode/extensions.json
+      - docs/en.md
+  - index: 4
+    slug: the_example_host_is_unroutable_by_design
+    kind: code
+    tier: T0
+    deps_group: none
+    en: |
+      If you have access to a remote machine, set up Remote SSH and open a folder on it
+    zh: |
+      如果你有遠端機器可用，設定 Remote SSH 並開啟上面的某個資料夾
+    verifies: >-
+      the doc's ~/.ssh/config block is Host gpu-box with 4 known keywords, IdentityFile
+      ~/.ssh/id_ed25519 matching ssh-keygen -t ed25519, and Remote SSH is recommended. Its HostName
+      203.0.113.50 is in 203.0.113.0/24 (RFC 5737 TEST-NET-3), is_global False, yet the doc says
+      gpu-box then 'connects instantly' without saying to replace it. ForwardAgent yes is aimed at lab
+      servers, Vast.ai and cloud VMs, which ssh_config(5) warns against. Control: the ssh-keygen -C
+      email is at example.com
+    uses_reference:
+      - docs/en.md
+      - code/vscode/extensions.json

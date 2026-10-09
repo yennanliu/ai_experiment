@@ -1,0 +1,128 @@
+lesson: 17-imbalanced-data
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/17-imbalanced-data/docs/en.md
+exercises:
+  - index: 1
+    slug: borderline_rule_is_vacuous_under_overlap
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Borderline-SMOTE**: modify the SMOTE implementation to only generate synthetic samples for minority points that are near the decision boundary (those whose k-nearest neighbors include majority class samples). Compare results with standard SMOTE on a dataset where classes overlap.
+    zh: |
+      **Borderline-SMOTE**：修改 SMOTE 的實作，只為靠近決策邊界的少數類別點（也就是 k 個最近鄰裡含有多數類別樣本的那些點）產生合成樣本。在一個類別互相重疊的資料集上，把結果跟標準 SMOTE 做比較。
+    verifies: >-
+      with the lesson's generator's minority centre moved to (1.5, 1.5) and 5 seeds, Borderline-SMOTE
+      (seed points restricted to minority points with any majority point among their 5 nearest
+      neighbours, built on the lesson's find_k_neighbors) scores F1 0.324 against SMOTE's 0.335 and
+      0.179 with no resampling; the three models' mean test AUC is 0.9454, 0.9458 and 0.9452, so every
+      F1 gap is a threshold shift (seed-0 intercept -2.92 untreated, -1.95 with SMOTE). With the
+      centre at (1, 1) all 40.4 minority points qualify, the sampler reproduces the lesson's smote bit
+      for bit, and 16.8 of them have only majority neighbours -- Han et al.'s noise, which the
+      exercise's rule keeps. On the lesson's own (2.5, 2.5) data the rule keeps 14.0 of 40.4 and F1
+      orders Borderline 0.460 < SMOTE 0.552 < none 0.818
+    uses_reference:
+      - make_imbalanced_data
+      - find_k_neighbors
+      - smote
+      - logistic_regression_weighted
+      - sigmoid
+      - compute_metrics
+  - index: 2
+    slug: cost_rule_needs_calibration_the_lesson_lacks
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Cost matrix optimization**: implement cost-sensitive learning where the cost matrix is a parameter. Create a function that takes a cost matrix and returns optimal predictions that minimize expected cost. Test with different cost ratios (1:10, 1:100, 1:1000) and plot how the precision-recall tradeoff changes.
+    zh: |
+      **成本矩陣最佳化**：實作成本敏感學習，並把成本矩陣做成一個參數。寫一個函式，吃進一個成本矩陣，回傳能讓期望成本最小的最佳預測。用不同的成本比例（1:10、1:100、1:1000）測試，並畫出精確率與召回率的取捨如何跟著改變。
+    verifies: >-
+      min_cost_predict takes a 2x2 cost matrix and predicts positive where the expected cost of doing
+      so is lower, i.e. threshold C_FP/(C_FP+C_FN). Scored on a fresh 10,000-row draw (500 positives),
+      the converged lesson model (lr 1.0, 50,000 epochs) gives precision 0.84, 0.60, 0.36 and recall
+      0.94, 1.00, 1.00 at 1:10, 1:100, 1:1000. Trained the lesson's way (lr 0.1, 300 epochs; w=[0.69,
+      0.64], b=-3.18 against [3.40, 3.47], -13.30) the mean probability is 0.080 against a base rate
+      of 0.050, the rule flags 21.65%, 93.87% and 99.99% of rows, and at 1:10 it costs 1665 against
+      263 for the best threshold. find_optimal_threshold's 0.05-0.95 grid cannot reach the 1:100 and
+      1:1000 thresholds: its best costs 15,137 at 1:1000 against 410. At 1:1 the rule is the 0.5
+      default and costs 107 against a best of 104
+    uses_reference:
+      - make_imbalanced_data
+      - logistic_regression_weighted
+      - sigmoid
+      - compute_metrics
+      - confusion_matrix_values
+  - index: 3
+    slug: platt_only_calibrates_when_converged
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Threshold calibration**: implement Platt scaling (fit a logistic regression on the model's raw outputs to produce calibrated probabilities). Compare the precision-recall curve before and after calibration. Show that calibration does not change the ranking (AUC stays the same) but makes the probabilities more meaningful.
+    zh: |
+      **閾值校準**：實作 Platt scaling（在模型的原始輸出上配適一個邏輯迴歸，產生校準過的機率）。比較校準前後的 PR 曲線。證明校準不會改變排序（AUC 保持不變），但會讓機率更有意義。
+    verifies: >-
+      Platt scaling of the lesson's class-weighted model, fitted on its 200-row validation split with
+      the lesson's logistic_regression_weighted, leaves the 10,000-row test AUC at 0.99808 and average
+      precision at 0.9660 with an identical row order, while ECE falls 0.127 -> 0.009, Brier 0.0427 ->
+      0.0101 and the mean probability 0.175 -> 0.059 against a base rate of 0.050. With the fitter's
+      default lr 0.01 and 200 epochs the slope stops at 0.79 and ECE at 0.118, against 5.70 and 0.009
+      converged. The validation split's 10 positives separate perfectly (top negative 0.667, bottom
+      positive 0.706), so F1 = 1.0 across the gap and find_optimal_threshold returns its low edge
+      (0.67 raw, 0.24 calibrated); on test that scores F1 0.858 against 0.896 at the best threshold. A
+      negated slope gives AUC 0.0019 = 1 - 0.99808
+    uses_reference:
+      - make_imbalanced_data
+      - logistic_regression_weighted
+      - compute_class_weights
+      - sigmoid
+      - compute_metrics
+      - find_optimal_threshold
+  - index: 4
+    slug: bagging_is_noisier_than_one_smote_model
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Ensemble with balanced bagging**: train multiple models, each on a balanced bootstrap sample (all minority + random subset of majority). Average their predictions. Compare this approach against a single model with SMOTE. Measure both performance and variance across runs.
+    zh: |
+      **用 balanced bagging 做集成**：訓練多個模型，每個都用一份平衡的 bootstrap 樣本（全部少數類別＋隨機抽出的一部分多數類別）。把它們的預測平均起來。把這個做法跟單一個搭配 SMOTE 的模型比較。同時量測效能與多次執行之間的變異。
+    verifies: >-
+      a 15-model bag over the lesson's random_undersample scores test F1 0.659 +- 0.015 over 10
+      resampling seeds on fixed data, against 0.683 +- 0.002 for one model on the lesson's smote;
+      bagging cuts a single undersampled model's spread from 0.051 by 3.4x but stays 7.5x SMOTE's.
+      With a fresh training draw per run the spreads are 0.020 (SMOTE) and 0.022 (bag), so the data
+      dominates. Mean test AUC is 0.9981 for bag and SMOTE and 0.9974 for one undersampled model: the
+      gaps are thresholds, not rankings
+    uses_reference:
+      - make_imbalanced_data
+      - random_undersample
+      - smote
+      - logistic_regression_weighted
+      - sigmoid
+      - compute_metrics
+  - index: 5
+    slug: smote_only_helps_an_undertrained_model
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      **Imbalance ratio experiment**: take a balanced dataset and progressively increase the imbalance ratio (50/50, 70/30, 90/10, 95/5, 99/1). For each ratio, train with and without SMOTE. Plot F1 vs imbalance ratio for both approaches. At what ratio does SMOTE start making a meaningful difference?
+    zh: |
+      **不平衡比例實驗**：拿一個平衡的資料集，逐步把不平衡比例拉高（50/50、70/30、90/10、95/5、99/1）。每個比例都分別在有 SMOTE 與沒有 SMOTE 的情況下訓練。把兩種做法的 F1 對不平衡比例畫出來。到什麼比例時，SMOTE 才開始帶來有意義的差別？
+    verifies: >-
+      keeping 500 negatives of the lesson's balanced make_imbalanced_data(500, 500) and subsampling
+      positives, F1 at threshold 0.5 on a matched 10,000-row test set over 5 seeds is, without/with
+      the lesson's smote and the lesson's training settings, 0.964/0.964, 0.954/0.923, 0.914/0.776,
+      0.806/0.632 and 0.000/0.240 at 50/50 to 99/1: SMOTE hurts from 70/30 and helps only at 99/1.
+      Trained to convergence (lr 1.0, 3000 epochs) the untreated model scores 0.767 at 99/1 and SMOTE
+      lowers F1 at every imbalanced ratio (0.958, 0.895, 0.822, 0.536). The lesson's random_oversample
+      is within 0.02 of SMOTE at every ratio
+    uses_reference:
+      - make_imbalanced_data
+      - smote
+      - random_oversample
+      - logistic_regression_weighted
+      - sigmoid
+      - compute_metrics

@@ -45,13 +45,13 @@ hand-written "simulation" of the answer could not have found it.
 
 <!-- coverage:start -->
 
-**2057 / 2150 exercises** (95.7%) across 20 phases.
+**2150 / 2150 exercises** (100.0%) across 20 phases.
 
 | Phase | Exercises | Solved | Lessons started |
 |---|---:|---:|---:|
-| ⬚ `00-setup-and-tooling` | 45 | 0 | 0 |
+| ✅ `00-setup-and-tooling` | 45 | 45 | 12 |
 | ✅ `01-math-foundations` | 92 | 92 | 21 |
-| 🚧 `02-ml-fundamentals` | 78 | 30 | 8 |
+| ✅ `02-ml-fundamentals` | 78 | 78 | 18 |
 | ✅ `03-deep-learning-core` | 63 | 63 | 13 |
 | ✅ `04-computer-vision` | 84 | 84 | 28 |
 | ✅ `05-nlp-foundations-to-advanced` | 87 | 87 | 29 |

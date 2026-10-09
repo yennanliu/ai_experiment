@@ -1,0 +1,121 @@
+lesson: 11-ensemble-methods
+phase: 02-ml-fundamentals
+source: phases/02-ml-fundamentals/11-ensemble-methods/docs/en.md
+exercises:
+  - index: 1
+    slug: train_converges_at_142_test_at_20
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Modify the AdaBoost implementation to track training accuracy after each round. Plot accuracy vs. number of estimators. When does it converge?
+    zh: |
+      修改 AdaBoost 的實作，讓它記錄每一輪之後的訓練準確率。把準確率對估計器數量畫出來。它什麼時候收斂？
+    verifies: >-
+      the lesson's own AdaBoostScratch is fitted for 150 rounds on its demo data (320 train / 80 test)
+      and accuracy is read after every round from the cumulative alpha-weighted stump votes. Training
+      accuracy first reaches 1.0000 at round 112, loses it, and holds it only from round 142; test
+      accuracy reaches 0.8250 at round 20 and afterwards stays between 0.8000 and 0.8375, peaking at
+      round 32. Training accuracy falls on 40 of 149 rounds while the mean exponential loss rises on
+      none, and the training error stays under prod 2 sqrt(eps(1-eps)) throughout. alpha_1 = 0.7862 >
+      alpha_2 = 0.5323, so round 2 changes no prediction (0.8281 after rounds 1 and 2).
+      AdaBoostScratch(n_estimators=25) matches the staged curve at round 25 exactly, and the mean
+      exponential loss equals prod sech(alpha_t) within 3.3e-16
+    uses_reference:
+      - AdaBoostScratch
+      - DecisionStump
+      - make_classification_data
+      - train_test_split
+  - index: 2
+    slug: forest_cuts_variance_75pct_and_pays_in_bias
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Implement a random forest from scratch by adding random feature subsampling to the regression tree. Train 100 trees with `max_features=sqrt(n_features)` and average predictions. Compare variance reduction to a single tree.
+    zh: |
+      從零實作一座 random forest：在迴歸樹上加入隨機特徵取樣。用 `max_features=sqrt(n_features)` 訓練 100 棵樹並平均預測。把變異降低的幅度和單一棵樹比較。
+    verifies: >-
+      a subclass of the lesson's SimpleRegressionTree hides all but int(sqrt(5)) = 2 random features
+      per node and lets the lesson's _build pick the split; 100 bootstrapped depth-4 trees per forest,
+      5 training sets of 200 rows from make_regression_data, scored at 100 fixed points against the
+      true function. Prediction variance across training sets falls from 0.444 for one tree to 0.113
+      for the forest (-75%; bagging reaches 0.150). Tree-to-tree correlation is 0.065 against
+      bagging's 0.240, but one random-feature tree varies 1.530, 3.4x a single tree. Squared bias
+      rises to 1.016 from 0.771 (one tree) and 0.722 (bagging): x0, which carries the slope-2 term, is
+      offered at 40% of splits and the forest's roots split on it in exactly 40% of trees. Error
+      against the truth: forest 1.129, bagging 0.872, one tree 1.215. The lesson's demo_bagging prints
+      bag_acc - single_acc as 'Variance reduction'. With all 5 features offered the subclass
+      reproduces SimpleRegressionTree exactly
+    uses_reference:
+      - SimpleRegressionTree
+      - TreeNode
+      - make_regression_data
+  - index: 3
+    slug: needs_188_trees_and_lr_0_5_needs_43
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      In the gradient boosting implementation, add early stopping: track validation loss after each round and stop when it has not improved for 10 consecutive rounds. How many trees does it actually need?
+    zh: |
+      在梯度提升的實作裡加入提早停止：記錄每一輪之後的驗證損失，連續 10 輪沒有改善就停下來。它實際上需要幾棵樹？
+    verifies: >-
+      the lesson's GradientBoostingScratch is grown one SimpleRegressionTree at a time on its demo
+      data split 240 fit / 80 validation / 80 test, stopping after 10 rounds with no new validation
+      minimum. At lr 0.1 validation MSE bottoms out at 0.4131 on round 188 (stop at 198, test MSE
+      0.4210). The curve has a 13-round plateau; patience 20 reaches round 232 with validation 0.4071
+      but test 0.4205, level with 0.4210. The lesson's default 100 trees gives test MSE 0.4475, 6%
+      worse. lr 0.5 needs 43 trees and reaches test MSE 0.4208, against the lesson's printed 'Lower
+      learning rates need more trees but often generalize better'. The first 20 trees predict exactly
+      what GradientBoostingScratch(n_estimators=20) predicts
+    uses_reference:
+      - GradientBoostingScratch
+      - SimpleRegressionTree
+      - make_regression_data
+      - train_test_split
+  - index: 4
+    slug: stack_wins_4_of_5_lesson_stack_is_a_vote
+    kind: code
+    tier: T0
+    deps_group: math
+    en: |
+      Build a stacking ensemble with three base models (logistic regression, decision tree, k-nearest neighbors) and a logistic regression meta-learner. Use 5-fold cross-validation to generate meta-features. Compare to each base model alone.
+    zh: |
+      用三個基模型（邏輯迴歸、決策樹、k 最近鄰）加上一個邏輯迴歸元學習器，建一個堆疊集成。用 5 折交叉驗證來產生元特徵。和每個基模型單獨的表現做比較。
+    verifies: >-
+      five 400-row training sets from the lesson's make_classification_data, one shared 4,000-row test
+      draw; base models logistic regression, a depth-5 tree and 15-NN, meta-learner a logistic
+      regression on out-of-fold probabilities from shuffled 5-fold CV. Stacking beats the best base
+      model on 4 of 5 sets, mean accuracy 0.9056 against k-NN's 0.8978 (logreg 0.8600, tree 0.8733).
+      In-sample meta-features raise the tree's weight from 1.74-2.04 to 4.25-4.97 and lose on all 5
+      sets (mean 0.8841). The lesson's StackingClassifier, fed hard +/-1 labels, agrees with a plain
+      3-way majority vote on 92.8-100% of test rows (exactly on 2 sets) and averages 0.8980, below the
+      probability stack on 4 of 5. scikit-learn's StackingClassifier with the same folds disagrees on
+      0 of 20,000 predictions
+    uses_reference:
+      - StackingClassifier
+      - make_classification_data
+  - index: 5
+    slug: speed_gap_grows_with_n_accuracy_gap_is_the_loss
+    kind: code
+    tier: T1
+    deps_group: math
+    en: |
+      Run XGBoost on the same dataset with default parameters. Compare its accuracy to your from-scratch gradient boosting. Time both. How large is the speed difference?
+    zh: |
+      在同一份資料集上用預設參數跑 XGBoost。把它的準確率和你從零寫的梯度提升比較。兩者都計時。速度差距有多大？
+    verifies: >-
+      xgboost is not a dependency, so scikit-learn's HistGradientBoostingClassifier (histogram,
+      second-order, log-loss) runs at default parameters against the lesson's GradientBoostingScratch
+      on the lesson's make_classification_data(500) split 400/100, plus a 4,000-row fresh draw. The
+      booster fits faster (about 0.13 s against 0.78 s on the author's machine) and scores 0.9220
+      against 0.9042 on 4,000 rows. Per tree the gap grows with n, about 7x at 400 rows to about 19x
+      at 20,000. The lesson's 100-row test shows 0.89 against 0.95, a 6.0-point gap that 4,000 rows
+      put at 1.8. Capped at depth 3 the booster scores 0.9235 while scikit-learn's squared-error
+      GradientBoostingRegressor on +/-1 labels scores 0.8985, so the gap is the loss; that regressor
+      agrees with the scratch GBM on 94.9% of rows
+    uses_reference:
+      - GradientBoostingScratch
+      - make_classification_data
+      - train_test_split
