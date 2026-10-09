@@ -8,6 +8,9 @@ reads. The docstring is excluded because it is mandated content (the exercise te
 plus the "Reading of the exercise:" line), and charging a solution for how long its own
 exercise is measures the wrong thing. Every rule here is one `DESIGN §6` lists as a
 rejection reason, so a solution that passes this passes the generation gate.
+
+`ci_hazards` adds the three CI-only failures that PRs #30 and #32 hit only after
+merge-time CI. Each one passes locally, so only a static check finds it before push.
 """
 
 from __future__ import annotations
@@ -53,6 +56,67 @@ def docstring_lines(tree) -> int:
     return 0
 
 
+HISTORY = {"log", "show", "diff", "blame", "rev-list"}
+TEMP_REPO = ("tempfile", "TemporaryDirectory", "mkdtemp", "tmp_path")
+
+
+def _calls(tree, attr):
+    return [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute) and n.func.attr == attr]
+
+
+def _is_environ(node) -> bool:
+    return isinstance(node, ast.Attribute) and node.attr == "environ"
+
+
+def clears_environ(tree) -> bool:
+    """`patch.dict(os.environ, ..., clear=True)` or `os.environ.clear()`, in process."""
+    patched = any(c.args and _is_environ(c.args[0]) and any(
+        k.arg == "clear" and isinstance(k.value, ast.Constant) and k.value.value is True
+        for k in c.keywords) for c in _calls(tree, "dict"))
+    return patched or any(_is_environ(c.func.value) for c in _calls(tree, "clear"))
+
+
+def scans_reference_root(tree) -> bool:
+    """An rglob/os.walk whose root is `find_reference_root()` itself, not its phases/."""
+    def is_root(node):
+        return (isinstance(node, ast.Call) and isinstance(node.func, (ast.Attribute, ast.Name))
+                and getattr(node.func, "attr", getattr(node.func, "id", "")) == "find_reference_root")
+    names = {t.id for n in ast.walk(tree) if isinstance(n, ast.Assign) and is_root(n.value)
+             for t in n.targets if isinstance(t, ast.Name)}
+
+    def rooted(node):
+        return is_root(node) or (isinstance(node, ast.Name) and node.id in names)
+    globbed = any(rooted(c.func.value) for c in _calls(tree, "rglob"))
+    return globbed or any(c.args and rooted(c.args[0]) for c in _calls(tree, "walk"))
+
+
+def reads_git_history(tree, text) -> bool:
+    """A `["git", ...]` command plus a history subcommand, and no throwaway repo to run it in."""
+    git = any(isinstance(n, ast.List) and n.elts and isinstance(n.elts[0], ast.Constant)
+              and n.elts[0].value == "git" for n in ast.walk(tree))
+    history = any(isinstance(n, ast.Constant) and n.value in HISTORY for n in ast.walk(tree))
+    return git and history and not any(marker in text for marker in TEMP_REPO)
+
+
+def ci_hazards(tree, text) -> list:
+    """Code that passes locally and fails only in CI (PRs #30 and #32).
+
+    CI finds the reference through `AIEFS_REFERENCE` alone, checks it out with
+    `fetch-depth 1`, and the checkout root holds more than `phases/`.
+    """
+    problems = []
+    if clears_environ(tree) and "AIEFS_REFERENCE" not in text:
+        problems.append("clears os.environ without carrying AIEFS_REFERENCE, "
+                        "so CI cannot find the reference")
+    if scans_reference_root(tree):
+        problems.append("scans the reference checkout root; anchor the scan to phases/")
+    if reads_git_history(tree, text):
+        problems.append("reads git history outside a temporary repo; CI clones "
+                        "with fetch-depth 1")
+    return problems
+
+
 def audit_solution(path: pathlib.Path, exercise, warnings=None) -> list:
     """Returns the problems. D14's soft ceiling lands in `warnings` when one is passed."""
     problems, warnings = [], [] if warnings is None else warnings
@@ -80,7 +144,7 @@ def audit_solution(path: pathlib.Path, exercise, warnings=None) -> list:
              if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)}
     if "PRACTICE_IMPL" not in names:
         problems.append("no PRACTICE_IMPL (D13)")
-    return problems
+    return problems + ci_hazards(tree, text)
 
 
 def audit_explain(exercise, readme, headings) -> list:

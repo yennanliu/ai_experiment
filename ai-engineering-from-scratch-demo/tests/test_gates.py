@@ -218,3 +218,32 @@ def test_prose_keys_are_block_scalars_so_the_manifests_are_real_yaml():
         offenders += [f"{man.parent.parent.name}: {problem}"
                       for problem in audit_practice.plain_scalars_with_colons(man)]
     assert offenders == []
+
+
+@pytest.mark.parametrize("hazard, body, message", [
+    ("env-clear", "with mock.patch.dict(os.environ, {}, clear=True):\n    pass\n",
+     "AIEFS_REFERENCE"),
+    ("root-scan", "root = parity.find_reference_root()\nfound = list(root.rglob('*.wav'))\n",
+     "checkout root"),
+    ("git-history", "subprocess.run(['git', 'log', '-1'], capture_output=True)\n",
+     "fetch-depth 1"),
+])
+def test_gate_rejects_code_that_only_fails_in_ci(lesson, hazard, body, message):
+    """PRs #30 and #32 went red in CI on code that was green locally."""
+    path = lesson / "ex01_thing.py"
+    path.write_text(SOLUTION + "\n" + body, encoding="utf-8")
+    problems = audit_practice.audit_lesson(lesson / "practice.yaml")
+    assert any(message in p for p in problems), hazard
+
+
+@pytest.mark.parametrize("body", [
+    "with mock.patch.dict(os.environ, {'AIEFS_REFERENCE': ref}, clear=True):\n    pass\n",
+    "root = parity.find_reference_root()\nfound = list((root / 'phases').rglob('*.wav'))\n",
+    "with tempfile.TemporaryDirectory() as tmp:\n"
+    "    subprocess.run(['git', 'log', '-1'], cwd=tmp)\n",
+    "subprocess.run(['git', 'status', '--porcelain'], cwd=parity.find_reference_root())\n",
+])
+def test_ci_hazard_gate_allows_the_fixed_forms(lesson, body):
+    path = lesson / "ex01_thing.py"
+    path.write_text(SOLUTION + "\n" + body, encoding="utf-8")
+    assert audit_practice.audit_lesson(lesson / "practice.yaml") == []
