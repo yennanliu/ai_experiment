@@ -57,7 +57,63 @@ def docstring_lines(tree) -> int:
 
 
 HISTORY = {"log", "show", "diff", "blame", "rev-list"}
-TEMP_REPO = ("tempfile", "TemporaryDirectory", "mkdtemp", "tmp_path")
+CHECKOUT = {"find_reference_root", "getcwd", "cwd"}   # calls that name the checkout itself
+
+
+class Bindings:
+    """Each name's latest binding before a use, in the use's own function.
+
+    Resolving a name this way, rather than asking whether the file mentions a
+    marker anywhere, keeps `root = root / "phases"` and an unrelated
+    `import tempfile` from deciding what a later call does.
+    """
+
+    def __init__(self, tree):
+        self.scope, self.binds = {}, {}
+        self.module = tree
+        for scope in [tree] + [n for n in ast.walk(tree)
+                               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+            for node in ast.walk(scope):    # walk is outer-first, so the innermost wins
+                self.scope[node] = scope
+        for node in ast.walk(tree):
+            for target, value in _bound(node):
+                key = (self.scope[node], target.id)
+                self.binds.setdefault(key, []).append((node.lineno, value))
+
+    def resolve(self, name):
+        """The value last bound to `name` before it is used, or None (a parameter, say).
+
+        A name its function never binds is a module global, and a module runs to the
+        end before any of its functions is called, so the last module binding counts.
+        """
+        scope = self.scope.get(name)
+        rows = [value for line, value in self.binds.get((scope, name.id), [])
+                if line < name.lineno]
+        if scope is not self.module and (scope, name.id) not in self.binds:
+            rows = [value for _, value in self.binds.get((self.module, name.id), [])]
+        return rows[-1] if rows else None
+
+    def reaches(self, node, found, depth=4):
+        """Whether `found` holds anywhere in `node`, following names to their values."""
+        for sub in ast.walk(node):
+            if found(sub):
+                return True
+            if depth and isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Load):
+                value = self.resolve(sub)
+                if value is not None and self.reaches(value, found, depth - 1):
+                    return True
+        return False
+
+
+def _bound(node):
+    """(Name target, value) pairs for an assignment or a `with ... as name`."""
+    if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        return [(t, node.value) for t in targets if isinstance(t, ast.Name)]
+    if isinstance(node, ast.With):
+        return [(i.optional_vars, i.context_expr) for i in node.items
+                if isinstance(i.optional_vars, ast.Name)]
+    return []
 
 
 def _calls(tree, attr):
@@ -65,55 +121,130 @@ def _calls(tree, attr):
             and isinstance(n.func, ast.Attribute) and n.func.attr == attr]
 
 
+def _called(node, names) -> bool:
+    func = getattr(node, "func", None)
+    return isinstance(node, ast.Call) and getattr(func, "attr", getattr(func, "id", "")) in names
+
+
 def _is_environ(node) -> bool:
     return isinstance(node, ast.Attribute) and node.attr == "environ"
 
 
-def clears_environ(tree) -> bool:
-    """`patch.dict(os.environ, ..., clear=True)` or `os.environ.clear()`, in process."""
-    patched = any(c.args and _is_environ(c.args[0]) and any(
-        k.arg == "clear" and isinstance(k.value, ast.Constant) and k.value.value is True
-        for k in c.keywords) for c in _calls(tree, "dict"))
-    return patched or any(_is_environ(c.func.value) for c in _calls(tree, "clear"))
+def _is_key(node) -> bool:
+    return isinstance(node, ast.Constant) and node.value == "AIEFS_REFERENCE"
 
 
-def scans_reference_root(tree) -> bool:
+def drops_reference(tree, names) -> bool:
+    """An in-process clear of os.environ whose replacement has no AIEFS_REFERENCE.
+
+    `patch.dict(os.environ, values, clear=True)` must carry the key in `values`
+    (followed through names, so `{**KEEP, **env}` counts); `os.environ.clear()`
+    must be followed in its function by a store or update that puts it back.
+    """
+    for call in _calls(tree, "dict"):
+        clear = any(k.arg == "clear" and getattr(k.value, "value", None) is True
+                    for k in call.keywords)
+        if call.args and _is_environ(call.args[0]) and clear:
+            values = call.args[1:] + [k.value for k in call.keywords if k.arg in (None, "values")]
+            named = any(k.arg == "AIEFS_REFERENCE" for k in call.keywords)
+            if not named and not any(names.reaches(v, _is_key) for v in values):
+                return True
+    for call in _calls(tree, "clear"):
+        if _is_environ(call.func.value) and not restores_reference(names.scope[call], names):
+            return True
+    return False
+
+
+def restores_reference(scope, names) -> bool:
+    stored = any(isinstance(n, ast.Subscript) and _is_environ(n.value) and _is_key(n.slice)
+                 and isinstance(n.ctx, ast.Store) for n in ast.walk(scope))
+    return stored or any(_is_environ(c.func.value) and any(names.reaches(a, _is_key)
+                                                           for a in c.args)
+                         for c in _calls(scope, "update"))
+
+
+def scans_reference_root(tree, names) -> bool:
     """An rglob/os.walk whose root is `find_reference_root()` itself, not its phases/."""
-    def is_root(node):
-        return (isinstance(node, ast.Call) and isinstance(node.func, (ast.Attribute, ast.Name))
-                and getattr(node.func, "attr", getattr(node.func, "id", "")) == "find_reference_root")
-    names = {t.id for n in ast.walk(tree) if isinstance(n, ast.Assign) and is_root(n.value)
-             for t in n.targets if isinstance(t, ast.Name)}
-
     def rooted(node):
-        return is_root(node) or (isinstance(node, ast.Name) and node.id in names)
+        if isinstance(node, ast.Name):
+            node = names.resolve(node)
+        return _called(node, {"find_reference_root"})
     globbed = any(rooted(c.func.value) for c in _calls(tree, "rglob"))
     return globbed or any(c.args and rooted(c.args[0]) for c in _calls(tree, "walk"))
 
 
-def reads_git_history(tree, text) -> bool:
-    """A `["git", ...]` command plus a history subcommand, and no throwaway repo to run it in."""
-    git = any(isinstance(n, ast.List) and n.elts and isinstance(n.elts[0], ast.Constant)
-              and n.elts[0].value == "git" for n in ast.walk(tree))
-    history = any(isinstance(n, ast.Constant) and n.value in HISTORY for n in ast.walk(tree))
-    return git and history and not any(marker in text for marker in TEMP_REPO)
+def git_commands(tree):
+    """(subcommand, repo expression or None, call) for every git invocation.
+
+    A literal argv `["git", "log", ...]` names its subcommand directly; a wrapper
+    such as `def git(root, *args)` that runs `["git", *args]` with `cwd=root` is
+    followed to each of its call sites, where the subcommand is a string argument.
+    """
+    rows, wrappers = [], {}
+    for call in [n for n in ast.walk(tree) if isinstance(n, ast.Call) and n.args]:
+        argv = call.args[0]
+        if not (isinstance(argv, (ast.List, ast.Tuple)) and argv.elts
+                and getattr(argv.elts[0], "value", None) == "git"):
+            continue
+        cwd = next((k.value for k in call.keywords if k.arg == "cwd"), None)
+        words = [e.value for e in argv.elts[1:] if isinstance(e, ast.Constant)]
+        if words:
+            rows.append((_subcommand(words), cwd, call))
+        elif any(isinstance(e, ast.Starred) for e in argv.elts):
+            wrappers.update(_wrapper(tree, call, cwd))
+    for call in [n for n in ast.walk(tree) if _called(n, set(wrappers))]:
+        index = wrappers[getattr(call.func, "attr", getattr(call.func, "id", ""))]
+        words = [a.value for a in call.args if isinstance(a, ast.Constant)]
+        repo = call.args[index] if index is not None and index < len(call.args) else None
+        rows.append((_subcommand(words), repo, call))
+    return rows
 
 
-def ci_hazards(tree, text) -> list:
+def _subcommand(words):
+    rest = [w for w in words if isinstance(w, str)]
+    while rest and rest[0] in ("-C", "-c"):
+        rest = rest[2:]
+    return next((w for w in rest if not w.startswith("-")), None)
+
+
+def _wrapper(tree, call, cwd):
+    """{function name: index of the parameter it runs git in} for a `*args` git helper."""
+    for func in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+        if call in ast.walk(func):
+            params = [a.arg for a in func.args.args]
+            name = cwd.id if isinstance(cwd, ast.Name) else None
+            return {func.name: params.index(name) if name in params else None}
+    return {}
+
+
+def reads_checkout_history(tree, names) -> bool:
+    """A git history command run in this checkout or the reference, not a scratch repo.
+
+    The repo is the checkout when no cwd is given, or when the cwd is built from
+    `find_reference_root()`, `__file__`, `os.getcwd()` or `Path.cwd()`. A cwd that is
+    a parameter or a temporary directory is somebody else's repo.
+    """
+    def checkout(node):
+        return _called(node, CHECKOUT) or (isinstance(node, ast.Name) and node.id == "__file__")
+    return any(sub in HISTORY and (repo is None or names.reaches(repo, checkout))
+               for sub, repo, _ in git_commands(tree))
+
+
+def ci_hazards(tree) -> list:
     """Code that passes locally and fails only in CI (PRs #30 and #32).
 
     CI finds the reference through `AIEFS_REFERENCE` alone, checks it out with
     `fetch-depth 1`, and the checkout root holds more than `phases/`.
     """
-    problems = []
-    if clears_environ(tree) and "AIEFS_REFERENCE" not in text:
+    names, problems = Bindings(tree), []
+    if drops_reference(tree, names):
         problems.append("clears os.environ without carrying AIEFS_REFERENCE, "
                         "so CI cannot find the reference")
-    if scans_reference_root(tree):
+    if scans_reference_root(tree, names):
         problems.append("scans the reference checkout root; anchor the scan to phases/")
-    if reads_git_history(tree, text):
-        problems.append("reads git history outside a temporary repo; CI clones "
-                        "with fetch-depth 1")
+    if reads_checkout_history(tree, names):
+        problems.append("reads git history of a checkout; CI clones with fetch-depth 1, "
+                        "so build a temporary repo instead")
     return problems
 
 
@@ -144,7 +275,7 @@ def audit_solution(path: pathlib.Path, exercise, warnings=None) -> list:
              if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)}
     if "PRACTICE_IMPL" not in names:
         problems.append("no PRACTICE_IMPL (D13)")
-    return problems + ci_hazards(tree, text)
+    return problems + ci_hazards(tree)
 
 
 def audit_explain(exercise, readme, headings) -> list:

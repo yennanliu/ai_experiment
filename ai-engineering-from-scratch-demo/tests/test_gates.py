@@ -227,6 +227,15 @@ def test_prose_keys_are_block_scalars_so_the_manifests_are_real_yaml():
      "checkout root"),
     ("git-history", "subprocess.run(['git', 'log', '-1'], capture_output=True)\n",
      "fetch-depth 1"),
+    # review of PR #33: each of these slipped past the first version of the gate
+    ("comment-only", "# keeps AIEFS_REFERENCE\nos.environ.clear()\n", "AIEFS_REFERENCE"),
+    ("unrelated-tempfile", "import tempfile\nsubprocess.run(['git', 'log', '-1'])\n",
+     "fetch-depth 1"),
+    ("tuple-argv", "subprocess.run(('git', 'log', '-1'), cwd=parity.find_reference_root())\n",
+     "fetch-depth 1"),
+    ("wrapper", "def git(root, *args):\n    return subprocess.run(['git', *args], cwd=root)\n\n\n"
+     "def history():\n    return git(parity.find_reference_root(), 'log', '-1')\n",
+     "fetch-depth 1"),
 ])
 def test_gate_rejects_code_that_only_fails_in_ci(lesson, hazard, body, message):
     """PRs #30 and #32 went red in CI on code that was green locally."""
@@ -242,6 +251,14 @@ def test_gate_rejects_code_that_only_fails_in_ci(lesson, hazard, body, message):
     "with tempfile.TemporaryDirectory() as tmp:\n"
     "    subprocess.run(['git', 'log', '-1'], cwd=tmp)\n",
     "subprocess.run(['git', 'status', '--porcelain'], cwd=parity.find_reference_root())\n",
+    "root = parity.find_reference_root()\nroot = root / 'phases'\nfound = list(root.rglob('*'))\n",
+    "subprocess.run(['git', 'status'])\nlevel = 'log'\n",
+    "os.environ.clear()\nos.environ['AIEFS_REFERENCE'] = ref\n",
+    # 00/04's own fix: a module-level KEEP spread into a function's patch.dict
+    "KEEP = {k: os.environ[k] for k in ('AIEFS_REFERENCE',) if k in os.environ}\n\n\n"
+    "def clean_env(env):\n    return mock.patch.dict(os.environ, {**KEEP, **env}, clear=True)\n",
+    "def git(root, *args):\n    return subprocess.run(['git', *args], cwd=root)\n\n\n"
+    "def history():\n    root = pathlib.Path(tempfile.mkdtemp())\n    return git(root, 'log')\n",
 ])
 def test_ci_hazard_gate_allows_the_fixed_forms(lesson, body):
     path = lesson / "ex01_thing.py"
