@@ -9,10 +9,12 @@
 ## Progress
 
 - 20261010
+	
+	- https://www.youtube.com/watch?v=1BWeH1oOM7k
 
 	- https://www.youtube.com/watch?v=S8v-dR4s29M
 
-		- 50:53
+		- done
 
 - 20261006
 
