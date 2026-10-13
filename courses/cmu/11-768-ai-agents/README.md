@@ -8,9 +8,17 @@
 
 ## Progress
 
+- 20261013
+	
+	- https://www.youtube.com/watch?v=1BWeH1oOM7k
+		- 39:26
+
+
+
 - 20261010
 	
 	- https://www.youtube.com/watch?v=1BWeH1oOM7k
+		- 39:26
 
 	- https://www.youtube.com/watch?v=S8v-dR4s29M
 
