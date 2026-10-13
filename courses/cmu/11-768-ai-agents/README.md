@@ -10,8 +10,10 @@
 
 - 20261013
 	
+	- https://www.youtube.com/watch?v=jwGluLrrqjQ
+	
 	- https://www.youtube.com/watch?v=1BWeH1oOM7k
-		- 39:26
+		- done
 
 
 
