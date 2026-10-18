@@ -11,7 +11,7 @@
 - 20261018
 	
 	- https://www.youtube.com/watch?v=jwGluLrrqjQ
-		- 36:30
+		- 1:01:42
 
 
 - 20261016
