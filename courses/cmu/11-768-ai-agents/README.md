@@ -8,6 +8,11 @@
 
 ## Progress
 
+- 20261018
+	
+	- https://www.youtube.com/watch?v=jwGluLrrqjQ
+		- 36:30
+
 
 - 20261016
 	
