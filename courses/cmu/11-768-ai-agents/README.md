@@ -11,8 +11,11 @@
 
 - 20261020
 	
+	- https://www.youtube.com/watch?v=O3HSU0AoILc
+
+
 	- https://www.youtube.com/watch?v=jwGluLrrqjQ
-		- 1:01:42
+		- done
 
 
 - 20261018
