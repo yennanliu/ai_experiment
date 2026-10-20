@@ -11,7 +11,10 @@
 
 - 20261020
 	
+	- https://www.youtube.com/watch?v=paAcPaaYZGM
+	
 	- https://www.youtube.com/watch?v=O3HSU0AoILc
+		- pass
 
 
 	- https://www.youtube.com/watch?v=jwGluLrrqjQ
