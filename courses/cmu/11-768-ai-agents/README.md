@@ -10,6 +10,8 @@
 
 
 - 20261022
+
+	- https://www.youtube.com/watch?v=nKUBrXFQBUM
 	
 	- https://www.youtube.com/watch?v=paAcPaaYZGM
 
