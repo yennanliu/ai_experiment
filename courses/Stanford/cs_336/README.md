@@ -13,3 +13,4 @@
 - 20261022
 	- https://www.youtube.com/watch?v=JuoVZkPBiKk&list=PLoROMvodv4rMqXOcazWaTUHhq-yembLCV
 		- Lecture 1.0
+			- 22:57
