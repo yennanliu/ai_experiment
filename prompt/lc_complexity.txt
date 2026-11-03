@@ -1,0 +1,52 @@
+# 1) 
+
+offer the time, space complexity for below code, explain the reason clearly in chinese in a readble way
+
+
+
+# 2)
+
+Please analyze the following code and provide its **time complexity and space complexity**.
+
+Explain your reasoning clearly and thoroughly in **Traditional Chinese (繁體中文)**, using a structured, readable, and beginner-friendly format.
+
+### Requirements
+
+1. **Time Complexity**
+   - State the Big-O time complexity.
+   - Break down the execution cost of each major operation, loop, nested loop, recursion, or data structure operation.
+   - Explain how the input size (`N`, `M`, `H`, etc.) affects the runtime.
+   - If relevant, distinguish between best, average, and worst cases.
+
+2. **Space Complexity**
+   - State the Big-O auxiliary space complexity.
+   - Identify which variables, data structures, recursion stacks, or temporary objects consume additional memory.
+   - Distinguish between auxiliary space and input/output space.
+   - Explain how memory usage scales with the input size.
+
+3. **Step-by-Step Analysis**
+   - Walk through the code logically to explain where the time and space costs come from.
+   - Use a small example when it helps clarify the analysis.
+   - Pay special attention to Python data structures and built-in operations (e.g., `list`, `dict`, `set`, `heapq`, sorting, slicing).
+
+4. **Final Summary**
+   Provide a concise summary table:
+
+   | Complexity | Big-O | Explanation |
+   |---|---|---|
+   | Time | O(...) | Brief reason |
+   | Space | O(...) | Brief reason |
+
+### Important Guidelines
+- Analyze the **actual implementation**, not just the underlying algorithm.
+- Do not assume that nested loops automatically mean O(N²); consider their actual iteration counts.
+- Do not incorrectly count input storage as auxiliary space unless explicitly stated.
+- Clearly state any assumptions about input size or data structure behavior.
+- If there is a common complexity-analysis pitfall in the implementation, explicitly point it out.
+- Prioritize correctness, clarity, and technical accuracy over simply providing a Big-O answer.
+
+### Code to Analyze
+
+```python
+# Paste code here
+```
