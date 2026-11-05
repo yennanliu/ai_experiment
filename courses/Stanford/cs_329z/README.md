@@ -10,6 +10,11 @@
 
 
 ## Progress
+
+- 20261105
+
+	- https://www.youtube.com/watch?v=_XlU4_yFNfY&list=PLVKEyLMx8AmU&index=2
+
 	
 - 20261024
 
