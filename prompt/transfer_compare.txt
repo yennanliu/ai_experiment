@@ -1,0 +1,4 @@
+# V1)
+
+Q: what's the different in result when transfer 10000 NTD to USD
+when 1 NTD = 0.0036 USD VS 1 NTD = 0.0030 USD
