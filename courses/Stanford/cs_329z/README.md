@@ -14,6 +14,7 @@
 - 20261106
 
 	- https://www.youtube.com/watch?v=R7UnLuGrLBk&list=PLVKEyLMx8AmU&index=4
+		- 16:03
 
 
 - 20261105
