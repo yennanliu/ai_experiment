@@ -4,6 +4,9 @@
 
 ## Todo
 
+- Agentic workflow
+  - https://hinacode.app/
+
 - official plugin / mcp
   - ChatGPT -> Claude
   - webmcp
