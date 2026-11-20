@@ -30,10 +30,6 @@ Here’s your updated prompt with the requested additions integrated cleanly and
 >
 > Let's begin. Here's the code/problem I’m working on:
 
----
-
-If you want, I can tighten this further for specific domains (e.g., LeetCode-style problems vs. system design vs. production debugging).
-
 
 ---
 
